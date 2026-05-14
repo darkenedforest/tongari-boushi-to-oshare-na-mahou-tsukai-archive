@@ -4,13 +4,6 @@ A fan-built reference site for the Japan-only NDS game *Tongari Boushi to Oshare
 
 Built as a companion to the fan English translation project at [darkenedforest/tongari-boushi-translation-claude-2026](https://github.com/darkenedforest/tongari-boushi-translation-claude-2026).
 
-## Sections
-
-- **2D Assets** *(live)* — every 2D image extracted from the ROM, browsable with palette and source-container metadata.
-- **Dialog Paths** *(planned)* — searchable conversation trees by character, location, and event.
-- **3D Models** *(planned)* — NPC and creature models with rotation, animation playback, and texture inspection.
-- **Maps** *(planned)* — interactive town and dungeon maps with NPC pin locations and shop overlays.
-
 ## Stack
 
 - [Astro](https://astro.build/) with [React](https://react.dev/) islands — static-first for fast browsing, interactive components only on the routes that need them.
