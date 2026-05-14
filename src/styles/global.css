@@ -1,0 +1,181 @@
+/* ─────────────────────────────────────────────────────────────────────
+   Theme — pastel pink / purple / blue with sparkle accents, loosely
+   inspired by the Konami Tongari Boushi page and the Magician's Quest
+   wiki vibe. Soft rounded surfaces, soft drop shadows, kawaii energy.
+   ───────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Pastel palette */
+  --color-pink-50:  #fff0f6;
+  --color-pink-100: #ffd6e7;
+  --color-pink-200: #ffadc9;
+  --color-pink-400: #ff7eb6;
+  --color-pink-600: #e93f8e;
+
+  --color-purple-50:  #f5f0ff;
+  --color-purple-100: #e8dcff;
+  --color-purple-200: #cab3ff;
+  --color-purple-400: #9b7bd9;
+  --color-purple-600: #6d4ca6;
+
+  --color-blue-50:  #eaf6ff;
+  --color-blue-100: #cce8ff;
+  --color-blue-200: #99cbff;
+  --color-blue-400: #5fa9ee;
+  --color-blue-600: #2f76b9;
+
+  --color-cream:   #fff8ee;
+  --color-ink:     #4a2e5e;
+  --color-ink-soft:#7d5e9a;
+
+  /* Sky / wash gradient used on the body */
+  --bg-sky: linear-gradient(
+    180deg,
+    #ffe4f1 0%,
+    #f1e0ff 35%,
+    #dbedff 75%,
+    #c8e6ff 100%
+  );
+
+  /* Surfaces */
+  --surface:        rgba(255, 255, 255, 0.85);
+  --surface-strong: #ffffff;
+  --surface-soft:   rgba(255, 255, 255, 0.55);
+
+  /* Shadows */
+  --shadow-soft: 0 8px 24px rgba(155, 123, 217, 0.18);
+  --shadow-pop:  0 12px 32px rgba(233, 63, 142, 0.22);
+
+  /* Type */
+  --font-display: 'Quicksand', 'Hiragino Maru Gothic ProN', 'M PLUS Rounded 1c', system-ui, -apple-system, sans-serif;
+  --font-body:    'Quicksand', 'Hiragino Maru Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 18px;
+  --radius-lg: 28px;
+  --radius-pill: 999px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--bg-sky) fixed;
+  -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+
+/* Faint sparkle pattern over the whole page */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(255,255,255,0.55) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 80% 30%, rgba(255,255,255,0.40) 0 1px, transparent 2px),
+    radial-gradient(circle at 65% 75%, rgba(255,255,255,0.55) 0 1.5px, transparent 2px),
+    radial-gradient(circle at 30% 85%, rgba(255,255,255,0.35) 0 1px, transparent 2px),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.30) 0 1px, transparent 2px);
+  background-size: 320px 320px;
+}
+
+a {
+  color: var(--color-pink-600);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+a:hover {
+  color: var(--color-purple-600);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--color-purple-600);
+  margin-top: 0;
+}
+
+h1 { font-size: 2.4rem; letter-spacing: 0.02em; }
+h2 { font-size: 1.6rem; }
+h3 { font-size: 1.2rem; }
+
+/* Pill / chip — used for filters, tags, breadcrumbs */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--color-purple-600);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--color-purple-100);
+}
+
+/* Card surface */
+.card {
+  background: var(--surface-strong);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: 24px;
+  border: 1px solid var(--color-pink-100);
+}
+
+/* Primary action button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+  color: white;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  box-shadow: var(--shadow-pop);
+  transition: transform 0.12s ease, box-shadow 0.15s ease;
+  text-decoration: none;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  color: white;
+  box-shadow: 0 16px 36px rgba(233, 63, 142, 0.30);
+}
+
+.btn-secondary {
+  background: white;
+  color: var(--color-purple-600);
+  border: 1px solid var(--color-purple-200);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Decorative sparkle SVG can be inlined as a pseudo-element */
+.sparkle::after {
+  content: '✦';
+  margin-left: 8px;
+  color: var(--color-pink-400);
+}
+
+/* Layout helpers */
+.container {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
+}
