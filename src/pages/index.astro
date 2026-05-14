@@ -6,18 +6,14 @@ const base = import.meta.env.BASE_URL;
 <Layout title="Home">
   <section class="hero">
     <div class="hero-text">
-      <h1>Tongari Boushi to Oshare na Mahou Tsukai</h1>
+      <h1>The Archives ✦</h1>
       <p class="lede">
-        I'm working on an English fan translation of this Japan-only DS game,
-        which mostly means cracking it open and reading its files. This is where
-        the pieces I pull out end up. Right now that's every 2D image the game
-        ships, organized by source container with enough metadata to track each
-        one back to where it lives in the ROM. The translation itself happens
-        in a separate repo.
+        I'm working on an English fan translation of this Japan-only DS game.
+        A lot of that work involves pulling the game open and finding what's
+        inside — files, art, dialog, characters. This is where the pieces I
+        uncover end up, so I can come back to them and so anyone else who's
+        curious can poke around.
       </p>
-      <div class="hero-cta">
-        <a href={`${base}/assets/`} class="btn">Browse the assets</a>
-      </div>
     </div>
     <div class="hero-decoration" aria-hidden="true">
       <div class="hat">🎩</div>
@@ -25,6 +21,21 @@ const base = import.meta.env.BASE_URL;
       <div class="sparkle s2">✧</div>
       <div class="sparkle s3">✦</div>
       <div class="sparkle s4">✧</div>
+    </div>
+  </section>
+
+  <section class="sections">
+    <div class="section-grid">
+      <a href={`${base}/assets/`} class="section-card live">
+        <span class="section-emoji">🖼️</span>
+        <h3>2D Assets</h3>
+        <p>Item icons, NPC sprites, magic keyboard glyphs, shop screens, title art — every 2D image in the game, with palette and source-container metadata.</p>
+        <span class="section-cta">Browse →</span>
+      </a>
+      <div class="section-card more">
+        <span class="section-emoji">✨</span>
+        <h3>More to come…?</h3>
+      </div>
     </div>
   </section>
 </Layout>
@@ -49,13 +60,6 @@ const base = import.meta.env.BASE_URL;
     line-height: 1.6;
     color: var(--color-ink);
     max-width: 56ch;
-  }
-
-  .hero-cta {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-top: 24px;
   }
 
   .hero-decoration {
@@ -92,4 +96,64 @@ const base = import.meta.env.BASE_URL;
   .s2 { top: 18%; right: 18%; font-size: 1.2rem; color: var(--color-purple-400); }
   .s3 { bottom: 22%; left: 14%; font-size: 1.4rem; color: var(--color-blue-400); }
   .s4 { bottom: 16%; right: 24%; }
+
+  .sections {
+    padding: 30px 0 50px;
+  }
+
+  .section-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+  }
+
+  .section-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 24px;
+    background: var(--surface-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--color-pink-100);
+    text-decoration: none;
+    color: var(--color-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .section-card.live {
+    cursor: pointer;
+  }
+
+  .section-card.live:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-pop);
+    border-color: var(--color-pink-200);
+  }
+
+  .section-card.more {
+    opacity: 0.72;
+    cursor: default;
+  }
+
+  .section-emoji {
+    font-size: 2rem;
+  }
+
+  .section-card h3 {
+    margin: 0;
+  }
+
+  .section-card p {
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .section-cta {
+    margin-top: auto;
+    font-weight: 700;
+    color: var(--color-pink-600);
+  }
 </style>
