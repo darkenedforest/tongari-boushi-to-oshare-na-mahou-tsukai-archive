@@ -1,0 +1,645 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import patchData from '../../../public/data/patches.json';
+
+const base = import.meta.env.BASE_URL;
+
+const releases = patchData.releases;
+const latest = releases[0];
+const olderReleases = releases.slice(1);
+const legacy = patchData.legacy;
+const patcher = patchData.patcherInfo;
+
+function formatDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+function resolveUrl(d: { url: string; isLocal?: boolean }): string {
+  if (d.isLocal) {
+    // strip leading slash so the base url joins cleanly
+    const trimmed = d.url.replace(/^\/+/, '');
+    return `${base}/${trimmed}`;
+  }
+  return d.url;
+}
+---
+
+<Layout title="Patches">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>Patches</span>
+    </p>
+    <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
+    <p class="lede">
+      English fan-translation patches for the original Japanese DS ROM. Pick the
+      patch that matches your ROM revision, run it through Delta Patcher, and
+      you'll get an English <code>.nds</code> file out the other side.
+    </p>
+  </section>
+
+  <section class="how-to card">
+    <h2>How to apply a patch</h2>
+    <ol class="how-list">
+      <li>
+        <strong>Figure out which ROM revision you have.</strong>
+        <p class="muted">Open a terminal in the folder with your ROM and run:</p>
+        <pre class="codeblock" aria-label="Windows PowerShell command"><span class="code-tag">PowerShell</span><code>{patcher.romHashCommandWindows}</code></pre>
+        <pre class="codeblock" aria-label="macOS / Linux command"><span class="code-tag">Mac / Linux</span><code>{patcher.romHashCommandUnix}</code></pre>
+        <p class="muted small">Match the MD5 it prints against the hash next to each download below.</p>
+      </li>
+      <li>
+        <strong>Grab Delta Patcher</strong> from
+        <a href={patcher.tool.url} target="_blank" rel="noopener">romhacking.net</a>
+        and install it.
+      </li>
+      <li>
+        <strong>Apply the patch.</strong>
+        <ul class="bare">
+          <li>"Original file" → your ROM.</li>
+          <li>"XDelta patch" → the <code>.xdelta</code> file you downloaded.</li>
+          <li>Click "Apply patch".</li>
+        </ul>
+        <p class="muted small">A new patched <code>.nds</code> file shows up in the same folder. That's the one to load.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="releases">
+    <h2>Release history</h2>
+
+    <article class="release latest">
+      <header class="release-head">
+        <div class="version-line">
+          <span class="version-tag">v{latest.version}</span>
+          <span class="latest-chip" aria-label="Latest release">Latest</span>
+        </div>
+        <time datetime={latest.date}>{formatDate(latest.date)}</time>
+      </header>
+      <h3 class="release-headline">{latest.headline}</h3>
+      <p class="release-summary">{latest.summary}</p>
+
+      <ul class="changes">
+        {latest.changes.map((c) => <li>{c}</li>)}
+      </ul>
+
+      {latest.notes && (
+        <p class="release-note">{latest.notes}</p>
+      )}
+
+      <div class="downloads">
+        <p class="downloads-label">Download</p>
+        <div class="download-grid">
+          {latest.downloads.map((d) => (
+            <a
+              class="download-card"
+              href={resolveUrl(d)}
+              {...(d.isLocal
+                ? { download: '' }
+                : { target: '_blank', rel: 'noopener' })}
+            >
+              <span class="download-label">{d.label}</span>
+              <span class="download-sub">Match this MD5:</span>
+              <code class="hash">{d.romMd5}</code>
+              <span class="download-cta">
+                {d.isLocal ? 'Download .xdelta' : 'Open download'}{' '}
+                <span aria-hidden="true">→</span>
+              </span>
+            </a>
+          ))}
+        </div>
+        {(latest.patchSizeBytes || latest.patchSha256 || latest.patchedRomMd5) && (
+          <div class="meta-grid">
+            {latest.patchSizeBytes && (
+              <p class="patched-hash">
+                <span class="muted">Patch size:</span>{' '}
+                <code class="hash inline">{formatBytes(latest.patchSizeBytes)}</code>
+              </p>
+            )}
+            {latest.patchSha256 && (
+              <p class="patched-hash">
+                <span class="muted">Patch SHA-256:</span>{' '}
+                <code class="hash inline">{latest.patchSha256}</code>
+              </p>
+            )}
+            {latest.patchedRomMd5 && (
+              <p class="patched-hash">
+                <span class="muted">Patched ROM MD5:</span>{' '}
+                <code class="hash inline">{latest.patchedRomMd5}</code>
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </article>
+
+    {olderReleases.length > 0 && (
+      <div class="older">
+        <h3 class="older-title">Older versions</h3>
+        <div class="older-list">
+          {olderReleases.map((r) => (
+            <article class="release older-release">
+              <header class="release-head">
+                <div class="version-line">
+                  <span class="version-tag muted-tag">v{r.version}</span>
+                </div>
+                <time datetime={r.date}>{formatDate(r.date)}</time>
+              </header>
+              <h4 class="release-headline">{r.headline}</h4>
+              <p class="release-summary">{r.summary}</p>
+
+              {r.changes.length > 0 && (
+                <ul class="changes">
+                  {r.changes.map((c) => <li>{c}</li>)}
+                </ul>
+              )}
+
+              <div class="downloads">
+                <div class="download-grid compact">
+                  {r.downloads.map((d) => (
+                    <a
+                      class="download-card small"
+                      href={resolveUrl(d)}
+                      {...(d.isLocal
+                        ? { download: '' }
+                        : { target: '_blank', rel: 'noopener' })}
+                    >
+                      <span class="download-label">{d.label}</span>
+                      <code class="hash">{d.romMd5}</code>
+                    </a>
+                  ))}
+                </div>
+                {r.patchedRomMd5 && (
+                  <p class="patched-hash">
+                    <span class="muted">Patched ROM MD5:</span>{' '}
+                    <code class="hash inline">{r.patchedRomMd5}</code>
+                  </p>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    )}
+  </section>
+
+  {legacy && (
+    <section class="legacy card">
+      <h2>Before v2.0 — the old tool</h2>
+      <p class="muted">
+        <time datetime={legacy.date}>{formatDate(legacy.date)}</time>
+      </p>
+      <p>{legacy.summary}</p>
+      <ul class="legacy-downloads">
+        {legacy.downloads.map((d) => (
+          <li>
+            <a href={d.url} target="_blank" rel="noopener"><strong>{d.label}</strong></a>
+            {d.description && <span class="muted"> — {d.description}</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <p class="source-note">
+    Originally posted at{' '}
+    <a href={patchData.source.origin} target="_blank" rel="noopener">
+      tongariboushipatchtool.wordpress.com
+    </a>.
+  </p>
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 12px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+
+  .sparkle-mark {
+    color: var(--color-pink-400);
+  }
+
+  .lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 1.05rem;
+  }
+
+  .lede code {
+    background: var(--color-purple-50);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+  }
+
+  /* How-to block */
+  .how-to {
+    margin: 24px 0 36px;
+    padding: 28px 30px;
+  }
+
+  .how-to h2 {
+    margin: 0 0 16px;
+    font-size: 1.25rem;
+  }
+
+  .how-list {
+    margin: 0;
+    padding-left: 24px;
+    display: grid;
+    gap: 16px;
+  }
+
+  .how-list li {
+    line-height: 1.55;
+  }
+
+  .how-list li strong {
+    color: var(--color-purple-600);
+  }
+
+  .how-list .muted {
+    margin: 6px 0;
+    color: var(--color-ink-soft);
+  }
+
+  .how-list .small {
+    font-size: 0.88rem;
+  }
+
+  .bare {
+    list-style: disc;
+    padding-left: 20px;
+    margin: 6px 0;
+  }
+
+  .bare li {
+    margin: 2px 0;
+  }
+
+  .codeblock {
+    position: relative;
+    margin: 8px 0;
+    padding: 14px 16px 14px 90px;
+    background: linear-gradient(135deg, var(--color-purple-50), var(--color-pink-50));
+    border: 1px solid var(--color-purple-100);
+    border-radius: var(--radius-md);
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.85rem;
+    color: var(--color-ink);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .code-tag {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-purple-600);
+    background: white;
+    padding: 3px 8px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-purple-100);
+  }
+
+  /* Releases */
+  .releases {
+    margin: 16px 0 36px;
+  }
+
+  .releases > h2 {
+    margin: 12px 0 18px;
+    font-size: 1.4rem;
+  }
+
+  .release {
+    background: var(--surface-strong);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-pink-100);
+    box-shadow: var(--shadow-soft);
+    padding: 28px 30px;
+    margin-bottom: 20px;
+    position: relative;
+  }
+
+  .release.latest {
+    border: 1px solid var(--color-pink-200);
+    box-shadow: var(--shadow-pop);
+    background:
+      linear-gradient(180deg, rgba(255, 240, 246, 0.85), rgba(255, 255, 255, 1) 40%);
+  }
+
+  .release.latest::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-pink-400), var(--color-purple-400), var(--color-blue-400));
+    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+  }
+
+  .release-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .version-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .version-tag {
+    display: inline-block;
+    padding: 5px 14px;
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 4px 12px rgba(155, 123, 217, 0.25);
+  }
+
+  .version-tag.muted-tag {
+    background: var(--color-purple-100);
+    color: var(--color-purple-600);
+    box-shadow: none;
+  }
+
+  .latest-chip {
+    display: inline-block;
+    padding: 4px 12px;
+    background: white;
+    color: var(--color-pink-600);
+    font-weight: 700;
+    font-size: 0.75rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-pink-200);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .release time {
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .release-headline {
+    margin: 10px 0 6px;
+    color: var(--color-purple-600);
+    font-size: 1.25rem;
+  }
+
+  .release.older-release .release-headline {
+    font-size: 1.05rem;
+  }
+
+  .release-summary {
+    margin: 0 0 14px;
+    line-height: 1.55;
+    color: var(--color-ink);
+  }
+
+  .changes {
+    margin: 0 0 18px;
+    padding-left: 22px;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+
+  .changes li {
+    margin: 4px 0;
+  }
+
+  .changes li::marker {
+    color: var(--color-pink-400);
+  }
+
+  .release-note {
+    margin: 0 0 18px;
+    padding: 10px 14px;
+    background: var(--color-blue-50);
+    border-left: 3px solid var(--color-blue-400);
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+    font-size: 0.9rem;
+  }
+
+  /* Downloads */
+  .downloads {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--color-purple-100);
+  }
+
+  .downloads-label {
+    margin: 0 0 10px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-purple-600);
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+  }
+
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+
+  .download-grid.compact {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .download-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #ffffff 0%, var(--color-pink-50) 100%);
+    border: 1px solid var(--color-pink-100);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--color-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .download-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+    border-color: var(--color-pink-200);
+    color: var(--color-ink);
+  }
+
+  .download-card.small {
+    padding: 10px 14px;
+  }
+
+  .download-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-pink-600);
+    font-size: 1rem;
+  }
+
+  .download-sub {
+    font-size: 0.78rem;
+    color: var(--color-ink-soft);
+    font-weight: 600;
+  }
+
+  .hash {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.78rem;
+    color: var(--color-purple-600);
+    background: var(--color-purple-50);
+    padding: 3px 8px;
+    border-radius: 6px;
+    word-break: break-all;
+    border: 1px solid var(--color-purple-100);
+  }
+
+  .hash.inline {
+    background: transparent;
+    border: none;
+    padding: 0;
+    color: var(--color-ink-soft);
+  }
+
+  .download-cta {
+    margin-top: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--color-pink-600);
+  }
+
+  .patched-hash {
+    margin: 12px 0 0;
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+  }
+
+  .meta-grid {
+    margin-top: 14px;
+    display: grid;
+    gap: 4px;
+  }
+
+  .meta-grid .patched-hash {
+    margin: 0;
+  }
+
+  .hash.inline {
+    word-break: break-all;
+  }
+
+  /* Older releases section */
+  .older {
+    margin-top: 28px;
+  }
+
+  .older-title {
+    margin: 0 0 14px;
+    color: var(--color-ink-soft);
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .older-list {
+    display: grid;
+    gap: 16px;
+  }
+
+  .older-release {
+    background: var(--surface-soft);
+    padding: 22px 26px;
+  }
+
+  /* Legacy / pre-2.0 */
+  .legacy {
+    margin: 16px 0 30px;
+    background: linear-gradient(180deg, var(--color-purple-50), var(--surface-strong) 50%);
+  }
+
+  .legacy h2 {
+    margin: 0 0 6px;
+    font-size: 1.2rem;
+  }
+
+  .legacy-downloads {
+    margin: 12px 0 0;
+    padding-left: 22px;
+    line-height: 1.6;
+  }
+
+  .legacy-downloads li {
+    margin: 6px 0;
+  }
+
+  .legacy-downloads li::marker {
+    color: var(--color-purple-400);
+  }
+
+  .muted {
+    color: var(--color-ink-soft);
+  }
+
+  .source-note {
+    margin: 30px 0 50px;
+    text-align: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 640px) {
+    .codeblock {
+      padding: 36px 14px 14px;
+    }
+    .code-tag {
+      top: 8px;
+      left: 10px;
+      transform: none;
+    }
+  }
+</style>

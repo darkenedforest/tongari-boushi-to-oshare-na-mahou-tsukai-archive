@@ -1,0 +1,148 @@
+{
+  "source": {
+    "origin": "https://tongariboushipatchtool.wordpress.com/2026/05/10/new-release-yay/",
+    "fetched": "2026-05-15",
+    "note": "Migrated from the original WordPress release post. v2.x patches use Xdelta3 — apply with Delta Patcher (https://www.romhacking.net/utilities/704/). v1.x line was a different tool (Enchanted Translator Lite + Translation.dat) and is kept for archival reference only."
+  },
+  "patcherInfo": {
+    "format": "xdelta",
+    "tool": {
+      "name": "Delta Patcher",
+      "url": "https://www.romhacking.net/utilities/704/"
+    },
+    "romHashCommandWindows": "Get-FileHash \"your_rom_filename.nds\" -Algorithm MD5",
+    "romHashCommandUnix": "md5sum \"your_rom_filename.nds\"",
+    "instructions": [
+      "Run the MD5 command above on your ROM to figure out which revision you have.",
+      "Download the patch file that matches your ROM's MD5 hash.",
+      "Open Delta Patcher.",
+      "Set \"Original file\" to your ROM.",
+      "Set \"XDelta patch\" to the .xdelta file you downloaded.",
+      "Click \"Apply patch\". A new patched .nds file appears in the same folder."
+    ]
+  },
+  "releases": [
+    {
+      "version": "2.3",
+      "date": "2026-05-15",
+      "headline": "Magic keyboard in English, name cleanup, less ROM bloat",
+      "summary": "A bunch of polish stuff this round. The magic-glyph keyboard is finally in English, a pile of inconsistent NPC names and currency labels got unified, and there's a fix in the ROM build that drops the patched file size by about 1.57 MB (which should help with the lag a few people reported).",
+      "changes": [
+        "Magic-glyph keyboard is in English. All 377 spell glyphs (incantation, magic, charm, the lot) now show their English equivalents on the on-screen keyboard.",
+        "NPC name consistency pass. Some characters had their names translated differently across dialog lines — the cat NPC is now \"Charlie\" everywhere, the dorm shop NPC is \"Malila\" everywhere, etc. 104 fixes across the corpus.",
+        "Currency is \"Ritch\" everywhere. It was drifting between \"Ritch\" and \"Ricci\" in different files. Now it's just Ritch.",
+        "Princess Sol / Principal Sol typo fixed. The Principal's NPC label was showing as \"Pricipal\" — fixed in the binary, so the speaker tag reads correctly now.",
+        "King is \"His Majesty\" again. 27 dialog lines were calling the king \"Her Majesty\" because the JP was gender-neutral and got translated wrong. Fixed.",
+        "Linguistics class label is consistent. The class まほうご (literally \"magic words\") is now called \"Linguistics\" wherever it shows up as a class name. References to the actual magic language being spoken still read as \"magic words\" / \"magic language\" — that's the in-fiction language, not the class.",
+        "UCC cooking recipe names are translated. All 14 of them: Cake, Shortcake, Stew, Beef Stew, Pasta, Carbonara, Napolitan, Red Bean Bun, Choco Bun, Cream Bun, Jam Bun, Ice Cream, Vanilla Ice Cream, Bread.",
+        "Magic license card fixed. The student ID card was showing entire sentences in fields that should have been short labels (Birthday, the Witch's Nose constellation, etc.) — corrected to actual labels.",
+        "Opening tutorial menu cleanup. Three menu options were showing long sentences instead of short option names — fixed.",
+        "Past Class / Special Class menu options renamed.",
+        "Constellation names use Game 1 canon (Witch's Nose, Bat's Wing, Scale Tail, etc.).",
+        "401 dialog overflow fixes. Lines that were too wide for the textbox got re-wrapped, and 51 of them got light rewrites to fit. Most are just line-break tweaks, no wording changes.",
+        "ROM size fix. There was a bug in the build that was bloating message files. Cutting that out drops the patched ROM by about 1.57 MB, which should help with the lag some people reported.",
+        "Misc canon corrections. 104 more dialog lines updated where the JP referenced something that has established English canon — e.g. \"Mr. Graves\" was being used incorrectly for one NPC line and got fixed."
+      ],
+      "downloads": [
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.3-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467"
+        }
+      ],
+      "patchedRomMd5": "43609966367bf98fdde5bedd19bee1de",
+      "patchedRomSha256": "b1fbb1afe9eccb16edb5834b335360caf931949993dfa9d0fa40a7d2c688555b",
+      "patchSizeBytes": 3847174,
+      "patchSha256": "92f451a83a796f6488cd034950d81b1289075962ed84e1b035e3469e819961cb",
+      "notes": "Rev 0 patch isn't in this release — if you're on Rev 0, the v2.2 patches below still work and include the Nintendo bug fixes Rev 1 has."
+    },
+    {
+      "version": "2.2",
+      "date": "2026-05-10",
+      "headline": "AI retranslation + Freedomuniverse fixes",
+      "summary": "Full retranslation of game text using current AI with proper dialog context. Imported Freedomuniverse's friend-code crash fix, repaired 18 broken menus, and patched text overruns on bug info screens.",
+      "changes": [
+        "Retranslated game dialog using a current AI model with much better dialog-context handling.",
+        "Bug fix: imported Freedomuniverse's edits for the friend code. Should prevent crashing when tapping it.",
+        "Bug fix: fixed 18 broken menus.",
+        "Bug fix: fixed text overruns on some bug information screens."
+      ],
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "https://drive.google.com/file/d/10PMG2yS820n6uXRTGnx5FY1MU9DgyIkw/view?usp=sharing",
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958"
+        },
+        {
+          "label": "Rev 1",
+          "url": "https://drive.google.com/file/d/1LZAtwvDghx4EAY98emEUMf3r23oTQ5OC/view?usp=sharing",
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467"
+        }
+      ],
+      "patchedRomMd5": "DD0CDAD60791D534AF8C63243AF8EB58",
+      "notes": "I patch off Rev 1, so if you have Rev 0 it will also include all the Nintendo bug fixes."
+    },
+    {
+      "version": "2.1",
+      "date": "2026-05-10",
+      "headline": "Terminator fix for merged dialog",
+      "summary": "Fixed an issue with missing terminators causing dialog to merge together and overflow.",
+      "changes": [
+        "Bug fix: missing terminators were causing adjacent dialog to merge together and overflow."
+      ],
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "https://drive.google.com/file/d/1j7gBqyEVyNCfxf28UZ1-4cxoZLvOz_Uj/view?usp=sharing",
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958"
+        },
+        {
+          "label": "Rev 1",
+          "url": "https://drive.google.com/file/d/1Klq9Mt33mCj-TBx_9NkfpnoIZ0sWBaS6/view?usp=sharing",
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467"
+        }
+      ],
+      "patchedRomMd5": "5DDCC419A05CED745074E8C76DB0EA6F"
+    },
+    {
+      "version": "2.0",
+      "date": "2026-05-10",
+      "headline": "First Xdelta3 release",
+      "summary": "Switched the patch format from the old custom tool to Xdelta3. Pick the patch that matches your ROM revision.",
+      "changes": [
+        "Switched patch format to Xdelta3, patched against Rev 1."
+      ],
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "https://drive.google.com/file/d/1L29fnAGyJ7wgvO6kmoajB7fsBLXRBVk8/view?usp=sharing",
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958"
+        },
+        {
+          "label": "Rev 1",
+          "url": "https://drive.google.com/file/d/12q8V2k84oV_3D04F56qSnREPS5ju6XlW/view?usp=sharing",
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467"
+        }
+      ],
+      "patchedRomMd5": "B2523DE3B67C4298FD001C660654F92E"
+    }
+  ],
+  "legacy": {
+    "name": "Enchanted Translator Lite + Translation.dat",
+    "date": "2023-12-28",
+    "summary": "The original patch system, before Xdelta3. Used a separate patcher tool and a database file with the translation. Roughly 5% human-translated, 95% DeepL. Kept here for historical reference; the v2.x Xdelta patches above replace it.",
+    "downloads": [
+      {
+        "label": "Enchanted Translator Lite v1.0",
+        "url": "https://www.mediafire.com/file/e8b1gif7fq8fwom/Enchanted_Translator_Lite_v1.0.zip/file",
+        "description": "The patcher executable. Patches NPC names, item names, message files."
+      },
+      {
+        "label": "Translation.dat",
+        "url": "https://drive.google.com/file/d/1FrGeV6eIXaEvmqRhrHp6CVDevpONUseZ/view?usp=sharing",
+        "description": "Translation database — ~5% human, ~95% DeepL. Message-board messages fixed to prevent save-file corruption."
+      }
+    ]
+  }
+}

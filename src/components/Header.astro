@@ -2,8 +2,12 @@
 const base = import.meta.env.BASE_URL;
 const sections = [
   { label: 'Home', href: `${base}/` },
+  { label: 'Patches', href: `${base}/patches/` },
+  { label: '2D Assets', href: `${base}/assets/` },
+  { label: 'Field Guide', href: `${base}/field-guide/` },
 ];
 const current = Astro.url.pathname.replace(/\/$/, '');
+const baseNorm = base.replace(/\/$/, '');
 ---
 
 <header class="site-header">
@@ -19,7 +23,10 @@ const current = Astro.url.pathname.replace(/\/$/, '');
       <ul class="nav-list">
         {sections.map(s => {
           const norm = s.href.replace(/\/$/, '');
-          const active = current === norm;
+          // Home matches only the bare base; section roots match themselves + subpaths
+          const active = norm === baseNorm
+            ? current === baseNorm
+            : current === norm || current.startsWith(norm + '/');
           return (
             <li>
               <a href={s.href} class:list={['nav-link', { active }]}>{s.label}</a>
