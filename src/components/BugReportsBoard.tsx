@@ -80,6 +80,7 @@ function NewReportForm({
   const [author, setAuthor] = useState('');
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [steps, setSteps] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [honeypot, setHoneypot] = useState('');
   const [busy, setBusy] = useState(false);
@@ -116,9 +117,17 @@ function NewReportForm({
     }
     setBusy(true);
     try {
+      // Combine description + optional steps into a single body field
+      // since the Supabase schema doesn't have a separate `steps` column.
+      // Marked with a header so the post displays cleanly.
+      let combinedBody = body.trim();
+      const stepsTrimmed = steps.trim();
+      if (stepsTrimmed) {
+        combinedBody = `${combinedBody}\n\n**Steps to reproduce:**\n${stepsTrimmed}`;
+      }
       const insertPayload = {
         title: title.trim().slice(0, MAX_TITLE),
-        body: body.trim().slice(0, MAX_BODY),
+        body: combinedBody.slice(0, MAX_BODY),
         author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
         status: 'open' as const,
       };
@@ -153,6 +162,7 @@ function NewReportForm({
       setAuthor('');
       setTitle('');
       setBody('');
+      setSteps('');
       setFiles([]);
       setOpen(false);
       onPosted();
@@ -219,6 +229,16 @@ function NewReportForm({
           rows={6}
           maxLength={MAX_BODY}
           required
+        />
+      </label>
+      <label className="field">
+        <span className="field-label">Steps to reproduce (optional)</span>
+        <textarea
+          value={steps}
+          onChange={e => setSteps(e.target.value)}
+          placeholder={"1. Open the magic shop\n2. Tap the Charm tab\n3. Garbled text appears in the description"}
+          rows={5}
+          maxLength={MAX_BODY}
         />
       </label>
       <div className="file-row">
