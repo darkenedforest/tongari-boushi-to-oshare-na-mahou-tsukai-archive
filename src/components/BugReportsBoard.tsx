@@ -29,6 +29,52 @@ const MAX_TITLE = 120;
 const MAX_BODY = 4000;
 const MAX_COMMENT = 2000;
 const MAX_AUTHOR = 40;
+const MAX_HARDWARE = 8;
+
+// Hardware options for the bug-report form. Grouped via optgroup so the
+// dropdown stays scannable. Order is rough-chronological within each
+// group. The strings are submitted as-is into the report body.
+const HARDWARE_OPTIONS: { label: string; items: string[] }[] = [
+  {
+    label: 'Original DS',
+    items: ['Nintendo DS (Phat)', 'Nintendo DS Lite'],
+  },
+  {
+    label: 'DSi family',
+    items: ['Nintendo DSi', 'Nintendo DSi XL'],
+  },
+  {
+    label: '3DS family',
+    items: [
+      'Nintendo 3DS',
+      'Nintendo 3DS XL',
+      'Nintendo 2DS',
+      'New Nintendo 3DS',
+      'New Nintendo 3DS XL',
+      'New Nintendo 2DS XL',
+    ],
+  },
+  {
+    label: 'Homebrew launcher (running on DSi/3DS)',
+    items: ['TWiLight Menu++', 'nds-bootstrap', 'Unlaunch (DSi)'],
+  },
+  {
+    label: 'Flashcart',
+    items: ['R4 / R4i', 'AceKard 2i', 'DSTT', 'M3 / M3i Zero', 'SuperCard DSTWO', 'EZ Flash 5'],
+  },
+  {
+    label: 'Emulator (PC)',
+    items: ['melonDS', 'DeSmuME', 'no$GBA', 'iDeaS', 'RetroArch (melonDS core)', 'RetroArch (DeSmuME core)'],
+  },
+  {
+    label: 'Emulator (mobile / other)',
+    items: ['DraStic (Android)', 'Delta (iOS)', 'RetroArch (mobile)'],
+  },
+  {
+    label: 'Other',
+    items: ['Other (note in description)'],
+  },
+];
 
 function timeAgo(iso: string): string {
   const t = new Date(iso).getTime();
@@ -80,6 +126,7 @@ function NewReportForm({
   const [author, setAuthor] = useState('');
   const [title, setTitle] = useState('');
   const [patchVersion, setPatchVersion] = useState('');
+  const [hardware, setHardware] = useState<string[]>(['']);
   const [body, setBody] = useState('');
   const [steps, setSteps] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -87,6 +134,16 @@ function NewReportForm({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  function setHardwareAt(idx: number, value: string) {
+    setHardware(prev => prev.map((v, i) => i === idx ? value : v));
+  }
+  function addHardware() {
+    setHardware(prev => prev.length >= MAX_HARDWARE ? prev : [...prev, '']);
+  }
+  function removeHardware(idx: number) {
+    setHardware(prev => prev.length <= 1 ? [''] : prev.filter((_, i) => i !== idx));
+  }
 
   function pickFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const list = Array.from(e.target.files || []);
@@ -118,14 +175,18 @@ function NewReportForm({
     }
     setBusy(true);
     try {
-      // Combine patch version + description + optional steps into a single
-      // body field since the Supabase schema doesn't have separate columns.
-      // Patch version goes at the top so it shows above the description.
+      // Combine patch version + hardware + description + optional steps
+      // into a single body field (no separate columns in the schema).
+      // Metadata at the top, description, then steps at the bottom.
       const pv = patchVersion.trim();
       const stepsTrimmed = steps.trim();
+      const hwList = hardware.map(h => h.trim()).filter(Boolean);
       let combinedBody = body.trim();
-      if (pv) {
-        combinedBody = `**Patch version:** ${pv.slice(0, 40)}\n\n${combinedBody}`;
+      const metaLines: string[] = [];
+      if (pv) metaLines.push(`**Patch version:** ${pv.slice(0, 40)}`);
+      if (hwList.length) metaLines.push(`**Hardware tested:** ${hwList.join(', ')}`);
+      if (metaLines.length) {
+        combinedBody = `${metaLines.join('\n')}\n\n${combinedBody}`;
       }
       if (stepsTrimmed) {
         combinedBody = `${combinedBody}\n\n**Steps to reproduce:**\n${stepsTrimmed}`;
@@ -167,6 +228,7 @@ function NewReportForm({
       setAuthor('');
       setTitle('');
       setPatchVersion('');
+      setHardware(['']);
       setBody('');
       setSteps('');
       setFiles([]);
@@ -236,6 +298,43 @@ function NewReportForm({
           maxLength={40}
         />
       </label>
+      <div className="field">
+        <span className="field-label">Hardware tested on (optional, add more if multiple)</span>
+        <div className="hw-list">
+          {hardware.map((value, idx) => (
+            <div key={idx} className="hw-row">
+              <select
+                value={value}
+                onChange={e => setHardwareAt(idx, e.target.value)}
+                className="hw-select"
+              >
+                <option value="">— Select hardware —</option>
+                {HARDWARE_OPTIONS.map(group => (
+                  <optgroup key={group.label} label={group.label}>
+                    {group.items.map(item => (
+                      <option key={item} value={item}>{item}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              {(hardware.length > 1 || value) && (
+                <button
+                  type="button"
+                  className="hw-remove"
+                  onClick={() => removeHardware(idx)}
+                  aria-label="Remove this hardware entry"
+                  title="Remove"
+                >×</button>
+              )}
+            </div>
+          ))}
+          {hardware.length < MAX_HARDWARE && (
+            <button type="button" className="hw-add" onClick={addHardware}>
+              <span aria-hidden>+</span> Add another
+            </button>
+          )}
+        </div>
+      </div>
       <label className="field">
         <span className="field-label">What's the issue?</span>
         <textarea
@@ -628,13 +727,41 @@ export default function BugReportsBoard() {
         .dot { margin: 0 6px; opacity: 0.5; }
 
         .new-form {
+          /* Claim a full row inside .board-header's flex layout so the form
+             doesn't get squeezed into a narrow column next to the sort pills. */
+          flex: 1 0 100%;
+          width: 100%;
+          max-width: 720px;
           background: white; padding: 18px 20px;
           border-radius: var(--radius-lg); border: 1px solid var(--color-pink-100);
           box-shadow: var(--shadow-soft);
           display: flex; flex-direction: column; gap: 12px;
-          margin-bottom: 24px;
+          margin-bottom: 4px;
         }
         .form-row.split { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .hw-list { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+        .hw-row { display: flex; gap: 8px; align-items: center; }
+        .hw-select {
+          flex: 1; padding: 10px 14px; border-radius: var(--radius-md);
+          border: 1px solid var(--color-purple-100); background: var(--color-purple-50);
+          font: inherit; color: var(--color-ink); cursor: pointer;
+        }
+        .hw-select:focus { outline: 2px solid var(--color-pink-200); background: white; }
+        .hw-remove {
+          width: 28px; height: 28px; border-radius: 50%;
+          background: var(--color-pink-100); color: var(--color-pink-600);
+          border: none; cursor: pointer; font-size: 1.1rem; line-height: 1;
+          flex-shrink: 0;
+        }
+        .hw-remove:hover { background: var(--color-pink-200); }
+        .hw-add {
+          align-self: flex-start; margin-top: 2px;
+          padding: 6px 14px; border-radius: var(--radius-pill);
+          background: var(--color-purple-50); color: var(--color-purple-600);
+          border: 1px solid var(--color-purple-100); font: inherit; font-size: 0.82rem; font-weight: 600;
+          cursor: pointer;
+        }
+        .hw-add:hover { background: var(--color-purple-100); }
         .field { display: flex; flex-direction: column; gap: 4px; }
         .field-label { font-weight: 600; color: var(--color-purple-600); font-size: 0.82rem; }
         .field input, .field textarea {
