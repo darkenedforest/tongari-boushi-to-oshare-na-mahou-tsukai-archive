@@ -167,6 +167,99 @@ def build_title_castles(records: list[dict], v: str) -> int:
     return added
 
 
+def build_btx0_clothing(records: list[dict], v: str) -> int:
+    """Category 5: clothing textures decoded from BTX0 (NSBTX) — the
+    same texture that wraps the 3D mannequin IS the 2D inventory icon.
+    Source: notes/2d_assets_v3/clothing_textures/<subcat>/<NNNN>__<src>.png.
+    Subcategories: plcloth_u (tops), plcloth_d (bottoms), plhat, plshoes,
+    plglasses, plhair, plface."""
+    src_root = TRANSLATION_REPO / "notes" / "2d_assets_v3" / "clothing_textures"
+    if not src_root.exists():
+        print("  clothing: source folder missing, skipping")
+        return 0
+    subcats = {
+        "plcloth_u": ("clothing_top", "Top"),
+        "plcloth_d": ("clothing_bottom", "Bottom"),
+        "plhat":     ("clothing_hat", "Hat"),
+        "plshoes":   ("clothing_shoes", "Shoes"),
+        "plglasses": ("clothing_glasses", "Glasses"),
+        "plhair":    ("clothing_hair", "Hair"),
+        "plface":    ("face_texture", "Face"),
+    }
+    total = 0
+    pat = re.compile(r"^(\d+)__(.+)\.png$")
+    for subdir, (cat, label_word) in subcats.items():
+        src_dir = src_root / subdir
+        if not src_dir.exists():
+            continue
+        dst_dir = IMAGES_ROOT / cat
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        added = 0
+        for fn in sorted(os.listdir(src_dir)):
+            m = pat.match(fn)
+            if not m:
+                continue
+            idx, src_tag = int(m.group(1)), m.group(2)
+            out_name = f"{src_tag}_{idx:04d}.png"
+            shutil.copyfile(src_dir / fn, dst_dir / out_name)
+            records.append({
+                "png_path": f"{SITE_BASE}/images/2d/{cat}/{out_name}?v={v}",
+                "source_container": f"model/player/tex/{subdir}.ofs",
+                "category": cat,
+                "ncgr_inner_index": idx,
+                "label_en": f"{label_word} #{idx}",
+                "label_jp": None,
+                "palette_strategy": "btx0_decoded",
+            })
+            added += 1
+        if added:
+            print(f"  {cat}: {added}")
+        total += added
+    return total
+
+
+def build_btx0_explicit_icons(records: list[dict], v: str) -> int:
+    """Category 6: developer-named inventory icons (icon_* / item_*) from
+    BTX0 texture dicts. 413 textures the devs explicitly designated as
+    inventory icons (icon_gomi=trash, icon_tane=seed, icon_kessyo=crystal,
+    etc.)."""
+    src_root = TRANSLATION_REPO / "notes" / "2d_assets_v3" / "inventory_icons_explicit"
+    if not src_root.exists():
+        print("  inventory_icon: source folder missing, skipping")
+        return 0
+    dst_dir = IMAGES_ROOT / "inventory_icon"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    added = 0
+    # Each subdir matches the source-container origin (Tshop, Troom, etc.)
+    for subdir in sorted(p for p in src_root.iterdir() if p.is_dir()):
+        for fn in sorted(os.listdir(subdir)):
+            if not fn.endswith(".png"):
+                continue
+            # Filename pattern: <NNNN>__<texname>.png
+            base = fn.removesuffix(".png")
+            if "__" not in base:
+                continue
+            idx_s, texname = base.split("__", 1)
+            try:
+                idx = int(idx_s)
+            except ValueError:
+                continue
+            out_name = f"{subdir.name}_{texname}_{idx:04d}.png"
+            shutil.copyfile(subdir / fn, dst_dir / out_name)
+            records.append({
+                "png_path": f"{SITE_BASE}/images/2d/inventory_icon/{out_name}?v={v}",
+                "source_container": f"model/.../{subdir.name}.ofs",
+                "category": "inventory_icon",
+                "ncgr_inner_index": idx,
+                "label_en": texname,  # Developer's own designation
+                "label_jp": None,
+                "palette_strategy": "btx0_decoded",
+            })
+            added += 1
+    print(f"  inventory_icon: {added}")
+    return added
+
+
 def build_classroom_cards(records: list[dict], v: str) -> int:
     """Category 4: 450 pic2d backgrounds (classroom UI, sign-design tool,
     spell-title cards). Generic 'Classroom card #N' labels."""
@@ -213,8 +306,10 @@ def main():
     build_item_icons(records, v)
     build_title_castles(records, v)
     build_classroom_cards(records, v)
+    build_btx0_clothing(records, v)
+    build_btx0_explicit_icons(records, v)
 
-    records.sort(key=lambda r: (r["category"], r.get("page_prefix", ""), r["ncgr_inner_index"]))
+    records.sort(key=lambda r: (r["category"], r.get("page_prefix", ""), r.get("ncgr_inner_index", 0)))
 
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST_PATH.write_text(
