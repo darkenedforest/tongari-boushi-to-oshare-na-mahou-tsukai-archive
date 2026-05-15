@@ -29,6 +29,7 @@
       "summary": "A bunch of polish stuff this round. The magic-glyph keyboard is finally in English, a pile of inconsistent NPC names and currency labels got unified, and there's a fix in the ROM build that drops the patched file size by about 1.57 MB (which should help with the lag a few people reported).",
       "changes": [
         "Magic-glyph keyboard is in English. All 377 spell glyphs (incantation, magic, charm, the lot) now show their English equivalents on the on-screen keyboard.",
+        "Overlay menus translated. The ARM9 + UI overlay menu pools (26 arm9 strings and 6 overlays: 47/59/65/96/170/171) now show English for things like Show BGM, Magic, OK, Equip, Remake, Picks, Stories, Hangout, Fashion, Style Check, Go shopping, To school, Trends, Reviews, Berries, Errand?, Like this? (Y/N) — the NPC interaction menu, equip/remake prompts, and the small UI strings that used to stay in Japanese.",
         "NPC name consistency pass. Some characters had their names translated differently across dialog lines — the cat NPC is now \"Charlie\" everywhere, the dorm shop NPC is \"Malila\" everywhere, etc. 104 fixes across the corpus.",
         "Currency is \"Ritch\" everywhere. It was drifting between \"Ritch\" and \"Ricci\" in different files. Now it's just Ritch.",
         "Princess Sol / Principal Sol typo fixed. The Principal's NPC label was showing as \"Pricipal\" — fixed in the binary, so the speaker tag reads correctly now.",
