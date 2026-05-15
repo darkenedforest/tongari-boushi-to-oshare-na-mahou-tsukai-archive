@@ -66,23 +66,32 @@ def build_language_tiles(records: list[dict]) -> int:
     conn = sqlite3.connect(DB_PATH)
     labels = load_tile_labels(conn)
     conn.close()
-    pattern = re.compile(r"^mgc\w+_ncgr(\d+)\.png$")
+    # 8 prefixes in this folder (mgc01, mgc02, ..., mgc09b). Each is a
+    # separate page of glyphs and each independently numbers from idx 0.
+    # The DB labels were validated against mgc01 only — other prefixes get
+    # neutral page-tagged labels.
+    pattern = re.compile(r"^(mgc[0-9a-z]+)_id\d+_ncgr(\d+)\.png$")
     added = 0
     for fn in sorted(os.listdir(src_dir)):
         m = pattern.match(fn)
         if not m:
             continue
-        idx = int(m.group(1))
-        jp, en = labels.get(idx, (None, None))
-        if en is None:
-            en = f"Tile #{idx}"
-        dst = dst_dir / f"{idx}.png"
+        prefix, idx = m.group(1), int(m.group(2))
+        if prefix == "mgc01":
+            jp, en = labels.get(idx, (None, None))
+            if en is None:
+                en = f"Tile #{idx}"
+        else:
+            jp, en = None, f"Tile ({prefix} #{idx})"
+        out_name = f"{prefix}_{idx}.png"
+        dst = dst_dir / out_name
         shutil.copyfile(src_dir / fn, dst)
         records.append({
-            "png_path": f"{SITE_BASE}/images/2d/language_tiles/{idx}.png",
-            "source_container": "2d/inputmagic/mgcall.ofs",
+            "png_path": f"{SITE_BASE}/images/2d/language_tiles/{out_name}",
+            "source_container": f"2d/inputmagic/{prefix}.ofs",
             "category": "language_tile",
             "ncgr_inner_index": idx,
+            "page_prefix": prefix,
             "label_en": en,
             "label_jp": jp,
             "palette_strategy": "external_language_tile",
@@ -204,7 +213,7 @@ def main():
     build_classroom_cards(records)
 
     # Sort by category then index for stable manifest
-    records.sort(key=lambda r: (r["category"], r["ncgr_inner_index"]))
+    records.sort(key=lambda r: (r["category"], r.get("page_prefix", ""), r["ncgr_inner_index"]))
 
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(MANIFEST_PATH, "w", encoding="utf-8") as f:
