@@ -41,7 +41,7 @@ IMAGES_ROOT = SITE / "public" / "images" / "2d"
 MANIFEST_PATH = SITE / "public" / "data" / "manifest.json"
 
 
-def load_glyph_labels(conn) -> dict[int, tuple[str | None, str | None]]:
+def load_tile_labels(conn) -> dict[int, tuple[str | None, str | None]]:
     rows = conn.execute(
         "SELECT slot_index, jp_name, en_name FROM magic_glyphs"
     ).fetchall()
@@ -55,16 +55,16 @@ def load_item_labels(conn) -> dict[int, tuple[str | None, str | None]]:
     return {r[0]: (r[1], r[2]) for r in rows}
 
 
-def build_magic_glyphs(records: list[dict]) -> int:
+def build_language_tiles(records: list[dict]) -> int:
     """Category 1: magic-glyph keyboard buttons. Source = mgcall.ofs NCGR
-    inner index N maps 1:1 to magic_glyphs.slot_index N (verified)."""
+    inner index N maps 1:1 to language_tiles.slot_index N (verified)."""
     # Source: 2d/inputmagic/mgcall.ofs renders. Filename is mgc01_id<asset_id>_ncgr<N>.png.
-    # The ncgr number maps 1:1 to magic_glyphs.slot_index. Validated 2026-05-15.
+    # The ncgr number maps 1:1 to language_tiles.slot_index. Validated 2026-05-15.
     src_dir = TRANSLATION_REPO / "notes" / "2d_assets_v2" / "magic_glyphs" / "2d" / "inputmagic"
-    dst_dir = IMAGES_ROOT / "magic_glyphs"
+    dst_dir = IMAGES_ROOT / "language_tiles"
     dst_dir.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
-    labels = load_glyph_labels(conn)
+    labels = load_tile_labels(conn)
     conn.close()
     pattern = re.compile(r"^mgc\w+_ncgr(\d+)\.png$")
     added = 0
@@ -79,16 +79,16 @@ def build_magic_glyphs(records: list[dict]) -> int:
         dst = dst_dir / f"{idx}.png"
         shutil.copyfile(src_dir / fn, dst)
         records.append({
-            "png_path": f"{SITE_BASE}/images/2d/magic_glyphs/{idx}.png",
+            "png_path": f"{SITE_BASE}/images/2d/language_tiles/{idx}.png",
             "source_container": "2d/inputmagic/mgcall.ofs",
-            "category": "magic_glyph",
+            "category": "language_tile",
             "ncgr_inner_index": idx,
             "label_en": en,
             "label_jp": jp,
-            "palette_strategy": "external_magic_glyph",
+            "palette_strategy": "external_language_tile",
         })
         added += 1
-    print(f"  magic_glyph: {added}")
+    print(f"  language_tile: {added}")
     return added
 
 
@@ -198,7 +198,7 @@ def main():
 
     records: list[dict] = []
     print("Building site assets:")
-    build_magic_glyphs(records)
+    build_language_tiles(records)
     build_item_icons(records)
     build_title_castles(records)
     build_classroom_cards(records)
