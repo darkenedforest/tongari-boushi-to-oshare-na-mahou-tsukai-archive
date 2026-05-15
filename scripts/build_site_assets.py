@@ -66,10 +66,9 @@ def build_language_tiles(records: list[dict]) -> int:
     conn = sqlite3.connect(DB_PATH)
     labels = load_tile_labels(conn)
     conn.close()
-    # 8 prefixes in this folder (mgc01, mgc02, ..., mgc09b). Each is a
-    # separate page of glyphs and each independently numbers from idx 0.
-    # The DB labels were validated against mgc01 only — other prefixes get
-    # neutral page-tagged labels.
+    # 10 prefixes in this folder. `mgcall` is the full keyboard (389 files
+    # ~ 377 DB rows — the validated 1:1 mapping). The other 9 (mgc01..mgc06,
+    # mgc09, mgc09b, mgc09c) are sub-pages and get neutral labels.
     pattern = re.compile(r"^(mgc[0-9a-z]+)_id\d+_ncgr(\d+)\.png$")
     added = 0
     for fn in sorted(os.listdir(src_dir)):
@@ -77,7 +76,7 @@ def build_language_tiles(records: list[dict]) -> int:
         if not m:
             continue
         prefix, idx = m.group(1), int(m.group(2))
-        if prefix == "mgc01":
+        if prefix == "mgcall":
             jp, en = labels.get(idx, (None, None))
             if en is None:
                 en = f"Tile #{idx}"

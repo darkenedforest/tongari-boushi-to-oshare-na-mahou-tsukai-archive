@@ -10615,7 +10615,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 0,
     "page_prefix": "mgc01",
-    "label_en": "Tile #0",
+    "label_en": "Tile (mgc01 #0)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -10625,8 +10625,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 1,
     "page_prefix": "mgc01",
-    "label_en": "greeting",
-    "label_jp": "あいさつ",
+    "label_en": "Tile (mgc01 #1)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10635,8 +10635,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 2,
     "page_prefix": "mgc01",
-    "label_en": "magic",
-    "label_jp": "まほう",
+    "label_en": "Tile (mgc01 #2)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10645,8 +10645,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 3,
     "page_prefix": "mgc01",
-    "label_en": "incantation",
-    "label_jp": "まじない",
+    "label_en": "Tile (mgc01 #3)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10655,8 +10655,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 4,
     "page_prefix": "mgc01",
-    "label_en": "yes",
-    "label_jp": "はい",
+    "label_en": "Tile (mgc01 #4)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10665,8 +10665,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 5,
     "page_prefix": "mgc01",
-    "label_en": "no",
-    "label_jp": "ちがう",
+    "label_en": "Tile (mgc01 #5)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10675,8 +10675,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 6,
     "page_prefix": "mgc01",
-    "label_en": "happy",
-    "label_jp": "にっこり",
+    "label_en": "Tile (mgc01 #6)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10685,8 +10685,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 7,
     "page_prefix": "mgc01",
-    "label_en": "sad",
-    "label_jp": "かなしみ",
+    "label_en": "Tile (mgc01 #7)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10695,8 +10695,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 8,
     "page_prefix": "mgc01",
-    "label_en": "angry",
-    "label_jp": "いかり",
+    "label_en": "Tile (mgc01 #8)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10705,8 +10705,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 9,
     "page_prefix": "mgc01",
-    "label_en": "sleepy",
-    "label_jp": "ねむい",
+    "label_en": "Tile (mgc01 #9)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10715,8 +10715,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 10,
     "page_prefix": "mgc01",
-    "label_en": "want",
-    "label_jp": "ほしい",
+    "label_en": "Tile (mgc01 #10)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10725,8 +10725,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 11,
     "page_prefix": "mgc01",
-    "label_en": "!",
-    "label_jp": "！",
+    "label_en": "Tile (mgc01 #11)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10735,8 +10735,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 12,
     "page_prefix": "mgc01",
-    "label_en": "?",
-    "label_jp": "？",
+    "label_en": "Tile (mgc01 #12)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10745,8 +10745,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 13,
     "page_prefix": "mgc01",
-    "label_en": "love",
-    "label_jp": "ラブ",
+    "label_en": "Tile (mgc01 #13)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10755,8 +10755,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 14,
     "page_prefix": "mgc01",
-    "label_en": "mystery",
-    "label_jp": "ふしぎ",
+    "label_en": "Tile (mgc01 #14)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10765,8 +10765,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 15,
     "page_prefix": "mgc01",
-    "label_en": "big",
-    "label_jp": "おおきい",
+    "label_en": "Tile (mgc01 #15)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10775,8 +10775,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 16,
     "page_prefix": "mgc01",
-    "label_en": "small",
-    "label_jp": "ちいさい",
+    "label_en": "Tile (mgc01 #16)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10785,8 +10785,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 17,
     "page_prefix": "mgc01",
-    "label_en": "fast",
-    "label_jp": "はやい",
+    "label_en": "Tile (mgc01 #17)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10795,8 +10795,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 18,
     "page_prefix": "mgc01",
-    "label_en": "slow",
-    "label_jp": "おそい",
+    "label_en": "Tile (mgc01 #18)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10805,8 +10805,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 19,
     "page_prefix": "mgc01",
-    "label_en": "Tile #19",
-    "label_jp": "１",
+    "label_en": "Tile (mgc01 #19)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10815,8 +10815,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 20,
     "page_prefix": "mgc01",
-    "label_en": "Tile #20",
-    "label_jp": "２",
+    "label_en": "Tile (mgc01 #20)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10825,8 +10825,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 21,
     "page_prefix": "mgc01",
-    "label_en": "Tile #21",
-    "label_jp": "３",
+    "label_en": "Tile (mgc01 #21)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10835,8 +10835,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 22,
     "page_prefix": "mgc01",
-    "label_en": "Tile #22",
-    "label_jp": "４",
+    "label_en": "Tile (mgc01 #22)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10845,8 +10845,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 23,
     "page_prefix": "mgc01",
-    "label_en": "Tile #23",
-    "label_jp": "５",
+    "label_en": "Tile (mgc01 #23)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10855,8 +10855,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 24,
     "page_prefix": "mgc01",
-    "label_en": "Tile #24",
-    "label_jp": "６",
+    "label_en": "Tile (mgc01 #24)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10865,8 +10865,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 25,
     "page_prefix": "mgc01",
-    "label_en": "Tile #25",
-    "label_jp": "７",
+    "label_en": "Tile (mgc01 #25)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10875,8 +10875,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 26,
     "page_prefix": "mgc01",
-    "label_en": "Tile #26",
-    "label_jp": "８",
+    "label_en": "Tile (mgc01 #26)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10885,8 +10885,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 27,
     "page_prefix": "mgc01",
-    "label_en": "Tile #27",
-    "label_jp": "９",
+    "label_en": "Tile (mgc01 #27)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10895,8 +10895,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 28,
     "page_prefix": "mgc01",
-    "label_en": "Tile #28",
-    "label_jp": "０",
+    "label_en": "Tile (mgc01 #28)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10905,7 +10905,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 29,
     "page_prefix": "mgc01",
-    "label_en": "Tile #29",
+    "label_en": "Tile (mgc01 #29)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -10915,7 +10915,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 30,
     "page_prefix": "mgc01",
-    "label_en": "Tile #30",
+    "label_en": "Tile (mgc01 #30)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -10925,8 +10925,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 31,
     "page_prefix": "mgc01",
-    "label_en": "me",
-    "label_jp": "じぶん",
+    "label_en": "Tile (mgc01 #31)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10935,8 +10935,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 32,
     "page_prefix": "mgc01",
-    "label_en": "you",
-    "label_jp": "あなた",
+    "label_en": "Tile (mgc01 #32)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10945,8 +10945,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 33,
     "page_prefix": "mgc01",
-    "label_en": "all",
-    "label_jp": "みんな",
+    "label_en": "Tile (mgc01 #33)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10955,8 +10955,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 34,
     "page_prefix": "mgc01",
-    "label_en": "friend",
-    "label_jp": "ともだち",
+    "label_en": "Tile (mgc01 #34)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10965,8 +10965,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 35,
     "page_prefix": "mgc01",
-    "label_en": "boy",
-    "label_jp": "だんし",
+    "label_en": "Tile (mgc01 #35)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10975,8 +10975,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 36,
     "page_prefix": "mgc01",
-    "label_en": "girl",
-    "label_jp": "じょし",
+    "label_en": "Tile (mgc01 #36)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10985,8 +10985,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 37,
     "page_prefix": "mgc01",
-    "label_en": "sweetheart",
-    "label_jp": "こいびと",
+    "label_en": "Tile (mgc01 #37)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -10995,8 +10995,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 38,
     "page_prefix": "mgc01",
-    "label_en": "Tile #38",
-    "label_jp": "UMA",
+    "label_en": "Tile (mgc01 #38)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11005,8 +11005,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 39,
     "page_prefix": "mgc01",
-    "label_en": "exchange student",
-    "label_jp": "りゅうがくせい",
+    "label_en": "Tile (mgc01 #39)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11015,8 +11015,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 40,
     "page_prefix": "mgc01",
-    "label_en": "who?",
-    "label_jp": "だれ？",
+    "label_en": "Tile (mgc01 #40)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11025,8 +11025,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 41,
     "page_prefix": "mgc01",
-    "label_en": "Principal Sol",
-    "label_jp": "こうちょう",
+    "label_en": "Tile (mgc01 #41)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11035,8 +11035,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 42,
     "page_prefix": "mgc01",
-    "label_en": "Mr. Vlad",
-    "label_jp": "リカルド",
+    "label_en": "Tile (mgc01 #42)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11045,8 +11045,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 43,
     "page_prefix": "mgc01",
-    "label_en": "Mr. Oakley",
-    "label_jp": "ドルイドン",
+    "label_en": "Tile (mgc01 #43)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11055,8 +11055,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 44,
     "page_prefix": "mgc01",
-    "label_en": "Miss Strawe",
-    "label_jp": "ミスキーキー",
+    "label_en": "Tile (mgc01 #44)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11065,8 +11065,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 45,
     "page_prefix": "mgc01",
-    "label_en": "Mr. Graves",
-    "label_jp": "ダグラス",
+    "label_en": "Tile (mgc01 #45)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11075,8 +11075,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 46,
     "page_prefix": "mgc01",
-    "label_en": "Piquard",
-    "label_jp": "ピカード",
+    "label_en": "Tile (mgc01 #46)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11085,8 +11085,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 47,
     "page_prefix": "mgc01",
-    "label_en": "Daisy",
-    "label_jp": "デイジー",
+    "label_en": "Tile (mgc01 #47)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11095,8 +11095,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 48,
     "page_prefix": "mgc01",
-    "label_en": "Vivian",
-    "label_jp": "ビビ",
+    "label_en": "Tile (mgc01 #48)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11105,8 +11105,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 49,
     "page_prefix": "mgc01",
-    "label_en": "Roley",
-    "label_jp": "ローリィ",
+    "label_en": "Tile (mgc01 #49)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11115,8 +11115,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 50,
     "page_prefix": "mgc01",
-    "label_en": "Malila",
-    "label_jp": "トメ",
+    "label_en": "Tile (mgc01 #50)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11125,8 +11125,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 51,
     "page_prefix": "mgc01",
-    "label_en": "Marcy",
-    "label_jp": "メルシィ",
+    "label_en": "Tile (mgc01 #51)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11135,8 +11135,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 52,
     "page_prefix": "mgc01",
-    "label_en": "George",
-    "label_jp": "ジョージ",
+    "label_en": "Tile (mgc01 #52)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11145,8 +11145,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 53,
     "page_prefix": "mgc01",
-    "label_en": "Thom",
-    "label_jp": "ブニャー",
+    "label_en": "Tile (mgc01 #53)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11155,8 +11155,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 54,
     "page_prefix": "mgc01",
-    "label_en": "Reginald",
-    "label_jp": "テツ",
+    "label_en": "Tile (mgc01 #54)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11165,8 +11165,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 55,
     "page_prefix": "mgc01",
-    "label_en": "Charlie",
-    "label_jp": "ヒゲマル",
+    "label_en": "Tile (mgc01 #55)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11175,8 +11175,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 56,
     "page_prefix": "mgc01",
-    "label_en": "Mah",
-    "label_jp": "マッハ",
+    "label_en": "Tile (mgc01 #56)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11185,8 +11185,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 57,
     "page_prefix": "mgc01",
-    "label_en": "King",
-    "label_jp": "おうさま",
+    "label_en": "Tile (mgc01 #57)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11195,8 +11195,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 58,
     "page_prefix": "mgc01",
-    "label_en": "Minister",
-    "label_jp": "だいじん",
+    "label_en": "Tile (mgc01 #58)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11205,8 +11205,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 59,
     "page_prefix": "mgc01",
-    "label_en": "Melissa",
-    "label_jp": "メリッサ",
+    "label_en": "Tile (mgc01 #59)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11215,8 +11215,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 60,
     "page_prefix": "mgc01",
-    "label_en": "Retake",
-    "label_jp": "リテイク",
+    "label_en": "Tile (mgc01 #60)",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -11225,7 +11225,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 61,
     "page_prefix": "mgc01",
-    "label_en": "Tile #61",
+    "label_en": "Tile (mgc01 #61)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11235,7 +11235,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 62,
     "page_prefix": "mgc01",
-    "label_en": "Tile #62",
+    "label_en": "Tile (mgc01 #62)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11245,7 +11245,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 63,
     "page_prefix": "mgc01",
-    "label_en": "Tile #63",
+    "label_en": "Tile (mgc01 #63)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11255,7 +11255,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 64,
     "page_prefix": "mgc01",
-    "label_en": "Tile #64",
+    "label_en": "Tile (mgc01 #64)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11265,7 +11265,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 65,
     "page_prefix": "mgc01",
-    "label_en": "Tile #65",
+    "label_en": "Tile (mgc01 #65)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11275,7 +11275,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 66,
     "page_prefix": "mgc01",
-    "label_en": "Tile #66",
+    "label_en": "Tile (mgc01 #66)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11285,7 +11285,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 67,
     "page_prefix": "mgc01",
-    "label_en": "Tile #67",
+    "label_en": "Tile (mgc01 #67)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11295,7 +11295,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 68,
     "page_prefix": "mgc01",
-    "label_en": "Tile #68",
+    "label_en": "Tile (mgc01 #68)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11305,7 +11305,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 69,
     "page_prefix": "mgc01",
-    "label_en": "Tile #69",
+    "label_en": "Tile (mgc01 #69)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11315,7 +11315,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 70,
     "page_prefix": "mgc01",
-    "label_en": "Tile #70",
+    "label_en": "Tile (mgc01 #70)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -11325,7 +11325,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 71,
     "page_prefix": "mgc01",
-    "label_en": "Tile #71",
+    "label_en": "Tile (mgc01 #71)",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -14955,8 +14955,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 1,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #1)",
-    "label_jp": null,
+    "label_en": "greeting",
+    "label_jp": "あいさつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -14965,8 +14965,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 2,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #2)",
-    "label_jp": null,
+    "label_en": "magic",
+    "label_jp": "まほう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -14975,8 +14975,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 3,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #3)",
-    "label_jp": null,
+    "label_en": "incantation",
+    "label_jp": "まじない",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -14985,8 +14985,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 4,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #4)",
-    "label_jp": null,
+    "label_en": "yes",
+    "label_jp": "はい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -14995,8 +14995,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 5,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #5)",
-    "label_jp": null,
+    "label_en": "no",
+    "label_jp": "ちがう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15005,8 +15005,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 6,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #6)",
-    "label_jp": null,
+    "label_en": "happy",
+    "label_jp": "にっこり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15015,8 +15015,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 7,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #7)",
-    "label_jp": null,
+    "label_en": "sad",
+    "label_jp": "かなしみ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15025,8 +15025,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 8,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #8)",
-    "label_jp": null,
+    "label_en": "angry",
+    "label_jp": "いかり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15035,8 +15035,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 9,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #9)",
-    "label_jp": null,
+    "label_en": "sleepy",
+    "label_jp": "ねむい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15045,8 +15045,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 10,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #10)",
-    "label_jp": null,
+    "label_en": "want",
+    "label_jp": "ほしい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15055,8 +15055,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 11,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #11)",
-    "label_jp": null,
+    "label_en": "!",
+    "label_jp": "！",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15065,8 +15065,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 12,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #12)",
-    "label_jp": null,
+    "label_en": "?",
+    "label_jp": "？",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15075,8 +15075,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 13,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #13)",
-    "label_jp": null,
+    "label_en": "love",
+    "label_jp": "ラブ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15085,8 +15085,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 14,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #14)",
-    "label_jp": null,
+    "label_en": "mystery",
+    "label_jp": "ふしぎ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15095,8 +15095,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 15,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #15)",
-    "label_jp": null,
+    "label_en": "big",
+    "label_jp": "おおきい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15105,8 +15105,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 16,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #16)",
-    "label_jp": null,
+    "label_en": "small",
+    "label_jp": "ちいさい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15115,8 +15115,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 17,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #17)",
-    "label_jp": null,
+    "label_en": "fast",
+    "label_jp": "はやい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15125,8 +15125,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 18,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #18)",
-    "label_jp": null,
+    "label_en": "slow",
+    "label_jp": "おそい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15135,8 +15135,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 19,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #19)",
-    "label_jp": null,
+    "label_en": "Tile #19",
+    "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15145,8 +15145,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 20,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #20)",
-    "label_jp": null,
+    "label_en": "Tile #20",
+    "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15155,8 +15155,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 21,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #21)",
-    "label_jp": null,
+    "label_en": "Tile #21",
+    "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15165,8 +15165,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 22,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #22)",
-    "label_jp": null,
+    "label_en": "Tile #22",
+    "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15175,8 +15175,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 23,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #23)",
-    "label_jp": null,
+    "label_en": "Tile #23",
+    "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15185,8 +15185,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 24,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #24)",
-    "label_jp": null,
+    "label_en": "Tile #24",
+    "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15195,8 +15195,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 25,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #25)",
-    "label_jp": null,
+    "label_en": "Tile #25",
+    "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15205,8 +15205,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 26,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #26)",
-    "label_jp": null,
+    "label_en": "Tile #26",
+    "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15215,8 +15215,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 27,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #27)",
-    "label_jp": null,
+    "label_en": "Tile #27",
+    "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15225,8 +15225,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 28,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #28)",
-    "label_jp": null,
+    "label_en": "Tile #28",
+    "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15235,7 +15235,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 30,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #30)",
+    "label_en": "Tile #30",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -15245,8 +15245,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 31,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #31)",
-    "label_jp": null,
+    "label_en": "me",
+    "label_jp": "じぶん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15255,8 +15255,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 32,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #32)",
-    "label_jp": null,
+    "label_en": "you",
+    "label_jp": "あなた",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15265,8 +15265,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 33,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #33)",
-    "label_jp": null,
+    "label_en": "all",
+    "label_jp": "みんな",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15275,8 +15275,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 34,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #34)",
-    "label_jp": null,
+    "label_en": "friend",
+    "label_jp": "ともだち",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15285,8 +15285,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 35,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #35)",
-    "label_jp": null,
+    "label_en": "boy",
+    "label_jp": "だんし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15295,8 +15295,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 36,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #36)",
-    "label_jp": null,
+    "label_en": "girl",
+    "label_jp": "じょし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15305,8 +15305,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 37,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #37)",
-    "label_jp": null,
+    "label_en": "sweetheart",
+    "label_jp": "こいびと",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15315,8 +15315,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 38,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #38)",
-    "label_jp": null,
+    "label_en": "Tile #38",
+    "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15325,8 +15325,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 39,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #39)",
-    "label_jp": null,
+    "label_en": "exchange student",
+    "label_jp": "りゅうがくせい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15335,8 +15335,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 40,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #40)",
-    "label_jp": null,
+    "label_en": "who?",
+    "label_jp": "だれ？",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15345,8 +15345,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 41,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #41)",
-    "label_jp": null,
+    "label_en": "Principal Sol",
+    "label_jp": "こうちょう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15355,8 +15355,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 42,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #42)",
-    "label_jp": null,
+    "label_en": "Mr. Vlad",
+    "label_jp": "リカルド",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15365,8 +15365,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 43,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #43)",
-    "label_jp": null,
+    "label_en": "Mr. Oakley",
+    "label_jp": "ドルイドン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15375,8 +15375,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 44,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #44)",
-    "label_jp": null,
+    "label_en": "Miss Strawe",
+    "label_jp": "ミスキーキー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15385,8 +15385,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 45,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #45)",
-    "label_jp": null,
+    "label_en": "Mr. Graves",
+    "label_jp": "ダグラス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15395,8 +15395,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 46,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #46)",
-    "label_jp": null,
+    "label_en": "Piquard",
+    "label_jp": "ピカード",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15405,8 +15405,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 47,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #47)",
-    "label_jp": null,
+    "label_en": "Daisy",
+    "label_jp": "デイジー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15415,8 +15415,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 48,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #48)",
-    "label_jp": null,
+    "label_en": "Vivian",
+    "label_jp": "ビビ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15425,8 +15425,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 49,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #49)",
-    "label_jp": null,
+    "label_en": "Roley",
+    "label_jp": "ローリィ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15435,8 +15435,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 50,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #50)",
-    "label_jp": null,
+    "label_en": "Malila",
+    "label_jp": "トメ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15445,8 +15445,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 51,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #51)",
-    "label_jp": null,
+    "label_en": "Marcy",
+    "label_jp": "メルシィ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15455,8 +15455,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 52,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #52)",
-    "label_jp": null,
+    "label_en": "George",
+    "label_jp": "ジョージ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15465,8 +15465,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 53,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #53)",
-    "label_jp": null,
+    "label_en": "Thom",
+    "label_jp": "ブニャー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15475,8 +15475,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 54,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #54)",
-    "label_jp": null,
+    "label_en": "Reginald",
+    "label_jp": "テツ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15485,8 +15485,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 55,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #55)",
-    "label_jp": null,
+    "label_en": "Charlie",
+    "label_jp": "ヒゲマル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15495,8 +15495,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 56,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #56)",
-    "label_jp": null,
+    "label_en": "Mah",
+    "label_jp": "マッハ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15505,8 +15505,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 57,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #57)",
-    "label_jp": null,
+    "label_en": "King",
+    "label_jp": "おうさま",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15515,8 +15515,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 58,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #58)",
-    "label_jp": null,
+    "label_en": "Minister",
+    "label_jp": "だいじん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15525,8 +15525,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 59,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #59)",
-    "label_jp": null,
+    "label_en": "Melissa",
+    "label_jp": "メリッサ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15535,8 +15535,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 60,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #60)",
-    "label_jp": null,
+    "label_en": "Retake",
+    "label_jp": "リテイク",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15545,8 +15545,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 76,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #76)",
-    "label_jp": null,
+    "label_en": "do",
+    "label_jp": "する",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15555,8 +15555,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 77,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #77)",
-    "label_jp": null,
+    "label_en": "together",
+    "label_jp": "いっしょ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15565,8 +15565,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 78,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #78)",
-    "label_jp": null,
+    "label_en": "go",
+    "label_jp": "いく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15575,8 +15575,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 79,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #79)",
-    "label_jp": null,
+    "label_en": "come",
+    "label_jp": "くる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15585,8 +15585,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 80,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #80)",
-    "label_jp": null,
+    "label_en": "play",
+    "label_jp": "あそぶ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15595,8 +15595,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 81,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #81)",
-    "label_jp": null,
+    "label_en": "take",
+    "label_jp": "とる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15605,8 +15605,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 82,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #82)",
-    "label_jp": null,
+    "label_en": "put",
+    "label_jp": "おく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15615,8 +15615,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 83,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #83)",
-    "label_jp": null,
+    "label_en": "use",
+    "label_jp": "つかう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15625,8 +15625,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 84,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #84)",
-    "label_jp": null,
+    "label_en": "give",
+    "label_jp": "あげる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15635,8 +15635,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 85,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #85)",
-    "label_jp": null,
+    "label_en": "get",
+    "label_jp": "もらう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15645,8 +15645,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 86,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #86)",
-    "label_jp": null,
+    "label_en": "exchange",
+    "label_jp": "こうかん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15655,8 +15655,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 87,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #87)",
-    "label_jp": null,
+    "label_en": "talk",
+    "label_jp": "はなす",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15665,8 +15665,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 88,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #88)",
-    "label_jp": null,
+    "label_en": "performance",
+    "label_jp": "えんそう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15675,8 +15675,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 89,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #89)",
-    "label_jp": null,
+    "label_en": "contest",
+    "label_jp": "しょうぶ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15685,8 +15685,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 90,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #90)",
-    "label_jp": null,
+    "label_en": "sleep",
+    "label_jp": "ねる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15695,8 +15695,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 91,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #91)",
-    "label_jp": null,
+    "label_en": "wait",
+    "label_jp": "まつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15705,8 +15705,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 92,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #92)",
-    "label_jp": null,
+    "label_en": "meet",
+    "label_jp": "まちあわせ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15715,8 +15715,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 93,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #93)",
-    "label_jp": null,
+    "label_en": "gather",
+    "label_jp": "あつまる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15725,8 +15725,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 94,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #94)",
-    "label_jp": null,
+    "label_en": "see",
+    "label_jp": "みる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15735,8 +15735,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 95,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #95)",
-    "label_jp": null,
+    "label_en": "hear",
+    "label_jp": "きく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15745,8 +15745,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 96,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #96)",
-    "label_jp": null,
+    "label_en": "seek",
+    "label_jp": "さがす",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15755,8 +15755,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 97,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #97)",
-    "label_jp": null,
+    "label_en": "study abroad",
+    "label_jp": "りゅうがく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15765,8 +15765,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 98,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #98)",
-    "label_jp": null,
+    "label_en": "explore",
+    "label_jp": "たんけん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15775,8 +15775,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 99,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #99)",
-    "label_jp": null,
+    "label_en": "date",
+    "label_jp": "デート",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15785,8 +15785,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 100,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #100)",
-    "label_jp": null,
+    "label_en": "learn",
+    "label_jp": "まなぶ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15795,8 +15795,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 101,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #101)",
-    "label_jp": null,
+    "label_en": "bury",
+    "label_jp": "うめる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15805,8 +15805,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 102,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #102)",
-    "label_jp": null,
+    "label_en": "trick",
+    "label_jp": "いたずら",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15815,8 +15815,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 103,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #103)",
-    "label_jp": null,
+    "label_en": "walk",
+    "label_jp": "あるく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15825,8 +15825,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 104,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #104)",
-    "label_jp": null,
+    "label_en": "run",
+    "label_jp": "はしる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15835,8 +15835,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 105,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #105)",
-    "label_jp": null,
+    "label_en": "go home",
+    "label_jp": "かえる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15845,8 +15845,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 106,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #106)",
-    "label_jp": null,
+    "label_en": "item",
+    "label_jp": "アイテム",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15855,8 +15855,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 107,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #107)",
-    "label_jp": null,
+    "label_en": "money",
+    "label_jp": "おかね",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15865,8 +15865,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 108,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #108)",
-    "label_jp": null,
+    "label_en": "furniture",
+    "label_jp": "かぐ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15875,8 +15875,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 109,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #109)",
-    "label_jp": null,
+    "label_en": "clothes",
+    "label_jp": "ようふく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15885,8 +15885,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 110,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #110)",
-    "label_jp": null,
+    "label_en": "bug",
+    "label_jp": "むし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15895,8 +15895,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 111,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #111)",
-    "label_jp": null,
+    "label_en": "fish",
+    "label_jp": "さかな",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15905,8 +15905,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 112,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #112)",
-    "label_jp": null,
+    "label_en": "instrument",
+    "label_jp": "がっき",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15915,8 +15915,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 113,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #113)",
-    "label_jp": null,
+    "label_en": "berry",
+    "label_jp": "ベリー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15925,8 +15925,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 114,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #114)",
-    "label_jp": null,
+    "label_en": "flower",
+    "label_jp": "はな",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15935,8 +15935,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 115,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #115)",
-    "label_jp": null,
+    "label_en": "telegram",
+    "label_jp": "でんぽう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15945,8 +15945,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 116,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #116)",
-    "label_jp": null,
+    "label_en": "staff",
+    "label_jp": "つえ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15955,8 +15955,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 117,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #117)",
-    "label_jp": null,
+    "label_en": "broom",
+    "label_jp": "ホウキ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15965,8 +15965,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 118,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #118)",
-    "label_jp": null,
+    "label_en": "mushroom",
+    "label_jp": "きのこ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15975,8 +15975,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 119,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #119)",
-    "label_jp": null,
+    "label_en": "ore",
+    "label_jp": "こうせき",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15985,8 +15985,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 120,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #120)",
-    "label_jp": null,
+    "label_en": "meal",
+    "label_jp": "しょくじ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15995,8 +15995,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 121,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #121)",
-    "label_jp": null,
+    "label_en": "fishing pole",
+    "label_jp": "つりざお",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16005,8 +16005,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 122,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #122)",
-    "label_jp": null,
+    "label_en": "watering can",
+    "label_jp": "ジョウロ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16015,8 +16015,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 123,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #123)",
-    "label_jp": null,
+    "label_en": "net",
+    "label_jp": "あみ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16025,8 +16025,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 124,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #124)",
-    "label_jp": null,
+    "label_en": "hat",
+    "label_jp": "ぼうし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16035,8 +16035,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 125,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #125)",
-    "label_jp": null,
+    "label_en": "wig",
+    "label_jp": "かつら",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16045,8 +16045,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 126,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #126)",
-    "label_jp": null,
+    "label_en": "seedling",
+    "label_jp": "なえ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16055,8 +16055,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 127,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #127)",
-    "label_jp": null,
+    "label_en": "seed",
+    "label_jp": "たね",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16065,8 +16065,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 128,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #128)",
-    "label_jp": null,
+    "label_en": "medicine",
+    "label_jp": "くすり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16075,8 +16075,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 129,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #129)",
-    "label_jp": null,
+    "label_en": "bone",
+    "label_jp": "ほね",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16085,8 +16085,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 130,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #130)",
-    "label_jp": null,
+    "label_en": "class",
+    "label_jp": "じゅぎょう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16095,8 +16095,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 131,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #131)",
-    "label_jp": null,
+    "label_en": "test",
+    "label_jp": "テスト",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16105,8 +16105,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 132,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #132)",
-    "label_jp": null,
+    "label_en": "magic runes",
+    "label_jp": "まほうご",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16115,8 +16115,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 133,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #133)",
-    "label_jp": null,
+    "label_en": "tree",
+    "label_jp": "き",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16125,8 +16125,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 134,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #134)",
-    "label_jp": null,
+    "label_en": "constellation",
+    "label_jp": "せいざ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16135,8 +16135,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 135,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #135)",
-    "label_jp": null,
+    "label_en": "fortune-telling",
+    "label_jp": "うらない",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16145,8 +16145,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 136,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #136)",
-    "label_jp": null,
+    "label_en": "picture book",
+    "label_jp": "ずかん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16155,8 +16155,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 137,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #137)",
-    "label_jp": null,
+    "label_en": "weeds",
+    "label_jp": "くさ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16165,8 +16165,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 145,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #145)",
-    "label_jp": null,
+    "label_en": "all the time",
+    "label_jp": "ずっと",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16175,8 +16175,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 146,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #146)",
-    "label_jp": null,
+    "label_en": "door",
+    "label_jp": "とびら",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16185,8 +16185,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 148,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #148)",
-    "label_jp": null,
+    "label_en": "many",
+    "label_jp": "たくさん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16195,8 +16195,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 151,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #151)",
-    "label_jp": null,
+    "label_en": "School",
+    "label_jp": "がっこう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16205,8 +16205,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 152,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #152)",
-    "label_jp": null,
+    "label_en": "House",
+    "label_jp": "いえ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16215,8 +16215,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 153,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #153)",
-    "label_jp": null,
+    "label_en": "Dorm",
+    "label_jp": "りょう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16225,8 +16225,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 154,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #154)",
-    "label_jp": null,
+    "label_en": "Dorm Room",
+    "label_jp": "へや",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16235,8 +16235,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 155,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #155)",
-    "label_jp": null,
+    "label_en": "Conservatory",
+    "label_jp": "おんしつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16245,8 +16245,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 156,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #156)",
-    "label_jp": null,
+    "label_en": "where?",
+    "label_jp": "どこ？",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16255,8 +16255,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 157,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #157)",
-    "label_jp": null,
+    "label_en": "Shopping Avenue",
+    "label_jp": "しょうてんがい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16265,8 +16265,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 158,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #158)",
-    "label_jp": null,
+    "label_en": "Woods",
+    "label_jp": "もり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16275,8 +16275,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 159,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #159)",
-    "label_jp": null,
+    "label_en": "Cave",
+    "label_jp": "どうくつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16285,8 +16285,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 160,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #160)",
-    "label_jp": null,
+    "label_en": "Beach",
+    "label_jp": "かいがん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16295,8 +16295,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 161,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #161)",
-    "label_jp": null,
+    "label_en": "Lovers' Point",
+    "label_jp": "こいびとみさき",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16305,8 +16305,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 162,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #162)",
-    "label_jp": null,
+    "label_en": "island",
+    "label_jp": "ことう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16315,8 +16315,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 163,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #163)",
-    "label_jp": null,
+    "label_en": "Haunted House",
+    "label_jp": "ゆうれいやしき",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16325,8 +16325,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 164,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #164)",
-    "label_jp": null,
+    "label_en": "Tower",
+    "label_jp": "とう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16335,8 +16335,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 165,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #165)",
-    "label_jp": null,
+    "label_en": "River",
+    "label_jp": "かわ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16345,8 +16345,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 166,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #166)",
-    "label_jp": null,
+    "label_en": "Waterfall",
+    "label_jp": "たき",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16355,8 +16355,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 167,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #167)",
-    "label_jp": null,
+    "label_en": "Pond",
+    "label_jp": "いけ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16365,8 +16365,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 168,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #168)",
-    "label_jp": null,
+    "label_en": "Post Office",
+    "label_jp": "ゆうびんきょく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16375,8 +16375,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 169,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #169)",
-    "label_jp": null,
+    "label_en": "Bank",
+    "label_jp": "ぎんこう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16385,8 +16385,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 170,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #170)",
-    "label_jp": null,
+    "label_en": "Charlie's Noodles",
+    "label_jp": "やたい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16395,8 +16395,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 171,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #171)",
-    "label_jp": null,
+    "label_en": "Park",
+    "label_jp": "こうえん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16405,8 +16405,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 172,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #172)",
-    "label_jp": null,
+    "label_en": "Harrows",
+    "label_jp": "ハロゲンデパート",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16415,8 +16415,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 173,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #173)",
-    "label_jp": null,
+    "label_en": "Daisy's Flowers",
+    "label_jp": "フラワーデイジー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16425,8 +16425,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 174,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #174)",
-    "label_jp": null,
+    "label_en": "Vivian's Boutique",
+    "label_jp": "スマイル・ビビ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16435,8 +16435,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 175,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #175)",
-    "label_jp": null,
+    "label_en": "Mon Paris",
+    "label_jp": "モン・パリ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16445,8 +16445,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 176,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #176)",
-    "label_jp": null,
+    "label_en": "The Emporium",
+    "label_jp": "かめや",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16455,8 +16455,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 177,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #177)",
-    "label_jp": null,
+    "label_en": "Limelight",
+    "label_jp": "ライムライト",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16465,8 +16465,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 178,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #178)",
-    "label_jp": null,
+    "label_en": "Classroom",
+    "label_jp": "きょうしつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16475,8 +16475,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 179,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #179)",
-    "label_jp": null,
+    "label_en": "Staff Room",
+    "label_jp": "しょくいんしつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16485,8 +16485,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 180,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #180)",
-    "label_jp": null,
+    "label_en": "toilet",
+    "label_jp": "トイレ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16495,8 +16495,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 181,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #181)",
-    "label_jp": null,
+    "label_en": "Auditorium",
+    "label_jp": "こうどう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16505,8 +16505,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 182,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #182)",
-    "label_jp": null,
+    "label_en": "Organ Room",
+    "label_jp": "きかいしつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16515,8 +16515,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 183,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #183)",
-    "label_jp": null,
+    "label_en": "Trophy Room",
+    "label_jp": "しりょうしつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16525,8 +16525,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 186,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #186)",
-    "label_jp": null,
+    "label_en": "Observatory",
+    "label_jp": "てんもんだい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16535,8 +16535,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 187,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #187)",
-    "label_jp": null,
+    "label_en": "above",
+    "label_jp": "うえ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16545,8 +16545,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 188,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #188)",
-    "label_jp": null,
+    "label_en": "below",
+    "label_jp": "した",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16555,8 +16555,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 189,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #189)",
-    "label_jp": null,
+    "label_en": "left",
+    "label_jp": "ひだり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16565,8 +16565,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 190,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #190)",
-    "label_jp": null,
+    "label_en": "right",
+    "label_jp": "みぎ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16575,8 +16575,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 191,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #191)",
-    "label_jp": null,
+    "label_en": "Town",
+    "label_jp": "まち",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16585,8 +16585,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 196,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #196)",
-    "label_jp": null,
+    "label_en": "morning",
+    "label_jp": "あさ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16595,8 +16595,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 197,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #197)",
-    "label_jp": null,
+    "label_en": "daytime",
+    "label_jp": "ひる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16605,8 +16605,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 198,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #198)",
-    "label_jp": null,
+    "label_en": "night",
+    "label_jp": "よる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16615,8 +16615,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 199,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #199)",
-    "label_jp": null,
+    "label_en": "time",
+    "label_jp": "じかん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16625,8 +16625,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 200,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #200)",
-    "label_jp": null,
+    "label_en": "now",
+    "label_jp": "いま",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16635,8 +16635,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 201,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #201)",
-    "label_jp": null,
+    "label_en": "next time",
+    "label_jp": "こんど",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16645,8 +16645,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 202,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #202)",
-    "label_jp": null,
+    "label_en": "when",
+    "label_jp": "いつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16655,8 +16655,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 203,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #203)",
-    "label_jp": null,
+    "label_en": "tomorrow",
+    "label_jp": "あした",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16665,8 +16665,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 204,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #204)",
-    "label_jp": null,
+    "label_en": "Sunday",
+    "label_jp": "にちようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16675,8 +16675,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 205,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #205)",
-    "label_jp": null,
+    "label_en": "Monday",
+    "label_jp": "げつようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16685,8 +16685,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 206,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #206)",
-    "label_jp": null,
+    "label_en": "Tuesday",
+    "label_jp": "かようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16695,8 +16695,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 207,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #207)",
-    "label_jp": null,
+    "label_en": "Wednesday",
+    "label_jp": "すいようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16705,8 +16705,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 208,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #208)",
-    "label_jp": null,
+    "label_en": "Thursday",
+    "label_jp": "もくようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16715,8 +16715,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 209,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #209)",
-    "label_jp": null,
+    "label_en": "Friday",
+    "label_jp": "きんようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16725,8 +16725,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 210,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #210)",
-    "label_jp": null,
+    "label_en": "Saturday",
+    "label_jp": "どようび",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16735,8 +16735,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 211,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #211)",
-    "label_jp": null,
+    "label_en": "sky",
+    "label_jp": "そら",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16745,8 +16745,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 212,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #212)",
-    "label_jp": null,
+    "label_en": "star",
+    "label_jp": "ほし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16755,8 +16755,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 218,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #218)",
-    "label_jp": null,
+    "label_en": "sun",
+    "label_jp": "たいよう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16765,8 +16765,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 222,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #222)",
-    "label_jp": null,
+    "label_en": "treasure",
+    "label_jp": "たから",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16775,8 +16775,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 223,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #223)",
-    "label_jp": null,
+    "label_en": "rumor",
+    "label_jp": "ウワサ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16785,8 +16785,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 224,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #224)",
-    "label_jp": null,
+    "label_en": "secret",
+    "label_jp": "ひみつ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16795,8 +16795,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 351,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #351)",
-    "label_jp": null,
+    "label_en": "sweet",
+    "label_jp": "あまい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16805,8 +16805,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 352,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #352)",
-    "label_jp": null,
+    "label_en": "spicy",
+    "label_jp": "からい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16815,8 +16815,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 353,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #353)",
-    "label_jp": null,
+    "label_en": "salty",
+    "label_jp": "しょっぱい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16825,8 +16825,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 354,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #354)",
-    "label_jp": null,
+    "label_en": "sour",
+    "label_jp": "すっぱい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16835,8 +16835,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 355,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #355)",
-    "label_jp": null,
+    "label_en": "Simple",
+    "label_jp": "シンプル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16845,8 +16845,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 356,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #356)",
-    "label_jp": null,
+    "label_en": "Cool",
+    "label_jp": "カッコイイ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16855,8 +16855,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 357,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #357)",
-    "label_jp": null,
+    "label_en": "Cute",
+    "label_jp": "かわいい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16865,8 +16865,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 358,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #358)",
-    "label_jp": null,
+    "label_en": "Gorgeous",
+    "label_jp": "ゴージャス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16875,7 +16875,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 359,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #359)",
+    "label_en": "Tile #359",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16885,7 +16885,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 360,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #360)",
+    "label_en": "Tile #360",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16895,7 +16895,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 361,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #361)",
+    "label_en": "Tile #361",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16905,7 +16905,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 362,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #362)",
+    "label_en": "Tile #362",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16915,7 +16915,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 363,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #363)",
+    "label_en": "Tile #363",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16925,7 +16925,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 364,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #364)",
+    "label_en": "Tile #364",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16935,7 +16935,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 365,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #365)",
+    "label_en": "Tile #365",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16945,7 +16945,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 366,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #366)",
+    "label_en": "Tile #366",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16955,7 +16955,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 367,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #367)",
+    "label_en": "Tile #367",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16965,7 +16965,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 368,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #368)",
+    "label_en": "Tile #368",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -16975,8 +16975,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 369,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #369)",
-    "label_jp": null,
+    "label_en": "Genzou",
+    "label_jp": "げんぞう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16985,8 +16985,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 370,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #370)",
-    "label_jp": null,
+    "label_en": "Hassan",
+    "label_jp": "ハッサン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -16995,8 +16995,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 371,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #371)",
-    "label_jp": null,
+    "label_en": "Cat Sith",
+    "label_jp": "ケット・シー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17005,8 +17005,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 372,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #372)",
-    "label_jp": null,
+    "label_en": "Dot",
+    "label_jp": "ドット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17015,8 +17015,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 373,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #373)",
-    "label_jp": null,
+    "label_en": "Part-Time Cat",
+    "label_jp": "バイトねこ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17025,8 +17025,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 374,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #374)",
-    "label_jp": null,
+    "label_en": "customer",
+    "label_jp": "おきゃくさま",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17035,8 +17035,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 375,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #375)",
-    "label_jp": null,
+    "label_en": "sing",
+    "label_jp": "うたう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17045,8 +17045,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 376,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #376)",
-    "label_jp": null,
+    "label_en": "exist",
+    "label_jp": "いる",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17055,8 +17055,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 377,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #377)",
-    "label_jp": null,
+    "label_en": "advertise",
+    "label_jp": "せんでん",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17065,8 +17065,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 378,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #378)",
-    "label_jp": null,
+    "label_en": "bouquet",
+    "label_jp": "はなたば",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17075,8 +17075,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 379,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #379)",
-    "label_jp": null,
+    "label_en": "sweets",
+    "label_jp": "おかし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17085,8 +17085,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 380,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #380)",
-    "label_jp": null,
+    "label_en": "cooking",
+    "label_jp": "りょうり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17095,8 +17095,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 381,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #381)",
-    "label_jp": null,
+    "label_en": "accessory",
+    "label_jp": "アクセサリー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17105,8 +17105,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 382,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #382)",
-    "label_jp": null,
+    "label_en": "trend",
+    "label_jp": "りゅうこう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17115,7 +17115,7 @@
     "category": "language_tile",
     "ncgr_inner_index": 383,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #383)",
+    "label_en": "Tile #383",
     "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
@@ -17125,8 +17125,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 384,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #384)",
-    "label_jp": null,
+    "label_en": "Abracadabra",
+    "label_jp": "アブラカダブラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17135,8 +17135,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 385,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #385)",
-    "label_jp": null,
+    "label_en": "castle",
+    "label_jp": "おしろ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17145,8 +17145,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 386,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #386)",
-    "label_jp": null,
+    "label_en": "Kitchen",
+    "label_jp": "キッチン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17155,8 +17155,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 387,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #387)",
-    "label_jp": null,
+    "label_en": "Atelier",
+    "label_jp": "アトリエ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17165,8 +17165,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 388,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #388)",
-    "label_jp": null,
+    "label_en": "Shop",
+    "label_jp": "おみせ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17175,8 +17175,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 389,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #389)",
-    "label_jp": null,
+    "label_en": "Cute",
+    "label_jp": "キュート",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17185,8 +17185,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 390,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #390)",
-    "label_jp": null,
+    "label_en": "Pop",
+    "label_jp": "ポップ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17195,8 +17195,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 391,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #391)",
-    "label_jp": null,
+    "label_en": "Rock",
+    "label_jp": "ロック",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17205,8 +17205,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 392,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #392)",
-    "label_jp": null,
+    "label_en": "Sporty",
+    "label_jp": "スポーティ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17215,8 +17215,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 393,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #393)",
-    "label_jp": null,
+    "label_en": "Cool",
+    "label_jp": "クール",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17225,8 +17225,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 394,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #394)",
-    "label_jp": null,
+    "label_en": "Natural",
+    "label_jp": "ナチュラル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17235,8 +17235,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 395,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #395)",
-    "label_jp": null,
+    "label_en": "Standard",
+    "label_jp": "スタンダード",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17245,8 +17245,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 396,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #396)",
-    "label_jp": null,
+    "label_en": "Elegant",
+    "label_jp": "エレガント",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17255,8 +17255,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 397,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #397)",
-    "label_jp": null,
+    "label_en": "uniform",
+    "label_jp": "せいふく",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17265,8 +17265,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 398,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #398)",
-    "label_jp": null,
+    "label_en": "mystery",
+    "label_jp": "ふしぎ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17275,8 +17275,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 399,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #399)",
-    "label_jp": null,
+    "label_en": "Model",
+    "label_jp": "モデル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17285,8 +17285,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 400,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #400)",
-    "label_jp": null,
+    "label_en": "Princess",
+    "label_jp": "ひめさま",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17295,8 +17295,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 401,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #401)",
-    "label_jp": null,
+    "label_en": "Jacqueline",
+    "label_jp": "ジャクリーヌ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17305,8 +17305,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 402,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #402)",
-    "label_jp": null,
+    "label_en": "Vicki",
+    "label_jp": "ヴィッキー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17315,8 +17315,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 403,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #403)",
-    "label_jp": null,
+    "label_en": "Shutter",
+    "label_jp": "シャッター",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17325,8 +17325,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 404,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #404)",
-    "label_jp": null,
+    "label_en": "photo shoot",
+    "label_jp": "さつえい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17335,8 +17335,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 405,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #405)",
-    "label_jp": null,
+    "label_en": "change clothes",
+    "label_jp": "きがえ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17345,8 +17345,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 406,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #406)",
-    "label_jp": null,
+    "label_en": "outfit",
+    "label_jp": "コーデ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17355,8 +17355,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 407,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #407)",
-    "label_jp": null,
+    "label_en": "magazine",
+    "label_jp": "ざっし",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17365,8 +17365,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 408,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #408)",
-    "label_jp": null,
+    "label_en": "Fashion Show",
+    "label_jp": "ファッションショー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17375,8 +17375,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 409,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #409)",
-    "label_jp": null,
+    "label_en": "Brand",
+    "label_jp": "ブランド",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17385,8 +17385,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 410,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #410)",
-    "label_jp": null,
+    "label_en": "Event Hall",
+    "label_jp": "イベントホール",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17395,8 +17395,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 411,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #411)",
-    "label_jp": null,
+    "label_en": "Photo Studio",
+    "label_jp": "さつえいスタジオ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17405,8 +17405,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 500,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #500)",
-    "label_jp": null,
+    "label_en": "Ben",
+    "label_jp": "ハチ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17415,8 +17415,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 501,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #501)",
-    "label_jp": null,
+    "label_en": "Richard",
+    "label_jp": "リチャード",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17425,8 +17425,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 502,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #502)",
-    "label_jp": null,
+    "label_en": "Rudolph",
+    "label_jp": "ルドルフ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17435,8 +17435,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 503,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #503)",
-    "label_jp": null,
+    "label_en": "Cocoa",
+    "label_jp": "ココア",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17445,8 +17445,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 504,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #504)",
-    "label_jp": null,
+    "label_en": "Fifi",
+    "label_jp": "チーコ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17455,8 +17455,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 505,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #505)",
-    "label_jp": null,
+    "label_en": "Zoe",
+    "label_jp": "ザマス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17465,8 +17465,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 506,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #506)",
-    "label_jp": null,
+    "label_en": "Chloe",
+    "label_jp": "ゆうこ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17475,8 +17475,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 507,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #507)",
-    "label_jp": null,
+    "label_en": "Silvia",
+    "label_jp": "シルビア",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17485,8 +17485,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 508,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #508)",
-    "label_jp": null,
+    "label_en": "Suzy",
+    "label_jp": "すず",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17495,8 +17495,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 509,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #509)",
-    "label_jp": null,
+    "label_en": "Anson",
+    "label_jp": "モンプチ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17505,8 +17505,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 510,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #510)",
-    "label_jp": null,
+    "label_en": "Wuss",
+    "label_jp": "ウッス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17515,8 +17515,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 511,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #511)",
-    "label_jp": null,
+    "label_en": "Chester",
+    "label_jp": "ニャロス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17525,8 +17525,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 512,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #512)",
-    "label_jp": null,
+    "label_en": "Theo",
+    "label_jp": "くまっち",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17535,8 +17535,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 513,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #513)",
-    "label_jp": null,
+    "label_en": "Damian",
+    "label_jp": "パンタ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17545,8 +17545,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 514,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #514)",
-    "label_jp": null,
+    "label_en": "Bernard",
+    "label_jp": "べべ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17555,8 +17555,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 515,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #515)",
-    "label_jp": null,
+    "label_en": "Ellis",
+    "label_jp": "イナバ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17565,8 +17565,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 516,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #516)",
-    "label_jp": null,
+    "label_en": "Pamela",
+    "label_jp": "パメラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17575,8 +17575,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 517,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #517)",
-    "label_jp": null,
+    "label_en": "Naomi",
+    "label_jp": "ヨサコ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17585,8 +17585,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 518,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #518)",
-    "label_jp": null,
+    "label_en": "Billy",
+    "label_jp": "ビル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17595,8 +17595,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 519,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #519)",
-    "label_jp": null,
+    "label_en": "Molly",
+    "label_jp": "コロネ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17605,8 +17605,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 520,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #520)",
-    "label_jp": null,
+    "label_en": "Libby",
+    "label_jp": "カンクー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17615,8 +17615,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 521,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #521)",
-    "label_jp": null,
+    "label_en": "Havana",
+    "label_jp": "ハバナ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17625,8 +17625,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 522,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #522)",
-    "label_jp": null,
+    "label_en": "Abasi",
+    "label_jp": "スワヒリ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17635,8 +17635,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 523,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #523)",
-    "label_jp": null,
+    "label_en": "Ralph",
+    "label_jp": "クルタン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17645,8 +17645,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 524,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #524)",
-    "label_jp": null,
+    "label_en": "Derrick",
+    "label_jp": "じんべい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17655,8 +17655,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 525,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #525)",
-    "label_jp": null,
+    "label_en": "Whitney",
+    "label_jp": "ウルル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17665,8 +17665,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 526,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #526)",
-    "label_jp": null,
+    "label_en": "Django",
+    "label_jp": "ジャンゴ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17675,8 +17675,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 527,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #527)",
-    "label_jp": null,
+    "label_en": "Stuart",
+    "label_jp": "ストラト",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17685,8 +17685,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 528,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #528)",
-    "label_jp": null,
+    "label_en": "Tina",
+    "label_jp": "サキ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17695,8 +17695,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 529,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #529)",
-    "label_jp": null,
+    "label_en": "Barkley",
+    "label_jp": "バッファ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17705,8 +17705,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 530,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #530)",
-    "label_jp": null,
+    "label_en": "Shawn",
+    "label_jp": "スリーピィ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17715,8 +17715,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 531,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #531)",
-    "label_jp": null,
+    "label_en": "Hannah",
+    "label_jp": "あけみ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17725,8 +17725,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 532,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #532)",
-    "label_jp": null,
+    "label_en": "Felicia",
+    "label_jp": "ラム",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17735,8 +17735,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 533,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #533)",
-    "label_jp": null,
+    "label_en": "Rodney",
+    "label_jp": "チュータロー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17745,8 +17745,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 534,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #534)",
-    "label_jp": null,
+    "label_en": "Neville",
+    "label_jp": "ムグリ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17755,8 +17755,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 535,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #535)",
-    "label_jp": null,
+    "label_en": "Sparkles",
+    "label_jp": "きらり",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17765,8 +17765,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 536,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #536)",
-    "label_jp": null,
+    "label_en": "Napoleon",
+    "label_jp": "ボナパルト",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17775,8 +17775,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 537,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #537)",
-    "label_jp": null,
+    "label_en": "Sammy",
+    "label_jp": "サミー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17785,8 +17785,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 538,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #538)",
-    "label_jp": null,
+    "label_en": "Moony",
+    "label_jp": "ムーニ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17795,8 +17795,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 539,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #539)",
-    "label_jp": null,
+    "label_en": "Aurora",
+    "label_jp": "オーラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17805,8 +17805,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 540,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #540)",
-    "label_jp": null,
+    "label_en": "Humphrey",
+    "label_jp": "ハンフリー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17815,8 +17815,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 541,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #541)",
-    "label_jp": null,
+    "label_en": "Thor",
+    "label_jp": "ライデン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17825,8 +17825,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 542,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #542)",
-    "label_jp": null,
+    "label_en": "Starla",
+    "label_jp": "ジェンヌ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17835,8 +17835,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 543,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #543)",
-    "label_jp": null,
+    "label_en": "Wyatt",
+    "label_jp": "ワイアット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17845,8 +17845,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 544,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #544)",
-    "label_jp": null,
+    "label_en": "Troy",
+    "label_jp": "トロイ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17855,8 +17855,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 545,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #545)",
-    "label_jp": null,
+    "label_en": "Holly",
+    "label_jp": "オウカ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17865,8 +17865,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 546,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #546)",
-    "label_jp": null,
+    "label_en": "Geraldine",
+    "label_jp": "りんこ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17875,8 +17875,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 547,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #547)",
-    "label_jp": null,
+    "label_en": "Sergey",
+    "label_jp": "ハラショー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17885,8 +17885,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 548,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #548)",
-    "label_jp": null,
+    "label_en": "Foggy",
+    "label_jp": "メタボン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17895,8 +17895,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 549,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #549)",
-    "label_jp": null,
+    "label_en": "Lucille",
+    "label_jp": "たまみ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17905,8 +17905,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 550,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #550)",
-    "label_jp": null,
+    "label_en": "Mikey",
+    "label_jp": "もんち",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17915,8 +17915,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 551,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #551)",
-    "label_jp": null,
+    "label_en": "Becky",
+    "label_jp": "キッキ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17925,8 +17925,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 552,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #552)",
-    "label_jp": null,
+    "label_en": "Madison",
+    "label_jp": "おその",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17935,8 +17935,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 553,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #553)",
-    "label_jp": null,
+    "label_en": "Johnson",
+    "label_jp": "ヤマダ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17945,8 +17945,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 554,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #554)",
-    "label_jp": null,
+    "label_en": "Grimble",
+    "label_jp": "グッチー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17955,8 +17955,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 555,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #555)",
-    "label_jp": null,
+    "label_en": "Olivia",
+    "label_jp": "ほっぺ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17965,8 +17965,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 556,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #556)",
-    "label_jp": null,
+    "label_en": "Brett",
+    "label_jp": "ベーブ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17975,8 +17975,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 557,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #557)",
-    "label_jp": null,
+    "label_en": "Chelsea",
+    "label_jp": "ココット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17985,8 +17985,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 558,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #558)",
-    "label_jp": null,
+    "label_en": "Shelly",
+    "label_jp": "シャーベット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17995,8 +17995,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 559,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #559)",
-    "label_jp": null,
+    "label_en": "Tot",
+    "label_jp": "トット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18005,8 +18005,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 560,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #560)",
-    "label_jp": null,
+    "label_en": "Frank",
+    "label_jp": "セイヤ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18015,8 +18015,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 561,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #561)",
-    "label_jp": null,
+    "label_en": "Sanderson",
+    "label_jp": "サンダーソン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18025,8 +18025,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 562,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #562)",
-    "label_jp": null,
+    "label_en": "Freya",
+    "label_jp": "プイプイ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18035,8 +18035,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 563,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #563)",
-    "label_jp": null,
+    "label_en": "Nigel",
+    "label_jp": "ヒロシ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18045,8 +18045,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 564,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #564)",
-    "label_jp": null,
+    "label_en": "Matthew",
+    "label_jp": "マシュー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18055,8 +18055,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 565,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #565)",
-    "label_jp": null,
+    "label_en": "Jessica",
+    "label_jp": "テンテン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18065,8 +18065,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 566,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #566)",
-    "label_jp": null,
+    "label_en": "Cherie",
+    "label_jp": "ハッピー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18075,8 +18075,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 567,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #567)",
-    "label_jp": null,
+    "label_en": "Tony",
+    "label_jp": "トラボルた",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18085,8 +18085,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 568,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #568)",
-    "label_jp": null,
+    "label_en": "Janet",
+    "label_jp": "ジャネット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18095,8 +18095,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 569,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #569)",
-    "label_jp": null,
+    "label_en": "Meg",
+    "label_jp": "メグ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18105,8 +18105,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 570,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #570)",
-    "label_jp": null,
+    "label_en": "Alexander",
+    "label_jp": "せいべい",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18115,8 +18115,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 571,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #571)",
-    "label_jp": null,
+    "label_en": "Eric",
+    "label_jp": "けいた",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18125,8 +18125,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 572,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #572)",
-    "label_jp": null,
+    "label_en": "Petra",
+    "label_jp": "ポロリン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18135,8 +18135,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 573,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #573)",
-    "label_jp": null,
+    "label_en": "Sonya",
+    "label_jp": "ソーニャ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18145,8 +18145,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 574,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #574)",
-    "label_jp": null,
+    "label_en": "Laurel",
+    "label_jp": "ビスカス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18155,8 +18155,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 575,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #575)",
-    "label_jp": null,
+    "label_en": "Barbara",
+    "label_jp": "バーバラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18165,8 +18165,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 576,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #576)",
-    "label_jp": null,
+    "label_en": "Petal",
+    "label_jp": "はなこ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18175,8 +18175,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 577,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #577)",
-    "label_jp": null,
+    "label_en": "Victoria",
+    "label_jp": "ラフレー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18185,8 +18185,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 578,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #578)",
-    "label_jp": null,
+    "label_en": "Brandy",
+    "label_jp": "チャミィ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18195,8 +18195,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 579,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #579)",
-    "label_jp": null,
+    "label_en": "Marty",
+    "label_jp": "プリンス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18205,8 +18205,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 580,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #580)",
-    "label_jp": null,
+    "label_en": "Marsha",
+    "label_jp": "カグヤ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18215,8 +18215,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 581,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #581)",
-    "label_jp": null,
+    "label_en": "Kelsey",
+    "label_jp": "カルシウム",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18225,8 +18225,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 582,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #582)",
-    "label_jp": null,
+    "label_en": "Gary",
+    "label_jp": "ロットン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18235,8 +18235,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 583,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #583)",
-    "label_jp": null,
+    "label_en": "Lydia",
+    "label_jp": "キョンキョン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18245,8 +18245,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 584,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #584)",
-    "label_jp": null,
+    "label_en": "Grace",
+    "label_jp": "グレース",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18255,8 +18255,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 585,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #585)",
-    "label_jp": null,
+    "label_en": "James",
+    "label_jp": "ちょうじろう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18265,8 +18265,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 586,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #586)",
-    "label_jp": null,
+    "label_en": "Delcy",
+    "label_jp": "フジ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18275,8 +18275,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 587,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #587)",
-    "label_jp": null,
+    "label_en": "Blossom",
+    "label_jp": "ももっぺ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18285,8 +18285,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 588,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #588)",
-    "label_jp": null,
+    "label_en": "TV-20C",
+    "label_jp": "ＴＶ２０Ｃ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18295,8 +18295,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 589,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #589)",
-    "label_jp": null,
+    "label_en": "Sarge",
+    "label_jp": "たいちょう",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18305,8 +18305,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 590,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #590)",
-    "label_jp": null,
+    "label_en": "Christine",
+    "label_jp": "クリスティン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18315,8 +18315,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 591,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #591)",
-    "label_jp": null,
+    "label_en": "Seth",
+    "label_jp": "イビラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18325,8 +18325,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 592,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #592)",
-    "label_jp": null,
+    "label_en": "Duke",
+    "label_jp": "デューク",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18335,8 +18335,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 593,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #593)",
-    "label_jp": null,
+    "label_en": "Amber",
+    "label_jp": "ガラッパ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18345,8 +18345,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 594,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #594)",
-    "label_jp": null,
+    "label_en": "Brownie",
+    "label_jp": "ブラウニー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18355,8 +18355,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 595,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #595)",
-    "label_jp": null,
+    "label_en": "Patsy",
+    "label_jp": "マロン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18365,8 +18365,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 596,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #596)",
-    "label_jp": null,
+    "label_en": "Cherry",
+    "label_jp": "ホイップ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18375,8 +18375,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 597,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #597)",
-    "label_jp": null,
+    "label_en": "Kevin",
+    "label_jp": "イベリコ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18385,8 +18385,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 598,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #598)",
-    "label_jp": null,
+    "label_en": "Phoebe",
+    "label_jp": "ウリ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18395,8 +18395,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 599,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #599)",
-    "label_jp": null,
+    "label_en": "Abigail",
+    "label_jp": "プップ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18405,8 +18405,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 600,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #600)",
-    "label_jp": null,
+    "label_en": "Honoka",
+    "label_jp": "ほのか",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18415,8 +18415,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 601,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #601)",
-    "label_jp": null,
+    "label_en": "Catherine",
+    "label_jp": "カトリーヌ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18425,8 +18425,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 602,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #602)",
-    "label_jp": null,
+    "label_en": "Otake",
+    "label_jp": "おたけ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18435,8 +18435,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 603,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #603)",
-    "label_jp": null,
+    "label_en": "Coco",
+    "label_jp": "ココ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18445,8 +18445,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 604,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #604)",
-    "label_jp": null,
+    "label_en": "Sandy",
+    "label_jp": "サンディー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18455,8 +18455,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 605,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #605)",
-    "label_jp": null,
+    "label_en": "Mint",
+    "label_jp": "ミント",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18465,8 +18465,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 606,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #606)",
-    "label_jp": null,
+    "label_en": "Pakira",
+    "label_jp": "パキラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18475,8 +18475,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 607,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #607)",
-    "label_jp": null,
+    "label_en": "Lycopene",
+    "label_jp": "リコピン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18485,8 +18485,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 608,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #608)",
-    "label_jp": null,
+    "label_en": "Merorin",
+    "label_jp": "メロリン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18495,8 +18495,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 609,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #609)",
-    "label_jp": null,
+    "label_en": "Rougue",
+    "label_jp": "ルージュ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18505,8 +18505,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 610,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #610)",
-    "label_jp": null,
+    "label_en": "Sorbet",
+    "label_jp": "ソルベ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18515,8 +18515,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 611,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #611)",
-    "label_jp": null,
+    "label_en": "Fugoppe",
+    "label_jp": "ふごっぺ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18525,8 +18525,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 612,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #612)",
-    "label_jp": null,
+    "label_en": "Hyouta",
+    "label_jp": "ひょうた",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18535,8 +18535,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 613,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #613)",
-    "label_jp": null,
+    "label_en": "Delhi",
+    "label_jp": "デリー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18545,8 +18545,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 614,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #614)",
-    "label_jp": null,
+    "label_en": "Gonta",
+    "label_jp": "ごんた",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18555,8 +18555,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 615,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #615)",
-    "label_jp": null,
+    "label_en": "Julie",
+    "label_jp": "ジュリー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18565,8 +18565,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 616,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #616)",
-    "label_jp": null,
+    "label_en": "Jose",
+    "label_jp": "ホセ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18575,8 +18575,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 617,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #617)",
-    "label_jp": null,
+    "label_en": "Crispy",
+    "label_jp": "クリスピー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18585,8 +18585,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 618,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #618)",
-    "label_jp": null,
+    "label_en": "Korota",
+    "label_jp": "コロタ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18595,8 +18595,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 619,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #619)",
-    "label_jp": null,
+    "label_en": "Bitter",
+    "label_jp": "ビター",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18605,8 +18605,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 620,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #620)",
-    "label_jp": null,
+    "label_en": "Doubt",
+    "label_jp": "ダウト",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18615,8 +18615,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 621,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #621)",
-    "label_jp": null,
+    "label_en": "Luminous",
+    "label_jp": "ルミナス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18625,8 +18625,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 622,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #622)",
-    "label_jp": null,
+    "label_en": "William",
+    "label_jp": "ウイリアム",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18635,8 +18635,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 623,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #623)",
-    "label_jp": null,
+    "label_en": "Apollo",
+    "label_jp": "アポロ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18645,8 +18645,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 624,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #624)",
-    "label_jp": null,
+    "label_en": "Antonio",
+    "label_jp": "アントニオ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18655,8 +18655,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 625,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #625)",
-    "label_jp": null,
+    "label_en": "Flora",
+    "label_jp": "フローラ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18665,8 +18665,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 626,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #626)",
-    "label_jp": null,
+    "label_en": "Comet",
+    "label_jp": "コメット",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18675,8 +18675,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 627,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #627)",
-    "label_jp": null,
+    "label_en": "Cider",
+    "label_jp": "シードル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18685,8 +18685,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 628,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #628)",
-    "label_jp": null,
+    "label_en": "Liz",
+    "label_jp": "リズ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18695,8 +18695,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 629,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #629)",
-    "label_jp": null,
+    "label_en": "Julienne",
+    "label_jp": "ジュリエンヌ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18705,8 +18705,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 630,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #630)",
-    "label_jp": null,
+    "label_en": "Kokoron",
+    "label_jp": "ココロン",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18715,8 +18715,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 631,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #631)",
-    "label_jp": null,
+    "label_en": "Hotaru",
+    "label_jp": "ホタル",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18725,8 +18725,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 632,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #632)",
-    "label_jp": null,
+    "label_en": "Lopez",
+    "label_jp": "ロペス",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18735,8 +18735,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 633,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #633)",
-    "label_jp": null,
+    "label_en": "Hyouga",
+    "label_jp": "ヒョウガ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18745,8 +18745,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 634,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #634)",
-    "label_jp": null,
+    "label_en": "Kuwacchi",
+    "label_jp": "くわっち",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18755,8 +18755,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 635,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #635)",
-    "label_jp": null,
+    "label_en": "Wao",
+    "label_jp": "ワオ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18765,8 +18765,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 636,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #636)",
-    "label_jp": null,
+    "label_en": "Baobab",
+    "label_jp": "バオバブ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18775,8 +18775,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 637,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #637)",
-    "label_jp": null,
+    "label_en": "Shammy",
+    "label_jp": "シャミー",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18785,8 +18785,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 638,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #638)",
-    "label_jp": null,
+    "label_en": "Moko",
+    "label_jp": "モコ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18795,8 +18795,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 639,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #639)",
-    "label_jp": null,
+    "label_en": "Martha",
+    "label_jp": "マーサ",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18805,8 +18805,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 640,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #640)",
-    "label_jp": null,
+    "label_en": "Tile #640",
+    "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18815,8 +18815,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 641,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #641)",
-    "label_jp": null,
+    "label_en": "Tile #641",
+    "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18825,8 +18825,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 642,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #642)",
-    "label_jp": null,
+    "label_en": "Tile #642",
+    "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
   {
@@ -18835,8 +18835,8 @@
     "category": "language_tile",
     "ncgr_inner_index": 643,
     "page_prefix": "mgcall",
-    "label_en": "Tile (mgcall #643)",
-    "label_jp": null,
+    "label_en": "Tile #643",
+    "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
   {
