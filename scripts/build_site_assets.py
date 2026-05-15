@@ -49,9 +49,32 @@ except Exception:
 SITE = Path(__file__).resolve().parent.parent
 TRANSLATION_REPO = SITE.parent / "Tongari boushi translation app claude"
 DB_PATH = TRANSLATION_REPO / "extracted" / "scratch" / "db" / "translation.sqlite"
+SITE_INGEST = TRANSLATION_REPO / "notes" / "2d_assets_v4" / "_SITE_INGEST.json"
 SITE_BASE = "/tongari-boushi-to-oshare-na-mahou-tsukai-archive"
 IMAGES_ROOT = SITE / "public" / "images" / "2d"
 MANIFEST_PATH = SITE / "public" / "data" / "manifest.json"
+
+
+def load_item_label_map() -> dict[int, tuple[str | None, str | None]]:
+    """Map icon_idx -> (label_jp, label_en) using the visual-grading agent's
+    _SITE_INGEST.json, which joined icon_idx -> item_id -> item_names DB.
+    Returns {} if file missing."""
+    if not SITE_INGEST.exists():
+        return {}
+    data = json.loads(SITE_INGEST.read_text(encoding="utf-8"))
+    out: dict[int, tuple[str | None, str | None]] = {}
+    for r in data:
+        if r.get("category") != "item_icon":
+            continue
+        ek = r.get("element_key")
+        if not ek or len(ek) < 2 or not isinstance(ek[1], int):
+            continue
+        idx = ek[1]
+        jp = (r.get("label_jp") or "").strip() or None
+        en = (r.get("label_en") or "").strip() or None
+        if jp or en:
+            out[idx] = (jp, en)
+    return out
 
 
 def load_glyph_labels(conn) -> dict[int, tuple[str | None, str | None]]:
@@ -105,13 +128,16 @@ def build_language_tiles(records: list[dict], v: str) -> int:
 
 def build_item_icons(records: list[dict], v: str) -> int:
     """Category 2: 656 item icons. Source filename: itemicon_<3-digit>.png
-    where N is the NCGR inner index. The runtime ItemNoList.itnt mapping
-    is cracked (479 items map directly into this range) but full join to
-    item_names isn't wired here yet — generic 'Item #N' for now."""
+    where N is the NCGR inner index = icon_idx. Real JP/EN names come from
+    the visual-grading agent's _SITE_INGEST.json which joined icon_idx ->
+    item_id via the cracked ItemNoList.itnt formula -> item_names DB. 454
+    of 656 get proper names; the rest fall back to 'Item #N'."""
     src_dir = TRANSLATION_REPO / "notes" / "2d_assets_v2" / "item_icons"
     dst_dir = IMAGES_ROOT / "item_icon"
     dst_dir.mkdir(parents=True, exist_ok=True)
     pattern = re.compile(r"^itemicon_(\d+)\.png$")
+    label_map = load_item_label_map()
+    labeled = 0
     added = 0
     for fn in sorted(os.listdir(src_dir)):
         m = pattern.match(fn)
@@ -119,18 +145,22 @@ def build_item_icons(records: list[dict], v: str) -> int:
             continue
         idx = int(m.group(1))
         shutil.copyfile(src_dir / fn, dst_dir / f"{idx}.png")
+        jp, en = label_map.get(idx, (None, None))
+        if en is None:
+            en = f"Item #{idx}"
+        else:
+            labeled += 1
         records.append({
             "png_path": f"{SITE_BASE}/images/2d/item_icon/{idx}.png?v={v}",
             "source_container": "item/itemicon.ofs",
             "category": "item_icon",
             "ncgr_inner_index": idx,
-            "label_en": f"Item #{idx}",
-            "label_jp": None,
+            "label_en": en,
+            "label_jp": jp,
             "palette_strategy": "external_item_icon",
-            "needs_remap": True,
         })
         added += 1
-    print(f"  item_icon: {added}")
+    print(f"  item_icon: {added} ({labeled} with real item names from ItemNoList.itnt join)")
     return added
 
 
