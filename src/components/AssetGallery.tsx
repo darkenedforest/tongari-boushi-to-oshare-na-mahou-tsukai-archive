@@ -5,6 +5,8 @@ interface AssetRecord {
   source_container: string;    // e.g. "2d/inputmagic/msg.ofs"
   category: string;            // e.g. "magic_glyphs" | "item_icons" | "ui" | "title" | etc.
   ncgr_inner_index: number;
+  label_jp?: string;
+  label_en?: string;
   width?: number;
   height?: number;
   bpp?: number;
@@ -53,7 +55,7 @@ export default function AssetGallery({ manifestUrl }: Props) {
     return records.filter(r => {
       if (category !== 'all' && (r.category || 'uncategorized') !== category) return false;
       if (q) {
-        const hay = `${r.source_container} ${r.png_path}`.toLowerCase();
+        const hay = `${r.source_container} ${r.png_path} ${r.label_en ?? ''} ${r.label_jp ?? ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
       }
       return true;
@@ -100,17 +102,26 @@ export default function AssetGallery({ manifestUrl }: Props) {
       </div>
 
       <div className="grid">
-        {pageRecords.map(r => (
-          <button
-            key={r.png_path}
-            className="tile"
-            onClick={() => setSelected(r)}
-            title={r.source_container}
-          >
-            <img loading="lazy" src={r.png_path} alt={r.source_container} />
-            <span className="tile-label">{r.source_container.split('/').pop()}</span>
-          </button>
-        ))}
+        {pageRecords.map(r => {
+          const primary = r.label_en || r.label_jp || r.source_container.split('/').pop() || '';
+          const tooltip = r.label_en && r.label_jp
+            ? `${r.label_en} — ${r.label_jp}`
+            : r.label_en || r.label_jp || r.source_container;
+          return (
+            <button
+              key={r.png_path}
+              className="tile"
+              onClick={() => setSelected(r)}
+              title={tooltip}
+            >
+              <img loading="lazy" src={r.png_path} alt={primary} />
+              <span className="tile-label">{primary}</span>
+              {r.label_jp && r.label_en && (
+                <span className="tile-sub">{r.label_jp}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {totalPages > 1 && (
@@ -125,10 +136,16 @@ export default function AssetGallery({ manifestUrl }: Props) {
         <div className="lightbox" onClick={() => setSelected(null)} role="dialog">
           <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
             <button className="lightbox-close" onClick={() => setSelected(null)} aria-label="Close">×</button>
-            <img className="lightbox-img" src={selected.png_path} alt={selected.source_container} />
+            <img className="lightbox-img" src={selected.png_path} alt={selected.label_en || selected.source_container} />
             <div className="lightbox-meta">
-              <h3>{selected.source_container.split('/').pop()}</h3>
+              <h3>{selected.label_en || selected.label_jp || selected.source_container.split('/').pop()}</h3>
+              {selected.label_jp && (
+                <p className="lightbox-jp">{selected.label_jp}</p>
+              )}
               <dl>
+                {selected.label_en && (<><dt>English name</dt><dd>{selected.label_en}</dd></>)}
+                {selected.label_jp && (<><dt>Japanese name</dt><dd lang="ja">{selected.label_jp}</dd></>)}
+                <dt>Category</dt><dd>{selected.category}</dd>
                 <dt>Source container</dt><dd><code>{selected.source_container}</code></dd>
                 <dt>NCGR index</dt><dd>{selected.ncgr_inner_index}</dd>
                 {selected.width && selected.height && (<><dt>Size</dt><dd>{selected.width} × {selected.height}</dd></>)}
@@ -222,7 +239,15 @@ export default function AssetGallery({ manifestUrl }: Props) {
           border-radius: 8px;
         }
         .tile-label {
-          font-size: 0.7rem;
+          font-size: 0.78rem;
+          font-weight: 600;
+          color: var(--color-ink);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        .tile-sub {
+          font-size: 0.68rem;
           color: var(--color-ink-soft);
           overflow: hidden;
           text-overflow: ellipsis;
@@ -293,7 +318,12 @@ export default function AssetGallery({ manifestUrl }: Props) {
           image-rendering: pixelated;
         }
         .lightbox-meta { margin-top: 16px; }
-        .lightbox-meta h3 { margin: 0 0 12px; }
+        .lightbox-meta h3 { margin: 0 0 4px; }
+        .lightbox-jp {
+          margin: 0 0 14px;
+          font-size: 1.05rem;
+          color: var(--color-purple-600);
+        }
         .lightbox-meta dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; margin: 0; }
         .lightbox-meta dt { font-weight: 700; color: var(--color-purple-600); font-size: 0.85rem; }
         .lightbox-meta dd { margin: 0; color: var(--color-ink); font-size: 0.9rem; word-break: break-all; }
