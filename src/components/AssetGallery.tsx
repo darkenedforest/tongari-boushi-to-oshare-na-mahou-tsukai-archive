@@ -29,7 +29,10 @@ export default function AssetGallery({ manifestUrl }: Props) {
   const [selected, setSelected] = useState<AssetRecord | null>(null);
 
   useEffect(() => {
-    fetch(manifestUrl)
+    // Cache-bust the manifest fetch — browser must never serve a stale
+    // manifest because the png_path entries it contains are tied to the
+    // build that produced them.
+    fetch(`${manifestUrl}?cb=${Date.now()}`)
       .then(r => {
         if (!r.ok) throw new Error(`Manifest fetch failed: ${r.status}`);
         return r.json();

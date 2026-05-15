@@ -25,6 +25,7 @@ import os
 import shutil
 import sqlite3
 import sys
+import time
 from pathlib import Path
 
 try:
@@ -96,6 +97,12 @@ def main():
     if not DB_PATH.exists():
         sys.exit(f"DB not found at {DB_PATH}")
 
+    # Build version stamp for cache-busting. Appended to every image URL
+    # as ?v=<ts>; AssetGallery additionally fetches manifest.json with a
+    # ?cb=<random> query so the manifest itself is never cached.
+    build_version = str(int(time.time()))
+    print(f"Build version: {build_version}")
+
     records_v4 = json.loads(V4_MANIFEST.read_text(encoding="utf-8"))
     print(f"V4 manifest: {len(records_v4)} records")
 
@@ -150,7 +157,7 @@ def main():
                 label_jp, label_en = glyph_labels[ncgr_idx]
 
         out_records.append({
-            "png_path": f"{SITE_BASE}/images/2d/{cat}/{sid}.png",
+            "png_path": f"{SITE_BASE}/images/2d/{cat}/{sid}.png?v={build_version}",
             "source_container": r.get("source_container", ""),
             "category": cat,
             "ncgr_inner_index": (
@@ -170,6 +177,14 @@ def main():
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST_PATH.write_text(
         json.dumps(out_records, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+    # Write a tiny version sidecar so non-manifest consumers can also
+    # cache-bust against the same build.
+    version_path = MANIFEST_PATH.parent / "version.json"
+    version_path.write_text(
+        json.dumps({"version": build_version, "built": int(time.time())}),
         encoding="utf-8",
     )
 
