@@ -79,6 +79,7 @@ function NewReportForm({
   const [open, setOpen] = useState(false);
   const [author, setAuthor] = useState('');
   const [title, setTitle] = useState('');
+  const [patchVersion, setPatchVersion] = useState('');
   const [body, setBody] = useState('');
   const [steps, setSteps] = useState('');
   const [files, setFiles] = useState<File[]>([]);
@@ -117,11 +118,15 @@ function NewReportForm({
     }
     setBusy(true);
     try {
-      // Combine description + optional steps into a single body field
-      // since the Supabase schema doesn't have a separate `steps` column.
-      // Marked with a header so the post displays cleanly.
-      let combinedBody = body.trim();
+      // Combine patch version + description + optional steps into a single
+      // body field since the Supabase schema doesn't have separate columns.
+      // Patch version goes at the top so it shows above the description.
+      const pv = patchVersion.trim();
       const stepsTrimmed = steps.trim();
+      let combinedBody = body.trim();
+      if (pv) {
+        combinedBody = `**Patch version:** ${pv.slice(0, 40)}\n\n${combinedBody}`;
+      }
       if (stepsTrimmed) {
         combinedBody = `${combinedBody}\n\n**Steps to reproduce:**\n${stepsTrimmed}`;
       }
@@ -161,6 +166,7 @@ function NewReportForm({
       window.localStorage.setItem('tongari-last-post', String(Date.now()));
       setAuthor('');
       setTitle('');
+      setPatchVersion('');
       setBody('');
       setSteps('');
       setFiles([]);
@@ -218,6 +224,16 @@ function NewReportForm({
           placeholder="Short summary of the bug"
           maxLength={MAX_TITLE}
           required
+        />
+      </label>
+      <label className="field">
+        <span className="field-label">Patch version (optional)</span>
+        <input
+          type="text"
+          value={patchVersion}
+          onChange={e => setPatchVersion(e.target.value)}
+          placeholder="e.g. v2.31 — the version you were running when this happened"
+          maxLength={40}
         />
       </label>
       <label className="field">
