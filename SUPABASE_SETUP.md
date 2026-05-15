@@ -110,13 +110,32 @@ create policy allow_public_upload on storage.objects
 
 ## 4. Grab the two keys
 
-In **Project Settings → API**:
+Supabase recently reorganized this page, so the URL and the key live in
+different sub-pages now:
 
-- **Project URL** — looks like `https://abcdefg.supabase.co`
-- **anon / public** key — long string starting with `eyJ...`
+**Project URL** — open **Project Settings → Data API** (it's the ↗ item
+under INTEGRATIONS in the sidebar, not under CONFIGURATION).
+Look for a field labeled "Project URL" or "Data API URL". It's a
+`https://<project-ref>.supabase.co` string where `<project-ref>` is the
+random project ID. (If you can't find it there, look at your browser's
+address bar while you're inside the project dashboard — the project ref
+is part of the URL path. The full Supabase URL is just
+`https://<that-ref>.supabase.co`.)
 
-(The anon key is safe to ship in the client — it can only do what the
-RLS policies allow.)
+**Public key** — open **Project Settings → API Keys**. You have two
+tabs:
+
+- "Publishable and secret API keys" (new format) — the value starts
+  with `sb_publishable_...`. This is the safe browser key.
+- "Legacy anon, service_role API keys" (old format) — the `anon /
+  public` value starts with `eyJ...`. Also a safe browser key.
+
+Either format works in the `PUBLIC_SUPABASE_ANON_KEY` env var. The
+`@supabase/supabase-js` client accepts both. New projects should prefer
+the `sb_publishable_*` form.
+
+**Do not** use the `service_role` / secret key in the client — that one
+has admin rights and bypasses RLS.
 
 ## 5. Add the keys to GitHub Actions secrets
 
