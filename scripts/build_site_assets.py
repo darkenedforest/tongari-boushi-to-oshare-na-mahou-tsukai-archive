@@ -58,13 +58,15 @@ def load_item_labels(conn) -> dict[int, tuple[str | None, str | None]]:
 def build_magic_glyphs(records: list[dict]) -> int:
     """Category 1: magic-glyph keyboard buttons. Source = mgcall.ofs NCGR
     inner index N maps 1:1 to magic_glyphs.slot_index N (verified)."""
+    # Source: 2d/inputmagic/mgcall.ofs renders. Filename is mgc01_id<asset_id>_ncgr<N>.png.
+    # The ncgr number maps 1:1 to magic_glyphs.slot_index. Validated 2026-05-15.
     src_dir = TRANSLATION_REPO / "notes" / "2d_assets_v2" / "magic_glyphs" / "2d" / "inputmagic"
     dst_dir = IMAGES_ROOT / "magic_glyphs"
     dst_dir.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     labels = load_glyph_labels(conn)
     conn.close()
-    pattern = re.compile(r"^mgcall__ncgr(\d+)_w\d+\.png$")
+    pattern = re.compile(r"^mgc\w+_ncgr(\d+)\.png$")
     added = 0
     for fn in sorted(os.listdir(src_dir)):
         m = pattern.match(fn)
@@ -93,10 +95,11 @@ def build_magic_glyphs(records: list[dict]) -> int:
 def build_item_icons(records: list[dict]) -> int:
     """Category 2: item icons from itemicon.ofs. NCGR index -> item_id mapping
     is NOT yet known (investigation pending), so labels are generic 'Item #N'."""
+    # Source filename is itemicon_<3-digit-N>.png where N is the NCGR inner index.
     src_dir = TRANSLATION_REPO / "notes" / "2d_assets_v2" / "item_icons"
     dst_dir = IMAGES_ROOT / "item_icons"
     dst_dir.mkdir(parents=True, exist_ok=True)
-    pattern = re.compile(r"^itemicon__ncgr(\d+).*\.png$|^(\d+)\.png$")
+    pattern = re.compile(r"^itemicon_(\d+)\.png$")
     added = 0
     for fn in sorted(os.listdir(src_dir)):
         m = pattern.match(fn)
