@@ -4,8 +4,8 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="Konami's custom extensions"
-  description="Type tags inside RESO containers that aren't part of Nintendo's SDK. Konami added these for their own game data — widget tables, binary tables, and a few other things."
+  title="Konami RESO extensions"
+  description="Non-Nintendo RESO type tags Konami uses: tad (widget table), nib (per-container blob), sfo (nested RESO), szl (nested LZ11)."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
@@ -13,92 +13,121 @@ const base = import.meta.env.BASE_URL;
   ]}
 >
   <p>
-    A <a href={`${base}/field-guide/file-formats/reso/`}>RESO container</a>
-    entry carries a 4-character type tag. Most of those tags are Nintendo
-    SDK formats (NCGR, NCLR, etc), but four of them are Konami's own:
+    Four RESO <code>type_tag</code> values sit outside the standard Nitro set.
+    All appear only in variant-0 (16-byte TOC entry) RESO containers.
   </p>
 
+  <h2>Tag census</h2>
   <table>
-    <thead>
-      <tr><th>Tag in file</th><th>What it holds</th></tr>
-    </thead>
+    <thead><tr><th>type_tag</th><th>Reads as</th><th>Description</th><th>Occurrences</th></tr></thead>
     <tbody>
-      <tr><td><code>tad</code></td><td>Static widget tables — fixed-stride records describing UI sprites and their positions.</td></tr>
-      <tr><td><code>nib</code></td><td>"bin" backwards. Per-container binary data with a layout that varies by context.</td></tr>
-      <tr><td><code>rnan</code></td><td>Standard NANR animation data, but Konami uses it as a generic container for some non-animation records too.</td></tr>
-      <tr><td><code>sfo</code></td><td>A nested RESO container inside the current RESO entry.</td></tr>
+      <tr><td><code>szl</code></td><td><code>lzs</code></td><td>Nested LZ11-compressed sub-RESO</td><td>34,464</td></tr>
+      <tr><td><code>tad</code></td><td><code>dat</code></td><td>Widget placement table</td><td>694</td></tr>
+      <tr><td><code>sfo</code></td><td><code>ofs</code></td><td>Nested uncompressed RESO</td><td>333</td></tr>
+      <tr><td><code>nib</code></td><td><code>bin</code></td><td>Per-container blob (variable schema)</td><td>251</td></tr>
     </tbody>
   </table>
 
-  <h2>The <code>tad</code> table</h2>
+  <h2><code>tad</code> — widget placement table</h2>
   <p>
-    The most useful Konami extension. A <code>tad</code> entry is a flat
-    array of fixed-size records. Each record describes one widget on a
-    UI screen — what sprite it is, where it goes, what palette and flags
-    to use.
+    Static table of UI widget records used by overlay-driven 2D screens. Found
+    in shop/menu containers (<code>2d/buyitem.lzs</code>,
+    <code>2d/defcos.lzs</code>, etc.).
+  </p>
+  <p>
+    The <code>buyitem.lzs</code> <code>tad</code> blob holds 76 records,
+    each 28 bytes = 26 bytes data + 2-byte <code>FF FF</code> terminator
+    (per <code>notes/phaseA_ghidra/DISCOVERIES.md</code>). The richer layout
+    for screen-control records (used by the 12-byte sprite-place tables that
+    live inside the overlay code at <code>0x0215A538</code>, see
+    <a href={`${base}/field-guide/how-the-game-works/sprite-pipeline/`}>sprite pipeline</a>)
+    is 12 bytes:
+  </p>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>2</td><td><code>u16</code></td><td>cell_id (which NCER cell to draw)</td></tr>
+      <tr><td><code>+0x02</code></td><td>2</td><td><code>u16</code></td><td>palette / style bank</td></tr>
+      <tr><td><code>+0x04</code></td><td>2</td><td><code>u16</code></td><td>sub_index (secondary index for compound widgets)</td></tr>
+      <tr><td><code>+0x06</code></td><td>2</td><td><code>u16</code></td><td>flags</td></tr>
+      <tr><td><code>+0x08</code></td><td>2</td><td><code>u16</code></td><td>screen_x (0..256)</td></tr>
+      <tr><td><code>+0x0A</code></td><td>2</td><td><code>u16</code></td><td>screen_y (0..192)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Example: buyitem screen widget table at <code>0x0215A538</code></h3>
+  <table>
+    <thead>
+      <tr><th>#</th><th>cell</th><th>pal</th><th>sub</th><th>flags</th><th>X</th><th>Y</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>6</td><td>9</td><td>21</td><td>0</td><td>10</td><td>92</td><td>Left-side icon</td></tr>
+      <tr><td>1</td><td>6</td><td>9</td><td>21</td><td>0</td><td>220</td><td>92</td><td>Right-side icon</td></tr>
+      <tr><td>2</td><td>7</td><td>9</td><td>22</td><td>0</td><td>128</td><td>107</td><td>Center icon</td></tr>
+      <tr><td>3</td><td>3</td><td>9</td><td>18</td><td>0</td><td>125</td><td>100</td><td>Center near-button</td></tr>
+      <tr><td>4</td><td>4</td><td>12</td><td>19</td><td>24</td><td>128</td><td>96</td><td>Main center</td></tr>
+      <tr><td>5</td><td>5</td><td>13</td><td>20</td><td>25</td><td>128</td><td>96</td><td>Main center alt</td></tr>
+      <tr><td>6</td><td>0</td><td>10</td><td>15</td><td>0</td><td>128</td><td>96</td><td>BG center</td></tr>
+      <tr><td>7</td><td>8</td><td>14</td><td>23</td><td>27</td><td>128</td><td>96</td><td>Effect center</td></tr>
+      <tr><td>8</td><td>1</td><td>10</td><td>16</td><td>0</td><td>128</td><td>96</td><td>UI alt 1</td></tr>
+      <tr><td>9</td><td>2</td><td>11</td><td>17</td><td>0</td><td>128</td><td>96</td><td>UI alt 2</td></tr>
+      <tr><td>10</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>Zero terminator</td></tr>
+    </tbody>
+  </table>
+
+  <h2><code>nib</code> — per-container binary</h2>
+  <p>
+    No single schema — each container's <code>nib</code> payload uses its own
+    layout. Notable instances:
+  </p>
+  <ul>
+    <li><code>global.lzs#33</code>, <code>#36</code>, <code>#37</code> — system tables</li>
+    <li><code>2d/designcloth.lzs#206..207</code> — 256-byte recipe blobs for
+      designer-cloth slots</li>
+  </ul>
+
+  <h2><code>sfo</code> — nested uncompressed RESO</h2>
+  <p>
+    The payload is itself a full RESO container with its own 16-byte header.
+    Parse recursively.
+  </p>
+  <ul>
+    <li><code>global.lzs#34, #51</code> — sub-RESOs containing fonts / metadata</li>
+    <li><code>2d/scrollbar.ofs#0</code> — nested chrome assets</li>
+    <li>6 RESO containers in the corpus are "nested-sfo" (mostly chrome)</li>
+  </ul>
+
+  <h2><code>szl</code> — nested LZ11 sub-blob</h2>
+  <p>
+    Payload is an LZ11 stream with no LZS wrapper. Decompress with
+    <code>decompress_lz11()</code> (skip the wrapper-strip step). After
+    decompression the bytes are typically another RESO container.
+  </p>
+  <p>
+    Example: <code>title_pack.ofs</code> has 5 <code>szl</code> entries, each
+    decompressing to an ~80–90 KB inner RESO holding two 256×192 8bpp BG
+    screens (top + bottom of the title for one season-of-day variant).
   </p>
 
-  <p>
-    In the buyitem container, the <code>tad</code> entry holds 76
-    records of 28 bytes each (26 bytes of data plus a 2-byte
-    <code>0xFFFF</code> terminator). Those records hold the parts list
-    for the entire shop-buying UI.
-  </p>
+  <h2>Container shapes</h2>
+  <table>
+    <thead><tr><th>Pattern</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>Only empty TOC entries (placeholders)</td><td>1,477</td></tr>
+      <tr><td>Non-UI script / message / text</td><td>348</td></tr>
+      <tr><td>3D-only (tbsn / mbsn / cbsn)</td><td>186</td></tr>
+      <tr><td>NCER-bearing, no static recipe (code-driven)</td><td>123</td></tr>
+      <tr><td>LZS-wrapped atlases</td><td>123</td></tr>
+      <tr><td>NCER-bearing + recipe: 37 rnan-only, 8 tad, 5 nib</td><td>50</td></tr>
+      <tr><td>NCER-less (BG-only) containers</td><td>30</td></tr>
+      <tr><td>Nested-sfo containers</td><td>6</td></tr>
+    </tbody>
+  </table>
 
-  <p>
-    The bigger question — "where do these widgets actually get placed on
-    screen?" — isn't answered by the <code>tad</code> table alone. The
-    placement is in code, baked into one of the game's overlays. See
-    <a href={`${base}/field-guide/2d-art/composition-recipes/`}>composition
-    recipes</a> for the worked example.
-  </p>
-
-  <h2>The <code>nib</code> entries</h2>
-  <p>
-    Catch-all binary data. The layout depends on what the container is
-    for. In the cooking-recipe container (<code>ucc/names.ofs</code>),
-    the <code>nib</code> entry holds a 16-byte stride table of recipe
-    metadata. In other containers it could be anything.
-  </p>
-
-  <p>
-    When you see a <code>nib</code> entry, the next step is usually to
-    look at the container's purpose and the size of the entry and try
-    to spot a fixed-stride pattern. The records are almost always a
-    multiple of some small power of two.
-  </p>
-
-  <h2>The <code>sfo</code> nested container</h2>
-  <p>
-    A RESO container inside a RESO container. The inner layout doesn't
-    quite match the outer one — there's some additional framing that
-    we haven't fully worked out. The clearest example is
-    <code>global.lzs</code> entry 34, which is an <code>sfo</code> tag
-    holding a list of sub-files. The inner table parses partially with
-    the standard RESO reader but the entry layout has extra fields.
-  </p>
-
-  <p>
-    For most uses we treat <code>sfo</code> as "compressed sub-blob" —
-    extract the bytes, try to parse them as a RESO, and if that doesn't
-    work, fall back to treating it as an opaque blob.
-  </p>
-
-  <h2>The <code>szl</code> tag</h2>
-  <p>
-    Not really a Konami extension — it's a fifth tag that's neither
-    Nintendo SDK nor table data. It marks an LZ11-compressed sub-blob
-    that, when decompressed, becomes another RESO container. So:
-  </p>
-
-  <pre><code>{`outer RESO entry (tag = szl)
-  └─ LZ11 compressed bytes
-      └─ inner RESO container
-          └─ NCGR / NCLR / NCER ...`}</code></pre>
-
-  <p>
-    This is how the title screen pack stores its seasonal variants —
-    one outer <code>szl</code> per variant, each one decompressing to
-    a fresh inner RESO with the artwork.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/all_sections/01_full_survey.txt</code> — full type_tag histogram</li>
+    <li><code>notes/phaseA_ghidra/BUYITEM_RECIPE_CRACKED.md</code> — widget table decode</li>
+    <li><code>notes/phaseA_ghidra/DISCOVERIES.md</code> — Konami quirks index</li>
+  </ul>
 </FieldGuideLayout>

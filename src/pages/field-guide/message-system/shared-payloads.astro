@@ -4,107 +4,163 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="Shared payloads"
-  description="A space-saving trick: multiple dialog entries pointing at the exact same payload. 53 percent of message files do this, and it's the reason naïve translations blow up to 5× their original size."
+  title="Shared-payload TOC pattern"
+  description="Multiple TOC entries point to one payload to deduplicate identical lines. 703 of 1,328 message files use this; re-emit must preserve it."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Message System', href: `${base}/field-guide/message-system/` },
     { label: 'Shared payloads' },
   ]}
 >
+  <h2>The pattern</h2>
   <p>
-    A message dialog file is a RESO container with 100 slots. Each
-    slot has a length and an offset pointing at the actual dialog
-    payload. Most of the time, every populated slot has its own
-    unique payload.
+    A <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a> TOC entry is
+    a <code>(length, data_offset)</code> pair (variant=1, 8 bytes per entry).
+    The format allows two TOC entries to carry the same
+    <code>data_offset</code> and <code>length</code>, in which case they
+    share a single physical payload. The engine reads the payload identically
+    regardless of which TOC entry index requested it.
+  </p>
+  <p>
+    Empirical scan across <code>data/message/**/*.ofs</code>:
+  </p>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Files scanned</td><td>1,328</td></tr>
+      <tr><td>Files using payload sharing</td><td>703 (52.9%)</td></tr>
+      <tr><td>Distinct shared groups</td><td>2,890</td></tr>
+      <tr><td>Pre-canonicalisation row pairs</td><td>13,422 (6,696 already consistent + 6,726 needing alignment)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Example: msg51016.ofs</h2>
+  <p>
+    Original file: 3,472 bytes. RESO header variant=1, file_count=100.
+    Of the 100 TOC entries, only 27 distinct <code>data_offset</code> values.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Entry range</th>
+        <th>Original data_offset</th>
+        <th>Payload length</th>
+        <th>Shared by N entries</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>0..9</td><td><code>0x0330</code></td><td>158</td><td>10</td></tr>
+      <tr><td>10..19</td><td><code>0x03D0</code></td><td>22</td><td>10</td></tr>
+      <tr><td>20..29</td><td><code>0x03F0</code></td><td>468</td><td>10</td></tr>
+      <tr><td>30..39</td><td><code>0x05D0</code></td><td>34</td><td>10</td></tr>
+      <tr><td>40..49</td><td><code>0x0600</code></td><td>34</td><td>10</td></tr>
+      <tr><td>60..69</td><td><code>0x0630</code></td><td>472</td><td>10</td></tr>
+      <tr><td>73,83</td><td><code>0x08A0</code></td><td>60</td><td>2</td></tr>
+      <tr><td>75,85,95</td><td><code>0x08F0</code></td><td>16</td><td>3</td></tr>
+      <tr><td>76,86,92</td><td><code>0x0900</code></td><td>144</td><td>3</td></tr>
+      <tr><td>78,88</td><td><code>0x0A30</code></td><td>38</td><td>2</td></tr>
+      <tr><td>79,89,94</td><td><code>0x0A60</code></td><td>106</td><td>3</td></tr>
+      <tr><td>96..99</td><td><code>0x0D70</code></td><td>30</td><td>4</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Unique payload bytes: 2,526. Phantom bytes saved by sharing: 11,412
+    (3.5× the payload section if expanded out).
   </p>
 
+  <h2>Why this matters for re-emission</h2>
   <p>
-    But not always. <strong>53 percent of message files (703 of 1,328)
-    have at least one group of slots that share a single payload.</strong>
-    The slot offsets all point at the same bytes. The engine reads
-    the same dialog whether you index slot 0 or slot 9.
+    Without dedup, a fresh payload is written per TOC entry, so a
+    100-entry-but-27-payload original becomes a 90+ distinct-payload
+    rebuilt file. <code>msg51016.ofs</code> ballooned from
+    3,472 B → 19,728 B before the dedup fix. Across the corpus the unfixed
+    re-emit added ≈3.54 MB of pure layout waste.
   </p>
 
-  <h2>Why the game does this</h2>
+  <h2>Dedup logic in re-emit</h2>
   <p>
-    Imagine ten NPCs in a town who all say "Welcome!" when you walk
-    into their shop. The dialog is identical. Instead of writing ten
-    copies of "Welcome!" into the file, the game writes it once and
-    has ten table-of-contents entries all point at that one copy.
-    Same engine behavior, less disk space.
+    From <code>src/translator/reemit.py::rewrite_reso_container</code>
+    (variant-1 header, 8-byte entries):
   </p>
+  <pre><code>{`header_entry_size = 16 if h.variant == 0 else 8
+payload_start     = 0x10 + h.file_count * header_entry_size
 
+new_header        = bytearray()
+payload_section   = bytearray()
+payload_offsets   : dict[bytes, int] = {}   # payload-bytes -> offset
+
+for ei in range(h.file_count):
+    payload = new_payloads.get(ei, b"")
+    if len(payload) == 0:
+        new_header += struct.pack("<II", 0, 0)
+    elif payload in payload_offsets:                     # ← REUSE OFFSET
+        offset = payload_offsets[payload]
+        new_header += struct.pack("<II", len(payload), offset)
+    else:                                                # ← NEW PAYLOAD
+        offset = payload_start + len(payload_section)
+        payload_offsets[payload] = offset
+        payload_section += payload
+        pad = (16 - (len(payload) % 16)) % 16            # ← 16-B align
+        payload_section += b"\\x00" * pad
+        new_header += struct.pack("<II", len(payload), offset)
+    if header_entry_size == 16:                          # variant-0: copy type_tag + unk
+        new_header += raw[0x10 + ei*16 + 8 : 0x10 + ei*16 + 16]
+`}</code></pre>
+
+  <h2>Canonicalisation</h2>
   <p>
-    A real example, from <code>msg51016.ofs</code>: slots 0 through 9
-    all share a single 158-byte payload. Slots 10 through 19 share a
-    22-byte payload. Slots 20 through 29 share a 468-byte payload.
-    The file has 100 TOC slots but only 27 distinct payloads behind
-    them.
+    Dedup only helps when the per-entry EN payloads happen to be byte-identical.
+    Because each entry was translated independently, two entries that shared a
+    JP payload often produced different EN paraphrases. Canonicalisation walks
+    each original shared group and forces all members to the same EN string
+    before re-emit.
   </p>
-
-  <h2>What happens when you translate naïvely</h2>
   <p>
-    If your translation pipeline reads the file as 100 independent
-    entries, translates each one separately, and writes each one back
-    out as its own payload, you've just turned 27 unique payloads
-    into up to 100 distinct payloads. The file balloons.
-  </p>
-
-  <p>
-    For <code>msg51016.ofs</code>, the original Japanese file is
-    3,472 bytes. A naïve translated version is 19,728 bytes — almost
-    six times bigger. Multiply this across all the affected files and
-    you've added megabytes of dialog data for no semantic reason.
-  </p>
-
-  <p>
-    There's also a subtle quality problem. If your translator
-    paraphrases each "Welcome!" differently, the same NPC might say
-    "Welcome!" the first time you visit, "Hi there!" the second
-    time, and "Hey!" the third. The original Japanese had them all
-    saying the same thing on purpose.
-  </p>
-
-  <h2>The fix</h2>
-  <p>
-    There are two things to do, and together they recover most of
-    the lost space:
+    Selection rule per group (from <code>shared_payload_canonicalization.md</code>):
   </p>
   <ol>
-    <li><strong>Deduplicate byte-identical payloads.</strong> If two
-      translated entries produce the same bytes by accident, write
-      the bytes once and have both TOC slots point at it. This
-      doesn't change any dialog at all — it's purely a structural
-      win. About 7-8 percent recovery.</li>
-    <li><strong>Canonicalize within original-shared groups.</strong>
-      For each group of slots that shared a payload in the original
-      file, pick one translation and use it for every slot in the
-      group. This restores the original sharing pattern, matches the
-      game's intent, and recovers about another 35 percent on top of
-      the byte-dedup.</li>
+    <li>If any row in the group is marked <code>manual</code>, that row wins.</li>
+    <li>Else: longest <code>en_text</code> wins (most likely to fit budget).</li>
+    <li>Tie-break: lowest <code>entry_id</code>.</li>
   </ol>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Rows changed by canonicalisation</td><td>6,726</td></tr>
+      <tr><td>Manual rows preserved</td><td>3</td></tr>
+      <tr><td>Structural mismatches</td><td>0</td></tr>
+      <tr><td>Bytes recovered from re-emit</td><td>~1.52 MB (43% of bloat)</td></tr>
+    </tbody>
+  </table>
 
+  <h2>Top growers (before dedup + canonicalisation)</h2>
+  <table>
+    <thead>
+      <tr><th>File</th><th>Original</th><th>Patched (naive)</th><th>Dedup savings</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>msg51016</code></td><td>3,472</td><td>19,728</td><td>11,412</td></tr>
+      <tr><td><code>msg42016</code></td><td>3,184</td><td>19,312</td><td>10,510</td></tr>
+      <tr><td><code>msg49043</code></td><td>11,040</td><td>27,168</td><td>9,952</td></tr>
+      <tr><td><code>msg48043</code></td><td>12,368</td><td>28,464</td><td>10,836</td></tr>
+      <tr><td><code>msg50043</code></td><td>11,184</td><td>26,912</td><td>10,330</td></tr>
+      <tr><td><code>msg43043</code></td><td>13,008</td><td>28,656</td><td>8,144</td></tr>
+      <tr><td><code>msg41016</code></td><td>3,136</td><td>18,512</td><td>8,988</td></tr>
+      <tr><td><code>msg40016</code></td><td>3,200</td><td>18,384</td><td>8,878</td></tr>
+      <tr><td><code>msg47016</code></td><td>3,200</td><td>18,368</td><td>9,596</td></tr>
+      <tr><td><code>msg48016</code></td><td>3,344</td><td>18,192</td><td>9,132</td></tr>
+    </tbody>
+  </table>
   <p>
-    Both together recover roughly 1.5 MB of the 3.5 MB of size growth
-    that an unaware translation produces. The translated patch is
-    still bigger than the original (English text takes more bytes
-    than Japanese text in UTF-16), but the multiplier is back down to
-    about 1.3×, not 5×.
+    All ten files are <code>msg{`<N>`}016.ofs</code> or <code>msg{`<N>`}043.ofs</code>
+    in the per-chapter career directories. The shared-group pattern is the
+    engine's "pick one variant by <code>(npc_id mod N)</code>" table.
   </p>
 
-  <h2>How to find the groups</h2>
-  <p>
-    Walking the original file's TOC. Group the entries by
-    <code>(length, data_offset)</code> — every group with more than
-    one entry is a shared-payload group. From there it's a matter of
-    picking a winner translation and applying it to every slot in
-    the group.
-  </p>
-
-  <p>
-    We applied this canonicalization across all 1,328 files. It
-    affected 2,890 groups and changed 6,726 dialog rows in the
-    database, with zero rebuild-time structural mismatches.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>src/translator/reemit.py</code> — dedup + emit logic</li>
+    <li><code>notes/msg51016_investigation.md</code> — root-cause + numbers</li>
+    <li><code>notes/shared_payload_canonicalization.md</code> — canon pass stats</li>
+  </ul>
 </FieldGuideLayout>

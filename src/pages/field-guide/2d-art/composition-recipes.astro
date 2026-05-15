@@ -4,118 +4,156 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="Composition recipes"
-  description="A lot of UI screens aren't single images — they're assemblies of sprite chips placed at specific positions. The placement instructions live in the game's code overlays."
+  title="Composition pipelines"
+  description="Three strategies the engine uses to turn Nitro resources into screen pixels: NSCR BG, NCER OBJ, tad-driven widget table."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: '2D Art', href: `${base}/field-guide/2d-art/` },
-    { label: 'Composition recipes' },
+    { label: 'Composition' },
   ]}
 >
+  <h2>Strategy A: NSCR-driven BG screen</h2>
   <p>
-    When you look at the shop's "buy item" screen, you might think it's a
-    full-screen background image. It isn't. It's six or seven sprite chips
-    layered over a tiled background, with each chip placed at a coordinate
-    decided by the game.
+    Inputs: <strong>NCGR</strong> tilebank (8×8 tiles) +
+    <strong>NCLR</strong> palette + <strong>NSCR</strong> screen map.
+    Output: 256×192 BG image (32×24 cells).
+  </p>
+  <pre><code>{`     ┌──────────┐
+NCLR │ palette  │──────┐
+     └──────────┘      │
+     ┌──────────┐      ▼
+NCGR │ tilebank │──┐  ┌────────────────────┐
+     └──────────┘  └─►│ compose_nscr_screen│──► 256×192 RGBA
+     ┌──────────┐  ┌─►│  for each cell:    │
+NSCR │ screen   │──┘  │   tile_idx (10b)   │
+     │ (32×24)  │     │   palette_bank(4b) │
+     └──────────┘     │   hflip / vflip    │
+                      └────────────────────┘`}</code></pre>
+  <pre><code>{`# src/translator/_sprite_decode.py::compose_nscr_screen
+for cell_y in range(24):
+    for cell_x in range(32):
+        word = nscr.cells[cell_y * 32 + cell_x]
+        tile = word & 0x3FF
+        hflip = (word >> 10) & 1
+        vflip = (word >> 11) & 1
+        bank  = (word >> 12) & 0xF
+        tile_pixels = ncgr.tile(tile)              # 8×8 indices
+        if hflip: tile_pixels = flip_x(tile_pixels)
+        if vflip: tile_pixels = flip_y(tile_pixels)
+        for py in range(8):
+            for px in range(8):
+                idx = tile_pixels[py][px]
+                color = nclr.bank(bank)[idx]
+                out[cell_y*8 + py][cell_x*8 + px] = color
+`}</code></pre>
+  <p>
+    Used by 1,099 NSCR-bearing containers. Examples:
+    <code>buyitem.lzs</code> shop chrome, <code>title_pack.ofs</code> castle
+    art, every map-screen overlay.
   </p>
 
+  <h2>Strategy B: NCER-driven OBJ sprite</h2>
   <p>
-    The placement isn't decided dynamically. For most static screens, it's
-    a baked-in table in one of the game's code overlays. Once you find the
-    table, you have the recipe for rendering the screen exactly as the
-    game does.
+    Inputs: <strong>NCGR</strong> tilebank +
+    <strong>NCLR</strong> palette + <strong>NCER</strong> cell definition.
+    Output: one or more sprite cells, each composed of multiple OAM "chips."
   </p>
-
-  <h2>Worked example: the buyitem screen</h2>
+  <pre><code>{`     ┌──────────┐
+NCLR │ palette  │──────────┐
+     └──────────┘          │
+     ┌──────────┐          ▼
+NCGR │ tilebank │──┐ ┌─────────────────────┐
+     └──────────┘  └►│ compose_ncer_cell   │──► per-cell PNG
+                    │   for each OBJ:     │
+     ┌──────────┐   │     (x,y,w,h,tile,  │
+NCER │ cells +  │──►│      palette,flip)  │
+     │ OAM list │   │     blit into canvas│
+     └──────────┘   └─────────────────────┘`}</code></pre>
   <p>
-    The shop's buy-item screen has been traced end-to-end. Here's the path
-    the game takes when you walk up to a shop counter:
+    Each cell holds <code>obj_count</code> OAM entries; per OBJ the
+    <code>(shape, size)</code> pair selects pixel dimensions via the
+    standard NDS lookup:
   </p>
-
-  <ol>
-    <li>The state machine decides to show the buy-item screen.</li>
-    <li>The "controller" code overlay <strong>ov003</strong> loads.</li>
-    <li>ov003 calls the file loader to bring
-      <code>2d/buyitem.lzs</code> and <code>2d/itemorderwnd.lzs</code>
-      into the content cache.</li>
-    <li>ov003 loads the "body" code overlay <strong>ov070</strong>,
-      which is the actual renderer.</li>
-    <li>ov070's init function reads its 10-row composition table and
-      places sprites accordingly.</li>
-  </ol>
-
-  <p>
-    Each row in the table is 12 bytes — six 16-bit fields:
-  </p>
-
   <table>
     <thead>
-      <tr><th>Field</th><th>What it does</th></tr>
+      <tr><th>size →</th><th>0</th><th>1</th><th>2</th><th>3</th></tr>
     </thead>
     <tbody>
-      <tr><td>cell ID</td><td>Which sprite chip to draw.</td></tr>
-      <tr><td>palette / style</td><td>Which palette bank to use.</td></tr>
-      <tr><td>sub-index</td><td>Secondary index for compound widgets.</td></tr>
-      <tr><td>flags</td><td>Render mode flags.</td></tr>
-      <tr><td>screen X</td><td>X coordinate on the 256-pixel-wide screen.</td></tr>
-      <tr><td>screen Y</td><td>Y coordinate on the 192-pixel-tall screen.</td></tr>
+      <tr><td><strong>shape 00 (square)</strong></td><td>8×8</td><td>16×16</td><td>32×32</td><td>64×64</td></tr>
+      <tr><td><strong>shape 01 (wide)</strong></td><td>16×8</td><td>32×8</td><td>32×16</td><td>64×32</td></tr>
+      <tr><td><strong>shape 10 (tall)</strong></td><td>8×16</td><td>8×32</td><td>16×32</td><td>32×64</td></tr>
     </tbody>
   </table>
+  <p>Used by 926 NCER-bearing containers.</p>
 
-  <p>The actual table for the buyitem screen:</p>
-
-  <table>
-    <thead>
-      <tr><th>Slot</th><th>Cell</th><th>Pal</th><th>Sub</th><th>Flags</th><th>X</th><th>Y</th><th>Role</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>0</td><td>6</td><td>9</td><td>21</td><td>0</td><td>10</td><td>92</td><td>Left-side icon</td></tr>
-      <tr><td>1</td><td>6</td><td>9</td><td>21</td><td>0</td><td>220</td><td>92</td><td>Right-side icon</td></tr>
-      <tr><td>2</td><td>7</td><td>9</td><td>22</td><td>0</td><td>128</td><td>107</td><td>Center icon</td></tr>
-      <tr><td>3</td><td>3</td><td>9</td><td>18</td><td>0</td><td>125</td><td>100</td><td>Center near-button</td></tr>
-      <tr><td>4</td><td>4</td><td>12</td><td>19</td><td>24</td><td>128</td><td>96</td><td>Main center</td></tr>
-      <tr><td>5</td><td>5</td><td>13</td><td>20</td><td>25</td><td>128</td><td>96</td><td>Main center alt</td></tr>
-      <tr><td>6</td><td>0</td><td>10</td><td>15</td><td>0</td><td>128</td><td>96</td><td>BG center</td></tr>
-      <tr><td>7</td><td>8</td><td>14</td><td>23</td><td>27</td><td>128</td><td>96</td><td>Effect center</td></tr>
-      <tr><td>8</td><td>1</td><td>10</td><td>16</td><td>0</td><td>128</td><td>96</td><td>UI alt 1</td></tr>
-      <tr><td>9</td><td>2</td><td>11</td><td>17</td><td>0</td><td>128</td><td>96</td><td>UI alt 2</td></tr>
-    </tbody>
-  </table>
-
+  <h2>Strategy C: <code>tad</code> widget table</h2>
   <p>
-    The 11th row is all zeros — the terminator. Most screens have around
-    this many entries.
+    Inputs: <strong>NCER</strong> cell (selected by <code>cell_id</code>) +
+    <strong>NCLR</strong> + the <code>tad</code>/widget-table record
+    <code>(palette, sub, flags, x, y)</code>.
+    Output: composed UI screen at the abs_x/abs_y of each record.
   </p>
-
-  <h2>The general pattern</h2>
   <p>
-    Most 2D UI screens follow the same shape:
+    The table can sit in two places:
   </p>
   <ul>
-    <li>A "controller" overlay handles the state machine for the screen
-      (what does the player see, what input is valid, when do we leave).</li>
-    <li>A "body" overlay is loaded into a shared slot when the screen is
-      active. The body's init function walks the placement table.</li>
-    <li>The body's table is always 12 bytes per row, terminated by a
-      zero row.</li>
+    <li>A <code>tad</code> RESO entry inside the asset container (e.g.
+      <code>buyitem.lzs</code>'s <code>tad</code> entry).</li>
+    <li>Inside an overlay's <code>.rodata</code> (e.g. ov070's table at
+      <code>0x0215A538</code> for the buyitem screen).</li>
+  </ul>
+  <p>
+    Either way the engine walks the table, calls a sprite-constructor for
+    each entry, and the constructor resolves the asset bytes from the
+    content cache. See
+    <a href={`${base}/field-guide/how-the-game-works/sprite-pipeline/`}>sprite pipeline</a>
+    for the runtime side.
+  </p>
+  <p>
+    50 containers ship with a static recipe: 37 with a <code>rnan</code>-only
+    table, 8 with <code>tad</code>, 5 with <code>nib</code>.
+  </p>
+
+  <h2>Strategy D: code-driven (no static recipe)</h2>
+  <p>
+    123 NCER-bearing containers ship without any static placement table.
+    The composition logic is hard-coded in the controller/body overlay
+    pair. Examples:
+  </p>
+  <ul>
+    <li><code>FUN_02174604</code>: <code>place(slot, x=20, y=0, w=216, h=64, type=2)</code></li>
+    <li><code>FUN_02174760</code>: <code>place(slot, x=13, y=40, w=230, h=112, type=2)</code></li>
+    <li><code>FUN_021747A8</code>: <code>place(slot, x=13, y=60, w=230, h=94, type=2)</code></li>
+    <li><code>FUN_02177FE4</code>: two placements at <code>(8,64)</code> and <code>(8,120)</code>, w=240 h=28</li>
+    <li><code>FUN_0217B9D8</code>: <code>place(slot, x=13, y=60, w=230, h=94, type=2)</code></li>
+    <li><code>FUN_02181D24</code>: looks up <code>(x, y)</code> from a 6-entry table at <code>0x0218CBE6</code></li>
+    <li><code>FUN_02174B80</code>: triple-nested loop, 144 sprites in a 3×4×12 grid (buyitem catalog)</li>
   </ul>
 
+  <h2>Runtime shadow-OAM</h2>
   <p>
-    We catalogued 35+ containers with their composed-screen renders. For
-    most of them we know which controller overlay loads them, but the
-    body overlay (and therefore the placement table) isn't yet known
-    for every screen. The chest, dustbox, fukidashi, signboard, and
-    several others are still in this state.
+    The engine never writes OAM RAM (<code>0x07000000</code> / <code>0x07000400</code>)
+    directly during scene composition. It builds a <strong>shadow OAM</strong>
+    in main RAM via <code>STR</code>/<code>STRH</code> at sprite-slot addresses
+    computed from <code>*0x021907BC + i*0x40 + field_offset</code> chains.
+    At VBlank, <code>FUN_02185BF8</code> (ov137) and <code>FUN_0207001C</code>
+    (arm9) DMA the shadow buffer into hardware OAM.
   </p>
+  <p>OAM/VRAM transfer wrappers (all four resolve to <code>FUN_02017D9C</code> = DMA0):</p>
+  <table>
+    <thead><tr><th>Address</th><th>Role</th><th>Destination</th></tr></thead>
+    <tbody>
+      <tr><td><code>0x020769C0</code></td><td>OAM main</td><td><code>0x07000000 + dst_off</code></td></tr>
+      <tr><td><code>0x02076A00</code></td><td>OAM sub</td><td><code>0x07000400 + dst_off</code></td></tr>
+      <tr><td><code>0x02076A40</code></td><td>OBJ VRAM main</td><td><code>0x06400000 + dst_off</code></td></tr>
+      <tr><td><code>0x02076A7C</code></td><td>OBJ VRAM sub</td><td><code>0x06600000 + dst_off</code></td></tr>
+    </tbody>
+  </table>
 
-  <h2>Why some screens can't be captured this way</h2>
-  <p>
-    Screens that resize, scroll, or animate based on player input don't
-    have a static recipe — the placement is decided by code at runtime.
-    The chat window, the fashion-design preview, and the mailorder catalog
-    are all in this category. We have all the individual sprite chips
-    extracted, but to capture those screens exactly as they appear in the
-    game, we'd need to record the game in an emulator and grab the OAM
-    state at the right frame.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>src/translator/_sprite_decode.py</code> — <code>compose_nscr_screen</code>, <code>compose_ncer_cell</code>, <code>OBJ_SIZE_LUT</code></li>
+    <li><code>notes/phaseA_ghidra/DISCOVERIES.md</code> — verified placement recipes</li>
+    <li><code>notes/phaseA_ghidra/BUYITEM_RECIPE_CRACKED.md</code> — Strategy C worked example</li>
+  </ul>
 </FieldGuideLayout>

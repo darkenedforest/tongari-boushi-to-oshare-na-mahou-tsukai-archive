@@ -4,95 +4,97 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="The content cache"
-  description="Every screen loads its art by calling the same function. That function is the heart of the asset pipeline."
+  title="Content cache"
+  description="Runtime asset loader. Master table at 0x020AA740, 712 references. Path strings live in a 28 KB region at 0x020A1000."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
     { label: 'Content cache' },
   ]}
 >
-  <p>
-    When a screen wants its sprites, it doesn't open files directly. It
-    calls a single shared function — the <strong>content cache loader</strong>
-    — with a path string and a sub-index. The loader either gives back
-    a pointer to the already-loaded asset, or reads the file off the
-    cart, parses the container, and caches it for future calls.
-  </p>
+  <h2>Master cache table</h2>
+  <table>
+    <thead><tr><th>Symbol</th><th>RAM</th><th>Refs in arm9</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td>master cache table</td><td><code>0x020AA740</code></td><td>712</td><td>Indexed pointer-to-asset table; each slot identifies one loaded resource.</td></tr>
+      <tr><td>path string region</td><td><code>0x020A1000..0x020A8000</code></td><td>—</td><td>~28 KB of static path strings (131 unique paths). Each path is a NUL-terminated ASCII string like <code>"item/itemicon.ofs"</code>.</td></tr>
+      <tr><td>game state struct (pointer)</td><td><code>0x021A55C0</code></td><td>750</td><td>Pointer to runtime game state; most engine functions take this in R0.</td></tr>
+    </tbody>
+  </table>
 
+  <h2>Generic loader</h2>
   <p>
-    The pattern looks something like this, paraphrasing the
-    decompiled code:
+    All asset load requests funnel through the generic loader
+    <code>FUN_02009894</code>:
   </p>
-
-  <pre><code>{`asset_ptr = load_asset(
-    master_table,        // pointer to cache table
-    "2d/buyitem.lzs",    // path string
-    sub_index,           // which entry inside the container
-    size_hint,
-    flags,
-    type_code,
-    ...
+  <pre><code>{`FUN_02009894(
+    void *table,        // r0 — usually 0x020AA740
+    const char *path,   // r1 — pointer into 0x020A1000..0x020A8000
+    u16 sub_index,      // r2 — TOC entry index inside the container
+    u32 size,           // r3 — expected payload size (or 0 = use TOC length)
+    u32 flag1,          // stack
+    u32 type_code,      // stack — e.g. 0x7800 for item icons
+    u32 flag2,          // stack
+    u32 flag3           // stack
 );`}</code></pre>
-
   <p>
-    Inside, the loader walks two helpers: a "find" function that checks
-    if the asset is already in cache, and a "load" function that reads
-    it from disk if not. The cache itself is a table indexed by path
-    string plus sub-index.
+    The loader reads the file at <code>path</code> from the NDS filesystem,
+    decompresses it if LZS-wrapped, walks its RESO TOC to find
+    <code>sub_index</code>, and writes a pointer/handle into the master
+    cache table at the slot the caller has prepared.
   </p>
 
-  <h2>The master table</h2>
+  <h2>Documented loader call sites</h2>
+  <table>
+    <thead>
+      <tr><th>Caller</th><th>Path</th><th>Asset class</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ov003</td><td><code>2d/buyitem.lzs</code></td><td>Shop chrome</td></tr>
+      <tr><td>ov003</td><td><code>2d/itemorderwnd.lzs</code></td><td>Shop order window</td></tr>
+      <tr><td>arm9 <code>0x02052D20</code></td><td><code>item/itemicon.ofs</code></td><td>Item icon (per item-icon index)</td></tr>
+      <tr><td>arm9 <code>0x02052D20</code></td><td><code>global.lzs</code> entry 5</td><td>Item icon palette (256-color)</td></tr>
+      <tr><td>arm9 (boot)</td><td><code>global.lzs</code> entry 0</td><td>Font (NFTR)</td></tr>
+      <tr><td>ov137</td><td><code>2d/inputmagic/mgcall.ofs</code></td><td>Magic glyph atlas</td></tr>
+      <tr><td>ov137</td><td><code>2d/inputmagic/mgc80.ofs</code></td><td>Magic glyph palette</td></tr>
+      <tr><td>various</td><td><code>data/npc/NpcDataOfs.ofs</code></td><td>NPC personality / portrait data</td></tr>
+      <tr><td>various</td><td><code>data/item/itemname.ofs</code></td><td>Item name strings</td></tr>
+      <tr><td>map overlays</td><td><code>map/static.lzs</code></td><td>3D map textures</td></tr>
+      <tr><td>map overlays</td><td><code>map/weather/*.ofs</code></td><td>Weather 3D models</td></tr>
+      <tr><td>title screen</td><td><code>2d/mainmenu/title_pack.ofs</code></td><td>Title-screen background variants (5 seasons)</td></tr>
+      <tr><td>title screen</td><td><code>title/titledata.lzs</code></td><td>Title splash sprites</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cache table entry layout (inferred)</h2>
+  <p>Each slot in the master table is a struct accessed by:</p>
+  <pre><code>{`struct CacheEntry {
+    u32   flags;
+    void *data_ptr;            // points into a heap-allocated decompressed RESO blob
+    u32   size;
+    u32   path_hash_or_id;
+    ...
+};`}</code></pre>
   <p>
-    The master cache table lives at a fixed memory address in the ARM9
-    binary (<code>0x020AA740</code>). Over 700 functions across the
-    ARM9 and overlays reference this address, which is why we know
-    it's the central one. Sub-tables hang off it for different kinds
-    of assets — sprite cells, palettes, tile sheets.
+    Exact layout has not been fully decoded; the loader and consumers
+    agree on offsets via <code>LDR/STR</code> with specific
+    <code>[rN, #imm]</code> offsets (e.g. <code>[r5, #0x84]</code> for the
+    item-icon sub-index).
   </p>
 
-  <h2>Why this exists</h2>
-  <p>
-    Assets in this game are surprisingly chunky. A typical shop screen
-    pulls in a tile sheet plus a palette plus a tilemap plus a sprite
-    definition — easily 30 KB once decompressed. If every screen
-    re-loaded that data from cart on every entry, transitions would be
-    slow. Caching the parsed result means the second time you enter a
-    shop is essentially free.
-  </p>
+  <h2>Generic asset loader at <code>0x02052D20</code></h2>
+  <p>Disassembly (THUMB, item-icon site):</p>
+  <pre><code>{`02052D4C  LDR  R0, [PC, #0x30]      ; r0 = 0x020AA740   (master table)
+02052D4E  LDR  R1, [PC, #0x34]      ; r1 = 0x020A55D8   ("item/itemicon.ofs")
+02052D50  LSLS R3, R3, #0xA          ; r3 = 0x7800       (flags / type_code)
+02052D52  BLX  0x02009894            ; call generic file-loader
+                                     ; r2 = u16 sub-index from caller's [r5+0x84]
+`}</code></pre>
 
-  <p>
-    The cache also normalizes access. Whether a file is compressed
-    (<code>.lzs</code>) or not (<code>.ofs</code>), whether it's
-    nested or flat, doesn't matter to the calling code. It hands off a
-    path and gets back a pointer to ready-to-use data.
-  </p>
-
-  <h2>Path strings as keys</h2>
-  <p>
-    The path strings themselves live in a few places. Most are in a
-    big string pool inside the ARM9 binary — over 130 known paths in
-    a single pool. Others are tucked into overlay data sections, so
-    that a controller overlay can have its specific file paths handy
-    when it loads.
-  </p>
-
-  <p>
-    When we want to know which overlay loads which file, we search for
-    the path string. The result is a map: 50+ container files paired
-    with the overlay that requests them. That map is one of the
-    handier outputs of the reverse-engineering work — it tells us, for
-    instance, that <code>2d/chest.lzs</code> is loaded by overlay
-    ov013.
-  </p>
-
-  <h2>Pre-wrapped loaders</h2>
-  <p>
-    For some categories of asset, the ARM9 has a thin wrapper that
-    bakes in the file path. The item-icon loader is one — it
-    takes a single sub-index argument and internally calls the generic
-    cache loader with <code>item/itemicon.ofs</code>. About 16 of
-    these category-specific wrappers exist, one for each major asset
-    family (item icons, magic glyphs, NPC portraits, etc.).
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/phaseA_ghidra/DISCOVERIES.md</code> — cache + loader analysis</li>
+    <li><code>arm9_full_plaintext.bin</code> @ <code>0x02009894</code> — generic loader</li>
+    <li><code>arm9_full_plaintext.bin</code> @ <code>0x02052D20</code> — item-icon loader thunk</li>
+  </ul>
 </FieldGuideLayout>

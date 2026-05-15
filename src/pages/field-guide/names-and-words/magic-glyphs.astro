@@ -1,140 +1,89 @@
 ---
 import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+import data from '../../../data/magic_glyphs.json';
 const base = import.meta.env.BASE_URL;
+
+type Glyph = { idx:number; jp:string; en:string; src:string };
+const rows = data as Glyph[];
+const counts = rows.reduce((acc:Record<string,number>, r) => {
+  acc[r.src] = (acc[r.src] || 0) + 1;
+  return acc;
+}, {});
+const SRC_LABEL: Record<string,string> = {
+  canon: 'Konami Game 1 canon',
+  npc: 'NPC name DB',
+  placeholder: 'NPC DB placeholder',
+  universal: 'Dictionary',
+  fresh: 'Fresh translation',
+};
 ---
 
 <FieldGuideLayout
-  title="The magic glyph keyboard"
-  description="The 377-icon vocabulary the player uses to cast spells, plus how we matched each glyph to its English meaning."
+  title="Magic glyph dictionary"
+  description={`The 377 populated slots in 2d/inputmagic/msg.ofs (RESO variant=1, 1000 slots). Each glyph is one word the player can place in a spell.`}
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
     { label: 'Magic glyphs' },
   ]}
 >
+  <h2>Slot table format</h2>
   <p>
-    Magic in this game isn't cast by selecting from a menu. The player
-    composes a spell by picking icons from a keyboard of cute pictograms
-    — each picture is a word in the game's "magic language."
+    <code>data/2d/inputmagic/msg.ofs</code> is a <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a>
+    container, variant=1, file_count=1000. Slots are addressable as
+    <code>slot_index ∈ [0, 999]</code>; 377 are populated. Each populated
+    payload is a UTF-16-LE Japanese word terminated by <code>0x0000</code>.
+    No CMD opcodes; no header.
   </p>
 
-  <p>
-    The keyboard holds <strong>377 populated glyphs</strong> out of 1000
-    slots. The slot table is in <code>2d/inputmagic/msg.ofs</code>; the
-    visual icons are in the surrounding files
-    (<code>mgcall.ofs</code> and the <code>mgc01..09c.lzs</code> family),
-    all sharing a palette in <code>mgc80.ofs</code> — see
-    <a href={`${base}/field-guide/2d-art/palettes/`}>finding the right
-    palette</a>.
-  </p>
+  <h2>Asset references</h2>
+  <table>
+    <thead><tr><th>Resource</th><th>File</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Slot text (JP)</td><td><code>2d/inputmagic/msg.ofs</code></td><td>RESO variant=1, 1000 slots, 377 populated</td></tr>
+      <tr><td>Atlas icons (4bpp NCGRs)</td><td><code>2d/inputmagic/mgcall.ofs</code></td><td>389 NCGRs</td></tr>
+      <tr><td>Individual icons</td><td><code>2d/inputmagic/mgc01..09c.lzs</code></td><td>434 NCGRs</td></tr>
+      <tr><td>Palette (16-color)</td><td><code>2d/inputmagic/mgc80.ofs</code> entry 0</td><td>Shared by all glyph NCGRs. Entry 2 = alt scheme.</td></tr>
+      <tr><td>Keyboard composition</td><td><code>2d/inputmagic/input.lzs</code> NCER ents 17/18/19</td><td>NCER cells</td></tr>
+    </tbody>
+  </table>
 
-  <h2>What the glyphs are</h2>
+  <h2>Cross-game canon coverage</h2>
   <p>
-    Each glyph is one word, in three rough categories:
+    EN names sourced by walking, in order: Konami Game 1 (Magician's Quest)
+    parallel-indexed corpus → NPC name DB → dictionary translations → fresh
+    decision. Sources are listed in the <code>source</code> column below.
   </p>
+  <table>
+    <thead><tr><th>Source</th><th>Count</th></tr></thead>
+    <tbody>
+      {Object.entries(counts).sort((a:any,b:any)=>b[1]-a[1]).map(([k,v]) => (
+        <tr><td>{SRC_LABEL[k] || k}</td><td>{v}</td></tr>
+      ))}
+      <tr><td><strong>Total populated</strong></td><td><strong>{rows.length}</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Full slot table</h2>
+  <p>Sorted by <code>slot_index</code>.</p>
+  <table>
+    <thead><tr><th>idx</th><th>JP</th><th>EN</th><th>source</th></tr></thead>
+    <tbody>
+      {rows.map(r => (
+        <tr>
+          <td><code>{r.idx}</code></td>
+          <td><code>{r.jp}</code></td>
+          <td><strong>{r.en}</strong></td>
+          <td>{SRC_LABEL[r.src] || r.src}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Source</h2>
   <ul>
-    <li><strong>Common nouns and adjectives</strong> — "magic," "yes,"
-      "love," "morning," "river," "flower," "Tower," "Beach."</li>
-    <li><strong>Character names</strong> — every NPC has a glyph.
-      Vivian, Mr. Vlad, Mr. Oakley, Miss Strawe, Mr. Graves, and so on.</li>
-    <li><strong>Numbers and symbols</strong> — 0 through 9, exclamation
-      and question marks.</li>
+    <li><code>notes/magic_glyph_ref.md</code> — full reference table</li>
+    <li><code>extracted/scratch/db/translation.sqlite</code> — <code>magic_glyphs</code> table</li>
+    <li>Game 1: <code>picstat/magic/msg_e.dat</code> — Konami EN corpus</li>
   </ul>
-
-  <p>
-    Spells are formed by chaining glyphs together. "Greet" + "morning"
-    + "[NPC name]" is a greeting spell. The game parses these compositions
-    and triggers different effects depending on the combination.
-  </p>
-
-  <h2>How we got the English names</h2>
-  <p>
-    Tongari Boushi never released in English, but the magic-glyph idea
-    came from the same studio's earlier game,
-    <em>Magician's Quest: Mysterious Times</em> (called <em>Enchanted
-    Folk and the School of Wizardry</em> in Europe), which <em>did</em>
-    release in English. Both games share a "magic word" vocabulary, and
-    Game 1's English localization gives us official English equivalents
-    for 280 of the 377 glyphs in Tongari.
-  </p>
-
-  <table>
-    <thead>
-      <tr><th>Source</th><th>Count</th><th>Notes</th></tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>Konami official canon</td>
-        <td>280</td>
-        <td>Direct from Magician's Quest 1 English release.</td>
-      </tr>
-      <tr>
-        <td>NPC database (hand-curated)</td>
-        <td>51</td>
-        <td>Character names we'd already locked down for this project.</td>
-      </tr>
-      <tr>
-        <td>NPC placeholder</td>
-        <td>2</td>
-        <td>Names where the database entry exists but isn't yet
-          translated.</td>
-      </tr>
-      <tr>
-        <td>Universal / dictionary</td>
-        <td>16</td>
-        <td>Obvious dictionary words ("ice," "school," "town").</td>
-      </tr>
-      <tr>
-        <td>Fresh translations</td>
-        <td>28</td>
-        <td>Game-3-only content with no Game 1 parallel; we picked
-          translations from context.</td>
-      </tr>
-    </tbody>
-  </table>
-
-  <p>
-    Total: 377 glyphs, 377 translations. Coverage is 100 percent —
-    every populated slot has an English form.
-  </p>
-
-  <h2>Sample glyphs</h2>
-  <p>A small slice of what the keyboard looks like:</p>
-
-  <table>
-    <thead>
-      <tr><th>Index</th><th>Japanese</th><th>English</th></tr>
-    </thead>
-    <tbody>
-      <tr><td>1</td><td>あいさつ</td><td>greeting</td></tr>
-      <tr><td>2</td><td>まほう</td><td>magic</td></tr>
-      <tr><td>4</td><td>はい</td><td>yes</td></tr>
-      <tr><td>5</td><td>ちがう</td><td>no</td></tr>
-      <tr><td>13</td><td>ラブ</td><td>love</td></tr>
-      <tr><td>15</td><td>おおきい</td><td>big</td></tr>
-      <tr><td>17</td><td>はやい</td><td>fast</td></tr>
-      <tr><td>34</td><td>ともだち</td><td>friend</td></tr>
-      <tr><td>41</td><td>こうちょう</td><td>Principal Sol</td></tr>
-      <tr><td>42</td><td>リカルド</td><td>Mr. Vlad</td></tr>
-      <tr><td>44</td><td>ミスキーキー</td><td>Miss Strawe</td></tr>
-    </tbody>
-  </table>
-
-  <h2>Why glyph consistency matters in dialog</h2>
-  <p>
-    When an NPC's dialog mentions a glyph word — like a hint that says
-    "try using the <em>morning</em> magic word" — the original
-    Japanese uses a colored highlight around the glyph's name. Our
-    translation needs to match that highlighted word to the glyph
-    exactly, or the player won't know which icon to look for.
-  </p>
-
-  <p>
-    To catch mismatches we run a dialog audit that scans every
-    color-highlighted span in the dialog database and checks whether
-    the English text matches the glyph's canonical English. About
-    2,500 entries match cleanly; 700 had inconsistencies that we
-    then fixed by canonicalizing the dialog to the glyph's official
-    name.
-  </p>
 </FieldGuideLayout>

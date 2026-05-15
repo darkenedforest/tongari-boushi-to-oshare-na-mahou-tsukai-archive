@@ -4,8 +4,8 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="The dialog wire format"
-  description="How a dialog entry is laid out in bytes. Walking a real example from the first message file in the game."
+  title="MSG wire format"
+  description="Byte-level layout of one dialog payload: RESO TOC entry → leading CMDs → UTF-16 body → trailing CMDs → terminator."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Message System', href: `${base}/field-guide/message-system/` },
@@ -13,122 +13,179 @@ const base = import.meta.env.BASE_URL;
   ]}
 >
   <p>
-    Each dialog entry is a stream of 16-bit words. Some words are text
-    (UTF-16 characters), some are control opcodes. The parser walks
-    one word at a time and uses a clever bit trick to decide which is
-    which.
+    A message file is a <a href={`${base}/field-guide/file-formats/reso/`}>RESO container</a>
+    whose payloads are dialog streams. Each stream is a sequence of
+    little-endian 16-bit words. Bit 15 of every word distinguishes <em>control
+    tokens</em> (bit 15 clear) from <em>data words</em> (bit 15 set: opcodes,
+    arguments, and the UTF-16-LE characters of Japanese text — all of which sit
+    above <code>U+8000</code> or are encoded as data above that line).
   </p>
 
-  <h2>The high-bit trick</h2>
-  <p>
-    Every word is either a control token or "data." Control tokens
-    have bit 15 clear (top bit is zero). Data words have bit 15 set
-    (top bit is one). That's how the parser knows whether a word is
-    text or a control instruction.
-  </p>
-
-  <p>
-    There are exactly four control tokens. Each one happens to look
-    like a low-ASCII character if you squint at it:
-  </p>
-
+  <h2>Control tokens</h2>
+  <p>The parser at ARM9 <code>0x02066c58</code> recognises four control words:</p>
   <table>
-    <thead>
-      <tr><th>Token</th><th>Bytes</th><th>Looks like</th><th>Meaning</th></tr>
-    </thead>
+    <thead><tr><th>Name</th><th>u16</th><th>ASCII</th><th>Role</th></tr></thead>
     <tbody>
-      <tr><td>OPEN</td><td><code>0x0024</code></td><td><code>$</code></td><td>Start of an inline command</td></tr>
-      <tr><td>ARG_SEP</td><td><code>0x0027</code></td><td><code>'</code></td><td>Argument separator</td></tr>
-      <tr><td>CLOSE</td><td><code>0x003b</code></td><td><code>;</code></td><td>End of an inline command</td></tr>
-      <tr><td>END</td><td><code>0x000c</code></td><td><code>\f</code></td><td>End of dialog entry</td></tr>
+      <tr><td><code>OPEN</code></td><td><code>0x0024</code></td><td><code>$</code></td><td>Start of CMD</td></tr>
+      <tr><td><code>ARG_SEP</code></td><td><code>0x0027</code></td><td><code>'</code></td><td>Argument separator inside a CMD</td></tr>
+      <tr><td><code>CLOSE</code></td><td><code>0x003b</code></td><td><code>;</code></td><td>End of CMD arg list</td></tr>
+      <tr><td><code>END</code></td><td><code>0x000c</code></td><td><code>\f</code></td><td>End of dialog payload</td></tr>
     </tbody>
   </table>
 
-  <p>
-    All four are below <code>0x80</code>, so they have the top bit
-    clear. Text characters are all in Japanese ranges (above
-    <code>0x3000</code>) or in furigana-marker ranges, never down in
-    low-ASCII territory, so there's no risk of accidentally matching
-    a control token in normal text.
-  </p>
-
-  <h2>The shape of an entry</h2>
-  <p>
-    A dialog entry looks like this, roughly:
-  </p>
-
-  <pre><code>{`ENTRY    := HEADER? CONTENT
-HEADER   := 0x0024 HEADER_OPCODE (0x0027 ARG_WORD)* 0x003b 0x0000
-CONTENT  := (TEXT | INLINE_CMD)* TERMINATOR
-TEXT     := UTF-16-LE characters
-INLINE_CMD := 0x0024 OPCODE ARG_WORD? ARG_WORD?
-TERMINATOR := 0x000c   (end of dialog)
-             | 0x0000  (end of buffer)`}</code></pre>
+  <h2>Grammar</h2>
+  <pre><code>{`PAYLOAD     := (HEADER_CMD)? CONTENT 0x000C
+CONTENT     := (TEXT_RUN | INLINE_CMD | NUL)*
+TEXT_RUN    := utf16_word+                       (all words have bit 15 set or are kana/kanji code units)
+NUL         := 0x0000                             (phrase boundary; "§" in en_text)
+INLINE_CMD  := 0x0024 OPCODE_W (0x0027 ARG_W)* 0x003B (DATA_W* 0x0000)?
+HEADER_CMD  := 0x0024 0x8037 (0x0027 ARG_W){1,2} 0x003B 0x0000
+OPCODE_W    := u16 with bit 15 set; opcode = (word & 0x7FFF)
+ARG_W       := u16 with bit 15 set; arg    = sign_extend15(word & 0x7FFF)
+DATA_W      := raw u16 emitted after CLOSE for opcodes that carry a data tail`}</code></pre>
 
   <p>
-    The header is optional and configures the dialog box layout —
-    where to show the text, what speaker portrait to display, and so
-    on. The content is the actual dialog: text interleaved with
-    inline commands.
+    <code>sign_extend15(x)</code> is <code>((int16)(x &lt;&lt; 17)) &gt;&gt; 17</code>
+    — that is, the 15-bit value treated as signed.
   </p>
 
-  <h2>A real example</h2>
+  <h2>Re-emission rules</h2>
   <p>
-    Here are the last 32 bytes of the first entry from the very
-    first message file in the game:
+    From <code>src/translator/reemit.py::cmd_bytes_for_tag</code> — the encoder
+    that rebuilds CMD bytes from <code>[TAG]</code> notation:
   </p>
-
-  <pre><code>{`5f 30 7b 00 17 6c 7c 00 4d 30 7d 00 4c 30 59 30
-8b 30 24 00 ff 81 27 00 02 80 3b 00 00 00 0c 00`}</code></pre>
-
+  <pre><code>{`bytes  ← <0x0024> <opcode | 0x8000>
+for arg in args:
+    bytes ← bytes + <0x0027> <(arg & 0x7FFF) | 0x8000>
+bytes  ← bytes + <0x003B>
+if data_words is not empty:
+    for dw in data_words: bytes ← bytes + <dw>
+    bytes ← bytes + <0x0000>
+`}</code></pre>
   <p>
-    Walking this byte by byte:
+    The trailing <code>0x0000</code> after CLOSE belongs to the CMD only when
+    the opcode emits a data tail (e.g. headers, certain script calls).
+    A bare CMD with no data words ends at <code>0x003B</code>.
   </p>
+
+  <h2>Body text encoding</h2>
   <ul>
-    <li><code>5f 30</code>, <code>7b 00</code>, <code>17 6c</code>, etc.
-      are UTF-16 characters — Japanese hiragana and kanji.</li>
-    <li><code>24 00</code> is the OPEN token — an inline command is
-      starting.</li>
-    <li><code>ff 81</code> is the opcode (high bit set, so it's data;
-      the actual opcode number is <code>0x01ff</code>, which is the
-      "NPC sentence-ender particle" substitution).</li>
-    <li><code>27 00</code> is ARG_SEP.</li>
-    <li><code>02 80</code> is an argument (high bit set, value
-      <code>0x0002</code>).</li>
-    <li><code>3b 00</code> is CLOSE — end of inline command.</li>
-    <li><code>00 00</code> is a NUL — phrase boundary.</li>
-    <li><code>0c 00</code> is END — end of entry.</li>
+    <li>Japanese text: UTF-16-LE. All kana/kanji code units fall in
+      <code>0x3000+</code>, so they read as data words even though bit 15 is
+      clear on some of them — the parser uses the four explicit control
+      tokens (above) as the only escape sequence.</li>
+    <li><code>§</code> (U+00A7) in the translation database encodes a phrase
+      boundary; on the wire it becomes <code>0x0000</code>.</li>
+    <li><code>▼</code> (U+25BC) is a "press to advance" page break — emitted
+      verbatim into the UTF-16 stream as <code>0x25BC</code>.</li>
+    <li>Furigana ruby annotations use literal <code>{`{kanji|reading}`}</code>
+      — three ASCII bytes encoded as UTF-16 code units <code>0x007B</code>,
+      <code>0x007C</code>, <code>0x007D</code>. The renderer special-cases
+      these.</li>
+    <li>U+3000 (the full-width space) is the in-game word separator.</li>
   </ul>
 
+  <h2>Annotated hex dump</h2>
   <p>
-    Almost every entry ends with <code>00 00 0c 00</code>. We use that
-    as a structural check when validating that a rebuilt file is
-    well-formed.
+    First non-empty entry of <code>data/message/msg00/00/msg00000.ofs</code>
+    (excerpted). Words shown LE, two bytes per word, address relative to
+    start of the payload:
+  </p>
+  <pre><code>{`offs  bytes        decoded
+----  -----------  ---------------------------------------------------
+0000  24 00        OPEN                          ┐
+0002  18 80        opcode 0x0018  (SPEAKER)      │
+0004  27 00        ARG_SEP                       │ inline CMD
+0006  72 9b        arg = 0x1B72                  │ opcode=0x18
+0008  27 00        ARG_SEP                       │ args=[0x1B72, 0x00]
+000A  00 80        arg = 0x0000                  │
+000C  3b 00        CLOSE                         ┘
+000E  24 00        OPEN                          ┐
+0010  17 80        opcode 0x0017  (TEXTBOX)      │
+0012  27 00 72 9b  ARG_SEP, arg 0x1B72           │ inline CMD
+0016  27 00 b2 80  ARG_SEP, arg 0x0032 (=0xB2&7FFF)│ opcode=0x17
+001A  27 00 0a 80  ARG_SEP, arg 0x000A           │ args=[0x1B72,0x32,0x0A,0x01]
+001E  27 00 01 80  ARG_SEP, arg 0x0001           │
+0022  3b 00        CLOSE                         ┘
+0024  24 00 16 80 ... CMD opcode 0x0016 (EXPR), 2 args ...
+...
+003E  4a 30 84 30   utf-16: お や              (TEXT_RUN starts here)
+0042  20 00         space                       (U+0020 — in this file, half-width)
+0044  42 30 6a 30 5f 30 ... utf-16: あなた
+... (more body text) ...
+00A0  bc 25         '▼' page break
+... more text + CMDs ...
+0180  00 00         NUL (phrase boundary, §)
+0182  0c 00         END
+`}</code></pre>
+
+  <h2>How the parser walks the stream</h2>
+  <p>
+    Paraphrased from <code>FUN_02066c58</code> (decompiled from
+    <code>arm9_full_plaintext.bin</code>):
+  </p>
+  <pre><code>{`short *p = msg->text;          // payload pointer (struct field +0x24)
+ushort max = msg->len;         // word count       (struct field +0x30)
+
+// 1. optional header — only if first CMD is opcode 0x37
+if (*p == 0x0024 && (p[1] & 0x7FFF) == 0x0037) {
+    p += 2;
+    while (*p != 0x003B && p < end) {
+        if (*p == 0x0027) header_arg[i++] = sign_extend15(*++p & 0x7FFF);
+        p++;
+    }
+    if (*p == 0x003B && p[1] == 0) p += 2;     // skip "3B 00"
+}
+
+// 2. content loop
+for (int line = 0; p < end; ) {
+    while (*p != 0x0024 && *p != 0x0000 && *p != 0x000C) p++;
+    if (*p == 0x000C) break;                   // END
+    if (*p == 0x0000) { p++; continue; }       // phrase boundary
+
+    *p++ = 0;                                  // null-terminate preceding text
+    ushort op = *p & 0x7FFF;
+    switch (op) {
+      case 0x10: line[i].flags = (flags & 0xF0) | 3; break;
+      case 0x11: line[i].flags = (flags & 0xF0) | 2; break;
+      case 0x12: line[i].flags = (flags & 0xF0) | 1; break;
+      case 0x13: line[i].flags &= 0xF0;             break;
+      case 0x4C: p += FUN_0206726C(...); continue;  // sub-handler: 2 typed args
+      default:   break;                              // renderer handles it
+    }
+    p++;                                       // advance past opcode
+    while (*p == 0x0027) {                     // collect args
+        p++; args[k++] = sign_extend15(*p & 0x7FFF); p++;
+    }
+    if (*p == 0x003B) p++;                     // CLOSE
+}`}</code></pre>
+
+  <p>
+    The parser only directly interprets six opcodes
+    (<code>0x10</code>, <code>0x11</code>, <code>0x12</code>, <code>0x13</code>,
+    <code>0x37</code>, <code>0x4C</code>) — everything else is forwarded to the
+    renderer <code>func_0x021c0ef8</code> as part of the per-line record.
+    See <a href={`${base}/field-guide/message-system/opcodes/`}>opcodes</a>
+    for the full catalog.
   </p>
 
-  <h2>Page breaks, word separators, furigana</h2>
+  <h2>Empirical census</h2>
   <p>
-    Inside the text part of an entry, three special characters do
-    formatting work:
+    Across 1,328 message files and 50,196 non-empty entries:
   </p>
   <ul>
-    <li><code>▼</code> (U+25BC) is a "press to advance" page break.
-      When the game sees one, it stops, waits for input, then clears
-      the textbox and continues.</li>
-    <li>U+3000 (the full-width space) is the in-game word
-      separator.</li>
-    <li>Furigana annotations use the format
-      <code>{`{kanji|reading}`}</code> — the kanji renders normally
-      with the kana reading shown above it.</li>
+    <li>88 distinct opcodes appear.</li>
+    <li>2,526 entries open with the <code>0x37</code> HEADER CMD.</li>
+    <li>703 of 1,328 files (52.9%) use payload sharing — see
+      <a href={`${base}/field-guide/message-system/shared-payloads/`}>shared payloads</a>.</li>
+    <li>Top 10 opcodes account for &gt;80% of all CMDs.</li>
   </ul>
 
-  <h2>How we decoded the format</h2>
-  <p>
-    The format was decoded by reading the actual parser code. The
-    parser function lives in the ARM9 binary at address
-    <code>0x02066c58</code> — about a hundred lines of decompiled C
-    that walks the stream and builds a list of line records. The
-    high-bit trick, the four control tokens, the optional header —
-    all of it falls out of reading that function.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>src/translator/reemit.py</code> — encoder (CMD bytes, tags, NUL handling)</li>
+    <li><code>src/archive/reso.py</code> — TOC parser used to slice payloads from <code>.ofs</code></li>
+    <li><code>arm9_full_plaintext.bin</code> @ <code>0x02066c58</code> — parser <code>FUN_02066c58</code></li>
+    <li><code>arm9_full_plaintext.bin</code> @ <code>0x021c0ef8</code> — renderer (external symbol)</li>
+  </ul>
 </FieldGuideLayout>

@@ -1,119 +1,123 @@
 ---
 import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
 const base = import.meta.env.BASE_URL;
+
+type Row = { off:string; slot:number; en:string; src:string; co:boolean; jp:string };
+const ARM9: Row[] = [
+  { off:'0xa6e44', slot: 8, en:'Get',     src:'canon-mine', co:true,  jp:'もつ (G1: Hold)' },
+  { off:'0xa6e4c', slot: 8, en:'Put',     src:'canon-mine', co:true,  jp:'おく (G1: Place)' },
+  { off:'0xa6e54', slot: 8, en:'Dig',     src:'canon-mine', co:true,  jp:'うめる (G1: Bury)' },
+  { off:'0xa6e5c', slot: 8, en:'Bin',     src:'canon-mine', co:true,  jp:'すてる (G1: Discard)' },
+  { off:'0xa6e64', slot: 8, en:'End',     src:'canon-mine', co:true,  jp:'やめる (G1: Exit/Quit)' },
+  { off:'0xa6e6c', slot: 8, en:'Hum',     src:'fresh',      co:false, jp:'うたう (sing; Sing overflows by 1)' },
+  { off:'0xa6e74', slot: 8, en:'Nxt',     src:'canon-mine', co:true,  jp:'つぎへ (G1: Next)' },
+  { off:'0xa6e7c', slot: 8, en:'<<<',     src:'canon-mine', co:true,  jp:'もどる (G1: Back)' },
+  { off:'0xa6e84', slot:12, en:'Save',    src:'corpus',     co:false, jp:'とうろく (G1: Register/Save)' },
+  { off:'0xa6e90', slot:12, en:'1 R',     src:'canon-mine', co:true,  jp:'１リッチ' },
+  { off:'0xa6e9c', slot:12, en:'Call',    src:'canon-mine', co:true,  jp:'くちぶえ (G1: Whistle)' },
+  { off:'0xa6ea8', slot:12, en:'Free',    src:'canon-mine', co:true,  jp:'むしにがす (G1: Release insect)' },
+  { off:'0xa6eb4', slot:12, en:'Equip',   src:'canon-G1',   co:false, jp:'みにつける ✓' },
+  { off:'0xa6ec0', slot:12, en:'10 R',    src:'canon-mine', co:true,  jp:'１０リッチ' },
+  { off:'0xa6ecc', slot:12, en:'Walls',   src:'canon-mine', co:true,  jp:'かべかえる (G1: Change wallpaper)' },
+  { off:'0xa6ed8', slot:12, en:'Floor',   src:'canon-mine', co:true,  jp:'ゆかかえる (G1: Change flooring)' },
+  { off:'0xa6ee4', slot:16, en:'Swap',    src:'fresh',      co:false, jp:'おく/かえる' },
+  { off:'0xa6ef4', slot:16, en:'Unequip', src:'canon-G1',   co:false, jp:'そうびはずす ✓' },
+  { off:'0xa6f04', slot:16, en:'Release', src:'canon-mine', co:true,  jp:'さかなにがす (G1: Release fish)' },
+  { off:'0xa6f14', slot:16, en:'Hat off', src:'canon-mine', co:true,  jp:'ぼうしはずす (G1: Remove hat)' },
+  { off:'0xa6f24', slot:16, en:'No spex', src:'canon-mine', co:true,  jp:'めがねはずす (G1: Remove glasses)' },
+  { off:'0xa6f34', slot:16, en:'100 R',   src:'canon-mine', co:true,  jp:'１００リッチ' },
+  { off:'0xa6f44', slot:16, en:'1000 R',  src:'canon-mine', co:true,  jp:'１０００リッチ' },
+  { off:'0xa6f54', slot:20, en:'10000 R', src:'canon-mine', co:true,  jp:'１００００リッチ' },
+  { off:'0xa6f68', slot:20, en:'Take off',src:'fresh',      co:false, jp:'ネックレスはずす (G1: Remove [N])' },
+  { off:'0xa6f7c', slot:28, en:'100000 Ritch', src:'canon-G1', co:false, jp:'１０００００リッチ ✓' },
+];
 ---
 
 <FieldGuideLayout
-  title="The ARM9 menu pool"
-  description="The little action verbs that appear on the inventory menu — Hold, Place, Bury, Equip — are stored directly in the game's main binary with strict byte budgets."
+  title="ARM9 menu string pool"
+  description="The 26 short action verbs / quantity labels embedded in the ARM9 binary's data section. Width-budgeted by fixed slot stride."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
     { label: 'ARM9 menu pool' },
   ]}
 >
+  <h2>String pool location</h2>
+  <ul>
+    <li>File: <code>arm9_full_plaintext.bin</code> (BLZ-decompressed ARM9, 723 KB)</li>
+    <li>Pool start: file offset <code>0xa6e44</code> → RAM <code>0x020a6e44</code></li>
+    <li>Pool end:   file offset <code>0xa6f88</code> → RAM <code>0x020a6f88</code></li>
+    <li>26 string records, total span: ~324 bytes (varies; record sizes differ)</li>
+    <li>Strings are SHIFT-JIS-style packed bytes (game's internal short encoding)</li>
+  </ul>
+
+  <h2>"Plaintext-ARM9" trick</h2>
   <p>
-    When you tap an item in your inventory, a little menu pops up
-    with verbs like "Hold," "Place," "Equip," "Bury." Those words
-    aren't in the message dialog files. They're hardcoded into the
-    game's main binary, in a fixed-size pool with a pointer table
-    addressing each entry.
+    The original ROM ships ARM9 in BLZ-compressed form (564,488 bytes at ROM
+    offset <code>0x4000</code>). Editing the embedded string pool in place
+    is awkward because the strings live <em>after</em> the BLZ-decompressed
+    boundary. Patching the Nintendo SDK module-params field
+    <code>CompressedStaticEnd := StaticBSSStart</code> (where
+    <code>StaticBSSStart = 0x020A87A0</code>) makes the boot ROM skip BLZ
+    decompression entirely — the ARM9 is loaded as plaintext at boot.
+    Decompressed size: 723,032 bytes (<code>0xB0858</code>). Validated in
+    <code>notes/arm9_passthrough_test_RESULTS.md</code>.
   </p>
 
+  <h2>Slot widths</h2>
   <p>
-    There are 26 strings in this ARM9 pool, plus another 20 in a
-    similar pool inside one of the overlays (overlay 96 — the NPC
-    interaction menu), plus a handful of single-string overlays. We
-    track 50 of these strings in total.
+    The patcher fits each EN string into the slot's pre-allocated byte width.
+    Slot column = byte budget. Strings that overflow even the canon shortened
+    form are marked <strong>CO</strong> (canon-overflow) and will be restored
+    if a pool relocator is added later.
   </p>
 
-  <h2>How they're stored</h2>
-  <p>
-    Each string sits in a fixed-size slot. The slot is sized so that
-    even the longest reasonable Japanese version of the word fits.
-    The text is UTF-16 with a NUL terminator. Once you account for
-    the terminator, the budget in English characters is
-    <code>(slot bytes / 2) - 1</code>.
-  </p>
-
-  <p>
-    A few slots and their budgets:
-  </p>
-
+  <h2>ARM9 pool — 26 strings</h2>
   <table>
     <thead>
-      <tr><th>Slot bytes</th><th>JP text</th><th>EN budget</th><th>English version</th></tr>
+      <tr>
+        <th>#</th><th>file off</th><th>slot</th><th>EN</th><th>CO?</th><th>source</th><th>JP / G1 canon note</th>
+      </tr>
     </thead>
     <tbody>
-      <tr><td>8</td><td>もつ</td><td>3 chars</td><td>"Hold" doesn't fit; "Get" does</td></tr>
-      <tr><td>8</td><td>すてる</td><td>3 chars</td><td>"Toss" or "Drop"</td></tr>
-      <tr><td>12</td><td>くちぶえ</td><td>5 chars</td><td>"Whistle" overflows; "Call" works</td></tr>
-      <tr><td>12</td><td>みにつける</td><td>5 chars</td><td>"Equip" fits exactly</td></tr>
-      <tr><td>16</td><td>そうびはずす</td><td>7 chars</td><td>"Unequip" fits exactly</td></tr>
-      <tr><td>28</td><td>１０００００リッチ</td><td>13 chars</td><td>"100,000 Mira" at 12 chars</td></tr>
+      {ARM9.map((r, i) => (
+        <tr>
+          <td>{i + 1}</td>
+          <td><code>{r.off}</code></td>
+          <td>{r.slot}</td>
+          <td><strong>{r.en}</strong></td>
+          <td>{r.co ? 'CO' : ''}</td>
+          <td>{r.src}</td>
+          <td><code>{r.jp}</code></td>
+        </tr>
+      ))}
     </tbody>
   </table>
 
-  <h2>The overflow problem</h2>
-  <p>
-    Most English words are longer than the equivalent Japanese. Of the
-    50 strings in this pool, most of the natural English translations
-    overflow their slot. We have three options for each one:
-  </p>
-  <ol>
-    <li>Shorten the English. "Bury" instead of the proper "Inter,"
-      "Toss" instead of "Discard."</li>
-    <li>Expand the slot. This means moving the string somewhere with
-      more room and updating the pointer table that addresses it.
-      Doable but invasive.</li>
-    <li>Live with the overflow and accept rendering bugs. Not really
-      an option for shipping.</li>
-  </ol>
+  <h2>Overlay single-string slots</h2>
+  <table>
+    <thead><tr><th>Overlay</th><th>file off</th><th>slot</th><th>EN</th><th>source</th><th>JP / canon notes</th></tr></thead>
+    <tbody>
+      <tr><td>ov047</td><td><code>0x1c70</code></td><td>20</td><td>Show BGM</td><td>fresh</td><td>ショーのおんがく</td></tr>
+      <tr><td>ov059</td><td><code>0x1b2c</code></td><td>12</td><td>Magic</td><td>fresh</td><td>とんがり (G1 dropped "Pointy")</td></tr>
+      <tr><td>ov065</td><td><code>0x3378</code></td><td>40</td><td>Like this? (Y/N)</td><td>fresh</td><td>これでいいかい？ (confirm prompt)</td></tr>
+    </tbody>
+  </table>
 
+  <h2>Currency canon</h2>
   <p>
-    The translation canon page tracks each slot's chosen approach.
-    Most are option 1 (just shorten).
+    Game 1's official Konami currency name is <strong>Ritch</strong> (not
+    "Mira"). Evidence: 66 corpus hits, including the standalone slot-form
+    <code>リッチ → Ritch</code>. The 6 currency tier strings:
+    <code>1リッチ → 1 R</code>, <code>10リッチ → 10 R</code>, …,
+    <code>100000リッチ → 100000 Ritch</code>.
   </p>
 
-  <h2>The currency tier strings</h2>
-  <p>
-    Five of the 26 slots are currency tier labels —
-    <code>１リッチ</code>, <code>１０リッチ</code>,
-    <code>１００リッチ</code>, <code>１０００リッチ</code>,
-    <code>１００００リッチ</code>. These appear in the player's wallet
-    display.
-  </p>
-
-  <p>
-    The Japanese uses "リッチ" (Ricchi) as the currency unit. Game 1's
-    English used <strong>Mira</strong> instead — a totally different
-    word. There's no English in any binary, so the currency tier
-    strings need fresh translation. The format is constrained: each
-    slot grows by 4 bytes per tier, so the budget gets a little
-    bigger as the numbers do.
-  </p>
-
-  <p>
-    See <a href={`${base}/field-guide/translation-canon/`}>translation
-    canon</a> for what we've settled on so far.
-  </p>
-
-  <h2>Where Game 1 helps</h2>
-  <p>
-    Of the 26 ARM9 strings, <strong>16 of them are word-for-word
-    matches with strings in Magician's Quest 1's English release</strong>.
-    That gives us official Konami translations to anchor our choices:
-    "Hold," "Place," "Bury," "Discard," "Exit," "Next," "Back,"
-    "Whistle," "Equip," "Unequip," "Release insect," "Release fish,"
-    "Remove hat," "Remove glasses," "Change wallpaper," "Change
-    flooring."
-  </p>
-
-  <p>
-    The other 10 strings are Tongari-specific (the currency tiers, the
-    "Save" / "Log" verb that has no Game 1 parallel, etc.) and need
-    fresh translation. The overlay-96 NPC menu pool is entirely
-    fresh — none of its 20 strings have Game 1 equivalents because
-    Game 1 didn't have NPC interaction menus.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/arm9_overlay_translations_final.md</code> — full string list + budgets</li>
+    <li><code>src/translator/_patch_arm9_overlays.py</code> — patcher</li>
+    <li><code>notes/arm9_passthrough_test_RESULTS.md</code> — BLZ-skip trick validation</li>
+    <li><code>arm9_full_plaintext.bin</code> — decompressed binary used for patching</li>
+  </ul>
 </FieldGuideLayout>

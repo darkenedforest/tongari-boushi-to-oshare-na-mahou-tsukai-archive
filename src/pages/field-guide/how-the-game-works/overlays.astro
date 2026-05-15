@@ -4,115 +4,121 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="The overlay system"
-  description="The DS only has 4 MB of main RAM. The game gets around that by loading and unloading 180 chunks of code as you play."
+  title="Overlay system"
+  description="180 dynamically loaded ARM9 overlays. Shared RAM slots, controller/body pattern, persistent rendering engines."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
     { label: 'Overlays' },
   ]}
 >
-  <p>
-    The game's code is split into two pieces. There's a big core
-    binary called the <strong>ARM9</strong> (about 723 KB once it's
-    decompressed) that's always in memory, and there are
-    <strong>180 overlays</strong> that get swapped in and out as
-    needed. Most overlays are between a few KB and about 130 KB.
-  </p>
-
-  <h2>What's always loaded</h2>
-  <p>
-    The ARM9 binary holds everything the game needs all the time:
-    the content cache, the file loader, the sprite construction code,
-    the game-state struct, the math library. About 5,000 functions in
-    total.
-  </p>
-
-  <p>
-    On top of the ARM9, two specific overlays are loaded almost
-    continuously:
-  </p>
+  <h2>Overlay table</h2>
   <ul>
-    <li><strong>ov137</strong> — the rendering engine. About 800
-      functions, mostly to do with building OAM lists, managing
-      sprite slots, and copying data to video memory at vertical
-      blank.</li>
-    <li><strong>ov138</strong> — the main Tongari engine. Shares RAM
-      with ov137 in the alternate slot; loaded for game modes that
-      need 3D rendering. About 1,300 functions.</li>
+    <li>Table at ROM offset <code>0x8DE00</code>, size <code>0x1680</code>.</li>
+    <li>180 entries × 32 bytes per entry.</li>
+    <li>Per entry: <code>ram_addr</code>, <code>ram_size</code>, <code>bss_size</code>, <code>file_id</code>, <code>flags</code>, <code>compressed_size</code>, <code>is_compressed</code>.</li>
+    <li>Total decompressed overlay code: 1,927,488 bytes.</li>
+    <li>Extracted via <code>ndspy.rom.NintendoDSRom.fromFile().loadArm9Overlays()</code>.</li>
   </ul>
-
-  <p>
-    Everything else is loaded on demand.
-  </p>
 
   <h2>Shared RAM slots</h2>
   <p>
-    Overlays don't each get their own address — they share. Several
-    overlays might all be assigned the same RAM slot, with the
-    understanding that only one of them is loaded at a time. The big
-    shared slots are:
+    Many overlays map to the same RAM address — only one is resident at a
+    time. The slot is selected by the game mode dispatcher in arm9.
   </p>
-
   <table>
-    <thead>
-      <tr><th>RAM address</th><th>Slot purpose</th><th># overlays</th></tr>
-    </thead>
+    <thead><tr><th>RAM address</th><th>Overlays sharing</th><th>Role</th></tr></thead>
     <tbody>
-      <tr><td><code>0x02155A00</code></td><td>Game mode controllers</td><td>66</td></tr>
-      <tr><td><code>0x021597A0</code></td><td>Screen body renderers</td><td>25</td></tr>
-      <tr><td><code>0x0215C540</code></td><td>Game-mode logic</td><td>20</td></tr>
-      <tr><td><code>0x021FB3C0</code></td><td>Misc shared</td><td>18</td></tr>
+      <tr><td><code>0x02155A00</code></td><td>66</td><td>Game-mode body / controller overlays</td></tr>
+      <tr><td><code>0x021597A0</code></td><td>25</td><td>Body / renderer slot 1</td></tr>
+      <tr><td><code>0x0215C540</code></td><td>20</td><td>Body / renderer slot 2</td></tr>
+      <tr><td><code>0x021FB3C0</code></td><td>18</td><td>Body / renderer slot 3</td></tr>
+      <tr><td><code>0x021B6080</code></td><td>(ov156/157)</td><td>Body / renderer slot 4</td></tr>
+      <tr><td><code>0x021C3420</code></td><td>(ov158/159)</td><td>Body / renderer slot 5</td></tr>
     </tbody>
   </table>
 
+  <h2>Persistent engines</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Overlay</th>
+        <th>RAM</th>
+        <th>Size</th>
+        <th>BSS</th>
+        <th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>ov137</code></td>
+        <td><code>0x0216DA40</code></td>
+        <td><code>0x20860</code></td>
+        <td><code>0x27E0</code></td>
+        <td>2D rendering engine (sprite API, OAM transfer, VBlank handler). Loaded persistently across most game modes.</td>
+      </tr>
+      <tr>
+        <td><code>ov138</code></td>
+        <td><code>0x0216DA40</code> (shares slot)</td>
+        <td>varies</td>
+        <td>—</td>
+        <td>Tongari 3D map engine. Alternates with ov137 depending on game mode.</td>
+      </tr>
+    </tbody>
+  </table>
   <p>
-    66 overlays sharing one RAM slot means the game has 66 distinct
-    "game modes" or screens that get treated as mutually exclusive.
-    Only one of them is in memory at any given moment.
+    The VBlank handler at <code>0x02185BF8</code> in ov137 transfers shadow
+    OAM to <code>0x07000000</code>/<code>0x07000400</code>. The ARM9 VBlank
+    handler at <code>0x0207001C</code> handles the wider system (DMA timing,
+    audio buffer, etc.).
   </p>
 
-  <h2>The controller-and-body pattern</h2>
+  <h2>Controller / body pattern</h2>
   <p>
-    Most screens in the game use two overlays in tandem: a
-    <strong>controller</strong> in one shared slot, a <strong>body</strong>
-    in another.
+    UI screens use a two-overlay pattern: a <strong>controller</strong>
+    (state machine + asset loading) plus a <strong>body</strong> (per-screen
+    sprite placement + interaction logic). The controller calls into the
+    body at <code>FUN_xxxxxxxx</code> entry points; the body reads its
+    sprite-placement table from <code>.rodata</code>.
   </p>
 
+  <h2>Known controller → body mappings</h2>
+  <table>
+    <thead><tr><th>Container</th><th>Controller</th><th>Body</th><th>Body init function</th></tr></thead>
+    <tbody>
+      <tr><td><code>2d/buyitem.lzs</code></td><td>ov003</td><td>ov070</td><td><code>FUN_02159828</code> @ <code>0x02159828</code></td></tr>
+      <tr><td><code>2d/itemorderwnd.lzs</code></td><td>ov003 (shared)</td><td>ov070</td><td>same</td></tr>
+      <tr><td><code>2d/chest.lzs</code></td><td>ov013</td><td>TBD</td><td>—</td></tr>
+      <tr><td><code>2d/dustbox.lzs</code></td><td>ov013</td><td>TBD</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Per-overlay roles (excerpt)</h2>
+  <p>Full table in <code>notes/phaseA_ghidra/overlay_role_final.json</code>. Highlights:</p>
+  <table>
+    <thead><tr><th>Overlay</th><th>RAM</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>ov003</code></td><td><code>0x02155A00</code></td><td>Buyitem controller (shop state machine)</td></tr>
+      <tr><td><code>ov010</code>, <code>ov041</code>, ...</td><td><code>0x02155A00</code></td><td>Game-mode controllers (66 share this slot)</td></tr>
+      <tr><td><code>ov070</code></td><td><code>0x021597A0</code></td><td>Buyitem body (renderer)</td></tr>
+      <tr><td><code>ov137</code></td><td><code>0x0216DA40</code></td><td>2D rendering engine (persistent)</td></tr>
+      <tr><td><code>ov138</code></td><td><code>0x0216DA40</code></td><td>3D map engine</td></tr>
+      <tr><td><code>ov156/157</code></td><td><code>0x021B6080</code></td><td>Slot 4 bodies</td></tr>
+      <tr><td><code>ov158/159</code></td><td><code>0x021C3420</code></td><td>Slot 5 bodies</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Nintendo DWC (wireless)</h2>
+  <p>
+    The VBlank handler in <code>ov137</code> is the game engine. The other
+    VBlank handler that appears in some Konami DS builds is Nintendo DWC
+    (wireless library) — not present here.
+  </p>
+
+  <h2>Source</h2>
   <ul>
-    <li>The controller is the state machine. "Show the buy-item screen.
-      Wait for input. The player picked an item, so update the
-      selection. The player pressed B, so leave." It doesn't draw
-      anything itself.</li>
-    <li>The body is the renderer. It has a table of sprite placements
-      and the code to walk that table and ask the rendering engine to
-      put each sprite on the screen.</li>
+    <li><code>notes/phaseA_ghidra/DISCOVERIES.md</code> — overlay table + per-RAM-slot membership</li>
+    <li><code>notes/phaseA_ghidra/overlay_role_final.json</code> — per-overlay role classification</li>
+    <li><code>notes/phaseA_ghidra/BUYITEM_RECIPE_CRACKED.md</code> — controller/body pattern worked example</li>
   </ul>
-
-  <p>
-    The shop screen is the cleanest example. The controller is ov003
-    and the body is ov070. ov003 loads when you walk up to a shop.
-    ov003 loads ov070 into its renderer slot and calls its init
-    function. ov070 reads its 10-entry placement table and stamps the
-    sprites onto the screen.
-  </p>
-
-  <h2>Why this matters for translating</h2>
-  <p>
-    Every time we change something the game reads — a path string, a
-    text label hard-coded in an overlay, a menu item — we have to
-    figure out which binary or overlay holds it. The ARM9 binary holds
-    most of the "system" strings (item menu actions like "Hold,"
-    "Place"). Overlay 96 holds the 20 NPC interaction menu options.
-    Some overlays hold a single string each. Finding where a given
-    string lives means searching across the ARM9 plus all 180
-    overlays, then figuring out the byte budget around it (how much
-    room is reserved before the next thing in memory).
-  </p>
-
-  <p>
-    The <a href={`${base}/field-guide/translation-canon/`}>translation
-    canon</a> section covers what we've nailed down for these
-    fixed-width slots.
-  </p>
 </FieldGuideLayout>

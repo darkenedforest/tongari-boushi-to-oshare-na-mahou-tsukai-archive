@@ -1,120 +1,156 @@
 ---
 import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+import subRecords from '../../../data/ucc_subrecords.json';
 const base = import.meta.env.BASE_URL;
+
+type Sub = { slot:number; sub:number; hdr:string; jp:string; en:string };
+const subs = subRecords as Sub[];
+const bySlot: Record<number, Sub[]> = {};
+for (const r of subs) {
+  if (!bySlot[r.slot]) bySlot[r.slot] = [];
+  bySlot[r.slot].push(r);
+}
+const SLOT_FAMILY: Record<number, string> = {
+  57:  'Cake / ショートケーキ',
+  65:  'Stew / クリームシチュー',
+  66:  'Stew / ビーフシチュー',
+  101: 'Ice / バニラアイス',
+  144: 'Bread / あんぱん',
+  145: 'Bread / チョコパン',
+  146: 'Bread / クリームパン',
+  149: 'Bread / ジャムパン',
+  151: 'Pasta / カルボナーラ',
+  152: 'Pasta / ナポリタン',
+};
 ---
 
 <FieldGuideLayout
-  title="Food and recipes"
-  description="The cooking system's name table. Most slots are simple, but ten of them hold arrays of variant names keyed by ingredient pairs."
+  title="UCC food recipe slots"
+  description="data/ucc/names.ofs multi-name slot format: 68-byte sub-records keyed by a 2-byte ingredient pair."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
-    { label: 'Food and recipes' },
+    { label: 'Food recipes' },
   ]}
 >
   <p>
-    The cooking minigame has 192 named food items. The names live in
-    <code>extracted/nds/data/ucc/names.ofs</code>. Most slots are
-    simple — one slot, one name. But ten of them are
-    <strong>multi-name slots</strong>: arrays of variant names keyed by
-    the pair of ingredients the player used.
+    <code>extracted/nds/data/ucc/names.ofs</code> is a
+    <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a> container,
+    variant=1, with 192 slots totalling 11,376 bytes. Most slots are simple
+    68-byte name records; <strong>10 slots</strong> are "multi-name" arrays
+    of 68-byte sub-records.
   </p>
 
-  <h2>Simple slots</h2>
-  <p>
-    A simple slot is 68 bytes:
-  </p>
-  <pre><code>{`+0x00  u32     header word (the variant key, or category code)
-+0x04  60 bytes UTF-16-LE name + NUL terminator + padding`}</code></pre>
-
-  <p>
-    The header word is a small integer telling the engine what
-    category the slot belongs to. The rest is the name, encoded in
-    UTF-16 with a NUL terminator and zero-padding.
-  </p>
-
-  <h2>Multi-name slots</h2>
-  <p>
-    Ten of the 192 slots are larger than 68 bytes, and every one of
-    them is a multiple of 68. Each is an array of sub-records, all
-    sharing the same 68-byte layout. The base category is sub-record
-    0; the recipe variants are sub-records 1 onward.
-  </p>
-
+  <h2>Simple slot (68 bytes)</h2>
   <table>
-    <thead>
-      <tr><th>Slot</th><th>Sub-records</th><th>Base name (JP)</th><th>Variant family</th></tr>
-    </thead>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th></tr></thead>
     <tbody>
-      <tr><td>57</td><td>2</td><td>ケーキ</td><td>ショートケーキ (Strawberry Shortcake)</td></tr>
-      <tr><td>65</td><td>10</td><td>シチュー</td><td>クリームシチュー (Cream Stew)</td></tr>
-      <tr><td>66</td><td>6</td><td>シチュー</td><td>ビーフシチュー (Beef Stew)</td></tr>
-      <tr><td>101</td><td>2</td><td>アイス</td><td>バニラアイス (Vanilla Ice Cream)</td></tr>
-      <tr><td>144</td><td>2</td><td>パン</td><td>あんぱん (Anpan)</td></tr>
-      <tr><td>145</td><td>5</td><td>パン</td><td>チョコパン (Choco Bread)</td></tr>
-      <tr><td>146</td><td>2</td><td>パン</td><td>クリームパン (Cream Bun)</td></tr>
-      <tr><td>149</td><td>2</td><td>パン</td><td>ジャムパン (Jam Bun)</td></tr>
-      <tr><td>151</td><td>9</td><td>パスタ</td><td>カルボナーラ (Carbonara)</td></tr>
-      <tr><td>152</td><td>9</td><td>パスタ</td><td>ナポリタン (Napolitan)</td></tr>
+      <tr><td><code>+0x00</code></td><td>2</td><td><code>u16</code></td><td>state_code_lo</td></tr>
+      <tr><td><code>+0x02</code></td><td>2</td><td><code>u16</code></td><td>state_code_hi (0x0000 for multi)</td></tr>
+      <tr><td><code>+0x04</code></td><td>64</td><td>UTF-16-LE</td><td>name + <code>0x0000</code> terminator + NUL pad</td></tr>
     </tbody>
   </table>
 
-  <h2>The variant key</h2>
+  <h2>Multi-name slot layout</h2>
   <p>
-    Each variant sub-record carries a 2-byte key in its header. The
-    key is a pair of ASCII bytes — usually digits or symbols. For
-    Cream Stew (slot 65, 10 sub-records), the keys are:
+    Multi-name slot length is always a multiple of 68 bytes. Sub-record [0]
+    is the category/base name; sub-records [1..N-1] are recipe variants
+    keyed by the 2-byte ingredient-pair code at <code>+0x00</code>.
+    The engine selects a variant by matching the player's ingredient pair
+    against each sub-record's key.
   </p>
 
-  <pre><code>{`'79'  '97'  '78'  '87'  '89'  '98'  '37'  '39'  '38'`}</code></pre>
+  <h2>Multi-name slot inventory</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Slot</th>
+        <th>Length</th>
+        <th>N sub-records</th>
+        <th>Base name (JP)</th>
+        <th>Variant family</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>57</td><td>136</td><td>2</td><td>ケーキ</td><td>ショートケーキ</td></tr>
+      <tr><td>65</td><td>680</td><td>10</td><td>シチュー</td><td>クリームシチュー</td></tr>
+      <tr><td>66</td><td>408</td><td>6</td><td>シチュー</td><td>ビーフシチュー</td></tr>
+      <tr><td>101</td><td>136</td><td>2</td><td>アイス</td><td>バニラアイス</td></tr>
+      <tr><td>144</td><td>136</td><td>2</td><td>パン</td><td>あんぱん</td></tr>
+      <tr><td>145</td><td>340</td><td>5</td><td>パン</td><td>チョコパン</td></tr>
+      <tr><td>146</td><td>136</td><td>2</td><td>パン</td><td>クリームパン</td></tr>
+      <tr><td>149</td><td>136</td><td>2</td><td>パン</td><td>ジャムパン</td></tr>
+      <tr><td>151</td><td>612</td><td>9</td><td>パスタ</td><td>カルボナーラ</td></tr>
+      <tr><td>152</td><td>612</td><td>9</td><td>パスタ</td><td>ナポリタン</td></tr>
+    </tbody>
+  </table>
+  <p>Total sub-records: 49 (10 base + 39 variants), 3,332 bytes.</p>
 
+  <h2>Worked example — Slot 57 (Cake)</h2>
+  <pre><code>{`[0] hdr=05000000  name='ケーキ'           (category root; simple-slot-style header 0x0005)
+[1] hdr=55550000  name='ショートケーキ'   (variant; key = ASCII 'UU' / 0x55,0x55)`}</code></pre>
+
+  <h2>Worked example — Slot 65 (Cream Stew, alphabet {`{3,7,8,9}`})</h2>
+  <pre><code>{`[0] hdr=05060000  name='シチュー'           (root)
+[1] hdr=37390000  name='クリームシチュー'   key '79'  (= 0x37,0x39)
+[2] hdr=39370000  name='クリームシチュー'   key '97'
+[3] hdr=37380000  name='クリームシチュー'   key '78'
+[4] hdr=38370000  name='クリームシチュー'   key '87'
+[5] hdr=38390000  name='クリームシチュー'   key '89'
+[6] hdr=39380000  name='クリームシチュー'   key '98'
+[7] hdr=33370000  name='クリームシチュー'   key '37'
+[8] hdr=33390000  name='クリームシチュー'   key '39'
+[9] hdr=33380000  name='クリームシチュー'   key '38'`}</code></pre>
   <p>
-    The "alphabet" here is <code>{3, 7, 8, 9}</code>, and the keys are
-    the non-equal ordered pairs of those digits with a few specific
-    combinations. The working theory: each digit stands for one
-    ingredient slot, and the engine looks up the cooked dish by the
-    pair of ingredients you used. So if you cooked with ingredients
-    "7" and "9," it finds the record keyed <code>'79'</code> and uses
-    its name.
+    All 9 variant names are identical JP text; only the 2-byte key differs.
+    The 9 keys cover the non-equal ordered pairs over alphabet
+    <code>{`{3,7,8,9}`}</code> where at least one digit is from
+    <code>{`{3}`}</code> plus a partner in <code>{`{7,8,9}`}</code>, or any
+    ordered pair of distinct digits in <code>{`{7,8,9}`}</code>.
   </p>
 
+  <h2>Re-emit constraint</h2>
   <p>
-    For carbonara (slot 151), the alphabet is
-    <code>{'{(, *, 3, 5}'}</code> — a different per-recipe ingredient
-    set. The same engine logic applies.
+    The RESO container is reflowed on rebuild — per-slot length is recomputed
+    from actual payload. <strong>However</strong>, within a multi-name slot
+    the engine indexes sub-records at fixed 68-byte strides. Therefore:
   </p>
+  <ul>
+    <li>Every sub-record must remain exactly 68 bytes.</li>
+    <li>Bytes <code>+0x00..+0x03</code> (the recipe-pair key) must be
+      preserved byte-for-byte.</li>
+    <li>EN name fits in 60 bytes (30 UTF-16 code units, then NUL).</li>
+    <li>Sub-record count per slot must stay at N (each variant key must
+      keep its slot).</li>
+  </ul>
 
-  <p>
-    We haven't fully confirmed the lookup logic by reading the
-    engine code yet — that would require finding the cooking-minigame
-    overlay and tracing its name-lookup routine — but the data fits
-    the pattern very cleanly.
-  </p>
+  <h2>All sub-records</h2>
+  {Object.keys(bySlot).sort((a:any,b:any)=>(a-b)).map((slotKey:any) => {
+    const slot = Number(slotKey);
+    return (
+      <>
+        <h3>Slot {slot} — {SLOT_FAMILY[slot] || ''}</h3>
+        <table>
+          <thead><tr><th>sub</th><th>header (hex)</th><th>JP</th><th>EN</th></tr></thead>
+          <tbody>
+            {bySlot[slot].map(r => (
+              <tr>
+                <td><code>{r.sub}</code></td>
+                <td><code>{r.hdr}</code></td>
+                <td><code>{r.jp}</code></td>
+                <td><strong>{r.en || ''}</strong></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </>
+    );
+  })}
 
-  <h2>Why all variants of a recipe have the same Japanese name</h2>
-  <p>
-    For Cream Stew with 9 variant sub-records, every single sub-record
-    has the identical Japanese string <code>クリームシチュー</code>.
-    Only the 2-byte key differs. The game treats them as
-    interchangeable for display purposes — what matters is the key,
-    not the name.
-  </p>
-
-  <p>
-    For translation that means we can safely give every variant of
-    Cream Stew the same English name ("Cream Stew"), as long as we
-    preserve the original key bytes exactly. The engine's
-    ingredient-pair lookup still works because the key isn't part of
-    the visible name.
-  </p>
-
-  <h2>Cross-reference with Game 1</h2>
-  <p>
-    Magician's Quest 1 (the English-released predecessor) doesn't
-    have a cooking system. There's no canonical English for any of
-    these recipe names. The translations we use come from dictionary
-    forms ("Cake," "Stew") and from Japanese-food English-writing
-    conventions ("Anpan" vs "Red Bean Bun" — a stylistic call we
-    leaned toward "Anpan" since it's the spelling Wikipedia uses).
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/ucc_food_format.md</code> — full decode + inventory</li>
+    <li><code>notes/ucc_food_inventory.txt</code> — raw sub-record dump</li>
+    <li><code>extracted/scratch/db/translation.sqlite</code> — <code>ucc_food_subrecords</code> table</li>
+  </ul>
 </FieldGuideLayout>

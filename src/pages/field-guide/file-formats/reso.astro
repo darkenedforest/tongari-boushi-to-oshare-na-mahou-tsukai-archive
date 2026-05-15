@@ -4,8 +4,8 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="RESO containers"
-  description="The main container format the game uses. A 16-byte header, a table of contents, then the data chunks."
+  title="RESO container"
+  description="Konami's TOC-based archive: 16-byte header, N TOC entries (8 or 16 B each), payload region. 2,343 of 2,441 game files are RESO."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
@@ -13,136 +13,129 @@ const base = import.meta.env.BASE_URL;
   ]}
 >
   <p>
-    RESO is the container format that holds almost everything in the game.
-    Out of the 2,441 asset files in the ROM, <strong>2,343 of them are
-    RESO containers</strong> (or compressed wrappers around RESO containers).
-    The remaining 98 are raw files of one kind or another.
+    Used by both <code>.ofs</code> (raw) and <code>.lzs</code> (post-LZ11)
+    files. Reference parser: <code>src/archive/reso.py</code>.
   </p>
 
-  <h2>The header</h2>
-  <p>
-    A RESO file always starts with a 16-byte header:
-  </p>
-
-  <pre><code>{`+0x00  4 bytes   "RESO"        magic
-+0x04  4 bytes   file_count    number of entries in the TOC
-+0x08  4 bytes   version       "1.21" / "1.11" / "1.10" / "1.01"
-+0x0c  4 bytes   variant       0 or 1 — picks the TOC entry size`}</code></pre>
-
-  <p>
-    Of 2,343 containers in the game, version <code>1.21</code> covers
-    2,148 of them. The other three versions are rare exceptions.
-  </p>
-
-  <h2>The table of contents</h2>
-  <p>
-    Right after the header is a list of entries — the table of contents.
-    Each entry says how big a chunk is and where it sits in the file.
-    There are two layouts, picked by the <code>variant</code> field:
-  </p>
-
-  <p><strong>Variant 0 (16 bytes per entry):</strong></p>
-  <pre><code>{`+0x00  u32      unknown (often 0)
-+0x04  4 bytes  type tag (4 ASCII chars, stored reversed)
-+0x08  u32      length of the chunk
-+0x0c  u32      offset where the chunk starts (absolute)`}</code></pre>
-
-  <p><strong>Variant 1 (8 bytes per entry, no per-entry tag):</strong></p>
-  <pre><code>{`+0x00  u32  length
-+0x04  u32  offset`}</code></pre>
-
-  <p>
-    Variant 1 shows up on the message dialog files — there's no need for
-    a per-entry tag because every entry is the same kind (a dialog payload).
-  </p>
-
-  <h2>The type tags</h2>
-  <p>
-    In variant-0 containers, every entry carries a 4-character type tag
-    saying what kind of data it is. Like everything else in the file
-    format, the bytes are reversed — read right to left to get the
-    "real" name.
-  </p>
-
+  <h2>Header (16 bytes)</h2>
   <table>
-    <thead>
-      <tr><th>Tag in file</th><th>Reversed</th><th>What it is</th></tr>
-    </thead>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th><th>Value</th></tr></thead>
     <tbody>
-      <tr><td><code>rgcn</code></td><td>NCGR</td><td>Tile sheet graphics</td></tr>
-      <tr><td><code>rlcn</code></td><td>NCLR</td><td>Color palette</td></tr>
-      <tr><td><code>rcsn</code></td><td>NSCR</td><td>Background tilemap</td></tr>
-      <tr><td><code>recn</code></td><td>NCER</td><td>Sprite definition (OAM cells)</td></tr>
-      <tr><td><code>rnan</code></td><td>NANR</td><td>Sprite animation</td></tr>
-      <tr><td><code>rtfn</code></td><td>NFTR</td><td>Font</td></tr>
-      <tr><td><code>ncbr</code></td><td>NCBR</td><td>Linear/bitmap variant of NCGR</td></tr>
-      <tr><td><code>tbsn</code></td><td>NSBTX</td><td>3D texture pack</td></tr>
-      <tr><td><code>mbsn</code></td><td>NSBMD</td><td>3D model</td></tr>
-      <tr><td><code>cbsn</code></td><td>NSBCA</td><td>3D animation</td></tr>
-      <tr><td><code>szl</code></td><td>—</td><td>Nested compressed sub-blob (decompress for another RESO)</td></tr>
-      <tr><td><code>tad</code></td><td>—</td><td>Konami's static widget table format</td></tr>
-      <tr><td><code>nib</code></td><td>"bin"</td><td>Konami's per-container binary data, variable layout</td></tr>
-      <tr><td><code>sfo</code></td><td>—</td><td>A nested RESO container</td></tr>
+      <tr><td><code>0x00</code></td><td>4</td><td><code>char[4]</code></td><td><code>magic</code></td><td><code>"RESO"</code> = <code>52 45 53 4F</code></td></tr>
+      <tr><td><code>0x04</code></td><td>4</td><td><code>u32 LE</code></td><td><code>file_count</code></td><td>Number of TOC entries</td></tr>
+      <tr><td><code>0x08</code></td><td>4</td><td><code>char[4]</code></td><td><code>version</code></td><td>Typically <code>"1.21"</code> = <code>31 2E 32 31</code></td></tr>
+      <tr><td><code>0x0C</code></td><td>4</td><td><code>u32 LE</code></td><td><code>variant</code></td><td><code>0</code> (type-tagged, 16-B stride) or <code>1</code> (simple, 8-B stride)</td></tr>
     </tbody>
   </table>
 
-  <p>
-    The first ten are standard Nintendo Nitro formats — see
-    <a href={`${base}/field-guide/file-formats/nitro-graphics/`}>Nitro
-    graphics</a>. The last four are Konami's own extensions — see
-    <a href={`${base}/field-guide/file-formats/konami-extensions/`}>Konami
-    extensions</a>.
-  </p>
+  <h2>TOC entry — variant 0 (16 bytes)</h2>
+  <p>Used by configuration-style containers like <code>global.lzs</code>, <code>title_pack.ofs</code>, sprite atlases.</p>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>4</td><td><code>u32 LE</code></td><td><code>unk</code> (often 0; in <code>tad</code> entries holds metadata)</td></tr>
+      <tr><td><code>+0x04</code></td><td>4</td><td><code>char[4]</code></td><td><code>type_tag</code> (reversed ASCII — see below)</td></tr>
+      <tr><td><code>+0x08</code></td><td>4</td><td><code>u32 LE</code></td><td><code>length</code> (payload bytes; 0 = empty slot)</td></tr>
+      <tr><td><code>+0x0C</code></td><td>4</td><td><code>u32 LE</code></td><td><code>data_offset</code> (absolute offset within the RESO file)</td></tr>
+    </tbody>
+  </table>
 
-  <h2>Containers can hold other containers</h2>
-  <p>
-    A RESO entry can itself be another RESO container, or a compressed
-    blob that decompresses to one. The title screen pack
-    (<code>2d/mainmenu/title_pack.ofs</code>) does exactly this: the
-    outer container has five entries, each of which is an LZ11-compressed
-    inner RESO container with the actual tile sheet, palette, and tilemap
-    for one seasonal variant of the title.
-  </p>
+  <h2>TOC entry — variant 1 (8 bytes)</h2>
+  <p>Used by message files (<code>data/message/**/*.ofs</code>), <code>talkstart/*.ofs</code>, and most plain data containers.</p>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>4</td><td><code>u32 LE</code></td><td><code>length</code></td></tr>
+      <tr><td><code>+0x04</code></td><td>4</td><td><code>u32 LE</code></td><td><code>data_offset</code></td></tr>
+    </tbody>
+  </table>
 
-  <h2>What's in most files</h2>
+  <h2>Type tag values (variant 0)</h2>
   <p>
-    Most containers are small — under a dozen entries. The big ones are
-    typically:
+    The 4-byte <code>type_tag</code> is reversed ASCII. Reverse to recover the
+    Nitro / Konami magic identifier.
   </p>
+  <table>
+    <thead><tr><th>Stored bytes</th><th>Reversed</th><th>Magic</th><th>Description</th><th>Count in corpus</th></tr></thead>
+    <tbody>
+      <tr><td><code>rgcn</code></td><td><code>NCGR</code></td><td><code>RGCN</code></td><td>Tile graphics</td><td>4,337</td></tr>
+      <tr><td><code>rlcn</code></td><td><code>NCLR</code></td><td><code>RLCN</code></td><td>Palette</td><td>2,600</td></tr>
+      <tr><td><code>recn</code></td><td><code>NCER</code></td><td><code>RECN</code></td><td>Cell / OAM definition</td><td>1,553</td></tr>
+      <tr><td><code>rcsn</code></td><td><code>NSCR</code></td><td><code>RCSN</code></td><td>BG screen / tilemap</td><td>1,128</td></tr>
+      <tr><td><code>rnan</code></td><td><code>NANR</code></td><td><code>RNAN</code></td><td>Animation</td><td>225</td></tr>
+      <tr><td><code>rtfn</code></td><td><code>NFTR</code></td><td><code>RTFN</code></td><td>Bitmap font</td><td>1</td></tr>
+      <tr><td><code>ncbr</code></td><td><code>NCBR</code></td><td><code>RBCN</code></td><td>Linear/bitmap NCGR variant</td><td>1</td></tr>
+      <tr><td><code>szl</code></td><td><code>lzs</code></td><td>—</td><td>Nested LZ11-compressed sub-RESO</td><td>34,464</td></tr>
+      <tr><td><code>sfo</code></td><td><code>ofs</code></td><td>—</td><td>Nested RESO (uncompressed)</td><td>333</td></tr>
+      <tr><td><code>tad</code></td><td><code>dat</code></td><td>—</td><td>Konami widget table (see <a href={`${base}/field-guide/file-formats/konami-extensions/`}>Konami extensions</a>)</td><td>694</td></tr>
+      <tr><td><code>nib</code></td><td><code>bin</code></td><td>—</td><td>Per-container binary blob (variable schema)</td><td>251</td></tr>
+      <tr><td><code>tbsn</code></td><td><code>nsbt</code></td><td><code>BTX0</code></td><td>3D texture pack (NSBTX)</td><td>8,773</td></tr>
+      <tr><td><code>mbsn</code></td><td><code>nsbm</code></td><td><code>BMD0</code></td><td>3D model (NSBMD)</td><td>297</td></tr>
+      <tr><td><code>cbsn</code></td><td><code>nsbc</code></td><td><code>BCA0</code></td><td>3D animation (NSBCA)</td><td>35</td></tr>
+      <tr><td><code>ymd</code></td><td><code>dmy</code></td><td>—</td><td>Dummy / placeholder script blob</td><td>15,712</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Payload region</h2>
   <ul>
-    <li><strong>Message dialog files</strong> (1,328 files): always
-      exactly 100 slots, of which only some are populated. The empty
-      slots are kept as zero-length placeholders so dialog can be
-      addressed by a fixed index.</li>
-    <li><strong>Item icons</strong> (<code>item/itemicon.ofs</code>):
-      656 tile-sheet entries in a single container, no palette inside
-      (it lives in <code>global.lzs</code>).</li>
-    <li><strong>Magic glyphs</strong>
-      (<code>2d/inputmagic/msg.ofs</code>): 1,000 slots of which 377
-      are populated, holding the JP labels for the magic-language
-      keyboard.</li>
-    <li><strong>Cooking recipes</strong>
-      (<code>ucc/names.ofs</code>): 192 slots holding food and recipe
-      names. Some slots are arrays of sub-records keyed by ingredient
-      pair — see <a href={`${base}/field-guide/names-and-words/food-recipes/`}>food
-      recipes</a>.</li>
+    <li>Payloads start at <code>0x10 + file_count × stride</code> (no special separator).</li>
+    <li>Re-emit aligns each payload to a 16-byte boundary
+      (<code>pad = (16 − len % 16) % 16</code>; pad bytes are <code>0x00</code>).</li>
+    <li>Empty TOC slots have <code>length=0</code> and <code>data_offset=0</code>.</li>
+    <li>Multiple TOC entries may share one <code>(length, data_offset)</code> —
+      see <a href={`${base}/field-guide/message-system/shared-payloads/`}>shared payloads</a>.</li>
   </ul>
 
-  <h2>Rebuilding a container</h2>
+  <h2>Annotated hex dump — header + first 4 TOC entries</h2>
   <p>
-    When we translate a dialog file, we have to write a new RESO container
-    back out. Two rules matter:
+    <code>data/message/msg00/00/msg00000.ofs</code> (variant 1, 100 entries):
   </p>
-  <ul>
-    <li>Every chunk's offset has to be 16-byte aligned, so we pad
-      between chunks with zero bytes if needed.</li>
-    <li>The TOC must list every original entry, even the empty ones. The
-      engine looks up dialog by fixed index, so a missing slot 47 would
-      misalign everything past it.</li>
-  </ul>
+  <pre><code>{`offs  bytes                                              meaning
+----  -------------------------------------------------- --------------------------------
+0000  52 45 53 4F                                        magic = "RESO"
+0004  64 00 00 00                                        file_count = 100
+0008  31 2E 32 31                                        version = "1.21"
+000C  01 00 00 00                                        variant = 1 (8-B stride TOC)
 
-  <p>
-    Empty slots are written with length 0 and offset 0. That's the same
-    thing the original file does.
-  </p>
+0010  08 00 00 00  30 03 00 00                           entry[0]: len=8, off=0x0330
+0018  40 01 00 00  38 03 00 00                           entry[1]: len=320, off=0x0338
+0020  EA 00 00 00  78 04 00 00                           entry[2]: len=234, off=0x0478
+0028  20 01 00 00  62 05 00 00                           entry[3]: len=288, off=0x0562
+... TOC continues for 96 more entries (100*8 = 800 bytes)
+0330  ...                                                 payload region begins`}</code></pre>
+
+  <h2>Variant-0 example: title_pack.ofs</h2>
+  <pre><code>{`0000  52 45 53 4F  05 00 00 00  31 2E 32 31  00 00 00 00   header, file_count=5, variant=0
+0010  00 00 00 00  6C 7A 73 00  00 F4 00 00  60 00 00 00   entry[0]: unk=0, tag="szl",
+                                                            len=0xF400 (62464), off=0x60
+0020  00 00 00 00  6C 7A 73 00  C0 5E 01 00  60 F4 00 00   entry[1]: tag="szl", len=89792
+0030  ... 3 more 16-B entries ...
+0060  11 10 27 00  ... LZ11 stream of inner RESO ...       payload[0] starts at 0x60`}</code></pre>
+
+  <h2>Decoder reference</h2>
+  <pre><code>{`# src/archive/reso.py
+def parse(data: bytes) -> list[ResoEntry]:
+    h = parse_header(data)
+    stride = 0x10 if h.variant == 0 else 0x08
+    entries = []
+    for i in range(h.file_count):
+        off = 0x10 + i * stride
+        if h.variant == 0:
+            unk          = u32(data, off + 0)
+            type_tag     = data[off+4:off+8].decode("ascii")  # reversed
+            length       = u32(data, off + 8)
+            data_offset  = u32(data, off + 12)
+        else:
+            length       = u32(data, off + 0)
+            data_offset  = u32(data, off + 4)
+            type_tag     = ""
+        entries.append(ResoEntry(i, type_tag, length, data_offset, unk))
+    return entries`}</code></pre>
+
+  <h2>Cross-references</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/file-formats/lz11/`}>LZ11</a> — outer compression wrapper for <code>.lzs</code> files</li>
+    <li><a href={`${base}/field-guide/file-formats/nitro-graphics/`}>Nitro graphics</a> — formats for <code>rgcn/rlcn/recn/rcsn/rnan</code></li>
+    <li><a href={`${base}/field-guide/file-formats/konami-extensions/`}>Konami extensions</a> — <code>tad/nib/sfo</code></li>
+  </ul>
 </FieldGuideLayout>

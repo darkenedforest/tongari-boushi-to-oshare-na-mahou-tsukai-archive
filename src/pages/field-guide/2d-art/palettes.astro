@@ -4,128 +4,166 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="Finding the right palette"
-  description="A tile sheet is just numbered pixels until you find its colors. The game has five different conventions for where the colors might live, and you have to try them in order."
+  title="Palette resolution"
+  description="Four-tier rule for matching an NCGR to its NCLR: sibling, container-shared, ARM9-pinned external, single-NCLR container."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: '2D Art', href: `${base}/field-guide/2d-art/` },
-    { label: 'Finding the right palette' },
+    { label: 'Palettes' },
   ]}
 >
   <p>
-    A "tile sheet" (the game calls these NCGRs) doesn't have any colors of
-    its own. Each pixel is just a number from 0 to 15, or 0 to 255 — an
-    index into a palette. The palette (the game calls it an NCLR) is a
-    separate file. Pair the right NCGR with the right NCLR and you get a
-    visible image. Pair it with the wrong palette and you get the right
-    shapes in nonsense colors.
+    NCGR tile data and NCLR palette data are separate
+    <a href={`${base}/field-guide/file-formats/nitro-graphics/`}>Nitro</a>
+    resources. The right palette for an NCGR is found by walking these rules
+    in order; the first match wins.
   </p>
 
+  <h2>BGR555 color format</h2>
+  <p>NCLR colors are 16-bit little-endian:</p>
+  <pre><code>{`bits 0..4   R  (5 bits)
+bits 5..9   G  (5 bits)
+bits 10..14 B  (5 bits)
+bit 15      ignored on hardware
+
+R8 = (c >> 0)  & 0x1F << 3      # scale 5→8 by left-shifting 3
+G8 = (c >> 5)  & 0x1F << 3
+B8 = (c >> 10) & 0x1F << 3`}</code></pre>
+  <p>Slot 0 is conventionally transparent in OBJ palettes.</p>
+
+  <h2>Palette banks (4bpp NCGR)</h2>
   <p>
-    The hard part is that the palette isn't always in the same place as
-    the tile sheet. So we work through five rules, in order, until one
-    of them produces an image that looks like an actual game graphic.
+    A 4bpp NCGR uses 16-color palettes — but an NCLR can hold many such banks
+    (up to 16 banks × 16 colors = 256 entries). The selection of <em>which</em>
+    bank applies to a given tile is encoded:
   </p>
-
-  <h2>Rule 1: same-group sibling</h2>
+  <ul>
+    <li>For BG (NSCR) cells: bits 12..15 of the screen cell word.</li>
+    <li>For OBJ (NCER) cells: bits 12..15 of OAM <code>attr2</code>.</li>
+  </ul>
   <p>
-    The simplest case. The container holds a tile sheet, then a palette,
-    then maybe an OAM sprite definition. The palette right next to the
-    tile sheet is the one that goes with it. This is how most NPC
-    portraits work.
+    When an NCLR has 2+ sections, the <code>PMCP</code> section maps each
+    local bank index to a VRAM bank index. Without <code>PMCP</code>, banks
+    are assumed sequential <code>0..N-1</code>.
   </p>
 
-  <h2>Rule 2: container-wide BG palette</h2>
+  <h2>Four-tier resolution rule</h2>
+
+  <h3>Tier 1: Sibling NCLR in same RESO</h3>
   <p>
-    Some containers batch several tile sheets at the start and put just a
-    couple of palettes after them. In that case, the first palette is the
-    shared one — every tile sheet uses it. The shop's "buy item" container
-    works this way (five tile sheets, three shared palettes, six tilemaps).
+    Within a container, the NCLR adjacent to the NCGR (in TOC index order,
+    immediately following the NCGR or preceding the next NCGR sentinel) is
+    the sibling palette. Implemented by <code>group_siblings()</code> in
+    <code>src/translator/_sprite_assoc.py</code>. Covers the
+    NCGR/NCLR/NCER triplet pattern.
   </p>
 
-  <h2>Rule 3: external palette from another container</h2>
+  <h3>Tier 2: Container-wide shared NCLR</h3>
   <p>
-    This was the surprise. For the two biggest "orphan" classes of art —
-    item icons and magic glyphs — the palette isn't even in the same file
-    as the tile sheets. It's somewhere completely different, and the game's
-    code is what knows where to look.
+    When a container batches several NCGRs at the start with no per-NCGR
+    NCLR, the container's first NCLR serves all of them. Used by
+    <code>buyitem.lzs</code> and similar shop containers (5 NCGRs + 3 shared
+    NCLRs + 6 NSCRs).
   </p>
 
+  <h3>Tier 3: ARM9-pinned external NCLR</h3>
+  <p>
+    The palette lives in a different container, pinned by ARM9 loader code.
+    Empirically resolved mappings:
+  </p>
   <table>
     <thead>
-      <tr><th>Source container</th><th>Palette container</th><th>Notes</th></tr>
+      <tr><th>Source container (NCGRs)</th><th>NCGR count</th><th>bpp</th><th>Palette container + entry</th><th>Notes</th></tr>
     </thead>
     <tbody>
       <tr>
-        <td><code>item/itemicon.ofs</code> (656 icons, 8-bit)</td>
-        <td><code>global.lzs</code> entry 5 (256 colors)</td>
-        <td>Entry 6 is the same palette dimmed, used for greyed-out icons.</td>
+        <td><code>item/itemicon.ofs</code></td><td>656</td><td>8bpp</td>
+        <td><code>global.lzs</code> RESO entry 5</td>
+        <td>256-color. Entry 6 = grayed-out variant.</td>
       </tr>
       <tr>
-        <td><code>2d/inputmagic/mgcall.ofs</code> (389 glyphs, 4-bit)</td>
-        <td><code>2d/inputmagic/mgc80.ofs</code> entry 0 (16 colors)</td>
-        <td>Entry 2 in the same file is an alternate color scheme.</td>
+        <td><code>2d/inputmagic/mgcall.ofs</code></td><td>389</td><td>4bpp</td>
+        <td><code>2d/inputmagic/mgc80.ofs</code> entry 0</td>
+        <td>16-color. Entry 2 = alt scheme.</td>
       </tr>
       <tr>
-        <td><code>2d/inputmagic/mgc01..09c.lzs</code> (more glyphs, 4-bit)</td>
-        <td><code>2d/inputmagic/mgc80.ofs</code> entry 0 (16 colors)</td>
-        <td>Same palette as the main glyph set.</td>
+        <td><code>2d/inputmagic/mgc01..09c.lzs</code></td><td>823 total</td><td>4bpp</td>
+        <td><code>2d/inputmagic/mgc80.ofs</code> entry 0</td>
+        <td>Shared with mgcall.</td>
       </tr>
     </tbody>
   </table>
 
+  <h3>Tier 4: Single-NCLR container</h3>
   <p>
-    We found these by reading the ARM9 code that loads the files. The
-    code knows that <code>itemicon.ofs</code> is always rendered with
-    the global OBJ palette, so it uploads that palette once at boot and
-    every item icon uses it.
+    When a container has exactly one NCLR (e.g.
+    <code>trendranking/npcicon.ofs</code> — 141 NCGRs + 1 NCLR), that single
+    NCLR is the shared palette for every NCGR. The sibling heuristic alone
+    misses this because the NCLR isn't grouped adjacent.
   </p>
 
-  <h2>Rule 4: single-palette container</h2>
+  <h3>Fallback</h3>
+  <p>Render with a grayscale palette. Used as a last resort.</p>
+
+  <h2>Resolution stats</h2>
   <p>
-    When a container has a bunch of tile sheets and exactly one palette
-    that isn't sitting next to any of them, that single palette is the
-    shared one. <code>trendranking/npcicon.ofs</code> is the classic
-    case — 141 tile sheets and one palette.
+    From <code>notes/palette_association.json</code> (4,337 total NCGR groups):
+  </p>
+  <table>
+    <thead><tr><th>Render kind</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>NSCR BG screen</td><td>1,099</td></tr>
+      <tr><td>NCER cell composition</td><td>926</td></tr>
+      <tr><td>External magic glyph</td><td>823</td></tr>
+      <tr><td>External item icon</td><td>656</td></tr>
+      <tr><td>Single sprite</td><td>466</td></tr>
+      <tr><td>Tilebank-only</td><td>296</td></tr>
+      <tr><td>Orphan (no palette resolved)</td><td>469</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Of the remaining 469 orphan NCGRs, the bulk are in:
+    <code>2d/signboard.lzs</code> (80), <code>2d/designlogo.lzs</code> (74),
+    <code>2d/designcloth.lzs</code> (58), <code>2d/selmaterial.lzs</code> (52),
+    <code>2d/expect.ofs</code> (51), <code>2d/buyitem.lzs</code> (31, shop bg
+    variants).
   </p>
 
-  <h2>Rule 5: give up, render grayscale</h2>
+  <h2>ARM9 external-palette evidence (item icons)</h2>
   <p>
-    For the 600 still-unresolved tile sheets (mostly in
-    <code>signboard.lzs</code>, <code>designlogo.lzs</code>,
-    <code>designcloth.lzs</code>, and a few other multi-palette
-    containers), we fall back to a grayscale render so we can at least
-    see the shapes. The pairing rule for these is probably indexed by
-    a hidden ordering — a sign, a logo, or a design slot has a specific
-    slot number, and the slot number picks both the tile sheet and the
-    palette. We just haven't dug that ordering out yet.
+    The 256-color OBJ palette for <code>item/itemicon.ofs</code> lives in
+    <code>global.lzs</code>, RESO entries 5 (main) and 6 (greyed-out). Each
+    NCLR is a 570-byte chunk with <code>bpp_code=4</code> (8bpp = 256
+    colors), <code>palette_data_size=512</code>. The loader is the generic
+    asset-loader at <code>0x02052D20</code>:
+  </p>
+  <pre><code>{`02052D4C  LDR  R0, [PC, #0x30]      ; r0 = 0x020AA740  (item-list ptr)
+02052D4E  LDR  R1, [PC, #0x34]      ; r1 = 0x020A55D8  ("item/itemicon.ofs")
+02052D50  LSLS R3, R3, #0xA          ; r3 = 0x7800     (flags)
+02052D52  BLX  0x02009894            ; call generic file-loader
+                                     ; r2 = u16 sub-index from caller's [r5+0x84]
+`}</code></pre>
+  <p>
+    No static <code>(icon_index → palette_index)</code> table exists because
+    none is needed: every item icon uses the same global OBJ palette uploaded
+    once at boot from <code>global.lzs</code>.
   </p>
 
-  <h2>The detective trick</h2>
-  <p>
-    When we don't know where a palette lives, the workflow is:
-  </p>
+  <h2>Discovering external mappings</h2>
+  <p>Recipe used when palette mapping is unknown:</p>
   <ol>
-    <li>Look at the tile sheet's bit depth. 4-bit means a 16-color palette;
-      8-bit means a 256-color palette.</li>
-    <li>Build a histogram of which palette indices are actually used in
-      the tile sheet. Item icons, for example, only use indices 0 and 129
-      through 255 — that's a strong fingerprint.</li>
-    <li>Filter candidate palettes by color count, then check which colors
-      they actually fill in. Pixel index 0 is almost always the transparent
-      key, usually a saturated green or magenta.</li>
-    <li>Render the tile sheet against each candidate. The right one
-      produces something recognizable.</li>
+    <li>Determine NCGR bpp distribution in the container.</li>
+    <li>If 4bpp → palette is 16-color (32 bytes + header). If 8bpp → 256-color (512 bytes + header).</li>
+    <li>Histogram palette indices used across all NCGRs in the container. Clustering in one half of the index range constrains which slots must be populated.</li>
+    <li>Filter candidate NCLRs by color count and visual content (slot 0 is often a saturated transparency key).</li>
+    <li>Score each candidate by color variety of actually-used indices when rendered.</li>
   </ol>
 
-  <h2>The ARM9 red herring</h2>
-  <p>
-    We originally thought item icons might have a per-icon palette mapping
-    in a static ARM9 table. Disassembly proved that's not the case — there
-    is no <code>icon_index → palette_index</code> lookup anywhere. Every
-    item icon uses the same palette, uploaded once at boot. The misleading
-    files <code>fscord.bin</code>, <code>mgcord.bin</code>, and
-    <code>pscord.bin</code> turned out to be recipe and category lookups,
-    not palette references.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>src/translator/_sprite_assoc.py</code> — sibling + container scanner</li>
+    <li><code>src/translator/_build_assoc_v2.py</code> — produces <code>palette_association.json</code></li>
+    <li><code>notes/palette_association.json</code> — full mapping</li>
+    <li><code>notes/asset_extraction_methodology.md</code> §"Palette association hierarchy"</li>
+  </ul>
 </FieldGuideLayout>

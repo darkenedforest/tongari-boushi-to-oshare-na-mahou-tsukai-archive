@@ -4,8 +4,8 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="LZS / LZ11 compression"
-  description="The compression Nintendo built into the DS hardware. About 70 percent of the game's asset files are wrapped in it."
+  title="LZ11 / LZS wrapper"
+  description="Outer LZS wrapper + inner Nintendo LZ11 stream. Used by ~70% of containers. Decoder + encoder in src/archive/lzs.py."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
@@ -13,69 +13,157 @@ const base = import.meta.env.BASE_URL;
   ]}
 >
   <p>
-    Most asset files in the game end in <code>.lzs</code> rather than
-    <code>.ofs</code>. The <code>.lzs</code> ones are compressed —
-    you have to decompress them before you can do anything with the
-    container inside.
+    A <code>.lzs</code> file is an outer 16-byte LZS wrapper followed by a
+    standard Nintendo LZ11 compressed stream. Decompressing it usually
+    yields a <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a>
+    container.
   </p>
 
+  <h2>Outer LZS wrapper (16 bytes)</h2>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td><code>0x00</code></td><td>4</td><td><code>char[4]</code></td><td><code>magic</code></td><td><code>"1.00"</code> = <code>31 2E 30 30</code></td></tr>
+      <tr><td><code>0x04</code></td><td>9</td><td><code>u8[9]</code></td><td><code>reserved</code></td><td>Zero-filled</td></tr>
+      <tr><td><code>0x0D</code></td><td>3</td><td><code>char[3]</code></td><td><code>tag</code></td><td><code>"sfo"</code> = <code>73 66 6F</code></td></tr>
+      <tr><td><code>0x10</code></td><td>—</td><td>—</td><td>LZ11 payload begins</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h2>LZ11 stream header (4 bytes)</h2>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>1</td><td><code>u8</code></td><td>magic = <code>0x11</code></td></tr>
+      <tr><td><code>+0x01</code></td><td>3</td><td><code>u24 LE</code></td><td>decompressed_size</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Stream body</h2>
   <p>
-    Nintendo calls the compression LZ11. Konami wraps it in an extra
-    16-byte header they call LZS. The two together look like this:
+    Repeating blocks of <code>1 flag byte</code> + up to <code>8 chunks</code>.
+    The flag byte's MSB-first bits select chunk kind: <code>0</code> = literal
+    byte, <code>1</code> = back-reference.
   </p>
 
-  <pre><code>{`+0x00  4 bytes  "1.00"        Konami's outer magic
-+0x04  9 bytes  zeros          reserved
-+0x0d  3 bytes  "sfo"          a literal tag, purpose unclear
-+0x10           LZ11 stream    Nintendo's actual compression`}</code></pre>
+  <h3>Literal chunk (1 byte)</h3>
+  <p>Emit the byte directly to the output buffer.</p>
 
-  <h2>The LZ11 stream</h2>
+  <h3>Back-reference chunk</h3>
   <p>
-    The compressed payload starts with a single magic byte (<code>0x11</code>)
-    followed by a 24-bit little-endian number — the size of the data once
-    it's decompressed. Everything after that is the compressed bitstream.
+    The first byte's top nibble (<code>n = b1 &gt;&gt; 4</code>) selects one of
+    three encodings:
+  </p>
+  <table>
+    <thead>
+      <tr><th>top nibble n</th><th>bytes read</th><th>length</th><th>disp</th><th>length range</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>n &gt; 1</code></td>
+        <td>2 (b1 b2)</td>
+        <td><code>n + 1</code></td>
+        <td><code>((b1 &amp; 0xF) &lt;&lt; 8) | b2</code></td>
+        <td>3..16</td>
+      </tr>
+      <tr>
+        <td><code>n == 0</code></td>
+        <td>3 (b1 b2 b3)</td>
+        <td><code>(((b1 &amp; 0xF) &lt;&lt; 4) | (b2 &gt;&gt; 4)) + 0x11</code></td>
+        <td><code>((b2 &amp; 0xF) &lt;&lt; 8) | b3</code></td>
+        <td>17..272</td>
+      </tr>
+      <tr>
+        <td><code>n == 1</code></td>
+        <td>4 (b1 b2 b3 b4)</td>
+        <td><code>(((b1 &amp; 0xF) &lt;&lt; 12) | (b2 &lt;&lt; 4) | (b3 &gt;&gt; 4)) + 0x111</code></td>
+        <td><code>((b3 &amp; 0xF) &lt;&lt; 8) | b4</code></td>
+        <td>273..65808</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    After decoding, copy <code>length</code> bytes from
+    <code>output[len(output) − disp − 1 .. +length]</code> into the output.
+    The copy can read bytes it just wrote (RLE-like overlapping copies).
   </p>
 
+  <h2>Decoder reference</h2>
+  <pre><code>{`# src/archive/lzs.py::decompress_lz11
+def decompress_lz11(payload: bytes) -> bytes:
+    decompressed_size = payload[1] | (payload[2] << 8) | (payload[3] << 16)
+    out = bytearray()
+    i = 4
+    while len(out) < decompressed_size:
+        flag = payload[i]; i += 1
+        for bit in range(7, -1, -1):
+            if len(out) >= decompressed_size: break
+            if (flag & (1 << bit)) == 0:                       # literal
+                out.append(payload[i]); i += 1
+            else:                                              # back-ref
+                b1 = payload[i]; b2 = payload[i+1]; i += 2
+                top = b1 >> 4
+                if top > 1:
+                    length = top + 1
+                    disp   = ((b1 & 0xF) << 8) | b2
+                elif top == 0:
+                    b3 = payload[i]; i += 1
+                    length = (((b1 & 0xF) << 4) | (b2 >> 4)) + 0x11
+                    disp   = ((b2 & 0xF) << 8) | b3
+                else:                                          # top == 1
+                    b3 = payload[i]; b4 = payload[i+1]; i += 2
+                    length = (((b1 & 0xF) << 12) | (b2 << 4) | (b3 >> 4)) + 0x111
+                    disp   = ((b3 & 0xF) << 8) | b4
+                copy_from = len(out) - disp - 1
+                for j in range(length):
+                    out.append(out[copy_from + j])
+    return bytes(out)`}</code></pre>
+
+  <h2>Encoder</h2>
   <p>
-    The bitstream uses back-references: chunks of the output can copy
-    themselves from earlier in the same output, up to about 4 KB back.
-    Match lengths run from 3 bytes up to about 65,000 bytes, encoded
-    with 2, 3, or 4 bytes depending on how big they are. It's a fairly
-    standard LZSS variant.
+    <code>src/archive/lzs.py::compress_lz11()</code> implements a greedy
+    encoder with one-byte lookahead. Limits (per spec):
+  </p>
+  <table>
+    <thead><tr><th>Form</th><th>Length range</th><th>Displacement range</th></tr></thead>
+    <tbody>
+      <tr><td>2-byte ref</td><td>3..0x10</td><td>1..0x1000</td></tr>
+      <tr><td>3-byte ref</td><td>0x11..0x110</td><td>1..0x1000</td></tr>
+      <tr><td>4-byte ref</td><td>0x111..0x10110</td><td>1..0x1000</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Output is padded to a multiple of 4 bytes (standard). The encoder is
+    <strong>not</strong> byte-identical to the Nintendo SDK — different valid
+    LZ11 streams can decompress to the same bytes. Round-trip
+    <code>decompress(compress(x)) == x</code> is the validation test
+    (passes on every blob tested, 2 KB NCGRs up to 110 KB inner RESOs).
   </p>
 
-  <h2>Why this matters for translation</h2>
-  <p>
-    To translate or repack any compressed asset, we need both a
-    decompressor and a compressor. We have both, but our compressor
-    won't produce byte-for-byte identical output to Nintendo's original
-    SDK compressor — different valid LZ11 streams can decompress to the
-    same input. The test we care about is the round-trip:
-    decompressing what we compressed gives back exactly what we started
-    with. That passes for every blob in the game we've tested, from
-    2 KB tile sheets up to 110 KB inner containers.
-  </p>
+  <h2>Worked example</h2>
+  <p>First 32 bytes of <code>2d/buyitem.lzs</code>:</p>
+  <pre><code>{`offs  bytes                                              meaning
+----  -------------------------------------------------- ----------------------------------
+0000  31 2E 30 30  00 00 00 00  00 00 00 00 00  73 66 6F   wrapper magic, zeros, "sfo" tag
+0010  11 80 BF 01                                          LZ11: magic=0x11, size=0x01BF80
+0014  FF                                                   flag byte (0b11111111 = 8 back-refs)
+0015  20 00                                                back-ref #1: n=2, length=3,
+                                                                       disp=((0x0<<8)|0x00)=0
+                                                                       copy 3 from out[-1]
+0017  ... 7 more 2-byte refs ...`}</code></pre>
 
-  <h2>The wrap order, in practice</h2>
-  <p>
-    A typical edit cycle for a compressed asset looks like this:
-  </p>
-  <ol>
-    <li>Read the <code>.lzs</code> file.</li>
-    <li>Skip the 16-byte LZS wrapper header.</li>
-    <li>Decompress the LZ11 stream.</li>
-    <li>You now have a RESO container — read it like any other.</li>
-    <li>Make your edit.</li>
-    <li>Write the new RESO container.</li>
-    <li>Compress with LZ11.</li>
-    <li>Wrap with a fresh 16-byte LZS header.</li>
-    <li>Save the result.</li>
-  </ol>
+  <h2>Compression ratios (sampled)</h2>
+  <table>
+    <thead><tr><th>File</th><th>Compressed</th><th>Decompressed</th><th>Ratio</th></tr></thead>
+    <tbody>
+      <tr><td><code>buyitem.lzs</code></td><td>24,064</td><td>114,560</td><td>4.76×</td></tr>
+      <tr><td><code>title_pack.ofs</code> inner sub-blob 3</td><td>62,464</td><td>~88,000</td><td>~1.41×</td></tr>
+      <tr><td><code>global.lzs</code></td><td>varies per entry</td><td>varies</td><td>~3.5×</td></tr>
+    </tbody>
+  </table>
 
-  <p>
-    The compressed size will probably be different from the original —
-    our compressor isn't byte-identical with Nintendo's. That's fine for
-    files inside the ROM, because the ROM filesystem uses absolute offsets
-    that we recompute anyway when we rebuild the ROM.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>src/archive/lzs.py</code> — decoder + encoder + CLI</li>
+  </ul>
 </FieldGuideLayout>

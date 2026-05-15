@@ -1,124 +1,109 @@
 ---
 import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
 const base = import.meta.env.BASE_URL;
+
+type Row = { jp:string; en:string; source:string; notes?:string };
+const GLOSSARY: Row[] = [
+  // Currency & royal
+  { jp: 'リッチ', en: 'Ritch', source: 'canon-G1', notes: 'Currency. 66 corpus hits. NOT "Mira".' },
+  { jp: '陛下', en: 'His Majesty', source: 'canon-G1', notes: 'Royal title (king is male).' },
+  { jp: '王様', en: 'King', source: 'canon-G1' },
+  { jp: '王子', en: 'Prince', source: 'canon-G1' },
+  { jp: '王女', en: 'Princess', source: 'canon-G1' },
+
+  // Locations
+  { jp: 'とんがり王国', en: 'Tongari Kingdom', source: 'canon-G3' },
+  { jp: 'カメヤ', en: 'Kameya', source: 'canon-G1', notes: 'Magic-supplies shop' },
+  { jp: 'フラワーデイジー', en: 'Flower Daisy', source: 'canon-G1', notes: 'Flower shop' },
+
+  // Classes / academic
+  { jp: 'マジック語', en: 'Linguistics', source: 'canon-G1', notes: 'Magic language class. In class-name contexts only.' },
+  { jp: 'まほうの言葉', en: 'magic language', source: 'canon-G1', notes: 'In-dialog reference (not the class name).' },
+  { jp: 'フィールド学', en: 'Outdoor class', source: 'canon-G1' },
+  { jp: 'ショーの音楽', en: 'Show BGM', source: 'fresh', notes: 'Width-constrained ARM9 slot.' },
+
+  // Game-1 NPC anchors (top character names)
+  { jp: 'こうちょう', en: 'Principal Sol', source: 'canon-G1' },
+  { jp: 'リカルド', en: 'Mr. Vlad', source: 'canon-G1' },
+  { jp: 'ドルイドン', en: 'Mr. Oakley', source: 'canon-G1' },
+  { jp: 'ミスキーキー', en: 'Miss Strawe', source: 'canon-G1' },
+  { jp: 'ダグラス', en: 'Mr. Graves', source: 'canon-G1' },
+  { jp: 'ピカード', en: 'Piquard', source: 'canon-G1' },
+  { jp: 'デイジー', en: 'Daisy', source: 'canon-G1' },
+  { jp: 'ビビ', en: 'Vivian', source: 'canon-G1' },
+  { jp: 'ローリィ', en: 'Roley', source: 'canon-G1' },
+  { jp: 'トメ', en: 'Malila', source: 'canon-G1' },
+  { jp: 'メルシィ', en: 'Marcy', source: 'canon-G1' },
+  { jp: 'ジョージ', en: 'George', source: 'canon-G1' },
+  { jp: 'ブニャー', en: 'Thom', source: 'canon-G1' },
+  { jp: 'テツ', en: 'Reginald', source: 'canon-G1', notes: 'Cross-game NPC: Tetsu (G3) = Reginald (G1).' },
+  { jp: 'ヒゲマル', en: 'Charlie', source: 'canon-G1' },
+  { jp: 'マッハ', en: 'Mah', source: 'canon-G1' },
+
+  // Player roles / substitutions
+  { jp: 'プレイヤー', en: '[PLAYER_NAME]', source: 'engine', notes: 'Opcode 0x01F4 substitutes runtime name. Width budget: 10 chars.' },
+  { jp: 'ガッコウ', en: '[SCHOOL_NAME]', source: 'engine', notes: 'Opcode 0x01F8 — school name from save data.' },
+
+  // Magic system
+  { jp: 'あいさつ', en: 'greeting', source: 'canon-G1' },
+  { jp: 'まほう', en: 'magic', source: 'canon-G1' },
+  { jp: 'まじない', en: 'incantation', source: 'canon-G1' },
+  { jp: 'UMA', en: 'UMA', source: 'canon-G1', notes: 'Unidentified Mysterious Animal' },
+  { jp: 'こいびと', en: 'sweetheart', source: 'canon-G1' },
+];
 ---
 
 <FieldGuideLayout
-  title="Glossary terms"
-  description="The recurring concepts and gameplay nouns that show up across hundreds of dialog lines, and how we settled on each translation."
+  title="Glossary — project canon"
+  description="JP → EN canonical mappings the patch keeps consistent. Sourced from Game 1 Konami EN, Tyler confirmations, project decisions."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Translation Canon', href: `${base}/field-guide/translation-canon/` },
     { label: 'Glossary' },
   ]}
 >
-  <p>
-    Some words show up everywhere in the game. The magic-magic-word
-    distinction, the names of activities, the time-of-day descriptors.
-    Picking the right English for each one matters because the choice
-    propagates across thousands of lines.
-  </p>
-
-  <h2>Magic vs incantation</h2>
-  <p>
-    The game uses two closely-related words:
-  </p>
-  <ul>
-    <li><strong>まほう</strong> (magic): the broad category. Spells, the
-      magic class, the magic system in general. Always
-      <strong>magic</strong> in English.</li>
-    <li><strong>まじない</strong> (literally "spell" or "charm"): used
-      for the specific compositions the player creates with the
-      magic-glyph keyboard. We translate this as
-      <strong>incantation</strong> — it's a more specific word that
-      pairs well with the glyph-composition mechanic.</li>
-  </ul>
-
-  <p>
-    Keeping these distinct matters because a tutorial line might say
-    "you've learned a new <em>incantation</em>" referring to a specific
-    composition, while another line says "magic class is fun" referring
-    to the school subject. The Japanese clearly distinguishes them; so
-    do we.
-  </p>
-
-  <h2>The magic glyph words</h2>
-  <p>
-    The 377 individual glyphs each have their own translation —
-    covered in <a href={`${base}/field-guide/names-and-words/magic-glyphs/`}>the
-    magic glyph keyboard</a>. A few worth calling out because they
-    appear in dialog frequently:
-  </p>
-
+  <h2>Source legend</h2>
   <table>
-    <thead>
-      <tr><th>JP</th><th>EN</th><th>Why</th></tr>
-    </thead>
+    <thead><tr><th>Tag</th><th>Meaning</th></tr></thead>
     <tbody>
-      <tr><td>ベリー</td><td>berry</td><td>Game 1 canon.</td></tr>
-      <tr><td>きのこ</td><td>mushroom</td><td>Universal.</td></tr>
-      <tr><td>くさ</td><td>weeds</td><td>Game 1 canon — note "weeds"
-        plural, not "grass."</td></tr>
-      <tr><td>むし</td><td>bug</td><td>Singular, matches Game 1's
-        insect-catching feature.</td></tr>
-      <tr><td>はな</td><td>flower</td><td>Game 1 canon.</td></tr>
-      <tr><td>つえ</td><td>staff</td><td>The wizard's staff. Game 1
-        canon.</td></tr>
-      <tr><td>でんぽう</td><td>telegram</td><td>The in-game messaging
-        system.</td></tr>
-      <tr><td>ふしぎ</td><td>mystery</td><td>Game 1 canon — used for
-        in-game lore concepts.</td></tr>
-      <tr><td>ウワサ</td><td>rumor</td><td>From Game 1's magic-word
-        list.</td></tr>
-      <tr><td>コーデ</td><td>outfit</td><td>The fashion system's
-        signature word.</td></tr>
-      <tr><td>キュート</td><td>Cute</td><td>One of the fashion-style
-        descriptors. Title-cased because it's a category name.</td></tr>
-      <tr><td>クール</td><td>Cool</td><td>Same category as Cute.</td></tr>
+      <tr><td><code>canon-G1</code></td><td>Konami EN canon from Game 1 (Magician's Quest, NDS).</td></tr>
+      <tr><td><code>canon-G3</code></td><td>Tongari Boushi (Game 3) project decision; no Game-1 anchor.</td></tr>
+      <tr><td><code>engine</code></td><td>Runtime substitution opcode, not literal text.</td></tr>
+      <tr><td><code>fresh</code></td><td>No canon match; minimal EN crafted to fit width budget.</td></tr>
     </tbody>
   </table>
 
-  <h2>Time of day</h2>
+  <h2>Canon table (project-wide)</h2>
   <p>
-    The game runs on the system clock and refers to time of day
-    frequently in dialog and quest descriptions.
+    Cross-referenced canon includes the 244 confirmed NPC names
+    (<a href={`${base}/field-guide/translation-canon/npc-names/`}>full NPC list</a>),
+    377 magic glyphs
+    (<a href={`${base}/field-guide/names-and-words/magic-glyphs/`}>full glyph table</a>),
+    49 UCC food sub-records
+    (<a href={`${base}/field-guide/names-and-words/food-recipes/`}>recipe table</a>),
+    and 26 ARM9 menu strings
+    (<a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`}>ARM9 pool</a>).
+    Highlights below.
   </p>
+
+  <table>
+    <thead><tr><th>JP</th><th>EN canon</th><th>source</th><th>notes</th></tr></thead>
+    <tbody>
+      {GLOSSARY.map(g => (
+        <tr>
+          <td><code>{g.jp}</code></td>
+          <td><strong>{g.en}</strong></td>
+          <td>{g.source}</td>
+          <td>{g.notes || ''}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Source</h2>
   <ul>
-    <li>あさ → <strong>morning</strong></li>
-    <li>ひる → <strong>daytime</strong></li>
-    <li>よる → <strong>night</strong> (rare in dialog; usually implied
-      by event timing)</li>
-    <li>いま → <strong>now</strong></li>
+    <li><code>extracted/scratch/db/translation.sqlite</code> — all canon tables</li>
+    <li>Game 1: <code>root/npc/NpcName_e.ofs</code>, <code>root/item/ItemName_e.ofs</code>, <code>picstat/magic/msg_e.dat</code></li>
+    <li><code>notes/applied_project_canon_changes.md</code> — project-level decisions</li>
   </ul>
-
-  <h2>Activities</h2>
-  <p>
-    The game's repeatable activities — what the player does in town
-    every day:
-  </p>
-  <ul>
-    <li>えんそう → <strong>performance</strong> (music class)</li>
-    <li>さつえい → <strong>photo shoot</strong> (the camera
-      minigame)</li>
-    <li>りょうり → <strong>cooking</strong></li>
-    <li>せんでん → <strong>advertise</strong> (for the design
-      minigame)</li>
-  </ul>
-
-  <h2>Why the canon keeps drifting</h2>
-  <p>
-    Translation choices feel obvious until you find a line where they
-    don't fit. We've revised several glossary entries mid-project as
-    a context appeared that contradicted the earlier choice. Each
-    revision is a one-script-run job because the dialog database has
-    canonicalization built in — change the canonical English for a
-    term and every affected dialog row updates the next time we
-    rebuild.
-  </p>
-
-  <p>
-    The notes folder in the translation repo tracks the audit history
-    if anyone needs to see what the term used to be and why we
-    changed it.
-  </p>
 </FieldGuideLayout>

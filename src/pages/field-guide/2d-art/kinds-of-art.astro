@@ -4,96 +4,163 @@ const base = import.meta.env.BASE_URL;
 ---
 
 <FieldGuideLayout
-  title="The kinds of art"
-  description="A quick tour of the categories of 2D images in the game, with rough counts and where each lives."
+  title="Art taxonomy"
+  description="The 10,261 image assets in the game by render strategy, file home, and palette source."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: '2D Art', href: `${base}/field-guide/2d-art/` },
     { label: 'Kinds of art' },
   ]}
 >
-  <h2>Item icons</h2>
   <p>
-    There are <strong>656 item icons</strong>, all 32×32 pixels, all packed
-    into a single file: <code>item/itemicon.ofs</code>. Every shop screen,
-    every inventory tile, every shopkeeper's display is drawing from this
-    set.
-  </p>
-  <p>
-    The icons themselves carry no palette. Their colors come from a
-    256-color palette in <code>global.lzs</code> (entry 5, plus entry 6
-    for the dimmed/unavailable variant). This took some hunting to figure
-    out — see <a href={`${base}/field-guide/2d-art/palettes/`}>finding the
-    right palette</a>.
+    Asset census from <code>extracted/scratch/db/translation.sqlite</code>
+    table <code>image_assets</code> (10,261 rows) and
+    <code>notes/palette_association.json</code>. Strategy refers to the
+    <a href={`${base}/field-guide/2d-art/composition-recipes/`}>composition pipeline</a>;
+    palette source refers to the <a href={`${base}/field-guide/2d-art/palettes/`}>palette resolution tier</a>.
   </p>
 
-  <h2>Magic glyphs (the keyboard)</h2>
-  <p>
-    The "magic language" keyboard the player uses to compose spells has
-    <strong>377 glyph buttons</strong>, drawn from a pool of icons across
-    <code>2d/inputmagic/mgcall.ofs</code> and the <code>mgc01..09c.lzs</code>
-    family. All of them share a single 16-color palette in
-    <code>2d/inputmagic/mgc80.ofs</code>.
-  </p>
-  <p>
-    Each glyph is a noun or short verb — "greeting," "magic," "yes,"
-    "Vivian," "morning," "river," and so on. The
-    <a href={`${base}/field-guide/names-and-words/magic-glyphs/`}>magic
-    glyph page</a> covers the full inventory and how we translated it.
-  </p>
+  <h2>By class</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Class</th>
+        <th>Count</th>
+        <th>Where</th>
+        <th>Strategy</th>
+        <th>Palette source</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>BG-screen NSCR composites</td>
+        <td>1,099</td>
+        <td>2d/* containers, map screens, title_pack.ofs</td>
+        <td>A (NSCR)</td>
+        <td>Sibling (Tier 1) or container-shared (Tier 2)</td>
+      </tr>
+      <tr>
+        <td>Item icons</td>
+        <td>656</td>
+        <td><code>item/itemicon.ofs</code></td>
+        <td>B (NCER) — 32×32 each</td>
+        <td>External: <code>global.lzs</code> entry 5 (Tier 3)</td>
+      </tr>
+      <tr>
+        <td>Magic glyphs (atlas)</td>
+        <td>389</td>
+        <td><code>2d/inputmagic/mgcall.ofs</code></td>
+        <td>B (NCER)</td>
+        <td>External: <code>mgc80.ofs</code> entry 0 (Tier 3)</td>
+      </tr>
+      <tr>
+        <td>Magic glyphs (individual)</td>
+        <td>434</td>
+        <td><code>2d/inputmagic/mgc01..09c.lzs</code></td>
+        <td>B (NCER)</td>
+        <td>External: <code>mgc80.ofs</code> entry 0 (Tier 3)</td>
+      </tr>
+      <tr>
+        <td>NCER sprite atlases (UI chrome)</td>
+        <td>926</td>
+        <td>Misc 2d/*</td>
+        <td>B or C</td>
+        <td>Sibling</td>
+      </tr>
+      <tr>
+        <td>Single sprite NCGRs</td>
+        <td>466</td>
+        <td>Various</td>
+        <td>B</td>
+        <td>Sibling / single-NCLR (Tier 4)</td>
+      </tr>
+      <tr>
+        <td>Tilebank-only NCGRs (BG fragments)</td>
+        <td>296</td>
+        <td>Map / dialog chrome</td>
+        <td>A (referenced by NSCRs elsewhere)</td>
+        <td>Sibling</td>
+      </tr>
+      <tr>
+        <td>3D model containers</td>
+        <td>186</td>
+        <td>mbsn/cbsn/tbsn entries (locker.lzs, map/weather/, etc.)</td>
+        <td>NSBMD pipeline (out of scope for 2D)</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td>NPC tutorial portraits</td>
+        <td>triplets</td>
+        <td><code>2d/pic2d.ofs</code></td>
+        <td>A (NSCR)</td>
+        <td>Sibling</td>
+      </tr>
+      <tr>
+        <td>Orphan NCGRs</td>
+        <td>469</td>
+        <td>signboard.lzs, designlogo.lzs, designcloth.lzs, selmaterial.lzs, expect.ofs, buyitem.lzs</td>
+        <td>Unknown</td>
+        <td>Unresolved (Tier 4 fallback to grayscale)</td>
+      </tr>
+    </tbody>
+  </table>
 
-  <h2>NPC portraits</h2>
-  <p>
-    Character portraits — the tutorial face, the close-up dialogue
-    portraits, the sticker / stamp variants — live in containers like
-    <code>2d/pic2d.ofs</code>. They're stored as background screens
-    (256×192 tilemaps), not sprites. Each portrait is a triplet of
-    files within the container: a tile sheet, a palette, and a tilemap
-    that lays the tiles out.
-  </p>
+  <h2>By image_assets status</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>metadata_only</td><td>5,811</td></tr>
+      <tr><td>nscr_bg_screen</td><td>1,110</td></tr>
+      <tr><td>ncer_composition_pending</td><td>926</td></tr>
+      <tr><td>external_magic_glyph</td><td>823</td></tr>
+      <tr><td>external_item_icon</td><td>656</td></tr>
+      <tr><td>orphan_palette</td><td>469</td></tr>
+      <tr><td>single_sprite</td><td>466</td></tr>
+      <tr><td><strong>Total</strong></td><td>10,261</td></tr>
+    </tbody>
+  </table>
 
-  <h2>Background screens</h2>
-  <p>
-    Full 256×192 still images — title art, shop interiors, menu backdrops,
-    cooking-minigame stages — are stored as a tile sheet plus a tilemap.
-    The tilemap is a 32×24 grid of 16-bit cells, where each cell says
-    "use this tile, with this palette bank, flipped this way."
-  </p>
-  <p>
-    The title screen is a good example: <code>2d/mainmenu/title_pack.ofs</code>
-    holds five seasonal/time-of-day variants (day castle, dawn, dusk, night
-    castle, sunburst), and the game picks one based on the system clock.
-  </p>
+  <h2>Phase D rendered outputs</h2>
+  <p>5,522 PNGs delivered as visual catalog:</p>
+  <table>
+    <thead><tr><th>Class</th><th>PNG count</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>item_icons</td><td>656</td><td>32×32, fixed dimensions</td></tr>
+      <tr><td>single_sprites</td><td>444</td><td>With layout inference</td></tr>
+      <tr><td>magic_glyphs</td><td>823</td><td>4bpp</td></tr>
+      <tr><td>nscr_bg_screens</td><td>1,100</td><td>Mostly 256×192</td></tr>
+      <tr><td>ncer_cells</td><td>1,815 + 240 fallback</td><td>Per-cell PNGs</td></tr>
+      <tr><td>orphan_renders</td><td>444</td><td>Grayscale fallback</td></tr>
+    </tbody>
+  </table>
 
-  <h2>UI sprites assembled from recipes</h2>
-  <p>
-    A lot of UI screens aren't single images. They're assemblies — half
-    a dozen sprite chips placed at specific X/Y coordinates on a 256×192
-    canvas. The shop's "buy item" screen is the worked example. Its
-    composition recipe is a 10-entry table baked into one of the game's
-    code overlays. Each entry says "place sprite chip N at (X, Y) using
-    palette M." More on this in
-    <a href={`${base}/field-guide/2d-art/composition-recipes/`}>composition
-    recipes</a>.
-  </p>
+  <h2>Validation targets (pixel-exact)</h2>
+  <table>
+    <thead><tr><th>Target</th><th>Render kind</th><th>Output</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Magic-keyboard glyph buttons (<code>2d/inputmagic/input.lzs</code> ents 17/18/19)</td>
+        <td>NCER cells</td>
+        <td><code>notes/sprites/visual_validation/inputmagic_keyboard_cell*.png</code></td>
+      </tr>
+      <tr>
+        <td>Buyitem shop screens (<code>2d/buyitem.lzs</code> ents 0..4 / 6 / 9..14)</td>
+        <td>NSCR screen</td>
+        <td><code>notes/sprites/visual_validation/buyitem_screen_*.png</code></td>
+      </tr>
+      <tr>
+        <td>NPC tutorial portraits (<code>2d/pic2d.ofs</code> triplets)</td>
+        <td>NSCR screen</td>
+        <td><code>notes/sprites/visual_validation/pic2d_trip*.png</code></td>
+      </tr>
+    </tbody>
+  </table>
 
-  <h2>UI sprites assembled at runtime</h2>
-  <p>
-    Other UI screens — the chat window, the chest, anything that resizes
-    or scrolls — don't have a static recipe. The placement comes from the
-    game's code, which decides on the fly where each chip goes. To capture
-    those screens exactly as they appear, we'd need to trace them in an
-    emulator. We have all the parts (every individual chip extracts to a
-    PNG), just not the assembly instructions yet.
-  </p>
-
-  <h2>3D models, which are out of scope here</h2>
-  <p>
-    A handful of things you might think are 2D are actually 3D: cooked
-    dishes (<code>dishup_mdl.ofs</code>), the cooking-minigame food
-    (<code>uccmdl.ofs</code>), and most of the world (the school grounds,
-    the town, etc.). These are Nintendo NSBMD models with NSBTX textures
-    and aren't covered in the 2D pipeline. The title splash's "EVENT HALL"
-    backdrop is also 3D, even though the logo on top of it is 2D.
-  </p>
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/asset_extraction_methodology.md</code></li>
+    <li><code>notes/palette_association.json</code></li>
+    <li><code>notes/asset_catalog.json</code> — 70,427 Nitro resources</li>
+    <li><code>extracted/scratch/db/translation.sqlite</code> — <code>image_assets</code> table</li>
+  </ul>
 </FieldGuideLayout>
