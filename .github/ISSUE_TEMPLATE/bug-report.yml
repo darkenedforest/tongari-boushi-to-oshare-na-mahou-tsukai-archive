@@ -1,0 +1,39 @@
+name: Bug report
+description: Report a bug in the patch, the website, or a translation issue.
+title: "[Bug] "
+labels: ["bug-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Drop screenshots/photos right into the description box — GitHub will upload them and they'll show up on the site automatically.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: |
+        Short description of the bug. If you have screenshots or photos of the issue, paste/drag them right into this box.
+      placeholder: |
+        e.g. "On the magic shop screen, the Charm description shows up as garbled text instead of English."
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where in the game / site?
+      description: Which screen, menu, location, or page?
+      placeholder: e.g. "Magic shop, Charm tab" or "/patches/ page"
+  - type: input
+    id: rom-rev
+    attributes:
+      label: ROM revision / patch version (game bugs only)
+      description: If this is a game bug, which patch version and ROM revision?
+      placeholder: e.g. "v2.3 patch, Rev 1 ROM"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce (optional)
+      placeholder: |
+        1. Open …
+        2. Click …
+        3. See …
