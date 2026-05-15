@@ -1,0 +1,41 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ThreeViewer from '../../components/ThreeViewer.tsx';
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="3D Models">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>3D Models</span>
+    </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/crown.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+    </div>
+    <h1>3D Models ✦</h1>
+    <p class="lede">
+      Every 3D model in the ROM — clothing the player can wear, NPCs, items
+      and furniture, caught bugs, environment pieces, magic effects, shop
+      interiors. Click any tile to spin it in a 3D viewer with orbit / zoom
+      controls; models that have animations play them on open. About 300
+      models total, ~9,000 textures.
+    </p>
+  </section>
+
+  <ThreeViewer client:load manifestUrl={`${base}/data/3d-manifest.json`} />
+</Layout>
+
+<style>
+  .page-header { padding: 40px 0 20px; }
+  .breadcrumb { display: flex; gap: 8px; align-items: center; color: var(--color-ink-soft); font-size: 0.9rem; margin: 0 0 12px; }
+  .breadcrumb a { color: var(--color-purple-400); font-weight: 600; }
+  .header-sprites { display: flex; align-items: center; gap: 18px; margin: 6px 0 4px; opacity: 0.78; }
+  .header-sprites img { width: 40px; height: 40px; }
+  .header-sprites img:nth-child(2) { width: 48px; height: 48px; }
+  .lede { max-width: 64ch; line-height: 1.6; color: var(--color-ink); }
+</style>
