@@ -1,0 +1,81 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="LZS / LZ11 compression"
+  description="The compression Nintendo built into the DS hardware. About 70 percent of the game's asset files are wrapped in it."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'LZ11' },
+  ]}
+>
+  <p>
+    Most asset files in the game end in <code>.lzs</code> rather than
+    <code>.ofs</code>. The <code>.lzs</code> ones are compressed —
+    you have to decompress them before you can do anything with the
+    container inside.
+  </p>
+
+  <p>
+    Nintendo calls the compression LZ11. Konami wraps it in an extra
+    16-byte header they call LZS. The two together look like this:
+  </p>
+
+  <pre><code>{`+0x00  4 bytes  "1.00"        Konami's outer magic
++0x04  9 bytes  zeros          reserved
++0x0d  3 bytes  "sfo"          a literal tag, purpose unclear
++0x10           LZ11 stream    Nintendo's actual compression`}</code></pre>
+
+  <h2>The LZ11 stream</h2>
+  <p>
+    The compressed payload starts with a single magic byte (<code>0x11</code>)
+    followed by a 24-bit little-endian number — the size of the data once
+    it's decompressed. Everything after that is the compressed bitstream.
+  </p>
+
+  <p>
+    The bitstream uses back-references: chunks of the output can copy
+    themselves from earlier in the same output, up to about 4 KB back.
+    Match lengths run from 3 bytes up to about 65,000 bytes, encoded
+    with 2, 3, or 4 bytes depending on how big they are. It's a fairly
+    standard LZSS variant.
+  </p>
+
+  <h2>Why this matters for translation</h2>
+  <p>
+    To translate or repack any compressed asset, we need both a
+    decompressor and a compressor. We have both, but our compressor
+    won't produce byte-for-byte identical output to Nintendo's original
+    SDK compressor — different valid LZ11 streams can decompress to the
+    same input. The test we care about is the round-trip:
+    decompressing what we compressed gives back exactly what we started
+    with. That passes for every blob in the game we've tested, from
+    2 KB tile sheets up to 110 KB inner containers.
+  </p>
+
+  <h2>The wrap order, in practice</h2>
+  <p>
+    A typical edit cycle for a compressed asset looks like this:
+  </p>
+  <ol>
+    <li>Read the <code>.lzs</code> file.</li>
+    <li>Skip the 16-byte LZS wrapper header.</li>
+    <li>Decompress the LZ11 stream.</li>
+    <li>You now have a RESO container — read it like any other.</li>
+    <li>Make your edit.</li>
+    <li>Write the new RESO container.</li>
+    <li>Compress with LZ11.</li>
+    <li>Wrap with a fresh 16-byte LZS header.</li>
+    <li>Save the result.</li>
+  </ol>
+
+  <p>
+    The compressed size will probably be different from the original —
+    our compressor isn't byte-identical with Nintendo's. That's fine for
+    files inside the ROM, because the ROM filesystem uses absolute offsets
+    that we recompute anyway when we rebuild the ROM.
+  </p>
+</FieldGuideLayout>

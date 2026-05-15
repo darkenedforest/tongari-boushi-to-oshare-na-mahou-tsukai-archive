@@ -1,0 +1,94 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="NPC names"
+  description="The cast of characters and the rules for what we call them. Most names come from Magician's Quest 1's English localization."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Translation Canon', href: `${base}/field-guide/translation-canon/` },
+    { label: 'NPC names' },
+  ]}
+>
+  <p>
+    Tongari Boushi reuses many characters from
+    <em>Magician's Quest: Mysterious Times</em>, the studio's earlier
+    DS game that had an English release. Wherever a character appears
+    in both games, we use Konami's official Game 1 English name.
+  </p>
+
+  <p>
+    Some of those names look <em>very</em> different from the
+    Japanese. リカルド is not "Ricardo" — it's <strong>Mr. Vlad</strong>.
+    ドルイドン is not "Druidon" — it's <strong>Mr. Oakley</strong>. We
+    don't get to second-guess these. They're locked.
+  </p>
+
+  <h2>Key NPC names</h2>
+
+  <table>
+    <thead>
+      <tr><th>Japanese</th><th>Official English (Konami)</th><th>Role</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>リカルド</td><td>Mr. Vlad</td><td>Teacher / vampire character</td></tr>
+      <tr><td>ドルイドン</td><td>Mr. Oakley</td><td>Teacher</td></tr>
+      <tr><td>ミスキーキー</td><td>Miss Strawe</td><td>Teacher</td></tr>
+      <tr><td>ダグラス</td><td>Mr. Graves</td><td>Teacher</td></tr>
+      <tr><td>こうちょう</td><td>Principal Sol</td><td>The school principal</td></tr>
+      <tr><td>テツ</td><td>Reginald</td><td>Recurring side character (from Game 1)</td></tr>
+      <tr><td>ヒゲマル</td><td>Charlie</td><td>Postman, recurring</td></tr>
+      <tr><td>ビビ</td><td>Vivian</td><td>Shopkeeper (Vivian's Boutique)</td></tr>
+      <tr><td>トメ</td><td>Malila</td><td>Side character</td></tr>
+      <tr><td>ピカード</td><td>Piquard</td><td>Side character</td></tr>
+      <tr><td>ラム</td><td>Felicia</td><td>Side character</td></tr>
+      <tr><td>ミント</td><td>Mint</td><td>Side character</td></tr>
+      <tr><td>ロック</td><td>Rock</td><td>Side character</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Honorifics</h2>
+  <p>
+    Teachers and other adult authority figures get "Mr." or "Miss"
+    prefixes in English even though Japanese uses a bare name or
+    "-sensei." This matches Game 1's convention. The principal is
+    "Principal Sol," not "Mr. Sol" — also matching Game 1.
+  </p>
+
+  <h2>Where there's no Game 1 canon</h2>
+  <p>
+    Some NPCs are Tongari-specific — they don't appear in Magician's
+    Quest 1. For those, we picked names from context, leaning toward
+    spellings that match the rest of the cast in feel:
+  </p>
+  <ul>
+    <li>NPCs whose Japanese name is a katakana rendering of a
+      Western name (like ピカード → Piquard) get a Western spelling.</li>
+    <li>NPCs with Japanese names (like テツ — though in this case
+      Game 1's official name <em>Reginald</em> applies) get treated
+      case-by-case.</li>
+    <li>NPCs whose Japanese name is an adjective or noun
+      ("ラム" = "rum") usually get a different Western-style name to
+      avoid being awkward.</li>
+  </ul>
+
+  <p>
+    For these fresh translations we keep notes on why we chose a
+    given form. If a better name surfaces later, the canonicalization
+    pass will update every affected dialog row in one shot.
+  </p>
+
+  <h2>The pronoun and particle system</h2>
+  <p>
+    Each NPC has six "personality particle" variants (cheerful,
+    timid, gruff, etc.) and one first-person pronoun. These are
+    looked up at runtime via opcodes — see
+    <a href={`${base}/field-guide/message-system/opcodes/`}>the
+    opcode menagerie</a>. The English side preserves the placeholder
+    bytes for these substitutions. We don't translate the particle
+    set directly; instead we make sure the English line reads
+    naturally around the substitution.
+  </p>
+</FieldGuideLayout>

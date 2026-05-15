@@ -1,0 +1,64 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The Message System"
+  description="Where the game stores its dialog, how the wire format works, and the surprising thing it does with repeated lines."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Message System' },
+  ]}
+>
+  <p>
+    There are <strong>1,328 message dialog files</strong> in the game,
+    organized in a deep directory tree under <code>data/message/</code>.
+    Each file is a RESO container with exactly 100 slots, of which the
+    populated ones hold one "dialog entry" each. A dialog entry is the
+    text plus all the control codes for one exchange with one NPC.
+  </p>
+
+  <p>
+    Across all 1,328 files there are about 50,000 populated entries.
+    Their wire format is a custom byte stream with embedded opcodes —
+    a tiny language the game's parser walks at runtime.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/message-system/wire-format/`} class="fg-card">
+      <h3>The wire format</h3>
+      <p>How text and opcodes are interleaved in a dialog entry, the four control tokens, and the high-bit trick that distinguishes data from control.</p>
+    </a>
+    <a href={`${base}/field-guide/message-system/opcodes/`} class="fg-card">
+      <h3>The opcode menagerie</h3>
+      <p>88 distinct opcodes in use across the game, what we know about each, and the ones that show up tens of thousands of times.</p>
+    </a>
+    <a href={`${base}/field-guide/message-system/shared-payloads/`} class="fg-card">
+      <h3>Shared payloads</h3>
+      <p>A space-saving trick the original Japanese ROM uses: multiple "different" dialog entries that all point at the exact same payload. 53 percent of files do this.</p>
+    </a>
+  </div>
+
+  <h2>Where dialog isn't</h2>
+  <p>
+    Not all "text-looking" files hold dialog. To clear up some
+    confusion:
+  </p>
+  <ul>
+    <li><code>data/script/*.ofs</code> (383 files) hold event scripts —
+      animations, camera moves, branching logic. The script bytecode
+      can call into the message system but doesn't hold dialog text
+      itself.</li>
+    <li><code>data/talkstart/*.ofs</code> (40 files) hold tables that
+      decide which dialog gets used when an NPC starts talking. The
+      structure is partially decoded but isn't covered here.</li>
+    <li><code>data/talk/word.dat</code> is a banned/swear-word filter
+      list for the player-typed name and chat features.</li>
+  </ul>
+
+  <p>
+    The actual dialog text is in <code>data/message/</code> and only
+    there.
+  </p>
+</FieldGuideLayout>

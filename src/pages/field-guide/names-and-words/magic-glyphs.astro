@@ -1,0 +1,140 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The magic glyph keyboard"
+  description="The 377-icon vocabulary the player uses to cast spells, plus how we matched each glyph to its English meaning."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
+    { label: 'Magic glyphs' },
+  ]}
+>
+  <p>
+    Magic in this game isn't cast by selecting from a menu. The player
+    composes a spell by picking icons from a keyboard of cute pictograms
+    — each picture is a word in the game's "magic language."
+  </p>
+
+  <p>
+    The keyboard holds <strong>377 populated glyphs</strong> out of 1000
+    slots. The slot table is in <code>2d/inputmagic/msg.ofs</code>; the
+    visual icons are in the surrounding files
+    (<code>mgcall.ofs</code> and the <code>mgc01..09c.lzs</code> family),
+    all sharing a palette in <code>mgc80.ofs</code> — see
+    <a href={`${base}/field-guide/2d-art/palettes/`}>finding the right
+    palette</a>.
+  </p>
+
+  <h2>What the glyphs are</h2>
+  <p>
+    Each glyph is one word, in three rough categories:
+  </p>
+  <ul>
+    <li><strong>Common nouns and adjectives</strong> — "magic," "yes,"
+      "love," "morning," "river," "flower," "Tower," "Beach."</li>
+    <li><strong>Character names</strong> — every NPC has a glyph.
+      Vivian, Mr. Vlad, Mr. Oakley, Miss Strawe, Mr. Graves, and so on.</li>
+    <li><strong>Numbers and symbols</strong> — 0 through 9, exclamation
+      and question marks.</li>
+  </ul>
+
+  <p>
+    Spells are formed by chaining glyphs together. "Greet" + "morning"
+    + "[NPC name]" is a greeting spell. The game parses these compositions
+    and triggers different effects depending on the combination.
+  </p>
+
+  <h2>How we got the English names</h2>
+  <p>
+    Tongari Boushi never released in English, but the magic-glyph idea
+    came from the same studio's earlier game,
+    <em>Magician's Quest: Mysterious Times</em> (called <em>Enchanted
+    Folk and the School of Wizardry</em> in Europe), which <em>did</em>
+    release in English. Both games share a "magic word" vocabulary, and
+    Game 1's English localization gives us official English equivalents
+    for 280 of the 377 glyphs in Tongari.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Source</th><th>Count</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Konami official canon</td>
+        <td>280</td>
+        <td>Direct from Magician's Quest 1 English release.</td>
+      </tr>
+      <tr>
+        <td>NPC database (hand-curated)</td>
+        <td>51</td>
+        <td>Character names we'd already locked down for this project.</td>
+      </tr>
+      <tr>
+        <td>NPC placeholder</td>
+        <td>2</td>
+        <td>Names where the database entry exists but isn't yet
+          translated.</td>
+      </tr>
+      <tr>
+        <td>Universal / dictionary</td>
+        <td>16</td>
+        <td>Obvious dictionary words ("ice," "school," "town").</td>
+      </tr>
+      <tr>
+        <td>Fresh translations</td>
+        <td>28</td>
+        <td>Game-3-only content with no Game 1 parallel; we picked
+          translations from context.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Total: 377 glyphs, 377 translations. Coverage is 100 percent —
+    every populated slot has an English form.
+  </p>
+
+  <h2>Sample glyphs</h2>
+  <p>A small slice of what the keyboard looks like:</p>
+
+  <table>
+    <thead>
+      <tr><th>Index</th><th>Japanese</th><th>English</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>あいさつ</td><td>greeting</td></tr>
+      <tr><td>2</td><td>まほう</td><td>magic</td></tr>
+      <tr><td>4</td><td>はい</td><td>yes</td></tr>
+      <tr><td>5</td><td>ちがう</td><td>no</td></tr>
+      <tr><td>13</td><td>ラブ</td><td>love</td></tr>
+      <tr><td>15</td><td>おおきい</td><td>big</td></tr>
+      <tr><td>17</td><td>はやい</td><td>fast</td></tr>
+      <tr><td>34</td><td>ともだち</td><td>friend</td></tr>
+      <tr><td>41</td><td>こうちょう</td><td>Principal Sol</td></tr>
+      <tr><td>42</td><td>リカルド</td><td>Mr. Vlad</td></tr>
+      <tr><td>44</td><td>ミスキーキー</td><td>Miss Strawe</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Why glyph consistency matters in dialog</h2>
+  <p>
+    When an NPC's dialog mentions a glyph word — like a hint that says
+    "try using the <em>morning</em> magic word" — the original
+    Japanese uses a colored highlight around the glyph's name. Our
+    translation needs to match that highlighted word to the glyph
+    exactly, or the player won't know which icon to look for.
+  </p>
+
+  <p>
+    To catch mismatches we run a dialog audit that scans every
+    color-highlighted span in the dialog database and checks whether
+    the English text matches the glyph's canonical English. About
+    2,500 entries match cleanly; 700 had inconsistencies that we
+    then fixed by canonicalizing the dialog to the glyph's official
+    name.
+  </p>
+</FieldGuideLayout>

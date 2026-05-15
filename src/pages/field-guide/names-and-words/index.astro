@@ -1,0 +1,36 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Names & Words"
+  description="Three corners of the game where individual words are stored in their own structured tables: the magic-glyph keyboard, the cooking recipes, and the ARM9's menu pool."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Names & Words' },
+  ]}
+>
+  <p>
+    Most text in the game is in the message dialog files
+    (<a href={`${base}/field-guide/message-system/`}>see that
+    section</a>). But there's a handful of places where individual
+    words and short phrases are stored in their own structured tables,
+    each with its own quirks.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/names-and-words/magic-glyphs/`} class="fg-card">
+      <h3>The magic glyph keyboard</h3>
+      <p>377 little icons make up the player's spell-casting vocabulary. Each one is a word like "morning," "river," "Vivian," or "happy."</p>
+    </a>
+    <a href={`${base}/field-guide/names-and-words/food-recipes/`} class="fg-card">
+      <h3>Food and recipes</h3>
+      <p>192 named food slots. Most are simple, but 10 are "multi-name" slots holding arrays of variant names keyed by ingredient pairs.</p>
+    </a>
+    <a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`} class="fg-card">
+      <h3>The ARM9 menu pool</h3>
+      <p>The short action verbs that appear on the inventory menu — "Hold," "Place," "Bury," "Equip." They're embedded directly in the game's main binary with strict byte budgets.</p>
+    </a>
+  </div>
+</FieldGuideLayout>

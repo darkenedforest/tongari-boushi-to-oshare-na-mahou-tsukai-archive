@@ -1,0 +1,120 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Food and recipes"
+  description="The cooking system's name table. Most slots are simple, but ten of them hold arrays of variant names keyed by ingredient pairs."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
+    { label: 'Food and recipes' },
+  ]}
+>
+  <p>
+    The cooking minigame has 192 named food items. The names live in
+    <code>extracted/nds/data/ucc/names.ofs</code>. Most slots are
+    simple — one slot, one name. But ten of them are
+    <strong>multi-name slots</strong>: arrays of variant names keyed by
+    the pair of ingredients the player used.
+  </p>
+
+  <h2>Simple slots</h2>
+  <p>
+    A simple slot is 68 bytes:
+  </p>
+  <pre><code>{`+0x00  u32     header word (the variant key, or category code)
++0x04  60 bytes UTF-16-LE name + NUL terminator + padding`}</code></pre>
+
+  <p>
+    The header word is a small integer telling the engine what
+    category the slot belongs to. The rest is the name, encoded in
+    UTF-16 with a NUL terminator and zero-padding.
+  </p>
+
+  <h2>Multi-name slots</h2>
+  <p>
+    Ten of the 192 slots are larger than 68 bytes, and every one of
+    them is a multiple of 68. Each is an array of sub-records, all
+    sharing the same 68-byte layout. The base category is sub-record
+    0; the recipe variants are sub-records 1 onward.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Slot</th><th>Sub-records</th><th>Base name (JP)</th><th>Variant family</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>57</td><td>2</td><td>ケーキ</td><td>ショートケーキ (Strawberry Shortcake)</td></tr>
+      <tr><td>65</td><td>10</td><td>シチュー</td><td>クリームシチュー (Cream Stew)</td></tr>
+      <tr><td>66</td><td>6</td><td>シチュー</td><td>ビーフシチュー (Beef Stew)</td></tr>
+      <tr><td>101</td><td>2</td><td>アイス</td><td>バニラアイス (Vanilla Ice Cream)</td></tr>
+      <tr><td>144</td><td>2</td><td>パン</td><td>あんぱん (Anpan)</td></tr>
+      <tr><td>145</td><td>5</td><td>パン</td><td>チョコパン (Choco Bread)</td></tr>
+      <tr><td>146</td><td>2</td><td>パン</td><td>クリームパン (Cream Bun)</td></tr>
+      <tr><td>149</td><td>2</td><td>パン</td><td>ジャムパン (Jam Bun)</td></tr>
+      <tr><td>151</td><td>9</td><td>パスタ</td><td>カルボナーラ (Carbonara)</td></tr>
+      <tr><td>152</td><td>9</td><td>パスタ</td><td>ナポリタン (Napolitan)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The variant key</h2>
+  <p>
+    Each variant sub-record carries a 2-byte key in its header. The
+    key is a pair of ASCII bytes — usually digits or symbols. For
+    Cream Stew (slot 65, 10 sub-records), the keys are:
+  </p>
+
+  <pre><code>{`'79'  '97'  '78'  '87'  '89'  '98'  '37'  '39'  '38'`}</code></pre>
+
+  <p>
+    The "alphabet" here is <code>{3, 7, 8, 9}</code>, and the keys are
+    the non-equal ordered pairs of those digits with a few specific
+    combinations. The working theory: each digit stands for one
+    ingredient slot, and the engine looks up the cooked dish by the
+    pair of ingredients you used. So if you cooked with ingredients
+    "7" and "9," it finds the record keyed <code>'79'</code> and uses
+    its name.
+  </p>
+
+  <p>
+    For carbonara (slot 151), the alphabet is
+    <code>{'{(, *, 3, 5}'}</code> — a different per-recipe ingredient
+    set. The same engine logic applies.
+  </p>
+
+  <p>
+    We haven't fully confirmed the lookup logic by reading the
+    engine code yet — that would require finding the cooking-minigame
+    overlay and tracing its name-lookup routine — but the data fits
+    the pattern very cleanly.
+  </p>
+
+  <h2>Why all variants of a recipe have the same Japanese name</h2>
+  <p>
+    For Cream Stew with 9 variant sub-records, every single sub-record
+    has the identical Japanese string <code>クリームシチュー</code>.
+    Only the 2-byte key differs. The game treats them as
+    interchangeable for display purposes — what matters is the key,
+    not the name.
+  </p>
+
+  <p>
+    For translation that means we can safely give every variant of
+    Cream Stew the same English name ("Cream Stew"), as long as we
+    preserve the original key bytes exactly. The engine's
+    ingredient-pair lookup still works because the key isn't part of
+    the visible name.
+  </p>
+
+  <h2>Cross-reference with Game 1</h2>
+  <p>
+    Magician's Quest 1 (the English-released predecessor) doesn't
+    have a cooking system. There's no canonical English for any of
+    these recipe names. The translations we use come from dictionary
+    forms ("Cake," "Stew") and from Japanese-food English-writing
+    conventions ("Anpan" vs "Red Bean Bun" — a stylistic call we
+    leaned toward "Anpan" since it's the spelling Wikipedia uses).
+  </p>
+</FieldGuideLayout>

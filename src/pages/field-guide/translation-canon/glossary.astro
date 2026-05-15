@@ -1,0 +1,124 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Glossary terms"
+  description="The recurring concepts and gameplay nouns that show up across hundreds of dialog lines, and how we settled on each translation."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Translation Canon', href: `${base}/field-guide/translation-canon/` },
+    { label: 'Glossary' },
+  ]}
+>
+  <p>
+    Some words show up everywhere in the game. The magic-magic-word
+    distinction, the names of activities, the time-of-day descriptors.
+    Picking the right English for each one matters because the choice
+    propagates across thousands of lines.
+  </p>
+
+  <h2>Magic vs incantation</h2>
+  <p>
+    The game uses two closely-related words:
+  </p>
+  <ul>
+    <li><strong>まほう</strong> (magic): the broad category. Spells, the
+      magic class, the magic system in general. Always
+      <strong>magic</strong> in English.</li>
+    <li><strong>まじない</strong> (literally "spell" or "charm"): used
+      for the specific compositions the player creates with the
+      magic-glyph keyboard. We translate this as
+      <strong>incantation</strong> — it's a more specific word that
+      pairs well with the glyph-composition mechanic.</li>
+  </ul>
+
+  <p>
+    Keeping these distinct matters because a tutorial line might say
+    "you've learned a new <em>incantation</em>" referring to a specific
+    composition, while another line says "magic class is fun" referring
+    to the school subject. The Japanese clearly distinguishes them; so
+    do we.
+  </p>
+
+  <h2>The magic glyph words</h2>
+  <p>
+    The 377 individual glyphs each have their own translation —
+    covered in <a href={`${base}/field-guide/names-and-words/magic-glyphs/`}>the
+    magic glyph keyboard</a>. A few worth calling out because they
+    appear in dialog frequently:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>JP</th><th>EN</th><th>Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ベリー</td><td>berry</td><td>Game 1 canon.</td></tr>
+      <tr><td>きのこ</td><td>mushroom</td><td>Universal.</td></tr>
+      <tr><td>くさ</td><td>weeds</td><td>Game 1 canon — note "weeds"
+        plural, not "grass."</td></tr>
+      <tr><td>むし</td><td>bug</td><td>Singular, matches Game 1's
+        insect-catching feature.</td></tr>
+      <tr><td>はな</td><td>flower</td><td>Game 1 canon.</td></tr>
+      <tr><td>つえ</td><td>staff</td><td>The wizard's staff. Game 1
+        canon.</td></tr>
+      <tr><td>でんぽう</td><td>telegram</td><td>The in-game messaging
+        system.</td></tr>
+      <tr><td>ふしぎ</td><td>mystery</td><td>Game 1 canon — used for
+        in-game lore concepts.</td></tr>
+      <tr><td>ウワサ</td><td>rumor</td><td>From Game 1's magic-word
+        list.</td></tr>
+      <tr><td>コーデ</td><td>outfit</td><td>The fashion system's
+        signature word.</td></tr>
+      <tr><td>キュート</td><td>Cute</td><td>One of the fashion-style
+        descriptors. Title-cased because it's a category name.</td></tr>
+      <tr><td>クール</td><td>Cool</td><td>Same category as Cute.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Time of day</h2>
+  <p>
+    The game runs on the system clock and refers to time of day
+    frequently in dialog and quest descriptions.
+  </p>
+  <ul>
+    <li>あさ → <strong>morning</strong></li>
+    <li>ひる → <strong>daytime</strong></li>
+    <li>よる → <strong>night</strong> (rare in dialog; usually implied
+      by event timing)</li>
+    <li>いま → <strong>now</strong></li>
+  </ul>
+
+  <h2>Activities</h2>
+  <p>
+    The game's repeatable activities — what the player does in town
+    every day:
+  </p>
+  <ul>
+    <li>えんそう → <strong>performance</strong> (music class)</li>
+    <li>さつえい → <strong>photo shoot</strong> (the camera
+      minigame)</li>
+    <li>りょうり → <strong>cooking</strong></li>
+    <li>せんでん → <strong>advertise</strong> (for the design
+      minigame)</li>
+  </ul>
+
+  <h2>Why the canon keeps drifting</h2>
+  <p>
+    Translation choices feel obvious until you find a line where they
+    don't fit. We've revised several glossary entries mid-project as
+    a context appeared that contradicted the earlier choice. Each
+    revision is a one-script-run job because the dialog database has
+    canonicalization built in — change the canonical English for a
+    term and every affected dialog row updates the next time we
+    rebuild.
+  </p>
+
+  <p>
+    The notes folder in the translation repo tracks the audit history
+    if anyone needs to see what the term used to be and why we
+    changed it.
+  </p>
+</FieldGuideLayout>

@@ -1,0 +1,135 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Nintendo Nitro graphics formats"
+  description="The five Nintendo-supplied formats that hold all the actual 2D art in the game. Standard across DS titles, but Tongari uses them in some specific ways."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'Nitro graphics' },
+  ]}
+>
+  <p>
+    Nintendo shipped an SDK for DS developers that included a small family
+    of graphics formats. Most DS games use them and this one is no
+    exception. You'll never see them as standalone files in Tongari —
+    they're always packaged inside a RESO container — but they're at the
+    bottom of every 2D asset.
+  </p>
+
+  <p>
+    There are five formats that matter for 2D, with three-letter
+    abbreviations Nintendo gave them. Read on for what each one is.
+  </p>
+
+  <h2>NCGR — tile sheet graphics</h2>
+  <p>
+    Pixels, organized into 8×8 tiles. Each pixel is a small integer (an
+    index into a palette), not a color. The header tells you how big the
+    sheet is, what bit depth it uses (4-bit = 16 colors, 8-bit = 256
+    colors), and whether the tiles are stored in the normal 8×8 layout
+    or in a linear "bitmap" layout.
+  </p>
+
+  <pre><code>{`+0x00  "RGCN" magic (NCGR backwards)
++0x10  "RAHC" magic (the "character" section)
++0x18  u16  tile rows (or 0xFFFF if not declared)
++0x1A  u16  tile cols (or 0xFFFF if not declared)
++0x1C  u32  bit depth (3 = 4bpp, 4 = 8bpp)
++0x24  u32  linear flag (0 = tiled, 1 = bitmap)
++0x30  raw pixels`}</code></pre>
+
+  <p>
+    Often the width and height fields are <code>0xFFFF</code> ("not
+    declared"). For sprites, the cell size comes from the paired NCER.
+    For backgrounds, the canvas is 256×192 from the paired NSCR. You
+    have to look at the partner files to know how to interpret the tile
+    sheet.
+  </p>
+
+  <h2>NCLR — palette</h2>
+  <p>
+    A flat list of 16-bit BGR colors. 16 colors for a 4-bit palette, 256
+    colors for an 8-bit palette. Some palettes hold multiple banks of 16
+    colors each, with a separate "palette compression map" telling you
+    which bank goes to which slot.
+  </p>
+
+  <pre><code>{`+0x00  "RLCN" magic
++0x10  "TTLP" magic (the "palette" section)
++0x18  u32   bit depth
++0x20  u32   palette data size
++0x28  16-bit BGR colors begin here`}</code></pre>
+
+  <p>
+    The format is BGR-555 with a leading bit ignored, packed little-endian.
+    Index 0 is treated as transparent on the DS hardware for OBJ sprites
+    and for any BG that uses priority-0 transparency. That means you
+    can't put a "visible" color in slot 0 — if you do, it'll show as
+    transparent on the actual hardware.
+  </p>
+
+  <h2>NCER — sprite cells</h2>
+  <p>
+    A definition for how to assemble a sprite from many small "OBJ" chips.
+    The DS hardware can place individual chips (8×8, 16×16, 32×32, 64×64,
+    or various wide/tall sizes) at specific positions. An NCER cell is a
+    list of OBJ entries describing one sprite assembly.
+  </p>
+
+  <p>
+    Each OBJ entry has its own X/Y offset, size, palette bank, and tile
+    index into the paired NCGR. To render a cell, you walk the list,
+    look up each OBJ's tiles, and stamp them onto the canvas at the
+    given offsets. NCER cells can flip OBJs horizontally and vertically,
+    so the same tile can appear multiple times in different orientations.
+  </p>
+
+  <h2>NSCR — background tilemap</h2>
+  <p>
+    A 32×24 grid of 16-bit cells covering a full 256×192 screen. Each
+    cell points at a tile in the NCGR, with bits for palette bank and
+    horizontal/vertical flip.
+  </p>
+
+  <p>
+    The cell bits, low to high:
+  </p>
+
+  <pre><code>{`bits 0-9    tile index (0..1023)
+bit 10      horizontal flip
+bit 11      vertical flip
+bits 12-15  palette bank (0..15)`}</code></pre>
+
+  <p>
+    To render a background, you walk the grid row by row, look up each
+    cell's tile from the NCGR, apply the flips, and draw it with the
+    chosen palette bank's 16 colors.
+  </p>
+
+  <h2>NANR — sprite animations</h2>
+  <p>
+    A list of frames over time, each frame being one or more NCER cells.
+    The format defines timing and frame sequences. We can read NANRs but
+    don't currently play them back — each cell renders as a static frame
+    in our extraction pipeline.
+  </p>
+
+  <h2>NCBR — the linear NCGR variant</h2>
+  <p>
+    A flag on the NCGR header that says "this sheet isn't tiled — it's
+    a flat bitmap." Used occasionally. Most things are tiled.
+  </p>
+
+  <h2>The other Nitro formats</h2>
+  <p>
+    NFTR (fonts) and the 3D formats (NSBMD models, NSBTX textures,
+    NSBCA animations) also appear in the game, but aren't part of the
+    2D pipeline. The 3D formats are well-documented externally; the
+    NFTR font format is what we used to dig into the game's character
+    rendering, but it's standard and not worth a separate page here.
+  </p>
+</FieldGuideLayout>

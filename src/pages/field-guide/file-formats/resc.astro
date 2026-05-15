@@ -1,0 +1,76 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="RESC containers"
+  description="A second container format used by a small set of files. Similar to RESO but with named entries."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'RESC' },
+  ]}
+>
+  <p>
+    A handful of files use a different container format from
+    <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a>. It looks
+    the same on the surface — same kind of header, same idea of
+    entries pointing at chunks — but the entries are larger and they
+    carry names.
+  </p>
+
+  <p>
+    We see RESC in two places in the NDS version:
+  </p>
+  <ul>
+    <li><code>item/itemslot.lzs</code> and <code>item/ItemEtc.lzs</code> —
+      item-slot metadata.</li>
+    <li>About 70 compressed files, mostly under
+      <code>data/2d/solvedeventlist/</code>, plus a few odd ones
+      (<code>data/goodslist.lzs</code>, <code>data/mailorder.lzs</code>).</li>
+  </ul>
+
+  <h2>The header</h2>
+  <p>
+    Same shape as RESO. Magic, file count, version, reserved word.
+    Version is always <code>3.11</code> in the files we've seen.
+  </p>
+
+  <pre><code>{`+0x00  4 bytes  "RESC"  magic
++0x04  u32      file_count
++0x08  4 bytes  version  ("3.11")
++0x0c  u32      reserved (zeros)`}</code></pre>
+
+  <h2>The entries</h2>
+  <p>
+    Each entry is 48 bytes. The big difference from RESO is the
+    embedded names — two 16-byte fields giving the entry's identifier
+    and type, both stored as reversed ASCII (the Konami convention).
+  </p>
+
+  <pre><code>{`+0x00  16 bytes  name1 (reversed ASCII)     e.g. "u_gak_noci" → "icon_kag_u"
++0x10  16 bytes  name2 (reversed ASCII)     e.g. "rgcn" → "NCGR"
++0x20  u32       unknown (usually 0)
++0x24  4 bytes   type tag (reversed ASCII)
++0x28  u32       length
++0x2C  u32       offset (from start of file)`}</code></pre>
+
+  <h2>How much we've verified</h2>
+  <p>
+    The 48-byte stride and the field layout match across the two RESC
+    files we've parsed in depth (<code>uma00.lzs</code> and
+    <code>goodslist.lzs</code>), but we haven't exhaustively verified
+    it on every RESC in the game. There's also an additional four bytes
+    at the end of each entry whose purpose isn't certain — possibly a
+    checksum or a flag word. Don't trust the layout for every file
+    without checking.
+  </p>
+
+  <p>
+    For palette-association scans across the whole game, we treat RESC
+    entries as if they were RESO entries (ignoring the name fields and
+    just reading the type tag, length, and offset). This works because
+    everything we need to render an image is in those three fields.
+  </p>
+</FieldGuideLayout>

@@ -45,17 +45,25 @@
       ],
       "downloads": [
         {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.3-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 15122386,
+          "patchSha256": "4229fd39260a90b830e1572a0960c8329c438016bbf3910be02ea0cb82bf62bb"
+        },
+        {
           "label": "Rev 1",
           "url": "/patches/tongari-boushi-en-v2.3-rev1.xdelta",
           "isLocal": true,
-          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467"
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3847174,
+          "patchSha256": "92f451a83a796f6488cd034950d81b1289075962ed84e1b035e3469e819961cb"
         }
       ],
       "patchedRomMd5": "43609966367bf98fdde5bedd19bee1de",
       "patchedRomSha256": "b1fbb1afe9eccb16edb5834b335360caf931949993dfa9d0fa40a7d2c688555b",
-      "patchSizeBytes": 3847174,
-      "patchSha256": "92f451a83a796f6488cd034950d81b1289075962ed84e1b035e3469e819961cb",
-      "notes": "Rev 0 patch isn't in this release — if you're on Rev 0, the v2.2 patches below still work and include the Nintendo bug fixes Rev 1 has."
+      "notes": "Patches for both ROM revisions are included. The Rev 0 patch bundles the Nintendo Rev 1 fixes so both endings produce the same patched ROM."
     },
     {
       "version": "2.2",

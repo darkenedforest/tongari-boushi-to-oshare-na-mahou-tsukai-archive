@@ -1,0 +1,107 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Places, titles, and currency"
+  description="The named locations in the town, the royal court terminology, and how we handle the currency unit."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Translation Canon', href: `${base}/field-guide/translation-canon/` },
+    { label: 'Places and currency' },
+  ]}
+>
+  <h2>Town and school locations</h2>
+
+  <p>
+    Most of the named places appear in both Game 1 and Game 3, so we
+    use Game 1's English names. A few are new and got fresh
+    translations.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Japanese</th><th>English</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>かめや</td><td>The Emporium</td></tr>
+      <tr><td>ハロゲンデパート</td><td>Harrows</td></tr>
+      <tr><td>フラワーデイジー</td><td>Daisy's Flowers</td></tr>
+      <tr><td>スマイル・ビビ</td><td>Vivian's Boutique</td></tr>
+      <tr><td>ゆうれいやしき</td><td>Haunted House</td></tr>
+      <tr><td>こうどう</td><td>Auditorium</td></tr>
+      <tr><td>おんしつ</td><td>Conservatory</td></tr>
+      <tr><td>しょうてんがい</td><td>Shopping Avenue</td></tr>
+      <tr><td>こいびとみさき</td><td>Lovers' Point</td></tr>
+      <tr><td>かいがん</td><td>Beach</td></tr>
+      <tr><td>かわ</td><td>River</td></tr>
+      <tr><td>いけ</td><td>Pond</td></tr>
+      <tr><td>もり</td><td>Woods</td></tr>
+      <tr><td>とう</td><td>Tower</td></tr>
+      <tr><td>おしろ</td><td>castle</td></tr>
+      <tr><td>まち</td><td>Town</td></tr>
+      <tr><td>りょう</td><td>Dorm</td></tr>
+      <tr><td>へや</td><td>Dorm Room</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Currency: Ritch, not Mira</h2>
+  <p>
+    Game 1's English release used <strong>Mira</strong> as its currency
+    name. The Japanese in Tongari uses <strong>リッチ (Ritchi)</strong>.
+    These are different in-universe currencies — Mira was a Game 1
+    convention, and Tongari's deliberately uses something else.
+  </p>
+
+  <p>
+    We've settled on <strong>Ritch</strong> as the English form of
+    リッチ: short, distinct, lets the Japanese pun ("rich") read
+    through into English. The currency tier strings in the ARM9 menu
+    pool use this spelling — "1 Ritch," "10 Ritch," up to "100,000
+    Ritch."
+  </p>
+
+  <p>
+    See <a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`}>the
+    ARM9 menu pool</a> for the byte budgets involved in fitting these
+    strings into their hardcoded slots.
+  </p>
+
+  <h2>Royal court</h2>
+  <p>
+    The game has a king and his court that occasionally show up in
+    cutscenes and special events. The titles:
+  </p>
+
+  <ul>
+    <li><strong>His Majesty</strong> — referring to the king. The king
+      is male in this game.</li>
+    <li><strong>The Court</strong> — when referring to royal officials
+      collectively.</li>
+    <li><strong>Minister</strong> — for だいじん, the king's chief
+      advisor.</li>
+  </ul>
+
+  <h2>Class names</h2>
+  <p>
+    The school's classes get English names based on their Japanese
+    subject area. Some are obvious (cooking class, magic class);
+    others needed a choice:
+  </p>
+  <ul>
+    <li>まほうご (Magic Words) class → <strong>Linguistics</strong>.
+      This is the class where students learn the magic-language
+      keyboard.</li>
+    <li>まほう (Magic) class → <strong>Magic</strong>. Casting practice.</li>
+    <li>がっき (Instrument) class → <strong>Music</strong>.</li>
+  </ul>
+
+  <h2>The Retake button</h2>
+  <p>
+    The photo and design minigames have a "リテイク" button. Game 1
+    doesn't have these, but Tyler picked <strong>Retake</strong> as the
+    canonical English form — straight katakana → English with no
+    surprises.
+  </p>
+</FieldGuideLayout>

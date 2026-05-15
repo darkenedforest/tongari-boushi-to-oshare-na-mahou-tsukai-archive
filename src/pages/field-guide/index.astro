@@ -1,0 +1,61 @@
+---
+import FieldGuideLayout from '../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Field Guide"
+  description="What I've found inside the game so far — file formats, art types, dialog system, naming canon. Plain English, no romhacker jargon (or if I have to use it, I'll explain)."
+  crumbs={[{ label: 'Field Guide' }]}
+>
+  <p>
+    This is the part of the archive where I write down what I've pulled apart
+    and how it works. The game is a Japan-only DS title with no English
+    release, so most of what's here was learned by opening files in a hex
+    editor, decompiling code, and writing tools to parse formats. Each section
+    below covers one slice of that.
+  </p>
+
+  <p>
+    Pages link to each other where it makes sense, so it's fine to wander in
+    from any direction. If a page assumes a term you don't know, it'll either
+    define it inline or link to the page that does.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/2d-art/`} class="fg-card">
+      <h3>2D Art</h3>
+      <p>The kinds of images in the game — item icons, magic glyphs, NPC portraits, background screens — and the rules for finding the right palette for each.</p>
+    </a>
+    <a href={`${base}/field-guide/file-formats/`} class="fg-card">
+      <h3>File Formats</h3>
+      <p>Every container and wire format I've decoded: RESO, RESC, LZ11, the Nintendo Nitro graphics formats, the game's custom Konami extensions.</p>
+    </a>
+    <a href={`${base}/field-guide/how-the-game-works/`} class="fg-card">
+      <h3>How the Game Works</h3>
+      <p>How the engine actually runs: the overlay system, the content cache, how a 2D UI screen gets composed from a recipe, and how sprites reach the screen.</p>
+    </a>
+    <a href={`${base}/field-guide/message-system/`} class="fg-card">
+      <h3>The Message System</h3>
+      <p>How dialog is stored. The message wire format with its opcodes and color tags, plus the shared-payload trick the game uses to save space on repeated lines.</p>
+    </a>
+    <a href={`${base}/field-guide/names-and-words/`} class="fg-card">
+      <h3>Names &amp; Words</h3>
+      <p>The 377 magic glyphs on the player's keyboard, the cooking recipe slots with their variant keys, and the ARM9 menu pool that holds short action verbs like "Hold" and "Place."</p>
+    </a>
+    <a href={`${base}/field-guide/translation-canon/`} class="fg-card">
+      <h3>Translation Canon</h3>
+      <p>What we keep consistent across the patch. NPC names, currency, royal titles, class names, and how Game 1's official English localization anchors our choices.</p>
+    </a>
+  </div>
+
+  <h2>A note on confidence</h2>
+  <p>
+    Some of what's here is verified at the byte level — round-trip tested,
+    pixel-exact, or confirmed by decompiling the engine code that reads it.
+    Other parts are working theories that fit the data but haven't been
+    proven yet. Where it matters, I try to flag confidence inline. If a page
+    says "verified," I've seen the code that does the thing. If it says
+    "working theory," it explains the data we have but might still be wrong.
+  </p>
+</FieldGuideLayout>

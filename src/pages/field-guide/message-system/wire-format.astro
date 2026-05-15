@@ -1,0 +1,134 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The dialog wire format"
+  description="How a dialog entry is laid out in bytes. Walking a real example from the first message file in the game."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Message System', href: `${base}/field-guide/message-system/` },
+    { label: 'Wire format' },
+  ]}
+>
+  <p>
+    Each dialog entry is a stream of 16-bit words. Some words are text
+    (UTF-16 characters), some are control opcodes. The parser walks
+    one word at a time and uses a clever bit trick to decide which is
+    which.
+  </p>
+
+  <h2>The high-bit trick</h2>
+  <p>
+    Every word is either a control token or "data." Control tokens
+    have bit 15 clear (top bit is zero). Data words have bit 15 set
+    (top bit is one). That's how the parser knows whether a word is
+    text or a control instruction.
+  </p>
+
+  <p>
+    There are exactly four control tokens. Each one happens to look
+    like a low-ASCII character if you squint at it:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Token</th><th>Bytes</th><th>Looks like</th><th>Meaning</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>OPEN</td><td><code>0x0024</code></td><td><code>$</code></td><td>Start of an inline command</td></tr>
+      <tr><td>ARG_SEP</td><td><code>0x0027</code></td><td><code>'</code></td><td>Argument separator</td></tr>
+      <tr><td>CLOSE</td><td><code>0x003b</code></td><td><code>;</code></td><td>End of an inline command</td></tr>
+      <tr><td>END</td><td><code>0x000c</code></td><td><code>\f</code></td><td>End of dialog entry</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    All four are below <code>0x80</code>, so they have the top bit
+    clear. Text characters are all in Japanese ranges (above
+    <code>0x3000</code>) or in furigana-marker ranges, never down in
+    low-ASCII territory, so there's no risk of accidentally matching
+    a control token in normal text.
+  </p>
+
+  <h2>The shape of an entry</h2>
+  <p>
+    A dialog entry looks like this, roughly:
+  </p>
+
+  <pre><code>{`ENTRY    := HEADER? CONTENT
+HEADER   := 0x0024 HEADER_OPCODE (0x0027 ARG_WORD)* 0x003b 0x0000
+CONTENT  := (TEXT | INLINE_CMD)* TERMINATOR
+TEXT     := UTF-16-LE characters
+INLINE_CMD := 0x0024 OPCODE ARG_WORD? ARG_WORD?
+TERMINATOR := 0x000c   (end of dialog)
+             | 0x0000  (end of buffer)`}</code></pre>
+
+  <p>
+    The header is optional and configures the dialog box layout —
+    where to show the text, what speaker portrait to display, and so
+    on. The content is the actual dialog: text interleaved with
+    inline commands.
+  </p>
+
+  <h2>A real example</h2>
+  <p>
+    Here are the last 32 bytes of the first entry from the very
+    first message file in the game:
+  </p>
+
+  <pre><code>{`5f 30 7b 00 17 6c 7c 00 4d 30 7d 00 4c 30 59 30
+8b 30 24 00 ff 81 27 00 02 80 3b 00 00 00 0c 00`}</code></pre>
+
+  <p>
+    Walking this byte by byte:
+  </p>
+  <ul>
+    <li><code>5f 30</code>, <code>7b 00</code>, <code>17 6c</code>, etc.
+      are UTF-16 characters — Japanese hiragana and kanji.</li>
+    <li><code>24 00</code> is the OPEN token — an inline command is
+      starting.</li>
+    <li><code>ff 81</code> is the opcode (high bit set, so it's data;
+      the actual opcode number is <code>0x01ff</code>, which is the
+      "NPC sentence-ender particle" substitution).</li>
+    <li><code>27 00</code> is ARG_SEP.</li>
+    <li><code>02 80</code> is an argument (high bit set, value
+      <code>0x0002</code>).</li>
+    <li><code>3b 00</code> is CLOSE — end of inline command.</li>
+    <li><code>00 00</code> is a NUL — phrase boundary.</li>
+    <li><code>0c 00</code> is END — end of entry.</li>
+  </ul>
+
+  <p>
+    Almost every entry ends with <code>00 00 0c 00</code>. We use that
+    as a structural check when validating that a rebuilt file is
+    well-formed.
+  </p>
+
+  <h2>Page breaks, word separators, furigana</h2>
+  <p>
+    Inside the text part of an entry, three special characters do
+    formatting work:
+  </p>
+  <ul>
+    <li><code>▼</code> (U+25BC) is a "press to advance" page break.
+      When the game sees one, it stops, waits for input, then clears
+      the textbox and continues.</li>
+    <li>U+3000 (the full-width space) is the in-game word
+      separator.</li>
+    <li>Furigana annotations use the format
+      <code>{`{kanji|reading}`}</code> — the kanji renders normally
+      with the kana reading shown above it.</li>
+  </ul>
+
+  <h2>How we decoded the format</h2>
+  <p>
+    The format was decoded by reading the actual parser code. The
+    parser function lives in the ARM9 binary at address
+    <code>0x02066c58</code> — about a hundred lines of decompiled C
+    that walks the stream and builds a list of line records. The
+    high-bit trick, the four control tokens, the optional header —
+    all of it falls out of reading that function.
+  </p>
+</FieldGuideLayout>

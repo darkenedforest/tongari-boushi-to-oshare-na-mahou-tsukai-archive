@@ -1,0 +1,71 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Memory map"
+  description="What lives at each address range in the DS's main memory while the game is running."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Memory map' },
+  ]}
+>
+  <p>
+    The DS gives the game 4 MB of main memory, from
+    <code>0x02000000</code> to <code>0x02400000</code>. Here's roughly
+    what's where while the game is playing.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Address range</th><th>What's there</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0x02000000 – 0x020A87A0</code></td><td>ARM9 binary (the always-loaded core). About 700 KB of code and data after the boot decompression.</td></tr>
+      <tr><td><code>0x020A87A0 – 0x02125420</code></td><td>ARM9 zero-initialized memory (BSS). Game state, content cache tables, sprite-slot arrays.</td></tr>
+      <tr><td><code>0x02125420 – 0x02155A00</code></td><td>Overlay BSS. Per-overlay uninitialized data.</td></tr>
+      <tr><td><code>0x02155A00 – 0x021570A0</code></td><td>Shared overlay slot 1 — game mode controllers (66 candidates).</td></tr>
+      <tr><td><code>0x021597A0 – 0x021643E0</code></td><td>Shared overlay slot 2 — screen body renderers (25 candidates).</td></tr>
+      <tr><td><code>0x0215C540 – 0x0215DE40</code></td><td>Shared overlay slot 3 — game-mode logic (20 candidates).</td></tr>
+      <tr><td><code>0x0216DA40 – 0x0218E2A0</code></td><td>The rendering engine. ov137 lives here most of the time, swapped with ov138 when 3D mode is active.</td></tr>
+      <tr><td><code>0x021B6080 – 0x021C3420</code></td><td>Shared overlay slot 4 (ov156 / ov157).</td></tr>
+      <tr><td><code>0x021C3420 – 0x021FB320</code></td><td>Shared overlay slot 5 (ov158 / ov159).</td></tr>
+      <tr><td><code>0x021FB3C0 – 0x02201000</code></td><td>Shared overlay slot 6.</td></tr>
+      <tr><td><code>0x023FFE00 – 0x023FFFFC</code></td><td>Stack, per the DS spec.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The game state struct</h2>
+  <p>
+    The most-referenced address in the game is <code>0x021A55C0</code>,
+    with about 750 references. It's a pointer to the game state struct
+    — a big record holding the player's current screen, their inventory
+    state, the current dialog cursor, and so on. Every overlay's init
+    function typically picks this up first and reads fields out of it.
+  </p>
+
+  <p>
+    The struct's fields aren't fully labeled, but we can see common
+    access patterns. For example, lots of functions read
+    <code>state-&gt;field_at_0x4C</code> to get a sub-record. We don't
+    always know what those sub-records hold without tracing further.
+  </p>
+
+  <h2>The system clock</h2>
+  <p>
+    The game reads the DS's real-world clock and uses the time of day
+    to pick which title screen variant to show (day castle vs night
+    castle), to decide which shops are open, and to drive several
+    other in-game systems. There's no in-game time-skip — the only way
+    to advance time is to actually wait, or to change the DS's clock.
+  </p>
+
+  <p>
+    This is the one feature of the game that genuinely depends on
+    hardware state outside the cart, and it affects what an emulator
+    user sees too: setting the emulator's clock to a different time
+    will get you a different title screen variant.
+  </p>
+</FieldGuideLayout>

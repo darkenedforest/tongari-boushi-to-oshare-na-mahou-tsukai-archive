@@ -1,0 +1,98 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The content cache"
+  description="Every screen loads its art by calling the same function. That function is the heart of the asset pipeline."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Content cache' },
+  ]}
+>
+  <p>
+    When a screen wants its sprites, it doesn't open files directly. It
+    calls a single shared function — the <strong>content cache loader</strong>
+    — with a path string and a sub-index. The loader either gives back
+    a pointer to the already-loaded asset, or reads the file off the
+    cart, parses the container, and caches it for future calls.
+  </p>
+
+  <p>
+    The pattern looks something like this, paraphrasing the
+    decompiled code:
+  </p>
+
+  <pre><code>{`asset_ptr = load_asset(
+    master_table,        // pointer to cache table
+    "2d/buyitem.lzs",    // path string
+    sub_index,           // which entry inside the container
+    size_hint,
+    flags,
+    type_code,
+    ...
+);`}</code></pre>
+
+  <p>
+    Inside, the loader walks two helpers: a "find" function that checks
+    if the asset is already in cache, and a "load" function that reads
+    it from disk if not. The cache itself is a table indexed by path
+    string plus sub-index.
+  </p>
+
+  <h2>The master table</h2>
+  <p>
+    The master cache table lives at a fixed memory address in the ARM9
+    binary (<code>0x020AA740</code>). Over 700 functions across the
+    ARM9 and overlays reference this address, which is why we know
+    it's the central one. Sub-tables hang off it for different kinds
+    of assets — sprite cells, palettes, tile sheets.
+  </p>
+
+  <h2>Why this exists</h2>
+  <p>
+    Assets in this game are surprisingly chunky. A typical shop screen
+    pulls in a tile sheet plus a palette plus a tilemap plus a sprite
+    definition — easily 30 KB once decompressed. If every screen
+    re-loaded that data from cart on every entry, transitions would be
+    slow. Caching the parsed result means the second time you enter a
+    shop is essentially free.
+  </p>
+
+  <p>
+    The cache also normalizes access. Whether a file is compressed
+    (<code>.lzs</code>) or not (<code>.ofs</code>), whether it's
+    nested or flat, doesn't matter to the calling code. It hands off a
+    path and gets back a pointer to ready-to-use data.
+  </p>
+
+  <h2>Path strings as keys</h2>
+  <p>
+    The path strings themselves live in a few places. Most are in a
+    big string pool inside the ARM9 binary — over 130 known paths in
+    a single pool. Others are tucked into overlay data sections, so
+    that a controller overlay can have its specific file paths handy
+    when it loads.
+  </p>
+
+  <p>
+    When we want to know which overlay loads which file, we search for
+    the path string. The result is a map: 50+ container files paired
+    with the overlay that requests them. That map is one of the
+    handier outputs of the reverse-engineering work — it tells us, for
+    instance, that <code>2d/chest.lzs</code> is loaded by overlay
+    ov013.
+  </p>
+
+  <h2>Pre-wrapped loaders</h2>
+  <p>
+    For some categories of asset, the ARM9 has a thin wrapper that
+    bakes in the file path. The item-icon loader is one — it
+    takes a single sub-index argument and internally calls the generic
+    cache loader with <code>item/itemicon.ofs</code>. About 16 of
+    these category-specific wrappers exist, one for each major asset
+    family (item icons, magic glyphs, NPC portraits, etc.).
+  </p>
+</FieldGuideLayout>

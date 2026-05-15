@@ -1,0 +1,110 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Shared payloads"
+  description="A space-saving trick: multiple dialog entries pointing at the exact same payload. 53 percent of message files do this, and it's the reason naïve translations blow up to 5× their original size."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Message System', href: `${base}/field-guide/message-system/` },
+    { label: 'Shared payloads' },
+  ]}
+>
+  <p>
+    A message dialog file is a RESO container with 100 slots. Each
+    slot has a length and an offset pointing at the actual dialog
+    payload. Most of the time, every populated slot has its own
+    unique payload.
+  </p>
+
+  <p>
+    But not always. <strong>53 percent of message files (703 of 1,328)
+    have at least one group of slots that share a single payload.</strong>
+    The slot offsets all point at the same bytes. The engine reads
+    the same dialog whether you index slot 0 or slot 9.
+  </p>
+
+  <h2>Why the game does this</h2>
+  <p>
+    Imagine ten NPCs in a town who all say "Welcome!" when you walk
+    into their shop. The dialog is identical. Instead of writing ten
+    copies of "Welcome!" into the file, the game writes it once and
+    has ten table-of-contents entries all point at that one copy.
+    Same engine behavior, less disk space.
+  </p>
+
+  <p>
+    A real example, from <code>msg51016.ofs</code>: slots 0 through 9
+    all share a single 158-byte payload. Slots 10 through 19 share a
+    22-byte payload. Slots 20 through 29 share a 468-byte payload.
+    The file has 100 TOC slots but only 27 distinct payloads behind
+    them.
+  </p>
+
+  <h2>What happens when you translate naïvely</h2>
+  <p>
+    If your translation pipeline reads the file as 100 independent
+    entries, translates each one separately, and writes each one back
+    out as its own payload, you've just turned 27 unique payloads
+    into up to 100 distinct payloads. The file balloons.
+  </p>
+
+  <p>
+    For <code>msg51016.ofs</code>, the original Japanese file is
+    3,472 bytes. A naïve translated version is 19,728 bytes — almost
+    six times bigger. Multiply this across all the affected files and
+    you've added megabytes of dialog data for no semantic reason.
+  </p>
+
+  <p>
+    There's also a subtle quality problem. If your translator
+    paraphrases each "Welcome!" differently, the same NPC might say
+    "Welcome!" the first time you visit, "Hi there!" the second
+    time, and "Hey!" the third. The original Japanese had them all
+    saying the same thing on purpose.
+  </p>
+
+  <h2>The fix</h2>
+  <p>
+    There are two things to do, and together they recover most of
+    the lost space:
+  </p>
+  <ol>
+    <li><strong>Deduplicate byte-identical payloads.</strong> If two
+      translated entries produce the same bytes by accident, write
+      the bytes once and have both TOC slots point at it. This
+      doesn't change any dialog at all — it's purely a structural
+      win. About 7-8 percent recovery.</li>
+    <li><strong>Canonicalize within original-shared groups.</strong>
+      For each group of slots that shared a payload in the original
+      file, pick one translation and use it for every slot in the
+      group. This restores the original sharing pattern, matches the
+      game's intent, and recovers about another 35 percent on top of
+      the byte-dedup.</li>
+  </ol>
+
+  <p>
+    Both together recover roughly 1.5 MB of the 3.5 MB of size growth
+    that an unaware translation produces. The translated patch is
+    still bigger than the original (English text takes more bytes
+    than Japanese text in UTF-16), but the multiplier is back down to
+    about 1.3×, not 5×.
+  </p>
+
+  <h2>How to find the groups</h2>
+  <p>
+    Walking the original file's TOC. Group the entries by
+    <code>(length, data_offset)</code> — every group with more than
+    one entry is a shared-payload group. From there it's a matter of
+    picking a winner translation and applying it to every slot in
+    the group.
+  </p>
+
+  <p>
+    We applied this canonicalization across all 1,328 files. It
+    affected 2,890 groups and changed 6,726 dialog rows in the
+    database, with zero rebuild-time structural mismatches.
+  </p>
+</FieldGuideLayout>

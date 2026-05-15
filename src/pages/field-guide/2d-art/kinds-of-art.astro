@@ -1,0 +1,99 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The kinds of art"
+  description="A quick tour of the categories of 2D images in the game, with rough counts and where each lives."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: '2D Art', href: `${base}/field-guide/2d-art/` },
+    { label: 'Kinds of art' },
+  ]}
+>
+  <h2>Item icons</h2>
+  <p>
+    There are <strong>656 item icons</strong>, all 32×32 pixels, all packed
+    into a single file: <code>item/itemicon.ofs</code>. Every shop screen,
+    every inventory tile, every shopkeeper's display is drawing from this
+    set.
+  </p>
+  <p>
+    The icons themselves carry no palette. Their colors come from a
+    256-color palette in <code>global.lzs</code> (entry 5, plus entry 6
+    for the dimmed/unavailable variant). This took some hunting to figure
+    out — see <a href={`${base}/field-guide/2d-art/palettes/`}>finding the
+    right palette</a>.
+  </p>
+
+  <h2>Magic glyphs (the keyboard)</h2>
+  <p>
+    The "magic language" keyboard the player uses to compose spells has
+    <strong>377 glyph buttons</strong>, drawn from a pool of icons across
+    <code>2d/inputmagic/mgcall.ofs</code> and the <code>mgc01..09c.lzs</code>
+    family. All of them share a single 16-color palette in
+    <code>2d/inputmagic/mgc80.ofs</code>.
+  </p>
+  <p>
+    Each glyph is a noun or short verb — "greeting," "magic," "yes,"
+    "Vivian," "morning," "river," and so on. The
+    <a href={`${base}/field-guide/names-and-words/magic-glyphs/`}>magic
+    glyph page</a> covers the full inventory and how we translated it.
+  </p>
+
+  <h2>NPC portraits</h2>
+  <p>
+    Character portraits — the tutorial face, the close-up dialogue
+    portraits, the sticker / stamp variants — live in containers like
+    <code>2d/pic2d.ofs</code>. They're stored as background screens
+    (256×192 tilemaps), not sprites. Each portrait is a triplet of
+    files within the container: a tile sheet, a palette, and a tilemap
+    that lays the tiles out.
+  </p>
+
+  <h2>Background screens</h2>
+  <p>
+    Full 256×192 still images — title art, shop interiors, menu backdrops,
+    cooking-minigame stages — are stored as a tile sheet plus a tilemap.
+    The tilemap is a 32×24 grid of 16-bit cells, where each cell says
+    "use this tile, with this palette bank, flipped this way."
+  </p>
+  <p>
+    The title screen is a good example: <code>2d/mainmenu/title_pack.ofs</code>
+    holds five seasonal/time-of-day variants (day castle, dawn, dusk, night
+    castle, sunburst), and the game picks one based on the system clock.
+  </p>
+
+  <h2>UI sprites assembled from recipes</h2>
+  <p>
+    A lot of UI screens aren't single images. They're assemblies — half
+    a dozen sprite chips placed at specific X/Y coordinates on a 256×192
+    canvas. The shop's "buy item" screen is the worked example. Its
+    composition recipe is a 10-entry table baked into one of the game's
+    code overlays. Each entry says "place sprite chip N at (X, Y) using
+    palette M." More on this in
+    <a href={`${base}/field-guide/2d-art/composition-recipes/`}>composition
+    recipes</a>.
+  </p>
+
+  <h2>UI sprites assembled at runtime</h2>
+  <p>
+    Other UI screens — the chat window, the chest, anything that resizes
+    or scrolls — don't have a static recipe. The placement comes from the
+    game's code, which decides on the fly where each chip goes. To capture
+    those screens exactly as they appear, we'd need to trace them in an
+    emulator. We have all the parts (every individual chip extracts to a
+    PNG), just not the assembly instructions yet.
+  </p>
+
+  <h2>3D models, which are out of scope here</h2>
+  <p>
+    A handful of things you might think are 2D are actually 3D: cooked
+    dishes (<code>dishup_mdl.ofs</code>), the cooking-minigame food
+    (<code>uccmdl.ofs</code>), and most of the world (the school grounds,
+    the town, etc.). These are Nintendo NSBMD models with NSBTX textures
+    and aren't covered in the 2D pipeline. The title splash's "EVENT HALL"
+    backdrop is also 3D, even though the logo on top of it is 2D.
+  </p>
+</FieldGuideLayout>

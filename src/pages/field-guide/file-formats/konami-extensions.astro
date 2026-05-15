@@ -1,0 +1,104 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Konami's custom extensions"
+  description="Type tags inside RESO containers that aren't part of Nintendo's SDK. Konami added these for their own game data — widget tables, binary tables, and a few other things."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'Konami extensions' },
+  ]}
+>
+  <p>
+    A <a href={`${base}/field-guide/file-formats/reso/`}>RESO container</a>
+    entry carries a 4-character type tag. Most of those tags are Nintendo
+    SDK formats (NCGR, NCLR, etc), but four of them are Konami's own:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Tag in file</th><th>What it holds</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>tad</code></td><td>Static widget tables — fixed-stride records describing UI sprites and their positions.</td></tr>
+      <tr><td><code>nib</code></td><td>"bin" backwards. Per-container binary data with a layout that varies by context.</td></tr>
+      <tr><td><code>rnan</code></td><td>Standard NANR animation data, but Konami uses it as a generic container for some non-animation records too.</td></tr>
+      <tr><td><code>sfo</code></td><td>A nested RESO container inside the current RESO entry.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The <code>tad</code> table</h2>
+  <p>
+    The most useful Konami extension. A <code>tad</code> entry is a flat
+    array of fixed-size records. Each record describes one widget on a
+    UI screen — what sprite it is, where it goes, what palette and flags
+    to use.
+  </p>
+
+  <p>
+    In the buyitem container, the <code>tad</code> entry holds 76
+    records of 28 bytes each (26 bytes of data plus a 2-byte
+    <code>0xFFFF</code> terminator). Those records hold the parts list
+    for the entire shop-buying UI.
+  </p>
+
+  <p>
+    The bigger question — "where do these widgets actually get placed on
+    screen?" — isn't answered by the <code>tad</code> table alone. The
+    placement is in code, baked into one of the game's overlays. See
+    <a href={`${base}/field-guide/2d-art/composition-recipes/`}>composition
+    recipes</a> for the worked example.
+  </p>
+
+  <h2>The <code>nib</code> entries</h2>
+  <p>
+    Catch-all binary data. The layout depends on what the container is
+    for. In the cooking-recipe container (<code>ucc/names.ofs</code>),
+    the <code>nib</code> entry holds a 16-byte stride table of recipe
+    metadata. In other containers it could be anything.
+  </p>
+
+  <p>
+    When you see a <code>nib</code> entry, the next step is usually to
+    look at the container's purpose and the size of the entry and try
+    to spot a fixed-stride pattern. The records are almost always a
+    multiple of some small power of two.
+  </p>
+
+  <h2>The <code>sfo</code> nested container</h2>
+  <p>
+    A RESO container inside a RESO container. The inner layout doesn't
+    quite match the outer one — there's some additional framing that
+    we haven't fully worked out. The clearest example is
+    <code>global.lzs</code> entry 34, which is an <code>sfo</code> tag
+    holding a list of sub-files. The inner table parses partially with
+    the standard RESO reader but the entry layout has extra fields.
+  </p>
+
+  <p>
+    For most uses we treat <code>sfo</code> as "compressed sub-blob" —
+    extract the bytes, try to parse them as a RESO, and if that doesn't
+    work, fall back to treating it as an opaque blob.
+  </p>
+
+  <h2>The <code>szl</code> tag</h2>
+  <p>
+    Not really a Konami extension — it's a fifth tag that's neither
+    Nintendo SDK nor table data. It marks an LZ11-compressed sub-blob
+    that, when decompressed, becomes another RESO container. So:
+  </p>
+
+  <pre><code>{`outer RESO entry (tag = szl)
+  └─ LZ11 compressed bytes
+      └─ inner RESO container
+          └─ NCGR / NCLR / NCER ...`}</code></pre>
+
+  <p>
+    This is how the title screen pack stores its seasonal variants —
+    one outer <code>szl</code> per variant, each one decompressing to
+    a fresh inner RESO with the artwork.
+  </p>
+</FieldGuideLayout>

@@ -1,0 +1,97 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="From code to pixels"
+  description="The path a sprite takes from a loaded asset blob to actually appearing on the screen."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Sprite pipeline' },
+  ]}
+>
+  <p>
+    The DS draws sprites by reading two pieces of hardware memory: a
+    <strong>tile data</strong> region in VRAM, and an <strong>OAM</strong>
+    region with a list of sprite descriptors. Each descriptor says
+    "show the chip at this position, at this size, using this palette."
+    The game's job is to keep those two regions filled in.
+  </p>
+
+  <h2>Shadow OAM</h2>
+  <p>
+    The hardware OAM only updates safely during vertical blank — the
+    brief gap between drawing one frame and the next. So the game
+    keeps a copy of the OAM in main RAM (the "shadow OAM"), edits the
+    copy whenever a sprite changes, and at vertical blank it does a
+    single DMA copy from the shadow to the hardware. Same idea for
+    tile data in VRAM.
+  </p>
+
+  <p>
+    Four wrapper functions handle the transfers:
+  </p>
+  <ul>
+    <li>Shadow OAM main → hardware OAM (top screen)</li>
+    <li>Shadow OAM sub → hardware OAM (bottom screen)</li>
+    <li>Shadow tile data → OBJ VRAM main</li>
+    <li>Shadow tile data → OBJ VRAM sub</li>
+  </ul>
+
+  <p>
+    All four are called from exactly two places: the ARM9's main
+    vertical blank handler, and the rendering engine overlay's
+    vertical blank handler. So sprite changes always show up in sync
+    with the screen refresh.
+  </p>
+
+  <h2>Sprite constructors</h2>
+  <p>
+    Game code doesn't poke OAM directly. It calls a "sprite constructor"
+    function with nine arguments — which sprite slot to use, and the
+    IDs of the tile sheet, palette, sprite definition, and tilemap to
+    pull from the content cache. The constructor sets up the entry in
+    the shadow OAM and registers it in a sprite-slot array.
+  </p>
+
+  <p>
+    There's a primary constructor and an alternate. They differ mostly
+    in which cache table they consult. Both ultimately write to the
+    same shadow OAM.
+  </p>
+
+  <h2>Attribute updaters</h2>
+  <p>
+    Once a sprite is placed, the game can change it without rebuilding
+    it. Helper functions update the position, the palette bank, the
+    render mode flags. These all write to the slot in the sprite-slot
+    array, which gets flushed at the next vertical blank.
+  </p>
+
+  <p>
+    A sprite slot record holds the sprite's current state — its OAM
+    attributes, its size, its current cell, animation state if any.
+    Updates touch specific fields and leave the rest alone, so a
+    moving sprite doesn't have to re-specify its palette every frame.
+  </p>
+
+  <h2>Why the same sprite chip can appear many times</h2>
+  <p>
+    Because OAM entries are independent. A single tile sheet can hold
+    one tile of "fire particle," and OAM can have 30 different OAM
+    entries all pointing at that tile, each at a different position
+    and rotation. So one chip in VRAM can produce 30 visible sprites
+    on screen. The buyitem screen exploits this: a single "decorative
+    star" tile in the tile sheet shows up at six different positions
+    via six OAM entries.
+  </p>
+
+  <p>
+    When we extract sprite chips to PNGs, we get the tile-sheet view —
+    each unique chip once. When the game renders, the chips are
+    multiplied out. That's part of why an extracted sprite gallery
+    can look "missing parts" compared to a screenshot.
+  </p>
+</FieldGuideLayout>

@@ -1,0 +1,79 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="File Formats"
+  description="Every container and wire format in the game that we've decoded, in plain English. Start with RESO and LZ11 — they wrap everything else."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats' },
+  ]}
+>
+  <p>
+    The game's files are layered. A single <code>.lzs</code> file is
+    usually a compressed wrapper around a container, and the container
+    holds several smaller files inside it. Each of those smaller files
+    has its own format. So before you can look at, say, a tile sheet
+    inside the title screen pack, you have to unwrap two or three
+    layers.
+  </p>
+
+  <p>
+    These pages cover each layer in order — the outer wrappers first,
+    then the containers, then the actual asset formats inside them.
+  </p>
+
+  <h2>The wrapping order</h2>
+  <p>
+    Most asset files are wrapped like this:
+  </p>
+  <pre><code>{`.lzs file
+  └─ LZS wrapper (16 byte header)
+      └─ LZ11 compressed stream
+          └─ RESO container
+              ├─ tile sheet (NCGR)
+              ├─ palette (NCLR)
+              ├─ sprite definition (NCER)
+              └─ background tilemap (NSCR)`}</code></pre>
+
+  <p>
+    A <code>.ofs</code> file skips the LZS wrapper and the compression —
+    it's just a RESO container directly.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/file-formats/reso/`} class="fg-card">
+      <h3>RESO containers</h3>
+      <p>The main container format. A simple table of contents pointing at chunks of data. Two header variants and a list of type tags for the chunks.</p>
+    </a>
+    <a href={`${base}/field-guide/file-formats/lz11/`} class="fg-card">
+      <h3>LZS / LZ11 compression</h3>
+      <p>The compression wrapper Nintendo uses on most assets. About 70 percent of files in the game are LZ11-compressed.</p>
+    </a>
+    <a href={`${base}/field-guide/file-formats/nitro-graphics/`} class="fg-card">
+      <h3>Nintendo Nitro graphics formats</h3>
+      <p>NCGR, NCLR, NCER, NSCR, NANR. The five Nintendo formats that hold all the actual image data. Standard across most DS games.</p>
+    </a>
+    <a href={`${base}/field-guide/file-formats/konami-extensions/`} class="fg-card">
+      <h3>Konami's custom extensions</h3>
+      <p>Tags that aren't standard Nintendo. <code>tad</code> holds widget tables; <code>nib</code>, <code>rnan</code>, <code>sfo</code> wrap other kinds of binary data inside RESO containers.</p>
+    </a>
+    <a href={`${base}/field-guide/file-formats/resc/`} class="fg-card">
+      <h3>RESC containers</h3>
+      <p>A newer container with named entries. Used for the item-slot data files and a handful of other places.</p>
+    </a>
+  </div>
+
+  <h2>The Tinke / Nintendo language tax</h2>
+  <p>
+    Almost every format here has its magic bytes stored <strong>backwards</strong>.
+    The RESO file you'd expect to start with <code>RESO</code> does start
+    with <code>RESO</code>, but the entry tags inside it are reversed —
+    <code>rgcn</code> in the file means the entry is an NCGR, <code>rlcn</code>
+    means NCLR, and so on. This is just little-endian byte order showing
+    through: the engine reads a 4-character tag as a 32-bit integer, so the
+    bytes appear reversed when you stare at the file in a hex editor.
+  </p>
+</FieldGuideLayout>

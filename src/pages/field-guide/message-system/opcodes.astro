@@ -1,0 +1,143 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The opcode menagerie"
+  description="88 different opcodes show up across the game's dialog. A handful run the show; the rest are rare. Here's a tour."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Message System', href: `${base}/field-guide/message-system/` },
+    { label: 'Opcodes' },
+  ]}
+>
+  <p>
+    We parsed every dialog entry in the game and counted which
+    opcodes appear, how often, and with what arguments. The result:
+    <strong>88 distinct opcodes</strong> in actual use. The top ten
+    cover almost every entry — the long tail of 78 others appear
+    only a handful of times each.
+  </p>
+
+  <h2>The frequent ones</h2>
+  <p>
+    These are the opcodes that drive ordinary dialog. If you read a
+    typical NPC line and notice it adjusts to the speaker — using their
+    name, their personality particle, their portrait — you're seeing
+    these at work.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Opcode</th><th>Count</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x01ff</code></td>
+        <td>60,685</td>
+        <td>Sentence-ender particle. Each NPC has 6 of them (one per
+          personality mode), and this opcode picks one based on the
+          speaker. This is why the same Japanese line reads differently
+          when said by a peppy character vs a stoic one.</td>
+      </tr>
+      <tr>
+        <td><code>0x0018</code></td>
+        <td>59,407</td>
+        <td>Speaker portrait ID. Picks which character face appears
+          next to the dialog. 129 unique portraits across the game.</td>
+      </tr>
+      <tr>
+        <td><code>0x0017</code></td>
+        <td>59,020</td>
+        <td>Textbox layout config. 154 distinct configurations of
+          textbox size and position.</td>
+      </tr>
+      <tr>
+        <td><code>0x0016</code></td>
+        <td>47,314</td>
+        <td>Facial expression. 432 different expression IDs.</td>
+      </tr>
+      <tr>
+        <td><code>0x0000</code></td>
+        <td>24,540</td>
+        <td>Text color. Most common arg is 1 (red, used for emphasis);
+          others are blue, green, yellow, pink, orange, gray.</td>
+      </tr>
+      <tr>
+        <td><code>0x0202</code></td>
+        <td>21,815</td>
+        <td>Per-NPC substitution. Arg 0 inserts the speaker's
+          first-person pronoun (わたし/オレ/アタシ); arg 1 inserts their
+          personal catchphrase.</td>
+      </tr>
+      <tr>
+        <td><code>0x01f4</code></td>
+        <td>10,778</td>
+        <td>Player name. Substituted at runtime with whatever name the
+          player picked when they started the game.</td>
+      </tr>
+      <tr>
+        <td><code>0x004f</code></td>
+        <td>8,070</td>
+        <td>Script marker. No arguments. Used to break up dialog into
+          logical phrases for the engine.</td>
+      </tr>
+      <tr>
+        <td><code>0x0013</code></td>
+        <td>5,870</td>
+        <td>Menu choice terminator. Marks the end of one option in a
+          multiple-choice prompt.</td>
+      </tr>
+      <tr>
+        <td><code>0x0037</code></td>
+        <td>2,526</td>
+        <td>Dialog header opcode. Every entry that has a header starts
+          with this.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>The pattern of substitutions</h2>
+  <p>
+    Many of the most-used opcodes are <strong>text substitutions</strong>:
+    placeholders for content that's filled in at runtime. The player's
+    name, the speaker's pronoun, the speaker's catchphrase, the
+    sentence-ender particle — all are substituted dynamically based on
+    who's speaking.
+  </p>
+
+  <p>
+    For translation, this means we leave the opcode bytes in place
+    when we rewrite an entry. The bytes are preserved exactly; the
+    text around them gets replaced with English. The engine still
+    substitutes the right per-NPC value at runtime. So a translated
+    line that reads <code>[PRONOUN] heard about it earlier!</code> in
+    our database becomes something like "I heard about it earlier!"
+    when spoken by an NPC whose pronoun is "I," or "We heard about it
+    earlier!" for a different NPC.
+  </p>
+
+  <h2>The 78 less common opcodes</h2>
+  <p>
+    The other 78 opcodes are a mix of:
+  </p>
+  <ul>
+    <li><strong>Branching</strong> — flags that select between dialog
+      paths based on game state.</li>
+    <li><strong>Inline references</strong> — things like "the name of
+      the item the player is currently holding."</li>
+    <li><strong>Effects</strong> — sound effects, screen shakes,
+      timing pauses.</li>
+    <li><strong>Script calls</strong> — invoke an event-script
+      sequence from within dialog.</li>
+  </ul>
+
+  <p>
+    Of the 88 total, about 30 are well understood, 40 are partially
+    understood, and the rest are tagged "unknown — appears only a
+    few times" and would need targeted investigation to nail down.
+    The good news is they're rare, so they don't get in the way of
+    most translation work.
+  </p>
+</FieldGuideLayout>

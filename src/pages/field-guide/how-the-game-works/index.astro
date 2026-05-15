@@ -1,0 +1,66 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="How the Game Works"
+  description="The engine, the overlays, and the path from a file on the cart to a sprite on the screen."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works' },
+  ]}
+>
+  <p>
+    The DS doesn't have a lot of RAM. The ROM does have a lot of code.
+    The way DS games bridge that gap is the <strong>overlay system</strong>:
+    chunks of code that get swapped in and out of a shared RAM slot as
+    the player moves between game modes. Tongari has 180 overlays plus
+    a main ARM9 binary. Each overlay handles one screen or one feature.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/how-the-game-works/overlays/`} class="fg-card">
+      <h3>The overlay system</h3>
+      <p>180 overlays, shared RAM slots, controller-and-body pattern. Why ov137 is loaded almost always and ov003 only when you're at a shop.</p>
+    </a>
+    <a href={`${base}/field-guide/how-the-game-works/content-cache/`} class="fg-card">
+      <h3>The content cache</h3>
+      <p>The asset loader. Every screen calls the same function to bring its art into memory, indexed by a path string and a sub-index.</p>
+    </a>
+    <a href={`${base}/field-guide/how-the-game-works/sprite-pipeline/`} class="fg-card">
+      <h3>From code to pixels</h3>
+      <p>How a sprite gets from a loaded asset into the OAM hardware buffer, and why every sprite update is synchronized to the vertical blank.</p>
+    </a>
+    <a href={`${base}/field-guide/how-the-game-works/memory-map/`} class="fg-card">
+      <h3>Memory map</h3>
+      <p>What's at each address range in main RAM. Where the engine lives, where overlays land, where the game state struct sits.</p>
+    </a>
+  </div>
+
+  <h2>The big picture</h2>
+  <p>
+    When you start a new dialog with an NPC, here's roughly what
+    happens:
+  </p>
+  <ol>
+    <li>The game state machine decides "we're in dialog now."</li>
+    <li>The current controller overlay is unloaded, and the dialog
+      controller is loaded into its slot.</li>
+    <li>The dialog controller asks the content cache to load the right
+      message file from <code>data/message/</code>.</li>
+    <li>It loads a body overlay that knows how to render dialog
+      bubbles.</li>
+    <li>The body overlay reads the dialog payload from cache, decodes
+      the wire format, and builds an OAM list of sprite chips.</li>
+    <li>At the next vertical blank, the OAM hardware copies the list
+      from RAM into video memory and the dialog appears.</li>
+  </ol>
+
+  <p>
+    Almost every screen in the game follows that same pattern. The
+    controller overlay handles "what's happening," the body overlay
+    handles "what does it look like," and the rendering engine
+    (ov137) handles "get it onto the screen."
+  </p>
+</FieldGuideLayout>

@@ -1,0 +1,119 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The ARM9 menu pool"
+  description="The little action verbs that appear on the inventory menu — Hold, Place, Bury, Equip — are stored directly in the game's main binary with strict byte budgets."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
+    { label: 'ARM9 menu pool' },
+  ]}
+>
+  <p>
+    When you tap an item in your inventory, a little menu pops up
+    with verbs like "Hold," "Place," "Equip," "Bury." Those words
+    aren't in the message dialog files. They're hardcoded into the
+    game's main binary, in a fixed-size pool with a pointer table
+    addressing each entry.
+  </p>
+
+  <p>
+    There are 26 strings in this ARM9 pool, plus another 20 in a
+    similar pool inside one of the overlays (overlay 96 — the NPC
+    interaction menu), plus a handful of single-string overlays. We
+    track 50 of these strings in total.
+  </p>
+
+  <h2>How they're stored</h2>
+  <p>
+    Each string sits in a fixed-size slot. The slot is sized so that
+    even the longest reasonable Japanese version of the word fits.
+    The text is UTF-16 with a NUL terminator. Once you account for
+    the terminator, the budget in English characters is
+    <code>(slot bytes / 2) - 1</code>.
+  </p>
+
+  <p>
+    A few slots and their budgets:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Slot bytes</th><th>JP text</th><th>EN budget</th><th>English version</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>8</td><td>もつ</td><td>3 chars</td><td>"Hold" doesn't fit; "Get" does</td></tr>
+      <tr><td>8</td><td>すてる</td><td>3 chars</td><td>"Toss" or "Drop"</td></tr>
+      <tr><td>12</td><td>くちぶえ</td><td>5 chars</td><td>"Whistle" overflows; "Call" works</td></tr>
+      <tr><td>12</td><td>みにつける</td><td>5 chars</td><td>"Equip" fits exactly</td></tr>
+      <tr><td>16</td><td>そうびはずす</td><td>7 chars</td><td>"Unequip" fits exactly</td></tr>
+      <tr><td>28</td><td>１０００００リッチ</td><td>13 chars</td><td>"100,000 Mira" at 12 chars</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The overflow problem</h2>
+  <p>
+    Most English words are longer than the equivalent Japanese. Of the
+    50 strings in this pool, most of the natural English translations
+    overflow their slot. We have three options for each one:
+  </p>
+  <ol>
+    <li>Shorten the English. "Bury" instead of the proper "Inter,"
+      "Toss" instead of "Discard."</li>
+    <li>Expand the slot. This means moving the string somewhere with
+      more room and updating the pointer table that addresses it.
+      Doable but invasive.</li>
+    <li>Live with the overflow and accept rendering bugs. Not really
+      an option for shipping.</li>
+  </ol>
+
+  <p>
+    The translation canon page tracks each slot's chosen approach.
+    Most are option 1 (just shorten).
+  </p>
+
+  <h2>The currency tier strings</h2>
+  <p>
+    Five of the 26 slots are currency tier labels —
+    <code>１リッチ</code>, <code>１０リッチ</code>,
+    <code>１００リッチ</code>, <code>１０００リッチ</code>,
+    <code>１００００リッチ</code>. These appear in the player's wallet
+    display.
+  </p>
+
+  <p>
+    The Japanese uses "リッチ" (Ricchi) as the currency unit. Game 1's
+    English used <strong>Mira</strong> instead — a totally different
+    word. There's no English in any binary, so the currency tier
+    strings need fresh translation. The format is constrained: each
+    slot grows by 4 bytes per tier, so the budget gets a little
+    bigger as the numbers do.
+  </p>
+
+  <p>
+    See <a href={`${base}/field-guide/translation-canon/`}>translation
+    canon</a> for what we've settled on so far.
+  </p>
+
+  <h2>Where Game 1 helps</h2>
+  <p>
+    Of the 26 ARM9 strings, <strong>16 of them are word-for-word
+    matches with strings in Magician's Quest 1's English release</strong>.
+    That gives us official Konami translations to anchor our choices:
+    "Hold," "Place," "Bury," "Discard," "Exit," "Next," "Back,"
+    "Whistle," "Equip," "Unequip," "Release insect," "Release fish,"
+    "Remove hat," "Remove glasses," "Change wallpaper," "Change
+    flooring."
+  </p>
+
+  <p>
+    The other 10 strings are Tongari-specific (the currency tiers, the
+    "Save" / "Log" verb that has no Game 1 parallel, etc.) and need
+    fresh translation. The overlay-96 NPC menu pool is entirely
+    fresh — none of its 20 strings have Game 1 equivalents because
+    Game 1 didn't have NPC interaction menus.
+  </p>
+</FieldGuideLayout>

@@ -1,0 +1,244 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+interface Crumb {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  crumbs: Crumb[];
+}
+
+const { title, description, crumbs } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title={title} description={description}>
+  <section class="fg-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      {crumbs.map((c, i) => (
+        <>
+          {c.href ? <a href={c.href}>{c.label}</a> : <span>{c.label}</span>}
+          {i < crumbs.length - 1 && <span aria-hidden="true">›</span>}
+        </>
+      ))}
+    </p>
+    <h1>{title}</h1>
+    {description && <p class="fg-lede">{description}</p>}
+  </section>
+  <article class="fg-body">
+    <slot />
+  </article>
+</Layout>
+
+<style is:global>
+  .fg-header {
+    padding: 40px 0 12px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+
+  .fg-lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 1.05rem;
+    margin: 0 0 8px;
+  }
+
+  .fg-body {
+    padding: 12px 0 60px;
+    max-width: 78ch;
+  }
+
+  .fg-body h2 {
+    margin-top: 40px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-pink-100);
+  }
+
+  .fg-body h3 {
+    margin-top: 28px;
+    color: var(--color-pink-600);
+  }
+
+  .fg-body p,
+  .fg-body li {
+    line-height: 1.65;
+    color: var(--color-ink);
+  }
+
+  .fg-body p {
+    margin: 0 0 14px;
+  }
+
+  .fg-body ul,
+  .fg-body ol {
+    margin: 0 0 14px;
+    padding-left: 24px;
+  }
+
+  .fg-body li {
+    margin-bottom: 6px;
+  }
+
+  .fg-body a {
+    color: var(--color-pink-600);
+    font-weight: 600;
+    border-bottom: 1px dashed rgba(233, 63, 142, 0.35);
+  }
+
+  .fg-body a:hover {
+    color: var(--color-purple-600);
+    border-bottom-color: var(--color-purple-400);
+  }
+
+  .fg-body code {
+    background: rgba(232, 220, 255, 0.55);
+    color: var(--color-purple-600);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+    font-size: 0.88em;
+  }
+
+  .fg-body pre {
+    background: #2a1a3e;
+    color: #f6efff;
+    padding: 16px 20px;
+    border-radius: var(--radius-md);
+    overflow-x: auto;
+    box-shadow: var(--shadow-soft);
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.55;
+  }
+
+  .fg-body pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+  }
+
+  .fg-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    background: var(--surface-strong);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .fg-body thead {
+    background: linear-gradient(135deg, var(--color-pink-100), var(--color-purple-100));
+  }
+
+  .fg-body th,
+  .fg-body td {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 0.92rem;
+    border-bottom: 1px solid var(--color-pink-100);
+  }
+
+  .fg-body th {
+    color: var(--color-purple-600);
+    font-weight: 700;
+  }
+
+  .fg-body tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .fg-body tbody tr:hover {
+    background: rgba(255, 240, 246, 0.5);
+  }
+
+  .fg-body blockquote {
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: rgba(255, 240, 246, 0.7);
+    border-left: 4px solid var(--color-pink-400);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    color: var(--color-ink);
+  }
+
+  .fg-body blockquote p {
+    margin: 0;
+  }
+
+  .fg-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 20px 0 30px;
+  }
+
+  .fg-card {
+    display: block;
+    background: var(--surface-strong);
+    border: 1px solid var(--color-pink-100);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-soft);
+    text-decoration: none;
+    color: var(--color-ink);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    border-bottom: 1px solid var(--color-pink-100);
+  }
+
+  .fg-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-pink-200);
+    box-shadow: var(--shadow-pop);
+    color: var(--color-ink);
+  }
+
+  .fg-card h3 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+    color: var(--color-pink-600);
+  }
+
+  .fg-card p {
+    margin: 0;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
+  .fg-note {
+    background: rgba(234, 246, 255, 0.6);
+    border: 1px dashed var(--color-blue-200);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin: 16px 0;
+    font-size: 0.92rem;
+  }
+
+  .fg-note strong {
+    color: var(--color-blue-600);
+  }
+</style>

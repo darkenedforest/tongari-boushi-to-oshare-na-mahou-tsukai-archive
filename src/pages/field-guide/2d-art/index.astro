@@ -1,0 +1,84 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="2D Art"
+  description="The game has thousands of 2D images packed into a few hundred container files. They fall into a handful of kinds, and each kind has its own rule for how to render it."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: '2D Art' },
+  ]}
+>
+  <p>
+    Almost no 2D image in the game is stored as a finished picture. Instead,
+    you get the ingredients — a sheet of tiles, a palette, and instructions
+    for how to assemble them. To render an image you have to find those three
+    things, match them up correctly, and run the composition.
+  </p>
+
+  <p>
+    The big practical problem is that the palette for a given image often
+    lives somewhere else. The next few pages cover the kinds of art and the
+    rules for finding their palettes.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/2d-art/kinds-of-art/`} class="fg-card">
+      <h3>The kinds of art</h3>
+      <p>Item icons, magic glyphs, NPC portraits, background screens, UI sprites. What each kind is for, where it lives, and roughly how many of each exist.</p>
+    </a>
+    <a href={`${base}/field-guide/2d-art/palettes/`} class="fg-card">
+      <h3>Finding the right palette</h3>
+      <p>The five-rule hierarchy for matching a tile sheet to its colors. Why item icons "look broken" until you find the palette inside <code>global.lzs</code>.</p>
+    </a>
+    <a href={`${base}/field-guide/2d-art/composition-recipes/`} class="fg-card">
+      <h3>Composition recipes</h3>
+      <p>How a shop screen gets assembled at runtime from a handful of sprite chips and an XY table. The buyitem screen, fully worked.</p>
+    </a>
+  </div>
+
+  <h2>How many images are there?</h2>
+  <p>
+    We catalogued 4,337 sets of tile graphics across the game. Each set has
+    siblings (a palette, sometimes an OAM sprite definition, sometimes a
+    background tilemap) telling us how to render it. The breakdown:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Kind of art</th><th>Count</th><th>What it is</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Background screens</td>
+        <td>1,100</td>
+        <td>Full 256×192 backgrounds assembled from a tilemap. Shop interiors, menus, title art.</td>
+      </tr>
+      <tr>
+        <td>Sprite cells</td>
+        <td>704</td>
+        <td>Animated or composite sprites assembled from many small "OBJ" chips. Character poses, UI widgets.</td>
+      </tr>
+      <tr>
+        <td>Tile banks</td>
+        <td>296</td>
+        <td>Loose tile sheets without explicit composition. Often atlases.</td>
+      </tr>
+      <tr>
+        <td>Orphans (palette comes from elsewhere)</td>
+        <td>2,237</td>
+        <td>Item icons, magic glyphs, and other sets whose palette is pinned somewhere outside the container.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Of the 2,237 orphan tile sheets, we resolved 1,637 by finding their
+    external palettes (656 item icons, 823 magic glyphs, plus shared-palette
+    containers). The remaining 600 are mostly in containers like
+    <code>signboard.lzs</code> and the fashion-design files, where the
+    pairing between tile sheet and palette isn't yet known.
+  </p>
+</FieldGuideLayout>

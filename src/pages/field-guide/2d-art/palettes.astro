@@ -1,0 +1,131 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Finding the right palette"
+  description="A tile sheet is just numbered pixels until you find its colors. The game has five different conventions for where the colors might live, and you have to try them in order."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: '2D Art', href: `${base}/field-guide/2d-art/` },
+    { label: 'Finding the right palette' },
+  ]}
+>
+  <p>
+    A "tile sheet" (the game calls these NCGRs) doesn't have any colors of
+    its own. Each pixel is just a number from 0 to 15, or 0 to 255 — an
+    index into a palette. The palette (the game calls it an NCLR) is a
+    separate file. Pair the right NCGR with the right NCLR and you get a
+    visible image. Pair it with the wrong palette and you get the right
+    shapes in nonsense colors.
+  </p>
+
+  <p>
+    The hard part is that the palette isn't always in the same place as
+    the tile sheet. So we work through five rules, in order, until one
+    of them produces an image that looks like an actual game graphic.
+  </p>
+
+  <h2>Rule 1: same-group sibling</h2>
+  <p>
+    The simplest case. The container holds a tile sheet, then a palette,
+    then maybe an OAM sprite definition. The palette right next to the
+    tile sheet is the one that goes with it. This is how most NPC
+    portraits work.
+  </p>
+
+  <h2>Rule 2: container-wide BG palette</h2>
+  <p>
+    Some containers batch several tile sheets at the start and put just a
+    couple of palettes after them. In that case, the first palette is the
+    shared one — every tile sheet uses it. The shop's "buy item" container
+    works this way (five tile sheets, three shared palettes, six tilemaps).
+  </p>
+
+  <h2>Rule 3: external palette from another container</h2>
+  <p>
+    This was the surprise. For the two biggest "orphan" classes of art —
+    item icons and magic glyphs — the palette isn't even in the same file
+    as the tile sheets. It's somewhere completely different, and the game's
+    code is what knows where to look.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Source container</th><th>Palette container</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>item/itemicon.ofs</code> (656 icons, 8-bit)</td>
+        <td><code>global.lzs</code> entry 5 (256 colors)</td>
+        <td>Entry 6 is the same palette dimmed, used for greyed-out icons.</td>
+      </tr>
+      <tr>
+        <td><code>2d/inputmagic/mgcall.ofs</code> (389 glyphs, 4-bit)</td>
+        <td><code>2d/inputmagic/mgc80.ofs</code> entry 0 (16 colors)</td>
+        <td>Entry 2 in the same file is an alternate color scheme.</td>
+      </tr>
+      <tr>
+        <td><code>2d/inputmagic/mgc01..09c.lzs</code> (more glyphs, 4-bit)</td>
+        <td><code>2d/inputmagic/mgc80.ofs</code> entry 0 (16 colors)</td>
+        <td>Same palette as the main glyph set.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    We found these by reading the ARM9 code that loads the files. The
+    code knows that <code>itemicon.ofs</code> is always rendered with
+    the global OBJ palette, so it uploads that palette once at boot and
+    every item icon uses it.
+  </p>
+
+  <h2>Rule 4: single-palette container</h2>
+  <p>
+    When a container has a bunch of tile sheets and exactly one palette
+    that isn't sitting next to any of them, that single palette is the
+    shared one. <code>trendranking/npcicon.ofs</code> is the classic
+    case — 141 tile sheets and one palette.
+  </p>
+
+  <h2>Rule 5: give up, render grayscale</h2>
+  <p>
+    For the 600 still-unresolved tile sheets (mostly in
+    <code>signboard.lzs</code>, <code>designlogo.lzs</code>,
+    <code>designcloth.lzs</code>, and a few other multi-palette
+    containers), we fall back to a grayscale render so we can at least
+    see the shapes. The pairing rule for these is probably indexed by
+    a hidden ordering — a sign, a logo, or a design slot has a specific
+    slot number, and the slot number picks both the tile sheet and the
+    palette. We just haven't dug that ordering out yet.
+  </p>
+
+  <h2>The detective trick</h2>
+  <p>
+    When we don't know where a palette lives, the workflow is:
+  </p>
+  <ol>
+    <li>Look at the tile sheet's bit depth. 4-bit means a 16-color palette;
+      8-bit means a 256-color palette.</li>
+    <li>Build a histogram of which palette indices are actually used in
+      the tile sheet. Item icons, for example, only use indices 0 and 129
+      through 255 — that's a strong fingerprint.</li>
+    <li>Filter candidate palettes by color count, then check which colors
+      they actually fill in. Pixel index 0 is almost always the transparent
+      key, usually a saturated green or magenta.</li>
+    <li>Render the tile sheet against each candidate. The right one
+      produces something recognizable.</li>
+  </ol>
+
+  <h2>The ARM9 red herring</h2>
+  <p>
+    We originally thought item icons might have a per-icon palette mapping
+    in a static ARM9 table. Disassembly proved that's not the case — there
+    is no <code>icon_index → palette_index</code> lookup anywhere. Every
+    item icon uses the same palette, uploaded once at boot. The misleading
+    files <code>fscord.bin</code>, <code>mgcord.bin</code>, and
+    <code>pscord.bin</code> turned out to be recipe and category lookups,
+    not palette references.
+  </p>
+</FieldGuideLayout>

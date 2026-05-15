@@ -1,0 +1,121 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Composition recipes"
+  description="A lot of UI screens aren't single images — they're assemblies of sprite chips placed at specific positions. The placement instructions live in the game's code overlays."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: '2D Art', href: `${base}/field-guide/2d-art/` },
+    { label: 'Composition recipes' },
+  ]}
+>
+  <p>
+    When you look at the shop's "buy item" screen, you might think it's a
+    full-screen background image. It isn't. It's six or seven sprite chips
+    layered over a tiled background, with each chip placed at a coordinate
+    decided by the game.
+  </p>
+
+  <p>
+    The placement isn't decided dynamically. For most static screens, it's
+    a baked-in table in one of the game's code overlays. Once you find the
+    table, you have the recipe for rendering the screen exactly as the
+    game does.
+  </p>
+
+  <h2>Worked example: the buyitem screen</h2>
+  <p>
+    The shop's buy-item screen has been traced end-to-end. Here's the path
+    the game takes when you walk up to a shop counter:
+  </p>
+
+  <ol>
+    <li>The state machine decides to show the buy-item screen.</li>
+    <li>The "controller" code overlay <strong>ov003</strong> loads.</li>
+    <li>ov003 calls the file loader to bring
+      <code>2d/buyitem.lzs</code> and <code>2d/itemorderwnd.lzs</code>
+      into the content cache.</li>
+    <li>ov003 loads the "body" code overlay <strong>ov070</strong>,
+      which is the actual renderer.</li>
+    <li>ov070's init function reads its 10-row composition table and
+      places sprites accordingly.</li>
+  </ol>
+
+  <p>
+    Each row in the table is 12 bytes — six 16-bit fields:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Field</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>cell ID</td><td>Which sprite chip to draw.</td></tr>
+      <tr><td>palette / style</td><td>Which palette bank to use.</td></tr>
+      <tr><td>sub-index</td><td>Secondary index for compound widgets.</td></tr>
+      <tr><td>flags</td><td>Render mode flags.</td></tr>
+      <tr><td>screen X</td><td>X coordinate on the 256-pixel-wide screen.</td></tr>
+      <tr><td>screen Y</td><td>Y coordinate on the 192-pixel-tall screen.</td></tr>
+    </tbody>
+  </table>
+
+  <p>The actual table for the buyitem screen:</p>
+
+  <table>
+    <thead>
+      <tr><th>Slot</th><th>Cell</th><th>Pal</th><th>Sub</th><th>Flags</th><th>X</th><th>Y</th><th>Role</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0</td><td>6</td><td>9</td><td>21</td><td>0</td><td>10</td><td>92</td><td>Left-side icon</td></tr>
+      <tr><td>1</td><td>6</td><td>9</td><td>21</td><td>0</td><td>220</td><td>92</td><td>Right-side icon</td></tr>
+      <tr><td>2</td><td>7</td><td>9</td><td>22</td><td>0</td><td>128</td><td>107</td><td>Center icon</td></tr>
+      <tr><td>3</td><td>3</td><td>9</td><td>18</td><td>0</td><td>125</td><td>100</td><td>Center near-button</td></tr>
+      <tr><td>4</td><td>4</td><td>12</td><td>19</td><td>24</td><td>128</td><td>96</td><td>Main center</td></tr>
+      <tr><td>5</td><td>5</td><td>13</td><td>20</td><td>25</td><td>128</td><td>96</td><td>Main center alt</td></tr>
+      <tr><td>6</td><td>0</td><td>10</td><td>15</td><td>0</td><td>128</td><td>96</td><td>BG center</td></tr>
+      <tr><td>7</td><td>8</td><td>14</td><td>23</td><td>27</td><td>128</td><td>96</td><td>Effect center</td></tr>
+      <tr><td>8</td><td>1</td><td>10</td><td>16</td><td>0</td><td>128</td><td>96</td><td>UI alt 1</td></tr>
+      <tr><td>9</td><td>2</td><td>11</td><td>17</td><td>0</td><td>128</td><td>96</td><td>UI alt 2</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    The 11th row is all zeros — the terminator. Most screens have around
+    this many entries.
+  </p>
+
+  <h2>The general pattern</h2>
+  <p>
+    Most 2D UI screens follow the same shape:
+  </p>
+  <ul>
+    <li>A "controller" overlay handles the state machine for the screen
+      (what does the player see, what input is valid, when do we leave).</li>
+    <li>A "body" overlay is loaded into a shared slot when the screen is
+      active. The body's init function walks the placement table.</li>
+    <li>The body's table is always 12 bytes per row, terminated by a
+      zero row.</li>
+  </ul>
+
+  <p>
+    We catalogued 35+ containers with their composed-screen renders. For
+    most of them we know which controller overlay loads them, but the
+    body overlay (and therefore the placement table) isn't yet known
+    for every screen. The chest, dustbox, fukidashi, signboard, and
+    several others are still in this state.
+  </p>
+
+  <h2>Why some screens can't be captured this way</h2>
+  <p>
+    Screens that resize, scroll, or animate based on player input don't
+    have a static recipe — the placement is decided by code at runtime.
+    The chat window, the fashion-design preview, and the mailorder catalog
+    are all in this category. We have all the individual sprite chips
+    extracted, but to capture those screens exactly as they appear in the
+    game, we'd need to record the game in an emulator and grab the OAM
+    state at the right frame.
+  </p>
+</FieldGuideLayout>

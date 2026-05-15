@@ -1,0 +1,64 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Translation Canon"
+  description="What we keep consistent across the patch. The names, titles, places, and conventions we lock in early so every line stays in agreement."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Translation Canon' },
+  ]}
+>
+  <p>
+    Every translation has to make choices the original didn't. Is Vlad
+    "Mr. Vlad" or just "Vlad"? Is the currency "Mira" or "Ricchi"? Is
+    まじない "incantation" or "spell"? Once we've picked, we have to
+    pick the same way every time, or NPCs start contradicting each
+    other.
+  </p>
+
+  <p>
+    Most of these choices are anchored by <strong>Magician's Quest 1</strong>
+    (also called Mysterious Times in North America, Enchanted Folk in
+    Europe), the same studio's earlier game that did get an English
+    release. Whenever Tongari mentions a character, item, or concept
+    that exists in Game 1, we use Game 1's official translation.
+  </p>
+
+  <div class="fg-cards">
+    <a href={`${base}/field-guide/translation-canon/npc-names/`} class="fg-card">
+      <h3>NPC names</h3>
+      <p>Who's who, and why some characters' English names look nothing like the Japanese — they're Konami's choices, not ours.</p>
+    </a>
+    <a href={`${base}/field-guide/translation-canon/places-and-currency/`} class="fg-card">
+      <h3>Places, titles, and currency</h3>
+      <p>The town's shops, the royal court, and the currency unit (Mira, not Ricchi).</p>
+    </a>
+    <a href={`${base}/field-guide/translation-canon/glossary/`} class="fg-card">
+      <h3>Glossary terms</h3>
+      <p>The recurring concepts — magic, incantation, the magic-language keyboard, the auditorium, the dorm, the woods.</p>
+    </a>
+  </div>
+
+  <h2>How the canon is enforced</h2>
+  <p>
+    The database tracks every translation. When we apply a glossary
+    change — say, deciding まじない is "incantation" rather than "spell"
+    — a script scans every dialog entry for the affected JP token and
+    canonicalizes the English form. We did this once across the whole
+    patch in the
+    <a href={`${base}/field-guide/message-system/shared-payloads/`}>shared-payload
+    canonicalization</a> pass, and we run it again whenever the canon
+    shifts.
+  </p>
+
+  <p>
+    Consistency checks then sweep the database for dialog where a
+    glyph or canon term is highlighted with a color tag but the
+    surrounding English doesn't match the canonical form. About 700
+    entries needed fixing in the initial sweep; ongoing sweeps catch
+    drift as we keep editing.
+  </p>
+</FieldGuideLayout>

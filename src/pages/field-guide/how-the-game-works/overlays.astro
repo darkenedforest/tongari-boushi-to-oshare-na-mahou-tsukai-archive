@@ -1,0 +1,118 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The overlay system"
+  description="The DS only has 4 MB of main RAM. The game gets around that by loading and unloading 180 chunks of code as you play."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Overlays' },
+  ]}
+>
+  <p>
+    The game's code is split into two pieces. There's a big core
+    binary called the <strong>ARM9</strong> (about 723 KB once it's
+    decompressed) that's always in memory, and there are
+    <strong>180 overlays</strong> that get swapped in and out as
+    needed. Most overlays are between a few KB and about 130 KB.
+  </p>
+
+  <h2>What's always loaded</h2>
+  <p>
+    The ARM9 binary holds everything the game needs all the time:
+    the content cache, the file loader, the sprite construction code,
+    the game-state struct, the math library. About 5,000 functions in
+    total.
+  </p>
+
+  <p>
+    On top of the ARM9, two specific overlays are loaded almost
+    continuously:
+  </p>
+  <ul>
+    <li><strong>ov137</strong> — the rendering engine. About 800
+      functions, mostly to do with building OAM lists, managing
+      sprite slots, and copying data to video memory at vertical
+      blank.</li>
+    <li><strong>ov138</strong> — the main Tongari engine. Shares RAM
+      with ov137 in the alternate slot; loaded for game modes that
+      need 3D rendering. About 1,300 functions.</li>
+  </ul>
+
+  <p>
+    Everything else is loaded on demand.
+  </p>
+
+  <h2>Shared RAM slots</h2>
+  <p>
+    Overlays don't each get their own address — they share. Several
+    overlays might all be assigned the same RAM slot, with the
+    understanding that only one of them is loaded at a time. The big
+    shared slots are:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>RAM address</th><th>Slot purpose</th><th># overlays</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0x02155A00</code></td><td>Game mode controllers</td><td>66</td></tr>
+      <tr><td><code>0x021597A0</code></td><td>Screen body renderers</td><td>25</td></tr>
+      <tr><td><code>0x0215C540</code></td><td>Game-mode logic</td><td>20</td></tr>
+      <tr><td><code>0x021FB3C0</code></td><td>Misc shared</td><td>18</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    66 overlays sharing one RAM slot means the game has 66 distinct
+    "game modes" or screens that get treated as mutually exclusive.
+    Only one of them is in memory at any given moment.
+  </p>
+
+  <h2>The controller-and-body pattern</h2>
+  <p>
+    Most screens in the game use two overlays in tandem: a
+    <strong>controller</strong> in one shared slot, a <strong>body</strong>
+    in another.
+  </p>
+
+  <ul>
+    <li>The controller is the state machine. "Show the buy-item screen.
+      Wait for input. The player picked an item, so update the
+      selection. The player pressed B, so leave." It doesn't draw
+      anything itself.</li>
+    <li>The body is the renderer. It has a table of sprite placements
+      and the code to walk that table and ask the rendering engine to
+      put each sprite on the screen.</li>
+  </ul>
+
+  <p>
+    The shop screen is the cleanest example. The controller is ov003
+    and the body is ov070. ov003 loads when you walk up to a shop.
+    ov003 loads ov070 into its renderer slot and calls its init
+    function. ov070 reads its 10-entry placement table and stamps the
+    sprites onto the screen.
+  </p>
+
+  <h2>Why this matters for translating</h2>
+  <p>
+    Every time we change something the game reads — a path string, a
+    text label hard-coded in an overlay, a menu item — we have to
+    figure out which binary or overlay holds it. The ARM9 binary holds
+    most of the "system" strings (item menu actions like "Hold,"
+    "Place"). Overlay 96 holds the 20 NPC interaction menu options.
+    Some overlays hold a single string each. Finding where a given
+    string lives means searching across the ARM9 plus all 180
+    overlays, then figuring out the byte budget around it (how much
+    room is reserved before the next thing in memory).
+  </p>
+
+  <p>
+    The <a href={`${base}/field-guide/translation-canon/`}>translation
+    canon</a> section covers what we've nailed down for these
+    fixed-width slots.
+  </p>
+</FieldGuideLayout>
