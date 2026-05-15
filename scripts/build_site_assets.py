@@ -1,27 +1,40 @@
-"""Build the site's public/images/2d/ + public/data/manifest.json from
-the translation repo's v4 ingest manifest.
+"""Build the site's public/images/2d/ + public/data/manifest.json.
 
-V4 manifest is the single source of truth — it has health scores,
-plausibility, winner-deduplication, validation source per record. This
-script consumes it, applies a category whitelist (visually validated),
-copies PNGs into the public tree with stable ids, joins on DB labels
-where available, and writes one manifest.json the AssetGallery reads.
+Four categories with their established labels (don't break what works):
 
-USAGE
+  language_tile    823 mgcall keyboard buttons. JP/EN labels come from the
+                   translation DB's `magic_glyphs` table by slot_index. 377
+                   real labels + 446 fallback "Tile #N". Source folder:
+                   notes/2d_assets_v2/magic_glyphs/2d/inputmagic/
+
+  item_icon        656 item icons from itemicon.ofs renders. Generic
+                   "Item #N" labels for now — the runtime ItemNoList.itnt
+                   mapping is cracked but the full item-name join isn't
+                   wired up yet (TODO). Source folder:
+                   notes/2d_assets_v2/item_icons/
+
+  title_castle     5 title-screen castle variants (day/dawn/dusk/night/
+                   stylised). Hand-named. Source folder:
+                   notes/2d_assets/2d/mainmenu/
+
+  classroom_card   450 pic2d backgrounds (classroom UI, sign-design tool,
+                   spell-name title cards). Generic "Classroom card #N"
+                   labels. Source folder: notes/2d_assets/2d/
+
+Cache-busting: every png_path carries ?v=<build_timestamp>; manifest.json
+itself is fetched with ?cb=Date.now() by the AssetGallery component so
+it's never served stale.
+
+Run anytime source images or DB labels change:
     python scripts/build_site_assets.py
 
-DEFERRED categories (not yet shipped — pending agent corrections):
-    item_icon       (raw tilesheets, needs NCER cell decomposition +
-                     cracked-formula item-name lookup)
-    magazine_page   (needs visual validation of agent's 526 composed pages)
-    npc_sprite      (agent corrected 141 to 32x32; ingestion pending)
-    clothing        (mixed quality, per-state palette renders pending)
-    ucc, horse_event, global_ui, other, event_list (not yet validated)
+Do NOT hand-edit public/images/ or manifest.json — they're regenerated.
 """
 from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import sqlite3
 import sys
@@ -35,166 +48,186 @@ except Exception:
 
 SITE = Path(__file__).resolve().parent.parent
 TRANSLATION_REPO = SITE.parent / "Tongari boushi translation app claude"
-V4_ROOT = TRANSLATION_REPO / "notes" / "2d_assets_v4"
-V4_MANIFEST = V4_ROOT / "_INGEST_MANIFEST.json"
 DB_PATH = TRANSLATION_REPO / "extracted" / "scratch" / "db" / "translation.sqlite"
-
 SITE_BASE = "/tongari-boushi-to-oshare-na-mahou-tsukai-archive"
 IMAGES_ROOT = SITE / "public" / "images" / "2d"
 MANIFEST_PATH = SITE / "public" / "data" / "manifest.json"
 
-# Categories shipped now — limited to what I personally validated at FULL
-# resolution (not thumbnail contact sheets). The v4 manifest's
-# is_winner+ship_by_default+health filters let through a lot of raw-tile-dump
-# NCGRs and orphan-palette fragments that scored well on the metric but render
-# as broken stripes/fragments on the site at native size. Holding off shipping
-# until each PNG has been actually opened and confirmed correct.
-CATEGORIES_SHIP: set[str] = set()
 
-# Specific stems I trust from prior validation (these rendered cleanly on the
-# site before this session's bulk expansion). Filter through anyway, but
-# restrict to records from these source containers.
-STEMS_TRUSTED = {
-    "inputmagic__mgcall_ofs",  # the language_tile keyboard buttons
-    "pic2d_ofs",               # classroom_card pic2d backgrounds
-    "mainmenu__title_pack_ofs",  # title castle BGs
-}
-
-ASPECT_CAP_CATEGORIES: set[str] = set()
-
-
-def load_magic_glyph_labels(conn) -> dict[int, tuple[str | None, str | None]]:
+def load_glyph_labels(conn) -> dict[int, tuple[str | None, str | None]]:
     rows = conn.execute(
         "SELECT slot_index, jp_name, en_name FROM magic_glyphs"
     ).fetchall()
     return {r[0]: (r[1], r[2]) for r in rows}
 
 
-def stable_id(rec: dict) -> str:
-    """Generate a stable filename id from element_key + stem."""
-    stem = rec["stem"]
-    key = rec.get("element_key") or []
-    # element_key is [sub, ncgr, nclr, ncer, cell]
-    parts = []
-    for v in key:
-        if v is None:
-            parts.append("x")
+def build_language_tiles(records: list[dict], v: str) -> int:
+    """Category 1: 823 mgcall keyboard tiles. 8 prefixes in this folder.
+    `mgcall` is the full keyboard — its NCGR inner index maps 1:1 to the
+    magic_glyphs DB slot_index (377 rows have labels; the rest fall back to
+    'Tile #N'). The other 7 prefixes are sub-pages and ship as 'Tile
+    (mgcXX #N)' without DB labels."""
+    src_dir = TRANSLATION_REPO / "notes" / "2d_assets_v2" / "magic_glyphs" / "2d" / "inputmagic"
+    dst_dir = IMAGES_ROOT / "language_tile"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    labels = load_glyph_labels(conn)
+    conn.close()
+    pattern = re.compile(r"^(mgc[0-9a-z]+)_id\d+_ncgr(\d+)\.png$")
+    added = 0
+    for fn in sorted(os.listdir(src_dir)):
+        m = pattern.match(fn)
+        if not m:
+            continue
+        prefix, idx = m.group(1), int(m.group(2))
+        if prefix == "mgcall":
+            jp, en = labels.get(idx, (None, None))
+            if en is None:
+                en = f"Tile #{idx}"
         else:
-            parts.append(str(v))
-    return f"{stem}__{'_'.join(parts)}"
+            jp, en = None, f"Tile ({prefix} #{idx})"
+        out_name = f"{prefix}_{idx}.png"
+        shutil.copyfile(src_dir / fn, dst_dir / out_name)
+        records.append({
+            "png_path": f"{SITE_BASE}/images/2d/language_tile/{out_name}?v={v}",
+            "source_container": f"2d/inputmagic/{prefix}.ofs",
+            "category": "language_tile",
+            "ncgr_inner_index": idx,
+            "page_prefix": prefix,
+            "label_en": en,
+            "label_jp": jp,
+            "palette_strategy": "external_language_tile",
+        })
+        added += 1
+    print(f"  language_tile: {added}")
+    return added
 
 
-def acceptable_aspect(w: int, h: int) -> bool:
-    if w <= 0 or h <= 0:
-        return False
-    ratio = max(w, h) / min(w, h)
-    return ratio <= 6.0
+def build_item_icons(records: list[dict], v: str) -> int:
+    """Category 2: 656 item icons. Source filename: itemicon_<3-digit>.png
+    where N is the NCGR inner index. The runtime ItemNoList.itnt mapping
+    is cracked (479 items map directly into this range) but full join to
+    item_names isn't wired here yet — generic 'Item #N' for now."""
+    src_dir = TRANSLATION_REPO / "notes" / "2d_assets_v2" / "item_icons"
+    dst_dir = IMAGES_ROOT / "item_icon"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    pattern = re.compile(r"^itemicon_(\d+)\.png$")
+    added = 0
+    for fn in sorted(os.listdir(src_dir)):
+        m = pattern.match(fn)
+        if not m:
+            continue
+        idx = int(m.group(1))
+        shutil.copyfile(src_dir / fn, dst_dir / f"{idx}.png")
+        records.append({
+            "png_path": f"{SITE_BASE}/images/2d/item_icon/{idx}.png?v={v}",
+            "source_container": "item/itemicon.ofs",
+            "category": "item_icon",
+            "ncgr_inner_index": idx,
+            "label_en": f"Item #{idx}",
+            "label_jp": None,
+            "palette_strategy": "external_item_icon",
+            "needs_remap": True,
+        })
+        added += 1
+    print(f"  item_icon: {added}")
+    return added
+
+
+def build_title_castles(records: list[dict], v: str) -> int:
+    """Category 3: 5 title-screen castle BGs. sub00..sub04 = day, dawn,
+    dusk, night, stylised."""
+    src_dir = TRANSLATION_REPO / "notes" / "2d_assets" / "2d" / "mainmenu"
+    dst_dir = IMAGES_ROOT / "title_castle"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    variants = [
+        ("day", "title_pack_sub00__ncgr3_nclr4_nscr5.png"),
+        ("dawn", "title_pack_sub01__ncgr3_nclr4_nscr5.png"),
+        ("dusk", "title_pack_sub02__ncgr3_nclr4_nscr5.png"),
+        ("night", "title_pack_sub03__ncgr3_nclr4_nscr5.png"),
+        ("stylised", "title_pack_sub04__ncgr3_nclr4_nscr5.png"),
+    ]
+    added = 0
+    for name, fn in variants:
+        src = src_dir / fn
+        if not src.exists():
+            continue
+        shutil.copyfile(src, dst_dir / f"{name}.png")
+        records.append({
+            "png_path": f"{SITE_BASE}/images/2d/title_castle/{name}.png?v={v}",
+            "source_container": "2d/mainmenu/title_pack.ofs",
+            "category": "title_castle",
+            "ncgr_inner_index": 3,
+            "label_en": f"Title screen ({name})",
+            "label_jp": None,
+            "palette_strategy": "sibling",
+        })
+        added += 1
+    print(f"  title_castle: {added}")
+    return added
+
+
+def build_classroom_cards(records: list[dict], v: str) -> int:
+    """Category 4: 450 pic2d backgrounds (classroom UI, sign-design tool,
+    spell-title cards). Generic 'Classroom card #N' labels."""
+    src_dir = TRANSLATION_REPO / "notes" / "2d_assets" / "2d"
+    dst_dir = IMAGES_ROOT / "classroom_card"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    pattern = re.compile(r"^pic2d__ncgr(\d+)_nclr\d+_nscr\d+\.png$")
+    added = 0
+    for fn in sorted(os.listdir(src_dir)):
+        m = pattern.match(fn)
+        if not m:
+            continue
+        idx = int(m.group(1))
+        shutil.copyfile(src_dir / fn, dst_dir / f"{idx}.png")
+        records.append({
+            "png_path": f"{SITE_BASE}/images/2d/classroom_card/{idx}.png?v={v}",
+            "source_container": "2d/pic2d.ofs",
+            "category": "classroom_card",
+            "ncgr_inner_index": idx,
+            "label_en": f"Classroom card #{idx}",
+            "label_jp": None,
+            "palette_strategy": "sibling",
+        })
+        added += 1
+    print(f"  classroom_card: {added}")
+    return added
 
 
 def main():
-    if not V4_MANIFEST.exists():
-        sys.exit(f"V4 manifest not found at {V4_MANIFEST}")
     if not DB_PATH.exists():
         sys.exit(f"DB not found at {DB_PATH}")
 
-    # Build version stamp for cache-busting. Appended to every image URL
-    # as ?v=<ts>; AssetGallery additionally fetches manifest.json with a
-    # ?cb=<random> query so the manifest itself is never cached.
-    build_version = str(int(time.time()))
-    print(f"Build version: {build_version}")
-
-    records_v4 = json.loads(V4_MANIFEST.read_text(encoding="utf-8"))
-    print(f"V4 manifest: {len(records_v4)} records")
-
-    conn = sqlite3.connect(DB_PATH)
-    glyph_labels = load_magic_glyph_labels(conn)
-    conn.close()
+    v = str(int(time.time()))
+    print(f"Build version: {v}")
 
     # Clean slate
     if IMAGES_ROOT.exists():
         shutil.rmtree(IMAGES_ROOT)
     IMAGES_ROOT.mkdir(parents=True)
 
-    out_records: list[dict] = []
-    counts: dict[str, int] = {}
-    skipped: dict[str, int] = {}
+    records: list[dict] = []
+    print("Building site assets:")
+    build_language_tiles(records, v)
+    build_item_icons(records, v)
+    build_title_castles(records, v)
+    build_classroom_cards(records, v)
 
-    for r in records_v4:
-        cat = r.get("category")
-        stem = r.get("stem")
-        # Pass either CATEGORIES_SHIP whitelist OR the trusted-stem whitelist.
-        # Currently CATEGORIES_SHIP is empty — only trusted stems pass.
-        if cat not in CATEGORIES_SHIP and stem not in STEMS_TRUSTED:
-            skipped[cat or "?"] = skipped.get(cat or "?", 0) + 1
-            continue
-        if not r.get("is_winner"):
-            continue
-        if not r.get("ship_by_default"):
-            continue
-        if cat in ASPECT_CAP_CATEGORIES and not acceptable_aspect(
-            r.get("w", 0), r.get("h", 0)
-        ):
-            continue
+    records.sort(key=lambda r: (r["category"], r.get("page_prefix", ""), r["ncgr_inner_index"]))
 
-        src_rel = r["png_path"]  # relative inside V4_ROOT
-        src_abs = V4_ROOT / src_rel
-        if not src_abs.exists():
-            continue
-
-        sid = stable_id(r)
-        dst_dir = IMAGES_ROOT / cat
-        dst_dir.mkdir(parents=True, exist_ok=True)
-        dst = dst_dir / f"{sid}.png"
-        shutil.copyfile(src_abs, dst)
-
-        # Labels
-        label_jp = None
-        label_en = None
-        if cat == "magic_glyph" and "mgcall" in (r.get("source_container") or ""):
-            key = r.get("element_key") or []
-            ncgr_idx = key[1] if len(key) > 1 and isinstance(key[1], int) else None
-            if ncgr_idx is not None and ncgr_idx in glyph_labels:
-                label_jp, label_en = glyph_labels[ncgr_idx]
-
-        out_records.append({
-            "png_path": f"{SITE_BASE}/images/2d/{cat}/{sid}.png?v={build_version}",
-            "source_container": r.get("source_container", ""),
-            "category": cat,
-            "ncgr_inner_index": (
-                (r.get("element_key") or [None, None])[1]
-                if isinstance((r.get("element_key") or [None, None])[1], int)
-                else 0
-            ),
-            "label_en": label_en,
-            "label_jp": label_jp,
-            "width": r.get("w"),
-            "height": r.get("h"),
-            "palette_strategy": r.get("validation_source") or "v4_ingest",
-        })
-        counts[cat] = counts.get(cat, 0) + 1
-
-    out_records.sort(key=lambda r: (r["category"], r["png_path"]))
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST_PATH.write_text(
-        json.dumps(out_records, ensure_ascii=False, indent=2),
+        json.dumps(records, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    (MANIFEST_PATH.parent / "version.json").write_text(
+        json.dumps({"version": v, "built": int(time.time())}),
         encoding="utf-8",
     )
 
-    # Write a tiny version sidecar so non-manifest consumers can also
-    # cache-bust against the same build.
-    version_path = MANIFEST_PATH.parent / "version.json"
-    version_path.write_text(
-        json.dumps({"version": build_version, "built": int(time.time())}),
-        encoding="utf-8",
-    )
-
-    print(f"\nWrote {len(out_records)} records to {MANIFEST_PATH.name}")
-    print("\nShipped by category:")
-    for c, n in sorted(counts.items(), key=lambda x: -x[1]):
-        print(f"  {c}: {n}")
-    print(f"\nDeferred categories (skipped):")
-    for c, n in sorted(skipped.items(), key=lambda x: -x[1]):
-        print(f"  {c}: {n}")
+    print(f"\nTotal manifest records: {len(records)}")
+    print(f"Wrote: {MANIFEST_PATH}")
 
 
 if __name__ == "__main__":
