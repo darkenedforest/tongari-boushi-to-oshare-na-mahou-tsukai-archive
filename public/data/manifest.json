@@ -10610,6 +10610,78 @@
     "needs_remap": true
   },
   {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/0.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 0,
+    "label_en": "Tile #0",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
     "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/1.png",
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
@@ -11901,7 +11973,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11910,7 +11982,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11919,7 +11991,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11928,7 +12000,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11937,7 +12009,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11946,7 +12018,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11955,7 +12027,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 19,
-    "label_en": null,
+    "label_en": "Tile #19",
     "label_jp": "１",
     "palette_strategy": "external_language_tile"
   },
@@ -11964,7 +12036,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -11973,7 +12045,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -11982,7 +12054,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -11991,7 +12063,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -12000,7 +12072,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -12009,7 +12081,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -12018,7 +12090,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 20,
-    "label_en": null,
+    "label_en": "Tile #20",
     "label_jp": "２",
     "palette_strategy": "external_language_tile"
   },
@@ -12027,7 +12099,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12036,7 +12108,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12045,7 +12117,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12054,7 +12126,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12063,7 +12135,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12072,7 +12144,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12081,7 +12153,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 21,
-    "label_en": null,
+    "label_en": "Tile #21",
     "label_jp": "３",
     "palette_strategy": "external_language_tile"
   },
@@ -12090,7 +12162,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12099,7 +12171,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12108,7 +12180,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12117,7 +12189,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12126,7 +12198,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12135,7 +12207,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12144,7 +12216,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 22,
-    "label_en": null,
+    "label_en": "Tile #22",
     "label_jp": "４",
     "palette_strategy": "external_language_tile"
   },
@@ -12153,7 +12225,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12162,7 +12234,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12171,7 +12243,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12180,7 +12252,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12189,7 +12261,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12198,7 +12270,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12207,7 +12279,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 23,
-    "label_en": null,
+    "label_en": "Tile #23",
     "label_jp": "５",
     "palette_strategy": "external_language_tile"
   },
@@ -12216,7 +12288,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12225,7 +12297,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12234,7 +12306,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12243,7 +12315,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12252,7 +12324,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12261,7 +12333,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12270,7 +12342,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 24,
-    "label_en": null,
+    "label_en": "Tile #24",
     "label_jp": "６",
     "palette_strategy": "external_language_tile"
   },
@@ -12279,7 +12351,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12288,7 +12360,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12297,7 +12369,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12306,7 +12378,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12315,7 +12387,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12324,7 +12396,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12333,7 +12405,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 25,
-    "label_en": null,
+    "label_en": "Tile #25",
     "label_jp": "７",
     "palette_strategy": "external_language_tile"
   },
@@ -12342,7 +12414,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12351,7 +12423,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12360,7 +12432,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12369,7 +12441,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12378,7 +12450,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12387,7 +12459,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12396,7 +12468,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 26,
-    "label_en": null,
+    "label_en": "Tile #26",
     "label_jp": "８",
     "palette_strategy": "external_language_tile"
   },
@@ -12405,7 +12477,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12414,7 +12486,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12423,7 +12495,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12432,7 +12504,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12441,7 +12513,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12450,7 +12522,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12459,7 +12531,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 27,
-    "label_en": null,
+    "label_en": "Tile #27",
     "label_jp": "９",
     "palette_strategy": "external_language_tile"
   },
@@ -12468,7 +12540,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
@@ -12477,7 +12549,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
@@ -12486,7 +12558,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
@@ -12495,7 +12567,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
@@ -12504,7 +12576,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
@@ -12513,7 +12585,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
     "palette_strategy": "external_language_tile"
   },
@@ -12522,8 +12594,125 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 28,
-    "label_en": null,
+    "label_en": "Tile #28",
     "label_jp": "０",
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/29.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 29,
+    "label_en": "Tile #29",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/29.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 29,
+    "label_en": "Tile #29",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/29.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 29,
+    "label_en": "Tile #29",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/29.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 29,
+    "label_en": "Tile #29",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/29.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 29,
+    "label_en": "Tile #29",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/29.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 29,
+    "label_en": "Tile #29",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/30.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 30,
+    "label_en": "Tile #30",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -12954,7 +13143,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 38,
-    "label_en": null,
+    "label_en": "Tile #38",
     "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
@@ -12963,7 +13152,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 38,
-    "label_en": null,
+    "label_en": "Tile #38",
     "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
@@ -12972,7 +13161,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 38,
-    "label_en": null,
+    "label_en": "Tile #38",
     "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
@@ -12981,7 +13170,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 38,
-    "label_en": null,
+    "label_en": "Tile #38",
     "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
@@ -12990,7 +13179,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 38,
-    "label_en": null,
+    "label_en": "Tile #38",
     "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
@@ -12999,7 +13188,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 38,
-    "label_en": null,
+    "label_en": "Tile #38",
     "label_jp": "UMA",
     "palette_strategy": "external_language_tile"
   },
@@ -14000,6 +14189,240 @@
     "ncgr_inner_index": 60,
     "label_en": "Retake",
     "label_jp": "リテイク",
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/61.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 61,
+    "label_en": "Tile #61",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/61.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 61,
+    "label_en": "Tile #61",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/62.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 62,
+    "label_en": "Tile #62",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/62.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 62,
+    "label_en": "Tile #62",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/63.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 63,
+    "label_en": "Tile #63",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/63.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 63,
+    "label_en": "Tile #63",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/64.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 64,
+    "label_en": "Tile #64",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/64.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 64,
+    "label_en": "Tile #64",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/65.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 65,
+    "label_en": "Tile #65",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/65.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 65,
+    "label_en": "Tile #65",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/66.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 66,
+    "label_en": "Tile #66",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/66.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 66,
+    "label_en": "Tile #66",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/67.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 67,
+    "label_en": "Tile #67",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/67.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 67,
+    "label_en": "Tile #67",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/68.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 68,
+    "label_en": "Tile #68",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/68.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 68,
+    "label_en": "Tile #68",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/69.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 69,
+    "label_en": "Tile #69",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/69.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 69,
+    "label_en": "Tile #69",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/70.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 70,
+    "label_en": "Tile #70",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/70.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 70,
+    "label_en": "Tile #70",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/71.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 71,
+    "label_en": "Tile #71",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/71.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 71,
+    "label_en": "Tile #71",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/72.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 72,
+    "label_en": "Tile #72",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/73.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 73,
+    "label_en": "Tile #73",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/74.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 74,
+    "label_en": "Tile #74",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/75.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 75,
+    "label_en": "Tile #75",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15116,6 +15539,69 @@
     "ncgr_inner_index": 137,
     "label_en": "weeds",
     "label_jp": "くさ",
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/138.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 138,
+    "label_en": "Tile #138",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/139.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 139,
+    "label_en": "Tile #139",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/140.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 140,
+    "label_en": "Tile #140",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/141.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 141,
+    "label_en": "Tile #141",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/142.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 142,
+    "label_en": "Tile #142",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/143.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 143,
+    "label_en": "Tile #143",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/144.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 144,
+    "label_en": "Tile #144",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -15758,6 +16244,96 @@
     "palette_strategy": "external_language_tile"
   },
   {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/359.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 359,
+    "label_en": "Tile #359",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/360.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 360,
+    "label_en": "Tile #360",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/361.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 361,
+    "label_en": "Tile #361",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/362.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 362,
+    "label_en": "Tile #362",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/363.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 363,
+    "label_en": "Tile #363",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/364.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 364,
+    "label_en": "Tile #364",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/365.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 365,
+    "label_en": "Tile #365",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/366.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 366,
+    "label_en": "Tile #366",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/367.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 367,
+    "label_en": "Tile #367",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/368.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 368,
+    "label_en": "Tile #368",
+    "label_jp": null,
+    "palette_strategy": "external_language_tile"
+  },
+  {
     "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/369.png",
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
@@ -15881,6 +16457,15 @@
     "ncgr_inner_index": 382,
     "label_en": "trend",
     "label_jp": "りゅうこう",
+    "palette_strategy": "external_language_tile"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/language_tiles/383.png",
+    "source_container": "2d/inputmagic/mgcall.ofs",
+    "category": "language_tile",
+    "ncgr_inner_index": 383,
+    "label_en": "Tile #383",
+    "label_jp": null,
     "palette_strategy": "external_language_tile"
   },
   {
@@ -17400,7 +17985,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 640,
-    "label_en": null,
+    "label_en": "Tile #640",
     "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
@@ -17409,7 +17994,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 641,
-    "label_en": null,
+    "label_en": "Tile #641",
     "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
@@ -17418,7 +18003,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 642,
-    "label_en": null,
+    "label_en": "Tile #642",
     "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },
@@ -17427,7 +18012,7 @@
     "source_container": "2d/inputmagic/mgcall.ofs",
     "category": "language_tile",
     "ncgr_inner_index": 643,
-    "label_en": null,
+    "label_en": "Tile #643",
     "label_jp": "-",
     "palette_strategy": "external_language_tile"
   },

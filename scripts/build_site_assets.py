@@ -73,9 +73,9 @@ def build_language_tiles(records: list[dict]) -> int:
         if not m:
             continue
         idx = int(m.group(1))
-        if idx not in labels:
-            continue
-        jp, en = labels[idx]
+        jp, en = labels.get(idx, (None, None))
+        if en is None:
+            en = f"Tile #{idx}"
         dst = dst_dir / f"{idx}.png"
         shutil.copyfile(src_dir / fn, dst)
         records.append({
