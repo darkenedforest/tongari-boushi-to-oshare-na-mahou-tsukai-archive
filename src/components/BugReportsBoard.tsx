@@ -1,61 +1,34 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { supabase, supabaseConfigured, BUG_BUCKET, getOrCreateSession } from '../lib/supabase';
 
-const REPO_OWNER = 'darkenedforest';
-const REPO_NAME = 'tongari-boushi-to-oshare-na-mahou-tsukai-archive';
-const LABEL = 'bug-report';
-
-interface User {
-  login: string;
-  avatar_url: string;
-  html_url: string;
-}
-
-interface Reactions {
-  total_count: number;
-  '+1': number;
-  '-1': number;
-  laugh: number;
-  hooray: number;
-  confused: number;
-  heart: number;
-  rocket: number;
-  eyes: number;
-}
-
-interface Issue {
-  number: number;
+interface ReportImage { id: number; url: string; }
+interface Report {
+  id: number;
   title: string;
-  body: string | null;
-  state: 'open' | 'closed';
-  state_reason: string | null;
-  user: User;
+  body: string;
+  author: string | null;
+  status: 'open' | 'flagged' | 'resolved' | 'closed';
+  metoo_count: number;
   created_at: string;
-  updated_at: string;
-  comments: number;
-  reactions: Reactions;
-  labels: { name: string; color: string }[];
-  html_url: string;
+  report_images?: ReportImage[];
+  comments?: Comment[];
 }
-
 interface Comment {
   id: number;
-  user: User;
+  report_id: number;
   body: string;
+  author: string | null;
   created_at: string;
-  reactions: Reactions;
 }
 
 type SortMode = 'open-first' | 'newest' | 'most-metoos';
 
-const NEW_ISSUE_URL = `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/new?template=bug-report.yml`;
-
-function issueUrl(num: number) {
-  return `https://github.com/${REPO_OWNER}/${REPO_NAME}/issues/${num}`;
-}
-
-function commentUrl(num: number) {
-  return `${issueUrl(num)}#issuecomment-new`;
-}
+const MAX_IMAGES = 6;
+const MAX_IMAGE_MB = 5;
+const MAX_TITLE = 120;
+const MAX_BODY = 4000;
+const MAX_COMMENT = 2000;
+const MAX_AUTHOR = 40;
 
 function timeAgo(iso: string): string {
   const t = new Date(iso).getTime();
@@ -67,100 +40,27 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString();
 }
 
-// Tiny markdown subset: images, links, bold, italic, code, line breaks.
-// Avoids pulling a full markdown library for an MVP.
-function renderInline(text: string): React.ReactNode[] {
-  const nodes: React.ReactNode[] = [];
-  // Patterns we look for: ![alt](url), [text](url), **bold**, *italic*, `code`
-  const pattern = /(!\[([^\]]*)\]\(([^)]+)\))|(\[([^\]]+)\]\(([^)]+)\))|(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)/g;
-  let last = 0;
-  let m: RegExpExecArray | null;
-  let key = 0;
-  while ((m = pattern.exec(text)) !== null) {
-    if (m.index > last) nodes.push(text.slice(last, m.index));
-    if (m[1]) {
-      // image — render small inline, full opens lightbox via parent
-      nodes.push(
-        <img
-          key={`md-${key++}`}
-          className="md-image"
-          src={m[3]}
-          alt={m[2] || ''}
-          loading="lazy"
-        />
-      );
-    } else if (m[4]) {
-      nodes.push(
-        <a key={`md-${key++}`} href={m[6]} target="_blank" rel="noreferrer">
-          {m[5]}
-        </a>
-      );
-    } else if (m[7]) {
-      nodes.push(<strong key={`md-${key++}`}>{m[8]}</strong>);
-    } else if (m[9]) {
-      nodes.push(<em key={`md-${key++}`}>{m[10]}</em>);
-    } else if (m[11]) {
-      nodes.push(<code key={`md-${key++}`}>{m[12]}</code>);
-    }
-    last = m.index + m[0].length;
-  }
-  if (last < text.length) nodes.push(text.slice(last));
-  return nodes;
+function authorOrAnon(s: string | null | undefined): string {
+  const trimmed = (s || '').trim();
+  return trimmed || 'Anonymous';
 }
 
-function renderMarkdown(body: string | null): { jsx: React.ReactNode; images: string[] } {
-  if (!body) return { jsx: null, images: [] };
-  // Strip GitHub's "<!-- ... -->" HTML comments
-  const cleaned = body.replace(/<!--[\s\S]*?-->/g, '').trim();
-  // Pull image urls so we can render a thumbnail strip separately AND inline
-  const images: string[] = [];
-  const imgPattern = /!\[[^\]]*\]\(([^)]+)\)/g;
-  let m: RegExpExecArray | null;
-  while ((m = imgPattern.exec(cleaned)) !== null) {
-    images.push(m[1]);
-  }
-  // Render paragraphs split on blank lines, with inline markdown inside
-  const blocks = cleaned.split(/\n\s*\n/).map((block, i) => {
-    // Split single newlines as <br>
-    const lines = block.split(/\n/);
-    return (
-      <p key={`p-${i}`} className="md-p">
-        {lines.map((line, j) => (
-          <span key={`l-${i}-${j}`}>
-            {renderInline(line)}
-            {j < lines.length - 1 && <br />}
-          </span>
-        ))}
-      </p>
-    );
-  });
-  return { jsx: blocks, images };
-}
-
-function StatusPill({ issue }: { issue: Issue }) {
-  const closed = issue.state === 'closed';
-  const isResolved = issue.labels.some(l => l.name === 'resolved');
-  const isFlagged = issue.labels.some(l => l.name === 'flagged');
-  let label = 'Open';
-  let cls = 'pill-open';
-  if (closed && isResolved) {
-    label = 'Resolved';
-    cls = 'pill-resolved';
-  } else if (closed) {
-    label = 'Closed';
-    cls = 'pill-closed';
-  } else if (isFlagged) {
-    label = 'Flagged';
-    cls = 'pill-flagged';
-  }
+function StatusPill({ status }: { status: Report['status'] }) {
+  const map: Record<Report['status'], { label: string; cls: string }> = {
+    open: { label: 'Open', cls: 'pill-open' },
+    flagged: { label: 'Flagged', cls: 'pill-flagged' },
+    resolved: { label: 'Resolved', cls: 'pill-resolved' },
+    closed: { label: 'Closed', cls: 'pill-closed' },
+  };
+  const { label, cls } = map[status];
   return <span className={`status-pill ${cls}`}>{label}</span>;
 }
 
-function ImageThumbs({ images, onOpen }: { images: string[]; onOpen: (url: string) => void }) {
-  if (!images.length) return null;
+function ImageThumbs({ urls, onOpen }: { urls: string[]; onOpen: (url: string) => void }) {
+  if (!urls.length) return null;
   return (
     <div className="thumb-row">
-      {images.map((url, i) => (
+      {urls.map((url, i) => (
         <button key={i} className="thumb-btn" onClick={() => onOpen(url)} aria-label="Open image">
           <img src={url} alt="" loading="lazy" />
         </button>
@@ -169,113 +69,364 @@ function ImageThumbs({ images, onOpen }: { images: string[]; onOpen: (url: strin
   );
 }
 
-function IssueCard({
-  issue,
+function NewReportForm({
+  onPosted,
+  rateLimited,
+}: {
+  onPosted: () => void;
+  rateLimited: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [author, setAuthor] = useState('');
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [files, setFiles] = useState<File[]>([]);
+  const [honeypot, setHoneypot] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  function pickFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files || []);
+    const trimmed = list.slice(0, MAX_IMAGES).filter(f => f.size <= MAX_IMAGE_MB * 1024 * 1024);
+    if (trimmed.length < list.length) {
+      setErr(`Some files were too big or you picked more than ${MAX_IMAGES}; ignored.`);
+    }
+    setFiles(prev => [...prev, ...trimmed].slice(0, MAX_IMAGES));
+  }
+
+  function removeFile(idx: number) {
+    setFiles(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  async function submit() {
+    setErr(null);
+    if (honeypot) return; // bot
+    if (!title.trim() || !body.trim()) {
+      setErr('Title and description are required.');
+      return;
+    }
+    if (rateLimited) {
+      setErr("You just posted — give it a couple of minutes before another one.");
+      return;
+    }
+    if (!supabaseConfigured || !supabase) {
+      setErr("Backend isn't configured yet. (Site owner: see SUPABASE_SETUP.md)");
+      return;
+    }
+    setBusy(true);
+    try {
+      const insertPayload = {
+        title: title.trim().slice(0, MAX_TITLE),
+        body: body.trim().slice(0, MAX_BODY),
+        author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
+        status: 'open' as const,
+      };
+      const { data: reportRow, error: insErr } = await supabase
+        .from('reports')
+        .insert(insertPayload)
+        .select()
+        .single();
+      if (insErr || !reportRow) throw insErr || new Error('No report returned');
+
+      const reportId = reportRow.id as number;
+
+      // Upload images
+      const imageRecords: { report_id: number; url: string }[] = [];
+      for (const f of files) {
+        const ext = f.name.split('.').pop()?.toLowerCase() || 'png';
+        const path = `r${reportId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from(BUG_BUCKET).upload(path, f, {
+          contentType: f.type || 'image/png',
+          cacheControl: '31536000',
+        });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from(BUG_BUCKET).getPublicUrl(path);
+        if (pub?.publicUrl) imageRecords.push({ report_id: reportId, url: pub.publicUrl });
+      }
+      if (imageRecords.length) {
+        const { error: imgErr } = await supabase.from('report_images').insert(imageRecords);
+        if (imgErr) throw imgErr;
+      }
+
+      window.localStorage.setItem('tongari-last-post', String(Date.now()));
+      setAuthor('');
+      setTitle('');
+      setBody('');
+      setFiles([]);
+      setOpen(false);
+      onPosted();
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="report-btn" onClick={() => setOpen(true)}>
+        <span className="emoji" aria-hidden>🐛</span>
+        <span>Post a bug report</span>
+      </button>
+    );
+  }
+
+  return (
+    <form
+      className="new-form"
+      onSubmit={e => { e.preventDefault(); submit(); }}
+    >
+      <div className="form-row split">
+        <label className="field">
+          <span className="field-label">Your name (optional)</span>
+          <input
+            type="text"
+            value={author}
+            onChange={e => setAuthor(e.target.value)}
+            placeholder="Anonymous"
+            maxLength={MAX_AUTHOR}
+          />
+        </label>
+        <label className="field hp" aria-hidden="true">
+          <span className="field-label">Website (leave blank)</span>
+          <input
+            type="text"
+            value={honeypot}
+            onChange={e => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </label>
+      </div>
+      <label className="field">
+        <span className="field-label">Title</span>
+        <input
+          type="text"
+          value={title}
+          onChange={e => setTitle(e.target.value)}
+          placeholder="Short summary of the bug"
+          maxLength={MAX_TITLE}
+          required
+        />
+      </label>
+      <label className="field">
+        <span className="field-label">What's the issue?</span>
+        <textarea
+          value={body}
+          onChange={e => setBody(e.target.value)}
+          placeholder="Describe what happened, where, and what you expected. Markdown is supported."
+          rows={6}
+          maxLength={MAX_BODY}
+          required
+        />
+      </label>
+      <div className="file-row">
+        <button
+          type="button"
+          className="add-images-btn"
+          onClick={() => fileInput.current?.click()}
+        >
+          <span aria-hidden>📷</span> Add screenshots
+        </button>
+        <input
+          ref={fileInput}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={pickFiles}
+          style={{ display: 'none' }}
+        />
+        <span className="file-hint">
+          Up to {MAX_IMAGES} images, {MAX_IMAGE_MB}MB each.
+        </span>
+      </div>
+      {files.length > 0 && (
+        <div className="file-previews">
+          {files.map((f, i) => (
+            <div key={i} className="file-preview">
+              <img src={URL.createObjectURL(f)} alt="" />
+              <button
+                type="button"
+                className="remove-file"
+                onClick={() => removeFile(i)}
+                aria-label="Remove image"
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {err && <div className="form-error">{err}</div>}
+      <div className="form-actions">
+        <button type="button" className="cancel-btn" onClick={() => setOpen(false)} disabled={busy}>
+          Cancel
+        </button>
+        <button type="submit" className="submit-btn" disabled={busy}>
+          {busy ? 'Posting…' : 'Post bug report'}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [author, setAuthor] = useState('');
+  const [body, setBody] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit() {
+    setErr(null);
+    if (!body.trim()) { setErr('Comment is required.'); return; }
+    if (!supabaseConfigured || !supabase) {
+      setErr("Backend isn't configured yet.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.from('comments').insert({
+        report_id: reportId,
+        body: body.trim().slice(0, MAX_COMMENT),
+        author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
+      });
+      if (error) throw error;
+      setAuthor('');
+      setBody('');
+      setOpen(false);
+      onPosted();
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return (
+      <button className="action add-comment-btn" onClick={() => setOpen(true)}>
+        <span className="emoji" aria-hidden>💬</span>
+        <span className="action-label">Add a comment</span>
+      </button>
+    );
+  }
+  return (
+    <form className="comment-form" onSubmit={e => { e.preventDefault(); submit(); }}>
+      <input
+        type="text"
+        value={author}
+        onChange={e => setAuthor(e.target.value)}
+        placeholder="Your name (optional)"
+        maxLength={MAX_AUTHOR}
+      />
+      <textarea
+        value={body}
+        onChange={e => setBody(e.target.value)}
+        placeholder="Got a fix, a workaround, or a similar experience? Share it."
+        rows={3}
+        maxLength={MAX_COMMENT}
+        required
+      />
+      {err && <div className="form-error">{err}</div>}
+      <div className="comment-form-actions">
+        <button type="button" className="cancel-btn small" onClick={() => setOpen(false)} disabled={busy}>Cancel</button>
+        <button type="submit" className="submit-btn small" disabled={busy}>{busy ? 'Posting…' : 'Add comment'}</button>
+      </div>
+    </form>
+  );
+}
+
+function MeTooButton({ report, onTooed }: { report: Report; onTooed: () => void }) {
+  const session = getOrCreateSession();
+  const localKey = `metoo-${report.id}`;
+  const [pressed, setPressed] = useState<boolean>(() =>
+    typeof window !== 'undefined' && localStorage.getItem(localKey) === '1'
+  );
+  const [busy, setBusy] = useState(false);
+  const [count, setCount] = useState(report.metoo_count);
+
+  async function press() {
+    if (pressed || busy) return;
+    if (!supabaseConfigured || !supabase) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase
+        .from('report_metoos')
+        .insert({ report_id: report.id, session_id: session });
+      if (error && error.code !== '23505') throw error;
+      // Optimistically bump count
+      setPressed(true);
+      setCount(c => c + 1);
+      window.localStorage.setItem(localKey, '1');
+      onTooed();
+    } catch (e) {
+      // Ignore silently for MVP
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      className={`action me-too ${pressed ? 'pressed' : ''}`}
+      onClick={press}
+      disabled={busy || pressed}
+      title={pressed ? "You've already said me too" : 'Tap if you have this bug too'}
+    >
+      <span className="emoji" aria-hidden>🙋</span>
+      <span className="action-label">{pressed ? "You're in" : 'Me too'}</span>
+      <span className="counter">{count}</span>
+    </button>
+  );
+}
+
+function ReportCard({
+  report,
+  onChanged,
   onOpenImage,
 }: {
-  issue: Issue;
+  report: Report;
+  onChanged: () => void;
   onOpenImage: (url: string) => void;
 }) {
-  const [comments, setComments] = useState<Comment[] | null>(null);
-  const [loadingComments, setLoadingComments] = useState(false);
-  const { jsx, images } = useMemo(() => renderMarkdown(issue.body), [issue.body]);
-  const metoo = issue.reactions['+1'] || 0;
-
-  useEffect(() => {
-    if (issue.comments === 0) return;
-    setLoadingComments(true);
-    fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues/${issue.number}/comments`)
-      .then(r => r.json())
-      .then((data: Comment[]) => {
-        setComments(Array.isArray(data) ? data : []);
-        setLoadingComments(false);
-      })
-      .catch(() => {
-        setComments([]);
-        setLoadingComments(false);
-      });
-  }, [issue.number, issue.comments]);
-
+  const imageUrls = (report.report_images || []).map(i => i.url);
   return (
     <article className="bug-card">
       <header className="bug-card-head">
         <div className="head-left">
-          <span className="ticket-num">#{issue.number}</span>
-          <h2 className="bug-title">{issue.title}</h2>
+          <span className="ticket-num">#{report.id}</span>
+          <h2 className="bug-title">{report.title}</h2>
         </div>
         <div className="head-right">
-          <StatusPill issue={issue} />
+          <StatusPill status={report.status} />
         </div>
       </header>
-
       <div className="bug-meta">
-        <a className="author" href={issue.user.html_url} target="_blank" rel="noreferrer">
-          <img src={issue.user.avatar_url} alt="" />
-          <span>{issue.user.login}</span>
-        </a>
+        <span className="author">{authorOrAnon(report.author)}</span>
         <span className="dot">·</span>
-        <span className="timestamp">opened {timeAgo(issue.created_at)}</span>
+        <span className="timestamp">{timeAgo(report.created_at)}</span>
       </div>
-
-      <div className="bug-body">{jsx}</div>
-
-      {images.length > 0 && (
-        <ImageThumbs images={images} onOpen={onOpenImage} />
-      )}
-
+      <div className="bug-body">
+        {report.body.split(/\n+/).map((p, i) => <p key={i}>{p}</p>)}
+      </div>
+      {imageUrls.length > 0 && <ImageThumbs urls={imageUrls} onOpen={onOpenImage} />}
       <div className="bug-actions">
-        <a
-          className="action me-too"
-          href={issueUrl(issue.number)}
-          target="_blank"
-          rel="noreferrer"
-          title="React on GitHub to say me too"
-        >
-          <span className="emoji" aria-hidden>🙋</span>
-          <span className="action-label">Me too</span>
-          <span className="counter">{metoo}</span>
-        </a>
-        <a
-          className="action comment"
-          href={commentUrl(issue.number)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          <span className="emoji" aria-hidden>💬</span>
-          <span className="action-label">Add a comment</span>
-          <span className="counter">{issue.comments}</span>
-        </a>
-        <a
-          className="action gh-link"
-          href={issue.html_url}
-          target="_blank"
-          rel="noreferrer"
-        >
-          View on GitHub →
-        </a>
+        <MeTooButton report={report} onTooed={onChanged} />
+        <CommentForm reportId={report.id} onPosted={onChanged} />
       </div>
-
-      {issue.comments > 0 && (
+      {report.comments && report.comments.length > 0 && (
         <section className="comments">
-          {loadingComments && <div className="loading-comments">loading replies…</div>}
-          {comments && comments.length > 0 && comments.map(c => {
-            const cmd = renderMarkdown(c.body);
-            return (
-              <article key={c.id} className="comment">
-                <header className="comment-head">
-                  <a className="author small" href={c.user.html_url} target="_blank" rel="noreferrer">
-                    <img src={c.user.avatar_url} alt="" />
-                    <span>{c.user.login}</span>
-                  </a>
-                  <span className="timestamp">{timeAgo(c.created_at)}</span>
-                </header>
-                <div className="comment-body">{cmd.jsx}</div>
-                {cmd.images.length > 0 && (
-                  <ImageThumbs images={cmd.images} onOpen={onOpenImage} />
-                )}
-              </article>
-            );
-          })}
+          {report.comments.map(c => (
+            <article key={c.id} className="comment">
+              <header className="comment-head">
+                <span className="author small">{authorOrAnon(c.author)}</span>
+                <span className="timestamp">{timeAgo(c.created_at)}</span>
+              </header>
+              <div className="comment-body">
+                {c.body.split(/\n+/).map((p, i) => <p key={i}>{p}</p>)}
+              </div>
+            </article>
+          ))}
         </section>
       )}
     </article>
@@ -283,63 +434,90 @@ function IssueCard({
 }
 
 export default function BugReportsBoard() {
-  const [issues, setIssues] = useState<Issue[]>([]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [sort, setSort] = useState<SortMode>('open-first');
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [rateLimited, setRateLimited] = useState(false);
+
+  async function load() {
+    if (!supabaseConfigured || !supabase) {
+      setLoading(false);
+      setErr('not_configured');
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*, report_images(*), comments(*)')
+      .order('created_at', { ascending: false });
+    if (error) {
+      setErr(error.message);
+    } else {
+      // Sort comments oldest-first within each report
+      const normalized = (data as Report[] || []).map(r => ({
+        ...r,
+        comments: (r.comments || []).slice().sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        ),
+      }));
+      setReports(normalized);
+      setErr(null);
+    }
+    setLoading(false);
+  }
 
   useEffect(() => {
-    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/issues?labels=${LABEL}&state=all&per_page=100`;
-    fetch(url)
-      .then(r => {
-        if (!r.ok) throw new Error(`GitHub API: ${r.status}`);
-        return r.json();
-      })
-      .then((data: Issue[]) => {
-        // GH API returns PRs too in some cases — strip anything that's a PR
-        setIssues(Array.isArray(data) ? data.filter(i => !(i as any).pull_request) : []);
-        setLoading(false);
-      })
-      .catch(e => {
-        setErr(String(e));
-        setLoading(false);
-      });
+    load();
+    // Rate-limit: 2-minute window after a post
+    const last = Number(localStorage.getItem('tongari-last-post') || 0);
+    setRateLimited(Date.now() - last < 2 * 60 * 1000);
+    const t = setInterval(() => {
+      const last2 = Number(localStorage.getItem('tongari-last-post') || 0);
+      setRateLimited(Date.now() - last2 < 2 * 60 * 1000);
+    }, 15000);
+    return () => clearInterval(t);
   }, []);
 
   const sorted = useMemo(() => {
-    const list = [...issues];
+    const list = [...reports];
     list.sort((a, b) => {
       if (sort === 'open-first') {
-        if (a.state !== b.state) return a.state === 'open' ? -1 : 1;
-        return (b.reactions['+1'] || 0) - (a.reactions['+1'] || 0);
+        const aOpen = a.status === 'open' || a.status === 'flagged' ? 0 : 1;
+        const bOpen = b.status === 'open' || b.status === 'flagged' ? 0 : 1;
+        if (aOpen !== bOpen) return aOpen - bOpen;
+        return (b.metoo_count || 0) - (a.metoo_count || 0);
       }
       if (sort === 'newest') {
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       }
-      // most-metoos
-      const ar = a.reactions['+1'] || 0;
-      const br = b.reactions['+1'] || 0;
-      if (br !== ar) return br - ar;
+      if ((b.metoo_count || 0) !== (a.metoo_count || 0)) {
+        return (b.metoo_count || 0) - (a.metoo_count || 0);
+      }
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return list;
-  }, [issues, sort]);
+  }, [reports, sort]);
 
+  if (!supabaseConfigured) {
+    return (
+      <div className="board-status">
+        <p>
+          The bug-report backend isn't configured for this site yet. The site
+          owner needs to add Supabase credentials — see{' '}
+          <code>SUPABASE_SETUP.md</code> in the repo for the one-time setup.
+        </p>
+      </div>
+    );
+  }
   if (loading) return <div className="board-status">Loading bug reports…</div>;
-  if (err) return (
-    <div className="board-status error">
-      Couldn't load bug reports ({err}). GitHub rate limit may be exhausted; refresh in a few minutes.
-    </div>
-  );
+  if (err) return <div className="board-status error">Couldn't load: {err}</div>;
 
   return (
     <div className="bug-board">
       <div className="board-header">
-        <a className="report-btn" href={NEW_ISSUE_URL} target="_blank" rel="noreferrer">
-          <span className="emoji" aria-hidden>🐛</span>
-          <span>Report a bug</span>
-        </a>
+        <NewReportForm onPosted={load} rateLimited={rateLimited} />
         <div className="sort-pills">
           {(['open-first', 'newest', 'most-metoos'] as SortMode[]).map(s => (
             <button
@@ -352,9 +530,9 @@ export default function BugReportsBoard() {
           ))}
         </div>
         <span className="board-counts">
-          {issues.filter(i => i.state === 'open').length} open
+          {reports.filter(r => r.status === 'open' || r.status === 'flagged').length} open
           <span className="dot">·</span>
-          {issues.filter(i => i.state === 'closed').length} closed
+          {reports.filter(r => r.status === 'closed' || r.status === 'resolved').length} closed
         </span>
       </div>
 
@@ -362,20 +540,13 @@ export default function BugReportsBoard() {
         <div className="empty-state">
           <div className="empty-emoji" aria-hidden>🌸</div>
           <h3>No bug reports yet</h3>
-          <p>
-            Found a bug in the patch, the website, or want to suggest a feature?
-            Hit the button above to open one.
-          </p>
+          <p>Be the first to share something — the post form is above.</p>
         </div>
       )}
 
       <div className="cards">
-        {sorted.map(issue => (
-          <IssueCard
-            key={issue.number}
-            issue={issue}
-            onOpenImage={setLightbox}
-          />
+        {sorted.map(r => (
+          <ReportCard key={r.id} report={r} onChanged={load} onOpenImage={setLightbox} />
         ))}
       </div>
 
@@ -387,297 +558,179 @@ export default function BugReportsBoard() {
       )}
 
       <style>{`
-        .board-status { padding: 60px 20px; text-align: center; color: var(--color-ink-soft); }
+        .board-status { padding: 60px 20px; text-align: center; color: var(--color-ink-soft); background: var(--surface-strong); border-radius: var(--radius-lg); border: 1px solid var(--color-pink-100); }
         .board-status.error { color: var(--color-pink-600); }
+        .board-status code { background: var(--color-purple-50); padding: 2px 6px; border-radius: 4px; }
 
         .board-header {
-          display: flex;
-          flex-wrap: wrap;
-          align-items: center;
-          gap: 14px;
+          display: flex; flex-wrap: wrap; align-items: center; gap: 14px;
           padding: 18px 20px;
           background: linear-gradient(135deg, var(--color-pink-50), var(--color-purple-50));
-          border-radius: var(--radius-lg);
-          margin-bottom: 24px;
+          border-radius: var(--radius-lg); margin-bottom: 24px;
           border: 1px solid var(--color-pink-100);
         }
         .report-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 18px;
-          border-radius: var(--radius-pill);
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 10px 18px; border-radius: var(--radius-pill);
           background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
-          color: white;
-          font-weight: 700;
-          text-decoration: none;
+          color: white; font-weight: 700; border: none; cursor: pointer;
+          font-family: inherit; font-size: 0.95rem;
           box-shadow: 0 6px 16px rgba(155, 123, 217, 0.35);
-          transition: transform 0.12s ease;
         }
         .report-btn:hover { transform: translateY(-1px); }
         .report-btn .emoji { font-size: 1.1rem; }
-
         .sort-pills { display: flex; gap: 6px; flex-wrap: wrap; }
         .sort-pill {
-          padding: 6px 14px;
-          border-radius: var(--radius-pill);
-          background: white;
-          color: var(--color-purple-600);
-          border: 1px solid var(--color-purple-100);
-          font-weight: 600;
-          font-size: 0.85rem;
-          cursor: pointer;
-          font-family: inherit;
+          padding: 6px 14px; border-radius: var(--radius-pill);
+          background: white; color: var(--color-purple-600);
+          border: 1px solid var(--color-purple-100); font-weight: 600; font-size: 0.85rem;
+          cursor: pointer; font-family: inherit;
         }
         .sort-pill:hover { background: var(--color-purple-100); }
-        .sort-pill.active {
-          background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
-          color: white;
-          border-color: transparent;
-        }
-        .board-counts {
-          margin-left: auto;
-          color: var(--color-ink-soft);
-          font-size: 0.85rem;
-        }
+        .sort-pill.active { background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400)); color: white; border-color: transparent; }
+        .board-counts { margin-left: auto; color: var(--color-ink-soft); font-size: 0.85rem; }
         .dot { margin: 0 6px; opacity: 0.5; }
 
-        .empty-state {
-          text-align: center;
-          padding: 60px 20px;
-          background: var(--surface-strong);
-          border-radius: var(--radius-lg);
+        .new-form {
+          background: white; padding: 18px 20px;
+          border-radius: var(--radius-lg); border: 1px solid var(--color-pink-100);
           box-shadow: var(--shadow-soft);
-          border: 1px solid var(--color-pink-100);
+          display: flex; flex-direction: column; gap: 12px;
+          margin-bottom: 24px;
         }
+        .form-row.split { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        .field { display: flex; flex-direction: column; gap: 4px; }
+        .field-label { font-weight: 600; color: var(--color-purple-600); font-size: 0.82rem; }
+        .field input, .field textarea {
+          padding: 10px 14px; border-radius: var(--radius-md);
+          border: 1px solid var(--color-purple-100); background: var(--color-purple-50);
+          color: var(--color-ink); font: inherit; resize: vertical;
+        }
+        .field input:focus, .field textarea:focus { outline: 2px solid var(--color-pink-200); background: white; }
+        .field.hp { position: absolute; left: -9999px; }
+        .file-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .add-images-btn {
+          padding: 7px 14px; border-radius: var(--radius-pill);
+          background: var(--color-purple-50); color: var(--color-purple-600);
+          border: 1px solid var(--color-purple-100); font-weight: 600; font-size: 0.85rem;
+          cursor: pointer; font-family: inherit;
+        }
+        .add-images-btn:hover { background: var(--color-purple-100); }
+        .file-hint { color: var(--color-ink-soft); font-size: 0.8rem; }
+        .file-previews { display: flex; flex-wrap: wrap; gap: 8px; }
+        .file-preview { position: relative; border: 2px solid var(--color-pink-100); border-radius: var(--radius-md); overflow: hidden; }
+        .file-preview img { display: block; width: 80px; height: 80px; object-fit: cover; }
+        .remove-file {
+          position: absolute; top: 2px; right: 2px;
+          width: 20px; height: 20px; border-radius: 50%;
+          background: white; color: var(--color-pink-600); border: none;
+          font-size: 0.9rem; cursor: pointer; line-height: 1;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .form-error { color: var(--color-pink-600); font-size: 0.85rem; }
+        .form-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .cancel-btn { padding: 8px 16px; border-radius: var(--radius-pill); background: white; color: var(--color-ink-soft); border: 1px solid var(--color-purple-100); font-weight: 600; cursor: pointer; font-family: inherit; }
+        .cancel-btn.small { padding: 5px 11px; font-size: 0.82rem; }
+        .submit-btn { padding: 8px 18px; border-radius: var(--radius-pill); background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400)); color: white; border: none; font-weight: 700; cursor: pointer; font-family: inherit; }
+        .submit-btn.small { padding: 5px 12px; font-size: 0.82rem; }
+        .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .empty-state { text-align: center; padding: 60px 20px; background: var(--surface-strong); border-radius: var(--radius-lg); box-shadow: var(--shadow-soft); border: 1px solid var(--color-pink-100); }
         .empty-state .empty-emoji { font-size: 3rem; }
         .empty-state h3 { color: var(--color-pink-600); margin: 8px 0 6px; }
         .empty-state p { color: var(--color-ink-soft); max-width: 50ch; margin: 0 auto; }
 
-        .cards {
-          display: flex;
-          flex-direction: column;
-          gap: 18px;
-        }
+        .cards { display: flex; flex-direction: column; gap: 18px; }
         .bug-card {
-          background: var(--surface-strong);
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-soft);
-          border: 1px solid var(--color-pink-100);
+          background: var(--surface-strong); border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-soft); border: 1px solid var(--color-pink-100);
           padding: 22px 24px;
           transition: box-shadow 0.15s ease, border-color 0.15s ease;
         }
-        .bug-card:hover {
-          box-shadow: var(--shadow-pop);
-          border-color: var(--color-pink-200);
-        }
-
-        .bug-card-head {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          gap: 12px;
-          margin-bottom: 6px;
-        }
+        .bug-card:hover { box-shadow: var(--shadow-pop); border-color: var(--color-pink-200); }
+        .bug-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
         .head-left { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; flex: 1; }
-        .ticket-num {
-          font-family: var(--font-mono, ui-monospace, monospace);
-          color: var(--color-purple-400);
-          font-weight: 700;
-          font-size: 0.95rem;
-        }
-        .bug-title {
-          margin: 0;
-          font-size: 1.2rem;
-          color: var(--color-ink);
-          font-weight: 700;
-          line-height: 1.3;
-        }
-        .status-pill {
-          display: inline-block;
-          padding: 4px 12px;
-          border-radius: var(--radius-pill);
-          font-size: 0.78rem;
-          font-weight: 700;
-          letter-spacing: 0.02em;
-        }
-        .pill-open      { background: var(--color-pink-100);   color: var(--color-pink-600); }
+        .ticket-num { font-family: ui-monospace, monospace; color: var(--color-purple-400); font-weight: 700; font-size: 0.95rem; }
+        .bug-title { margin: 0; font-size: 1.2rem; color: var(--color-ink); font-weight: 700; line-height: 1.3; }
+        .status-pill { display: inline-block; padding: 4px 12px; border-radius: var(--radius-pill); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; }
+        .pill-open      { background: var(--color-pink-100);    color: var(--color-pink-600); }
         .pill-flagged   { background: #fff1c4;                  color: #b07f00; }
         .pill-resolved  { background: #d9f3df;                  color: #2c8a4a; }
-        .pill-closed    { background: var(--color-purple-100); color: var(--color-purple-600); }
-
-        .bug-meta {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          color: var(--color-ink-soft);
-          font-size: 0.82rem;
-          margin-bottom: 12px;
-        }
-        .author {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          text-decoration: none;
-          color: var(--color-purple-600);
-          font-weight: 600;
-        }
-        .author img { width: 22px; height: 22px; border-radius: 50%; }
-        .author.small img { width: 18px; height: 18px; }
+        .pill-closed    { background: var(--color-purple-100);  color: var(--color-purple-600); }
+        .bug-meta { display: flex; align-items: center; gap: 6px; color: var(--color-ink-soft); font-size: 0.82rem; margin-bottom: 12px; }
+        .author { color: var(--color-purple-600); font-weight: 600; }
+        .author.small { font-size: 0.82rem; }
         .timestamp { color: var(--color-ink-soft); }
-
         .bug-body { color: var(--color-ink); line-height: 1.55; font-size: 0.96rem; }
-        .md-p { margin: 0 0 10px; }
-        .md-p:last-child { margin-bottom: 0; }
-        .md-image {
-          max-width: 100%;
-          max-height: 220px;
-          border-radius: var(--radius-md);
-          margin: 6px 0;
-          display: block;
-        }
-        .bug-body a { color: var(--color-pink-600); font-weight: 600; }
-        .bug-body code {
-          background: var(--color-purple-50);
-          padding: 1px 6px;
-          border-radius: 4px;
-          font-size: 0.88em;
-        }
+        .bug-body p { margin: 0 0 10px; }
+        .bug-body p:last-child { margin-bottom: 0; }
 
-        .thumb-row {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin: 10px 0;
-        }
+        .thumb-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .thumb-btn {
-          padding: 0;
-          border: 2px solid var(--color-pink-100);
-          background: white;
-          border-radius: var(--radius-md);
-          overflow: hidden;
-          cursor: pointer;
+          padding: 0; border: 2px solid var(--color-pink-100); background: white;
+          border-radius: var(--radius-md); overflow: hidden; cursor: pointer;
           transition: transform 0.12s ease, border-color 0.12s ease;
         }
-        .thumb-btn:hover {
-          transform: scale(1.03);
-          border-color: var(--color-pink-400);
-        }
-        .thumb-btn img {
-          display: block;
-          width: 96px;
-          height: 96px;
-          object-fit: cover;
-        }
+        .thumb-btn:hover { transform: scale(1.03); border-color: var(--color-pink-400); }
+        .thumb-btn img { display: block; width: 96px; height: 96px; object-fit: cover; }
 
         .bug-actions {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          margin-top: 14px;
-          padding-top: 14px;
+          display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-start;
+          margin-top: 14px; padding-top: 14px;
           border-top: 1px dashed var(--color-pink-100);
         }
         .action {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 7px 14px;
-          border-radius: var(--radius-pill);
-          background: var(--color-purple-50);
-          color: var(--color-purple-600);
-          border: 1px solid var(--color-purple-100);
-          font-weight: 600;
-          font-size: 0.82rem;
-          text-decoration: none;
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 7px 14px; border-radius: var(--radius-pill);
+          background: var(--color-purple-50); color: var(--color-purple-600);
+          border: 1px solid var(--color-purple-100); font-weight: 600; font-size: 0.82rem;
+          cursor: pointer; font-family: inherit;
           transition: background 0.12s ease, color 0.12s ease;
         }
-        .action:hover {
-          background: var(--color-purple-100);
-        }
-        .action.me-too:hover {
-          background: var(--color-pink-100);
-          color: var(--color-pink-600);
-          border-color: var(--color-pink-200);
-        }
+        .action:hover { background: var(--color-purple-100); }
+        .action.me-too:hover { background: var(--color-pink-100); color: var(--color-pink-600); border-color: var(--color-pink-200); }
+        .action.me-too.pressed { background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400)); color: white; border-color: transparent; cursor: default; }
+        .action:disabled { cursor: not-allowed; }
         .action .counter {
-          background: white;
-          padding: 1px 8px;
-          border-radius: 999px;
-          font-size: 0.75rem;
-          color: var(--color-ink);
-          min-width: 16px;
-          text-align: center;
+          background: white; padding: 1px 8px; border-radius: 999px;
+          font-size: 0.75rem; color: var(--color-ink); min-width: 16px; text-align: center;
         }
-        .action.gh-link {
-          margin-left: auto;
-          background: transparent;
-          border-color: transparent;
-          color: var(--color-ink-soft);
+        .action.me-too.pressed .counter { background: rgba(255,255,255,0.85); }
+
+        .comment-form {
+          display: flex; flex-direction: column; gap: 8px;
+          background: var(--color-purple-50); padding: 12px;
+          border-radius: var(--radius-md); margin-top: 4px; width: 100%;
         }
+        .comment-form input, .comment-form textarea {
+          padding: 8px 12px; border-radius: var(--radius-md);
+          border: 1px solid var(--color-purple-100); background: white;
+          font: inherit; resize: vertical;
+        }
+        .comment-form-actions { display: flex; gap: 6px; justify-content: flex-end; }
 
         .comments {
-          margin-top: 14px;
-          padding-top: 14px;
+          margin-top: 14px; padding-top: 14px;
           border-top: 1px dashed var(--color-pink-100);
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-        .loading-comments {
-          color: var(--color-ink-soft);
-          font-size: 0.85rem;
-          font-style: italic;
+          display: flex; flex-direction: column; gap: 10px;
         }
         .comment {
-          background: var(--color-purple-50);
-          padding: 12px 16px;
-          border-radius: var(--radius-md);
-          border-left: 3px solid var(--color-purple-200);
+          background: var(--color-purple-50); padding: 12px 16px;
+          border-radius: var(--radius-md); border-left: 3px solid var(--color-purple-200);
         }
-        .comment-head {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 8px;
-          margin-bottom: 6px;
-          font-size: 0.82rem;
-        }
+        .comment-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 0.82rem; }
         .comment-body { color: var(--color-ink); font-size: 0.92rem; line-height: 1.5; }
-        .comment-body .md-p { margin: 0 0 6px; }
-        .comment-body .md-p:last-child { margin-bottom: 0; }
+        .comment-body p { margin: 0 0 6px; }
+        .comment-body p:last-child { margin-bottom: 0; }
 
         .lightbox {
-          position: fixed;
-          inset: 0;
-          background: rgba(74, 46, 94, 0.75);
-          backdrop-filter: blur(8px);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          z-index: 100;
-          cursor: zoom-out;
+          position: fixed; inset: 0;
+          background: rgba(74, 46, 94, 0.75); backdrop-filter: blur(8px);
+          display: flex; align-items: center; justify-content: center;
+          padding: 24px; z-index: 100; cursor: zoom-out;
         }
-        .lightbox img {
-          max-width: 96vw;
-          max-height: 92vh;
-          object-fit: contain;
-          border-radius: var(--radius-md);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-        }
-        .lightbox-close {
-          position: absolute;
-          top: 18px; right: 22px;
-          width: 38px; height: 38px;
-          border-radius: 50%;
-          background: white;
-          color: var(--color-pink-600);
-          border: none;
-          font-size: 1.5rem;
-          cursor: pointer;
-          line-height: 1;
-        }
+        .lightbox img { max-width: 96vw; max-height: 92vh; object-fit: contain; border-radius: var(--radius-md); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
+        .lightbox-close { position: absolute; top: 18px; right: 22px; width: 38px; height: 38px; border-radius: 50%; background: white; color: var(--color-pink-600); border: none; font-size: 1.5rem; cursor: pointer; line-height: 1; }
       `}</style>
     </div>
   );
