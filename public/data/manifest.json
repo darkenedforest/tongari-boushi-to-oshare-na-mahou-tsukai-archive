@@ -13388,5 +13388,545 @@
     "bpp": 8,
     "palette_strategy": "external_item_icon",
     "needs_remap": true
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/Locker.lzs.png",
+    "source_container": "Locker.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "Locker",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/MG57.ofs.png",
+    "source_container": "MG57.ofs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "MG57",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/MG58.ofs.png",
+    "source_container": "MG58.ofs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "MG58",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/MG60.ofs.png",
+    "source_container": "MG60.ofs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "MG60",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/MG61.ofs.png",
+    "source_container": "MG61.ofs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "MG61",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/MG63.ofs.png",
+    "source_container": "MG63.ofs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "MG63",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/audition.lzs.png",
+    "source_container": "audition.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "audition",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/bank_in.lzs.png",
+    "source_container": "bank_in.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "bank_in",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/bank_out.lzs.png",
+    "source_container": "bank_out.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "bank_out",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/bbs.lzs.png",
+    "source_container": "bbs.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "bbs",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/buyitem.lzs.png",
+    "source_container": "buyitem.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "buyitem",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/changelogo.lzs.png",
+    "source_container": "changelogo.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "changelogo",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/chest.lzs.png",
+    "source_container": "chest.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "chest",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/common.lzs.png",
+    "source_container": "common.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "common",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/coordinate.lzs.png",
+    "source_container": "coordinate.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "coordinate",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/crdires.lzs.png",
+    "source_container": "crdires.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "crdires",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/customerlist.lzs.png",
+    "source_container": "customerlist.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "customerlist",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/designcloth.lzs.png",
+    "source_container": "designcloth.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "designcloth",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/designlogo.lzs.png",
+    "source_container": "designlogo.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "designlogo",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/directmail.lzs.png",
+    "source_container": "directmail.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "directmail",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/dustbox.lzs.png",
+    "source_container": "dustbox.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "dustbox",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/entryitmname.lzs.png",
+    "source_container": "entryitmname.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "entryitmname",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/expect.ofs.png",
+    "source_container": "expect.ofs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "expect",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/friend.lzs.png",
+    "source_container": "friend.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "friend",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/goodslist.lzs.png",
+    "source_container": "goodslist.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "goodslist",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/hc_common.lzs.png",
+    "source_container": "hc_common.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "hc_common",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/ho_style.lzs.png",
+    "source_container": "ho_style.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "ho_style",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/input.lzs.png",
+    "source_container": "input.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "input",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/itemorderwnd.lzs.png",
+    "source_container": "itemorderwnd.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "itemorderwnd",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/itemstackwnd.lzs.png",
+    "source_container": "itemstackwnd.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "itemstackwnd",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/letter.lzs.png",
+    "source_container": "letter.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "letter",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/magazine.lzs.png",
+    "source_container": "magazine.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "magazine",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/magic.lzs.png",
+    "source_container": "magic.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "magic",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/mainmenu.lzs.png",
+    "source_container": "mainmenu.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "mainmenu",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/makechime.lzs.png",
+    "source_container": "makechime.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "makechime",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/makeprofile.lzs.png",
+    "source_container": "makeprofile.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "makeprofile",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/map.lzs.png",
+    "source_container": "map.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "map",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/mapname.lzs.png",
+    "source_container": "mapname.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "mapname",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/mealmenu.lzs.png",
+    "source_container": "mealmenu.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "mealmenu",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/my.lzs.png",
+    "source_container": "my.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "my",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/npcrunway.lzs.png",
+    "source_container": "npcrunway.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "npcrunway",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/npcvisitor.lzs.png",
+    "source_container": "npcvisitor.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "npcvisitor",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/paypanel.lzs.png",
+    "source_container": "paypanel.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "paypanel",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/pcrunway.lzs.png",
+    "source_container": "pcrunway.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "pcrunway",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/picturebook.lzs.png",
+    "source_container": "picturebook.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "picturebook",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/requestlist.lzs.png",
+    "source_container": "requestlist.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "requestlist",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/safe.lzs.png",
+    "source_container": "safe.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "safe",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/scr_top.lzs.png",
+    "source_container": "scr_top.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "scr_top",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/selectmusic.lzs.png",
+    "source_container": "selectmusic.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "selectmusic",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/selectrecipe.lzs.png",
+    "source_container": "selectrecipe.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "selectrecipe",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/sellitem.lzs.png",
+    "source_container": "sellitem.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "sellitem",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/selmaterial.lzs.png",
+    "source_container": "selmaterial.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "selmaterial",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/setprice.lzs.png",
+    "source_container": "setprice.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "setprice",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/shopprofile.lzs.png",
+    "source_container": "shopprofile.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "shopprofile",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/signboard.lzs.png",
+    "source_container": "signboard.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "signboard",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/singminigame.lzs.png",
+    "source_container": "singminigame.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "singminigame",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/snap.lzs.png",
+    "source_container": "snap.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "snap",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/stamp.lzs.png",
+    "source_container": "stamp.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "stamp",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/trendranking.lzs.png",
+    "source_container": "trendranking.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "trendranking",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
+  },
+  {
+    "png_path": "/tongari-boushi-to-oshare-na-mahou-tsukai-archive/images/2d/ui_screens/warehouse.lzs.png",
+    "source_container": "warehouse.lzs",
+    "category": "ui_screen",
+    "ncgr_inner_index": 0,
+    "label_en": "warehouse",
+    "label_jp": null,
+    "palette_strategy": "overlay_recipe_v6"
   }
 ]
