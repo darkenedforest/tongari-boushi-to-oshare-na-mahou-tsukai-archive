@@ -42,24 +42,24 @@ SITE_BASE = "/tongari-boushi-to-oshare-na-mahou-tsukai-archive"
 IMAGES_ROOT = SITE / "public" / "images" / "2d"
 MANIFEST_PATH = SITE / "public" / "data" / "manifest.json"
 
-# Categories validated visually and ready to ship. See file docstring for
-# what's deferred and why.
-CATEGORIES_SHIP = {
-    "magic_glyph",
-    "hair_catalog",
-    "bg_screen",
-    "animation",
-    "design_tool",
-    "charmake",
-    "title_screen",
-    "shop",
-    "minigame",
-    "ui_window",
+# Categories shipped now — limited to what I personally validated at FULL
+# resolution (not thumbnail contact sheets). The v4 manifest's
+# is_winner+ship_by_default+health filters let through a lot of raw-tile-dump
+# NCGRs and orphan-palette fragments that scored well on the metric but render
+# as broken stripes/fragments on the site at native size. Holding off shipping
+# until each PNG has been actually opened and confirmed correct.
+CATEGORIES_SHIP: set[str] = set()
+
+# Specific stems I trust from prior validation (these rendered cleanly on the
+# site before this session's bulk expansion). Filter through anyway, but
+# restrict to records from these source containers.
+STEMS_TRUSTED = {
+    "inputmagic__mgcall_ofs",  # the language_tile keyboard buttons
+    "pic2d_ofs",               # classroom_card pic2d backgrounds
+    "mainmenu__title_pack_ofs",  # title castle BGs
 }
 
-# ui_window contains a lot of raw tilesheets that look bad as 100px
-# thumbnails. Filter to roughly-square or rectangular tiles only.
-ASPECT_CAP_CATEGORIES = {"ui_window", "minigame"}
+ASPECT_CAP_CATEGORIES: set[str] = set()
 
 
 def load_magic_glyph_labels(conn) -> dict[int, tuple[str | None, str | None]]:
@@ -114,7 +114,10 @@ def main():
 
     for r in records_v4:
         cat = r.get("category")
-        if cat not in CATEGORIES_SHIP:
+        stem = r.get("stem")
+        # Pass either CATEGORIES_SHIP whitelist OR the trusted-stem whitelist.
+        # Currently CATEGORIES_SHIP is empty — only trusted stems pass.
+        if cat not in CATEGORIES_SHIP and stem not in STEMS_TRUSTED:
             skipped[cat or "?"] = skipped.get(cat or "?", 0) + 1
             continue
         if not r.get("is_winner"):
