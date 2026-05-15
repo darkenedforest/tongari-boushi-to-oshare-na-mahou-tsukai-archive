@@ -290,6 +290,48 @@ def build_btx0_explicit_icons(records: list[dict], v: str) -> int:
     return added
 
 
+def build_magazine_pages(records: list[dict], v: str) -> int:
+    """Category: 513 in-game magazine pages with proper BG composition.
+    Source: notes/2d_assets_v4/__magazine_pages_v3/MG<NN>/page_<NN>.png.
+    Each MG##.ofs is one magazine issue (61 issues total), each holds
+    multiple pages composited with magpage.ofs master NSCRs."""
+    src_root = TRANSLATION_REPO / "notes" / "2d_assets_v4" / "__magazine_pages_v3"
+    if not src_root.exists():
+        print("  magazine_page: source folder missing, skipping")
+        return 0
+    dst_dir = IMAGES_ROOT / "magazine_page"
+    dst_dir.mkdir(parents=True, exist_ok=True)
+    added = 0
+    issue_pat = re.compile(r"^MG(\d+)$")
+    page_pat = re.compile(r"^page_(\d+)\.png$")
+    for issue_dir in sorted(src_root.iterdir()):
+        if not issue_dir.is_dir():
+            continue
+        m = issue_pat.match(issue_dir.name)
+        if not m:
+            continue
+        issue_num = int(m.group(1))
+        for fn in sorted(os.listdir(issue_dir)):
+            pm = page_pat.match(fn)
+            if not pm:
+                continue
+            page_num = int(pm.group(1))
+            out_name = f"MG{issue_num:02d}_page_{page_num:02d}.png"
+            shutil.copyfile(issue_dir / fn, dst_dir / out_name)
+            records.append({
+                "png_path": f"{SITE_BASE}/images/2d/magazine_page/{out_name}?v={v}",
+                "source_container": f"magazine/MG{issue_num:02d}.ofs + magpage.ofs",
+                "category": "magazine_page",
+                "ncgr_inner_index": issue_num * 100 + page_num,
+                "label_en": f"Magazine {issue_num} — page {page_num}",
+                "label_jp": None,
+                "palette_strategy": "nscr_composited",
+            })
+            added += 1
+    print(f"  magazine_page: {added}")
+    return added
+
+
 def build_classroom_cards(records: list[dict], v: str) -> int:
     """Category 4: 450 pic2d backgrounds (classroom UI, sign-design tool,
     spell-title cards). Generic 'Classroom card #N' labels."""
@@ -336,6 +378,7 @@ def main():
     build_item_icons(records, v)
     build_title_castles(records, v)
     build_classroom_cards(records, v)
+    build_magazine_pages(records, v)
     build_btx0_clothing(records, v)
     build_btx0_explicit_icons(records, v)
 
