@@ -139,18 +139,31 @@ has admin rights and bypasses RLS.
 
 ## 5. Add the keys to GitHub Actions secrets
 
-The site builds via GitHub Actions. In the archive repo on GitHub:
+The site builds via GitHub Actions. The repo to edit is the **archive
+repo** (the one this README lives in, the one the site is built from —
+NOT the translation repo).
 
-**Settings → Secrets and variables → Actions → New repository secret**
+**Direct link:**
+<https://github.com/darkenedforest/tongari-boushi-to-oshare-na-mahou-tsukai-archive/settings/secrets/actions>
 
-Add these two:
+That takes you to the Actions secrets page. Click "New repository
+secret" and add these two:
 
-- `PUBLIC_SUPABASE_URL` = your project URL from step 4
-- `PUBLIC_SUPABASE_ANON_KEY` = your anon key from step 4
+- Name: `PUBLIC_SUPABASE_URL`
+  Value: the Project URL from step 4 (the `https://<project-ref>.supabase.co` string)
+- Name: `PUBLIC_SUPABASE_ANON_KEY`
+  Value: the anon / publishable key from step 4
 
-If the GitHub Action that builds the site doesn't currently pass these
-through, edit `.github/workflows/deploy.yml` to include them under the
-build step's `env:` block.
+If you can't reach that direct link, navigate manually:
+1. Go to <https://github.com/darkenedforest/tongari-boushi-to-oshare-na-mahou-tsukai-archive>
+2. Click **Settings** (top right of the repo, gear icon)
+3. In the left sidebar: **Secrets and variables → Actions**
+4. Click **New repository secret** (green button)
+
+The Astro build reads these as `import.meta.env.PUBLIC_SUPABASE_URL` and
+`PUBLIC_SUPABASE_ANON_KEY`. The existing `.github/workflows/deploy.yml`
+already forwards env vars at build time, so once the secrets are set
+the next push will pick them up automatically.
 
 ## 6. Local dev
 
