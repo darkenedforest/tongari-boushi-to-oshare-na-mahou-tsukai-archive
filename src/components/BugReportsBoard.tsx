@@ -70,11 +70,11 @@ const HARDWARE_OPTIONS: { label: string; items: string[] }[] = [
     label: 'Emulator (mobile / other)',
     items: ['DraStic (Android)', 'Delta (iOS)', 'RetroArch (mobile)'],
   },
-  {
-    label: 'Other',
-    items: ['Other (note in description)'],
-  },
+  // 'Other' is handled specially: picking it shows a freeform text input
+  // next to the dropdown for typing the actual hardware name.
 ];
+const OTHER_SENTINEL = '__OTHER__';
+const OTHER_PREFIX = 'Other: ';
 
 function timeAgo(iso: string): string {
   const t = new Date(iso).getTime();
@@ -180,7 +180,10 @@ function NewReportForm({
       // Metadata at the top, description, then steps at the bottom.
       const pv = patchVersion.trim();
       const stepsTrimmed = steps.trim();
-      const hwList = hardware.map(h => h.trim()).filter(Boolean);
+      // Filter empty entries and "Other:" picks with no text typed.
+      const hwList = hardware
+        .map(h => h.trim())
+        .filter(h => h && h !== 'Other:' && h !== OTHER_PREFIX.trim());
       let combinedBody = body.trim();
       const metaLines: string[] = [];
       if (pv) metaLines.push(`**Patch version:** ${pv.slice(0, 40)}`);
@@ -301,33 +304,54 @@ function NewReportForm({
       <div className="field">
         <span className="field-label">Hardware tested on (optional, add more if multiple)</span>
         <div className="hw-list">
-          {hardware.map((value, idx) => (
-            <div key={idx} className="hw-row">
-              <select
-                value={value}
-                onChange={e => setHardwareAt(idx, e.target.value)}
-                className="hw-select"
-              >
-                <option value="">— Select hardware —</option>
-                {HARDWARE_OPTIONS.map(group => (
-                  <optgroup key={group.label} label={group.label}>
-                    {group.items.map(item => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-              {(hardware.length > 1 || value) && (
-                <button
-                  type="button"
-                  className="hw-remove"
-                  onClick={() => removeHardware(idx)}
-                  aria-label="Remove this hardware entry"
-                  title="Remove"
-                >×</button>
-              )}
-            </div>
-          ))}
+          {hardware.map((value, idx) => {
+            const isOther = value.startsWith(OTHER_PREFIX);
+            const otherText = isOther ? value.slice(OTHER_PREFIX.length) : '';
+            const selectValue = isOther ? OTHER_SENTINEL : value;
+            return (
+              <div key={idx} className="hw-row">
+                <select
+                  value={selectValue}
+                  onChange={e => {
+                    const v = e.target.value;
+                    if (v === OTHER_SENTINEL) setHardwareAt(idx, OTHER_PREFIX);
+                    else setHardwareAt(idx, v);
+                  }}
+                  className="hw-select"
+                >
+                  <option value="">— Select hardware —</option>
+                  {HARDWARE_OPTIONS.map(group => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.items.map(item => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                  <option value={OTHER_SENTINEL}>Other (type your own)…</option>
+                </select>
+                {isOther && (
+                  <input
+                    type="text"
+                    className="hw-other-input"
+                    value={otherText}
+                    placeholder="Type hardware name"
+                    maxLength={60}
+                    onChange={e => setHardwareAt(idx, OTHER_PREFIX + e.target.value)}
+                    autoFocus
+                  />
+                )}
+                {(hardware.length > 1 || value) && (
+                  <button
+                    type="button"
+                    className="hw-remove"
+                    onClick={() => removeHardware(idx)}
+                    aria-label="Remove this hardware entry"
+                    title="Remove"
+                  >×</button>
+                )}
+              </div>
+            );
+          })}
           {hardware.length < MAX_HARDWARE && (
             <button type="button" className="hw-add" onClick={addHardware}>
               <span aria-hidden>+</span> Add another
@@ -747,6 +771,12 @@ export default function BugReportsBoard() {
           font: inherit; color: var(--color-ink); cursor: pointer;
         }
         .hw-select:focus { outline: 2px solid var(--color-pink-200); background: white; }
+        .hw-other-input {
+          flex: 1; min-width: 160px; padding: 10px 14px; border-radius: var(--radius-md);
+          border: 1px solid var(--color-purple-100); background: white;
+          font: inherit; color: var(--color-ink);
+        }
+        .hw-other-input:focus { outline: 2px solid var(--color-pink-200); }
         .hw-remove {
           width: 28px; height: 28px; border-radius: 50%;
           background: var(--color-pink-100); color: var(--color-pink-600);
