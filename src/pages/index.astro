@@ -16,12 +16,7 @@ const base = import.meta.env.BASE_URL;
       </p>
     </div>
     <div class="hero-decoration" aria-hidden="true">
-      <img class="hero-sprite hp-center" src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
-      <img class="hero-sprite hp1" src={`${base}/decorations/butterfly-yellow.png`} alt="" />
-      <img class="hero-sprite hp2" src={`${base}/decorations/crown.png`} alt="" />
-      <img class="hero-sprite hp3" src={`${base}/decorations/key.png`} alt="" />
-      <img class="hero-sprite hp4" src={`${base}/decorations/grapes.png`} alt="" />
-      <img class="hero-sprite hp5" src={`${base}/decorations/dragonfly.png`} alt="" />
+      <img class="title-castle" src={`${base}/decorations/title_castle_day.png`} alt="" />
     </div>
   </section>
 
@@ -79,40 +74,19 @@ const base = import.meta.env.BASE_URL;
 
   .hero-decoration {
     position: relative;
-    aspect-ratio: 1;
-    background: radial-gradient(
-      circle at center,
-      rgba(255, 255, 255, 0.95) 0%,
-      rgba(255, 213, 232, 0.7) 45%,
-      rgba(202, 179, 255, 0.4) 70%,
-      transparent 100%
-    );
     border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(155, 123, 217, 0.25);
+    border: 3px solid var(--color-pink-200);
   }
 
-  .hero-sprite {
-    position: absolute;
-    image-rendering: auto;
-    pointer-events: none;
-    user-select: none;
-    width: 96px;
-    height: 96px;
+  .title-castle {
+    display: block;
+    width: 100%;
+    height: auto;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
   }
-
-  .hp-center {
-    top: 50%;
-    left: 50%;
-    width: 168px;
-    height: 168px;
-    transform: translate(-50%, -50%);
-    opacity: 0.95;
-  }
-
-  .hp1 { top: 8%; left: 14%; width: 72px; height: 72px; opacity: 0.85; transform: rotate(-8deg); }
-  .hp2 { top: 14%; right: 12%; width: 84px; height: 84px; opacity: 0.9; transform: rotate(6deg); }
-  .hp3 { bottom: 16%; left: 8%; width: 76px; height: 76px; opacity: 0.8; transform: rotate(-4deg); }
-  .hp4 { bottom: 8%; right: 14%; width: 80px; height: 80px; opacity: 0.85; transform: rotate(10deg); }
-  .hp5 { top: 46%; right: 4%; width: 64px; height: 64px; opacity: 0.7; transform: rotate(-12deg); }
 
   .section-divider {
     display: flex;
