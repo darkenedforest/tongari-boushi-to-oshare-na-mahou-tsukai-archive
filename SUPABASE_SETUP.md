@@ -165,17 +165,55 @@ The Astro build reads these as `import.meta.env.PUBLIC_SUPABASE_URL` and
 already forwards env vars at build time, so once the secrets are set
 the next push will pick them up automatically.
 
-## 6. Local dev
+## 6. (Optional) Local dev — skip this if you just want the live site
 
-Create `.env` in the repo root (already gitignored):
+If you only want the bug reports working on the deployed site, **stop
+here**. Steps 1-5 are enough. After step 5, the next git push to the
+archive repo (or a manual workflow re-run from
+<https://github.com/darkenedforest/tongari-boushi-to-oshare-na-mahou-tsukai-archive/actions>)
+will rebuild the site with the env vars wired in, and the bug-report
+form will start working at
+<https://darkenedforest.github.io/tongari-boushi-to-oshare-na-mahou-tsukai-archive/bug-reports/>.
 
-```
-PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key...
-```
+Section 6 is only needed if you want to test the form on your computer
+before letting visitors hit it on the live site. To do that:
 
-Then `npm run dev` and visit `/bug-reports/` — you can post and see
-it live.
+1. Open a terminal (PowerShell on Windows is fine) inside the archive
+   repo folder:
+   ```powershell
+   cd C:\Users\Tyler\Documents\Repos\tongari-boushi-archive
+   ```
+
+2. Make a file named exactly `.env` in that folder (the leading dot is
+   required — Windows Explorer will let you create it; right-click →
+   New → Text Document, then rename to `.env` deleting the `.txt`). It
+   has to live in the repo root, i.e. next to `package.json` and
+   `astro.config.mjs`. Open `.env` in a text editor and paste:
+
+   ```
+   PUBLIC_SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
+   PUBLIC_SUPABASE_ANON_KEY=eyJ...YOUR-ANON-KEY...
+   ```
+
+   Replace the URL and key with the actual values you got in step 4.
+   The `.env` file is already in `.gitignore`, so it won't get
+   accidentally committed.
+
+3. Run the dev server:
+   ```powershell
+   npm run dev
+   ```
+   That starts a local preview at <http://localhost:4321/> (Astro's
+   default). The terminal will print the exact URL.
+
+4. Open <http://localhost:4321/tongari-boushi-to-oshare-na-mahou-tsukai-archive/bug-reports/>
+   in a browser. You should see the "Post a bug report" button
+   instead of the "backend not configured" message. Posting should
+   work — anything you post will go straight to your live Supabase
+   project, so use a throwaway title like "test" so you can delete it
+   from the Supabase dashboard afterward.
+
+5. When done, hit `Ctrl+C` in the terminal to stop the dev server.
 
 ## Moderation
 
