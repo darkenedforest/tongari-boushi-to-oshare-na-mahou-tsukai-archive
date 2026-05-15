@@ -113,14 +113,31 @@ create policy allow_public_upload on storage.objects
 Supabase recently reorganized this page, so the URL and the key live in
 different sub-pages now:
 
-**Project URL** — open **Project Settings → Data API** (it's the ↗ item
-under INTEGRATIONS in the sidebar, not under CONFIGURATION).
-Look for a field labeled "Project URL" or "Data API URL". It's a
-`https://<project-ref>.supabase.co` string where `<project-ref>` is the
-random project ID. (If you can't find it there, look at your browser's
-address bar while you're inside the project dashboard — the project ref
-is part of the URL path. The full Supabase URL is just
-`https://<that-ref>.supabase.co`.)
+**Project URL** — IMPORTANT: this is the **base URL only**, NOT the
+REST endpoint URL Supabase shows on the Data API page. The form you
+want is:
+
+```
+https://<project-ref>.supabase.co
+```
+
+**No trailing slash. No `/rest/v1/` suffix.** The Supabase JS client
+appends `/rest/v1/...` itself when making queries — if you include it
+in the env var, the client builds malformed URLs like
+`…/rest/v1/rest/v1/reports` and every fetch fails with "Invalid path
+specified in request URL".
+
+Where to find it:
+
+- The easiest path: in your browser's address bar while you're inside
+  the Supabase project dashboard, the URL is
+  `https://supabase.com/dashboard/project/<project-ref>/...`. Copy the
+  `<project-ref>` portion and build the URL yourself as
+  `https://<project-ref>.supabase.co`.
+- If you go to **Project Settings → Data API**, you'll see an "API URL"
+  field that ends in `/rest/v1/`. **Do NOT paste that into the secret.**
+  Strip the `/rest/v1/` so only `https://<project-ref>.supabase.co`
+  remains.
 
 **Public key** — open **Project Settings → API Keys**. You have two
 tabs:
