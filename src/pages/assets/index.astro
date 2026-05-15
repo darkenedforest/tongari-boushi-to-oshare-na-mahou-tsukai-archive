@@ -14,6 +14,13 @@ const base = import.meta.env.BASE_URL;
       <span aria-hidden="true">›</span>
       <span>2D Assets</span>
     </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+      <img src={`${base}/decorations/crown.png`} alt="" />
+      <img src={`${base}/decorations/peach.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img src={`${base}/decorations/dragonfly.png`} alt="" />
+    </div>
     <h1>2D Assets ✦</h1>
     <p class="lede">
       Magic-glyph keyboard buttons and item icons — what we've validated so far.
@@ -48,5 +55,24 @@ const base = import.meta.env.BASE_URL;
     max-width: 64ch;
     line-height: 1.6;
     color: var(--color-ink);
+  }
+
+  .header-sprites {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 6px 0 4px;
+    opacity: 0.78;
+  }
+
+  .header-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .header-sprites img:nth-child(2),
+  .header-sprites img:nth-child(4) {
+    width: 48px;
+    height: 48px;
   }
 </style>

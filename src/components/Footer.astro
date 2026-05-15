@@ -1,6 +1,14 @@
 ---
+const base = import.meta.env.BASE_URL;
 ---
 <footer class="site-footer">
+  <div class="footer-sprites" aria-hidden="true">
+    <img src={`${base}/decorations/turtle.png`} alt="" />
+    <img src={`${base}/decorations/butterfly-dark.png`} alt="" />
+    <img src={`${base}/decorations/donut.png`} alt="" />
+    <img src={`${base}/decorations/quill-pen.png`} alt="" />
+    <img src={`${base}/decorations/beetle.png`} alt="" />
+  </div>
   <div class="container footer-inner">
     <p>
       Fan archive for <em>Tongari Boushi to Oshare na Mahou Tsukai</em> (Magician's Quest 2).
@@ -15,12 +23,31 @@
 <style>
   .site-footer {
     margin-top: 80px;
-    padding: 28px 0;
+    padding: 18px 0 28px;
     background: rgba(255, 255, 255, 0.55);
     border-top: 1px solid var(--color-purple-100);
     text-align: center;
     color: var(--color-ink-soft);
     font-size: 0.85rem;
+  }
+
+  .footer-sprites {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin: -42px 0 16px;
+    opacity: 0.78;
+  }
+
+  .footer-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+
+  .footer-sprites img:nth-child(3) {
+    width: 52px;
+    height: 52px;
   }
 
   .footer-inner p {

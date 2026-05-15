@@ -16,13 +16,20 @@ const base = import.meta.env.BASE_URL;
       </p>
     </div>
     <div class="hero-decoration" aria-hidden="true">
-      <div class="hat">🎩</div>
-      <div class="sparkle s1">✦</div>
-      <div class="sparkle s2">✧</div>
-      <div class="sparkle s3">✦</div>
-      <div class="sparkle s4">✧</div>
+      <img class="hero-sprite hp-center" src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img class="hero-sprite hp1" src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+      <img class="hero-sprite hp2" src={`${base}/decorations/crown.png`} alt="" />
+      <img class="hero-sprite hp3" src={`${base}/decorations/key.png`} alt="" />
+      <img class="hero-sprite hp4" src={`${base}/decorations/grapes.png`} alt="" />
+      <img class="hero-sprite hp5" src={`${base}/decorations/dragonfly.png`} alt="" />
     </div>
   </section>
+
+  <div class="section-divider" aria-hidden="true">
+    <img src={`${base}/decorations/peach.png`} alt="" />
+    <img src={`${base}/decorations/parfait.png`} alt="" />
+    <img src={`${base}/decorations/lemon.png`} alt="" />
+  </div>
 
   <section class="sections">
     <div class="section-grid">
@@ -38,10 +45,12 @@ const base = import.meta.env.BASE_URL;
         <p>Item icons, NPC sprites, magic keyboard glyphs, shop screens, title art — every 2D image in the game, with palette and source-container metadata.</p>
         <span class="section-cta">Browse →</span>
       </a>
-      <div class="section-card more">
-        <span class="section-emoji">✨</span>
-        <h3>More to come…?</h3>
-      </div>
+      <a href={`${base}/field-guide/`} class="section-card live">
+        <span class="section-emoji">📖</span>
+        <h3>Field Guide</h3>
+        <p>What I've found inside the game — how the files are laid out, how the dialog system works, where the art lives, and the translation canon I'm working from.</p>
+        <span class="section-cta">Read →</span>
+      </a>
     </div>
   </section>
 </Layout>
@@ -81,27 +90,49 @@ const base = import.meta.env.BASE_URL;
     border-radius: var(--radius-lg);
   }
 
-  .hat {
+  .hero-sprite {
     position: absolute;
-    inset: 0;
+    image-rendering: auto;
+    pointer-events: none;
+    user-select: none;
+    width: 96px;
+    height: 96px;
+  }
+
+  .hp-center {
+    top: 50%;
+    left: 50%;
+    width: 168px;
+    height: 168px;
+    transform: translate(-50%, -50%);
+    opacity: 0.95;
+  }
+
+  .hp1 { top: 8%; left: 14%; width: 72px; height: 72px; opacity: 0.85; transform: rotate(-8deg); }
+  .hp2 { top: 14%; right: 12%; width: 84px; height: 84px; opacity: 0.9; transform: rotate(6deg); }
+  .hp3 { bottom: 16%; left: 8%; width: 76px; height: 76px; opacity: 0.8; transform: rotate(-4deg); }
+  .hp4 { bottom: 8%; right: 14%; width: 80px; height: 80px; opacity: 0.85; transform: rotate(10deg); }
+  .hp5 { top: 46%; right: 4%; width: 64px; height: 64px; opacity: 0.7; transform: rotate(-12deg); }
+
+  .section-divider {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 6rem;
-    filter: drop-shadow(0 8px 16px rgba(155, 123, 217, 0.35));
+    gap: 28px;
+    padding: 8px 0 4px;
+    opacity: 0.7;
   }
 
-  .sparkle {
-    position: absolute;
-    color: var(--color-pink-400);
-    font-size: 1.8rem;
-    text-shadow: 0 2px 6px rgba(255, 126, 182, 0.4);
+  .section-divider img {
+    width: 44px;
+    height: 44px;
+    image-rendering: auto;
   }
 
-  .s1 { top: 12%; left: 22%; }
-  .s2 { top: 18%; right: 18%; font-size: 1.2rem; color: var(--color-purple-400); }
-  .s3 { bottom: 22%; left: 14%; font-size: 1.4rem; color: var(--color-blue-400); }
-  .s4 { bottom: 16%; right: 24%; }
+  .section-divider img:nth-child(2) {
+    width: 56px;
+    height: 56px;
+  }
 
   .sections {
     padding: 30px 0 50px;

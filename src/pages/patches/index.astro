@@ -10,6 +10,18 @@ const olderReleases = releases.slice(1);
 const legacy = patchData.legacy;
 const patcher = patchData.patcherInfo;
 
+// Rotating sprite list for older release cards (purely decorative).
+const olderSprites = [
+  'parfait',
+  'butterfly-yellow',
+  'key',
+  'crown',
+  'magic-lamp-tall',
+  'turtle',
+  'grapes',
+  'pizza',
+];
+
 function formatDate(iso: string): string {
   const d = new Date(iso + 'T00:00:00Z');
   return d.toLocaleDateString('en-US', {
@@ -82,6 +94,7 @@ function resolveUrl(d: { url: string; isLocal?: boolean }): string {
     <h2>Release history</h2>
 
     <article class="release latest">
+      <img class="release-sprite" src={`${base}/decorations/magic-lamp-gold.png`} alt="" aria-hidden="true" />
       <header class="release-head">
         <div class="version-line">
           <span class="version-tag">v{latest.version}</span>
@@ -150,8 +163,9 @@ function resolveUrl(d: { url: string; isLocal?: boolean }): string {
       <div class="older">
         <h3 class="older-title">Older versions</h3>
         <div class="older-list">
-          {olderReleases.map((r) => (
+          {olderReleases.map((r, idx) => (
             <article class="release older-release">
+              <img class="release-sprite small" src={`${base}/decorations/${olderSprites[idx % olderSprites.length]}.png`} alt="" aria-hidden="true" />
               <header class="release-head">
                 <div class="version-line">
                   <span class="version-tag muted-tag">v{r.version}</span>
@@ -370,6 +384,26 @@ function resolveUrl(d: { url: string; isLocal?: boolean }): string {
     height: 4px;
     background: linear-gradient(90deg, var(--color-pink-400), var(--color-purple-400), var(--color-blue-400));
     border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+  }
+
+  .release-sprite {
+    position: absolute;
+    top: -18px;
+    right: 18px;
+    width: 64px;
+    height: 64px;
+    pointer-events: none;
+    user-select: none;
+    transform: rotate(8deg);
+  }
+
+  .release-sprite.small {
+    width: 44px;
+    height: 44px;
+    top: -12px;
+    right: 16px;
+    transform: rotate(-6deg);
+    opacity: 0.85;
   }
 
   .release-head {
