@@ -243,6 +243,82 @@ You're the admin. From the Supabase dashboard → Table Editor:
 
 The site reflects status changes on next page load.
 
+## Edit suggestions table
+
+The `/translation/` page lets visitors propose edits to any EN line in
+the fan patch. Submissions land in a separate Supabase table called
+`edit_suggestions` and are reviewed offline (`src/translator/_review_edit_suggestions.py`
+in the translation repo).
+
+In the Supabase dashboard, open **SQL Editor → New query**, paste this,
+and click "Run":
+
+```sql
+create table edit_suggestions (
+  id bigint primary key generated always as identity,
+  kind text not null check (kind in ('dialog','item','npc')),
+  ref text not null,                     -- e.g., "entries:511:1:0" or "item:567"
+  original_en text not null,             -- snapshot of the EN string at submission time
+  proposed_en text not null,
+  reason text,
+  submitter text,
+  status text not null default 'pending'
+    check (status in ('pending','accepted','rejected','duplicate','needs_info')),
+  created_at timestamptz not null default now()
+);
+
+-- Row-Level Security
+alter table edit_suggestions enable row level security;
+
+-- Anyone can read submissions (the page itself doesn't display them, but
+-- the triage script reads via the anon key, and a future "recent
+-- suggestions" sidebar might need it).
+create policy read_all_edit_suggestions on edit_suggestions
+  for select using (true);
+
+-- Anyone can insert a suggestion — no auth required.
+create policy insert_edit_suggestions on edit_suggestions
+  for insert with check (true);
+
+-- Updates / deletes happen only through the service role (Supabase
+-- dashboard or admin scripts). No public update / delete policy.
+```
+
+That's it for the translation suggestions backend. The existing
+`PUBLIC_SUPABASE_URL` and `PUBLIC_SUPABASE_ANON_KEY` cover this table
+too — no extra secrets needed.
+
+### Snapshot refresh workflow
+
+The browse-able list itself comes from a static JSON bundle generated
+from the SQLite translation DB. When the DB changes and the public
+listing should update, in the **translation repo** run:
+
+```powershell
+cd C:\Users\Tyler\Documents\Repos\Tongari boushi translation app claude
+python src\translator\_export_translation_snapshot.py
+```
+
+That overwrites `src/data/translation_snapshot.json` in this archive
+repo. Commit that JSON and push — GitHub Actions rebuilds the site and
+the page updates.
+
+### Triage submitted suggestions
+
+From the **translation repo**:
+
+```powershell
+$env:PUBLIC_SUPABASE_URL  = "https://YOUR-REF.supabase.co"
+$env:PUBLIC_SUPABASE_ANON_KEY = "eyJ..."
+python src\translator\_review_edit_suggestions.py
+```
+
+Writes a Markdown report to `notes/edit_suggestions_triage_<date>.md`
+with one section per pending suggestion, including the original JP,
+current EN, proposed EN, char budget, overflow flag, and a blank
+"Verdict:" line. Mark verdicts in the Supabase dashboard (Table Editor
+→ `edit_suggestions` → change `status`).
+
 ## Cost
 
 Free tier limits are generous for a fan-site bug board:

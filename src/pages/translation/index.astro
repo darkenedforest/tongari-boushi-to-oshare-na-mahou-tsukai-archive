@@ -1,0 +1,148 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import TranslationBrowser from '../../components/TranslationBrowser.tsx';
+import meta from '../../data/translation_snapshot_meta.json';
+
+// Only metadata is imported at build time. The 11 MB rows JSON lives in
+// public/data/translation_snapshot.json and is fetched lazily by the
+// React island on mount, so it doesn't bloat the first-paint bundle.
+const base = import.meta.env.BASE_URL;
+const counts = meta.counts;
+const generated = new Date(meta.generated_at);
+const generatedLabel = isNaN(generated.getTime())
+  ? meta.generated_at
+  : generated.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+// Strip trailing slash so we always emit "${base}/data/..." cleanly.
+const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
+---
+
+<Layout title="Translation Browser">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>Translation</span>
+    </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img src={`${base}/decorations/dragonfly.png`} alt="" />
+    </div>
+    <h1>Translation Browser ✦</h1>
+    <p class="lede">
+      Browse every English line that appears in the fan patch — dialog,
+      item names, and NPC names. Search by any phrase, filter by category,
+      and submit suggestions where you think the wording can be tighter,
+      clearer, or more faithful. Suggestions go to a moderation queue;
+      a reviewer reads each one before anything ships in the patch.
+    </p>
+    <p class="meta">
+      <span><strong>{counts.dialog.toLocaleString()}</strong> dialog</span>
+      <span class="dot">·</span>
+      <span><strong>{counts.items.toLocaleString()}</strong> items</span>
+      <span class="dot">·</span>
+      <span><strong>{counts.npcs.toLocaleString()}</strong> NPCs</span>
+      <span class="dot">·</span>
+      <span class="generated">Snapshot from {generatedLabel}</span>
+    </p>
+    <details class="tips">
+      <summary>Submission tips</summary>
+      <ul>
+        <li>
+          The yellow <em>Max N chars</em> badge is the in-game text budget.
+          If you go over, the suggestion may not physically fit on the
+          screen — propose something at or under the limit when you can.
+        </li>
+        <li>
+          Tags like <code>[NPC:1009]</code>, <code>▼</code>, and <code>§</code>
+          are control codes (name slots, page breaks, line endings).
+          Keep them where they are unless you're sure they need to move.
+        </li>
+        <li>
+          Anonymous is fine. If you want credit on accepted suggestions,
+          drop a name in the optional field.
+        </li>
+      </ul>
+    </details>
+  </section>
+
+  <TranslationBrowser dataUrl={dataUrl} client:load />
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 20px;
+  }
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+  .header-sprites {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 6px 0 4px;
+    opacity: 0.78;
+  }
+  .header-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+  .header-sprites img:nth-child(2) {
+    width: 48px;
+    height: 48px;
+  }
+  .lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.88rem;
+    margin: 6px 0 18px;
+  }
+  .meta strong { color: var(--color-purple-600); }
+  .meta .dot { opacity: 0.5; }
+  .meta .generated { color: var(--color-ink-soft); }
+  .tips {
+    background: var(--color-purple-50);
+    border: 1px solid var(--color-purple-100);
+    border-radius: var(--radius-md);
+    padding: 10px 16px;
+    margin: 0 0 8px;
+    max-width: 720px;
+  }
+  .tips summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-purple-600);
+    font-size: 0.92rem;
+  }
+  .tips ul {
+    margin: 8px 0 4px;
+    padding-left: 20px;
+    color: var(--color-ink);
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .tips code {
+    background: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.85rem;
+  }
+</style>
