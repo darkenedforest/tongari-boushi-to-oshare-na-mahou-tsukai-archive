@@ -1,0 +1,151 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import ChangelogDetail from '../../../components/ChangelogDetail.tsx';
+import meta from '../../../data/changelog_v2.1_meta.json';
+
+// Row-level data lives in public/data/changelog_v2.0.json (~22 MB) and is
+// fetched lazily on mount so it doesn't bloat the first-paint bundle.
+const base = import.meta.env.BASE_URL;
+const dataUrl = `${base.replace(/\/$/, '')}/data/changelog_v${meta.version}.json`;
+
+function formatDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+const totalMsg = meta.counts.msgEdits;
+const totalItems = meta.counts.itemNameEdits;
+const totalOverlay = meta.counts.overlayEdits;
+const totalRows = totalMsg + totalItems + totalOverlay;
+---
+
+<Layout title={`Changelog · v${meta.version}`}>
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <a href={`${base}/changelog/`}>Changelog</a>
+      <span aria-hidden="true">›</span>
+      <span>v{meta.version}</span>
+    </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img src={`${base}/decorations/dragonfly.png`} alt="" />
+    </div>
+    <div class="title-row">
+      <h1>v{meta.version} <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
+      <time datetime={meta.date}>{formatDate(meta.date)}</time>
+    </div>
+    <p class="lede">
+      {meta.summary}
+    </p>
+    <p class="counters">
+      <span><strong>{totalRows.toLocaleString()}</strong> total changes</span>
+      <span class="dot">·</span>
+      <span><strong>{totalMsg.toLocaleString()}</strong> msg entries</span>
+      <span class="dot">·</span>
+      <span><strong>{totalItems.toLocaleString()}</strong> item names</span>
+      {totalOverlay > 0 && (
+        <>
+          <span class="dot">·</span>
+          <span><strong>{totalOverlay.toLocaleString()}</strong> overlay/ARM9 strings</span>
+        </>
+      )}
+    </p>
+    <p class="back-link">
+      <a href={`${base}/changelog/`}>← Back to changelog index</a>
+    </p>
+  </section>
+
+  <ChangelogDetail dataUrl={dataUrl} client:load />
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 20px;
+  }
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+  .header-sprites {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 6px 0 4px;
+    opacity: 0.78;
+  }
+  .header-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+  .header-sprites img:nth-child(2) {
+    width: 48px;
+    height: 48px;
+  }
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin: 0 0 8px;
+  }
+  .title-row h1 {
+    margin: 0;
+  }
+  .title-row time {
+    color: var(--color-ink-soft);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .sparkle-mark {
+    color: var(--color-pink-400);
+  }
+  .lede {
+    max-width: 72ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+  .counters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 8px 0 4px;
+  }
+  .counters strong {
+    color: var(--color-purple-600);
+  }
+  .counters .dot {
+    opacity: 0.5;
+  }
+  .back-link {
+    margin: 14px 0 0;
+    font-size: 0.92rem;
+  }
+  .back-link a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .back-link a:hover {
+    color: var(--color-pink-600);
+  }
+</style>

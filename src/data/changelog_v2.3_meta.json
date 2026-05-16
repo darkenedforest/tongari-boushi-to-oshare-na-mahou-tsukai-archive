@@ -1,0 +1,12 @@
+{
+  "version": "2.3",
+  "date": "2026-05-15",
+  "headline": "Magic keyboard in English, name cleanup, less ROM bloat",
+  "summary": "Major polish round. The ARM9 + UI overlay menu pools are translated for the first time (this is the release that introduced the menu code path v2.31 had to fix the compressed-flag for), 401 dialog-overflow rewrites land, currency unified to \"Ritch\" everywhere, NPCs have consistent names, and the patched-ROM size drops ~1.57 MB from a build-side dedup fix. This is the largest content drop before the v2.31 stabilization.",
+  "previousVersionLabel": "v2.2",
+  "counts": {
+    "msgEdits": 18564,
+    "itemNameEdits": 1371,
+    "overlayEdits": 55
+  }
+}

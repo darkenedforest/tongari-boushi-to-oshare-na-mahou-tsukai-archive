@@ -1,0 +1,12 @@
+{
+  "version": "2.0",
+  "date": "2026-05-10",
+  "headline": "First Xdelta3 release",
+  "summary": "The initial Xdelta3 patch — the entire game's dialog and item names get their first machine-translated pass. Built against the Japanese source ROM, this release is where almost every line becomes English for the first time. \"Before\" here is the raw Japanese.",
+  "previousVersionLabel": "JP source",
+  "counts": {
+    "msgEdits": 76225,
+    "itemNameEdits": 3315,
+    "overlayEdits": 0
+  }
+}

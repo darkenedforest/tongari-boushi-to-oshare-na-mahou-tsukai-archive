@@ -5,33 +5,121 @@
   "summary": "Fixes the friend-menu / sing / hum / clothing-codec / bug-registering crashes by re-cooking how overlay strings get stored. Restores 15 NPC dialog bodies that were getting skipped because of a stray page-break. Retranslates 29 song titles where the AI had drifted from the Japanese (most visibly \"Cottage Cheese\" for what should have been \"Summer Cottage\").",
   "shipFormats": [
     {
-      "label": "Regular",
-      "description": "Path A — overlay strings stored as plaintext, compressed flag flipped off. Larger on-disk, simpler bookkeeping."
-    },
-    {
-      "label": "Compressed overlay",
-      "description": "Path B — overlay strings re-LZ-compressed with ndspy.codeCompression, on-disk shape closer to the original Konami layout."
+      "label": "Released patch",
+      "description": "Overlay strings stored re-LZ-compressed with the fixed compressed-flag bookkeeping. One patch per ROM revision (Rev 0 / Rev 1)."
     }
   ],
-  "shipNote": "Both behave identically at runtime; pick by preference.",
+  "shipNote": "v2.31 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's MD5.",
   "msgFileEdits": {
     "description": "15 dialog entries lost their body in v2.3 because the en_text gained a leading § (added during a canon sweep between v2.2 and v2.3). The reemit pipeline encoded that § as a 00 00 page-break, but the leading_cmds_hex for these entries already ends in 00 00, so the result was 00 00 00 00 back-to-back at the entry start. The renderer interpreted that as \"end of page, next page is empty, skip to whatever's after\" and fired the trailing [MENU:N] immediately. Body invisible, menu inescapable. Fixed by stripping exactly one leading § from these 15 rows. Detection was structural (en_text starts with § AND contains §[MENU:), so menu-choice-list entries where the leading § is correct were untouched.",
     "entries": [
-      { "rowid": 104003, "file": "message/msg32/08/msg32086.ofs", "entryId": "0.0",  "before": "§*twang* May I help you?",                                "after": "*twang* May I help you?" },
-      { "rowid": 104008, "file": "message/msg32/08/msg32086.ofs", "entryId": "5.0",  "before": "§*twang* Shall I reset the bell then?",                  "after": "*twang* Shall I reset the bell then?" },
-      { "rowid": 104012, "file": "message/msg32/08/msg32086.ofs", "entryId": "9.0",  "before": "§*twang* May I help you?",                                "after": "*twang* May I help you?" },
-      { "rowid": 104017, "file": "message/msg32/08/msg32086.ofs", "entryId": "20.0", "before": "§Bah! Can't you see I'm busy? What do you want?",        "after": "Bah! Can't you see I'm busy? What do you want?",        "context": "bug-book intro" },
-      { "rowid": 104028, "file": "message/msg32/08/msg32086.ofs", "entryId": "31.0", "before": "§Anything else?",                                         "after": "Anything else?" },
-      { "rowid": 104032, "file": "message/msg32/08/msg32086.ofs", "entryId": "35.0", "before": "§Can I help you with something?",                         "after": "Can I help you with something?",                         "context": "fish-book intro" },
-      { "rowid": 104043, "file": "message/msg32/08/msg32086.ofs", "entryId": "46.0", "before": "§Can I help you with anything else?",                     "after": "Can I help you with anything else?" },
-      { "rowid": 104139, "file": "message/msg32/08/msg32088.ofs", "entryId": "1.0",  "before": "§Huh? You're a wizard, aren't you...?",                  "after": "Huh? You're a wizard, aren't you...?" },
-      { "rowid": 104141, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§Wait! It won't take that long!",                        "after": "Wait! It won't take that long!" },
-      { "rowid": 104143, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§Please! You must listen!",                              "after": "Please! You must listen!" },
-      { "rowid": 104157, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§So what do you say? Will you collect the [ITEM:1284]...","after": "So what do you say? Will you collect the [ITEM:1284]..." },
-      { "rowid": 104160, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§Come on! Don't be like that!",                          "after": "Come on! Don't be like that!" },
-      { "rowid": 104194, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§Nice to see you. Huh? Have I seen you somewhere before?","after": "Nice to see you. Huh? Have I seen you somewhere before?" },
-      { "rowid": 104196, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§Wait! It won't take that long!",                        "after": "Wait! It won't take that long!" },
-      { "rowid": 104197, "file": "message/msg32/08/msg32088.ofs", "entryId": "—",    "before": "§Please! You must listen!",                              "after": "Please! You must listen!" }
+      {
+        "rowid": 104003,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "0.0",
+        "before": "§*twang* May I help you?",
+        "after": "*twang* May I help you?"
+      },
+      {
+        "rowid": 104008,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "5.0",
+        "before": "§*twang* Shall I reset the bell then?",
+        "after": "*twang* Shall I reset the bell then?"
+      },
+      {
+        "rowid": 104012,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "9.0",
+        "before": "§*twang* May I help you?",
+        "after": "*twang* May I help you?"
+      },
+      {
+        "rowid": 104017,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "20.0",
+        "before": "§Bah! Can't you see I'm busy? What do you want?",
+        "after": "Bah! Can't you see I'm busy? What do you want?",
+        "context": "bug-book intro"
+      },
+      {
+        "rowid": 104028,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "31.0",
+        "before": "§Anything else?",
+        "after": "Anything else?"
+      },
+      {
+        "rowid": 104032,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "35.0",
+        "before": "§Can I help you with something?",
+        "after": "Can I help you with something?",
+        "context": "fish-book intro"
+      },
+      {
+        "rowid": 104043,
+        "file": "message/msg32/08/msg32086.ofs",
+        "entryId": "46.0",
+        "before": "§Can I help you with anything else?",
+        "after": "Can I help you with anything else?"
+      },
+      {
+        "rowid": 104139,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "1.0",
+        "before": "§Huh? You're a wizard, aren't you...?",
+        "after": "Huh? You're a wizard, aren't you...?"
+      },
+      {
+        "rowid": 104141,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§Wait! It won't take that long!",
+        "after": "Wait! It won't take that long!"
+      },
+      {
+        "rowid": 104143,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§Please! You must listen!",
+        "after": "Please! You must listen!"
+      },
+      {
+        "rowid": 104157,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§So what do you say? Will you collect the [ITEM:1284]...",
+        "after": "So what do you say? Will you collect the [ITEM:1284]..."
+      },
+      {
+        "rowid": 104160,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§Come on! Don't be like that!",
+        "after": "Come on! Don't be like that!"
+      },
+      {
+        "rowid": 104194,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§Nice to see you. Huh? Have I seen you somewhere before?",
+        "after": "Nice to see you. Huh? Have I seen you somewhere before?"
+      },
+      {
+        "rowid": 104196,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§Wait! It won't take that long!",
+        "after": "Wait! It won't take that long!"
+      },
+      {
+        "rowid": 104197,
+        "file": "message/msg32/08/msg32088.ofs",
+        "entryId": "—",
+        "before": "§Please! You must listen!",
+        "after": "Please! You must listen!"
+      }
     ],
     "entryIdNote": "For the seven msg32088 rows shown without an entry ID, only the rowid was captured in the upstream fix script; the structural detector matches them by rowid against the DB. The full list of 15 affected rowids is the canonical record."
   },
@@ -39,160 +127,215 @@
     "file": "message/msg99/02/msg99020.ofs",
     "description": "The original AI-generated translations for many song titles drifted significantly from the Japanese — most visibly entry 7 (なついろのコテージ, \"Summer Cottage\", which had been translated as \"Cottage Cheese\" and read as a food item in the in-game song menu). Reviewed all 96 entries; 29 corrected to track the JP meaning. Surviving entries unchanged. All replacements ≤ 20 characters (the slot budget).",
     "entries": [
-      { "entryId": 4,  "jp": "ブロークンティアーズ",   "before": "Ragin' Rivers",        "after": "Broken Tears" },
-      { "entryId": 7,  "jp": "なついろのコテージ",     "before": "Cottage Cheese",       "after": "Summer Cottage" },
-      { "entryId": 8,  "jp": "ワルガキパラダイス",     "before": "The Misfits",          "after": "Brat Paradise" },
-      { "entryId": 9,  "jp": "スウィートホーム",       "before": "See You on the Ranch", "after": "Sweet Home" },
-      { "entryId": 12, "jp": "デオ・グラティアス",     "before": "Latin Flava",          "after": "Deo Gratias" },
-      { "entryId": 13, "jp": "プルアウト！",           "before": "Hang Five",            "after": "Pull Out!" },
-      { "entryId": 18, "jp": "ウォーシャンニー！",     "before": "Bamboo Dream",         "after": "Wooshannie!" },
-      { "entryId": 19, "jp": "タイトビート",           "before": "Dirty Hubcaps",        "after": "Tight Beat" },
-      { "entryId": 22, "jp": "ブラックパイソン",       "before": "Bottom of the Barrel", "after": "Black Python" },
-      { "entryId": 23, "jp": "スタイリッシュフロア",   "before": "Volume Control",       "after": "Stylish Floor" },
-      { "entryId": 29, "jp": "コンガスタ",             "before": "!atsugnoC",            "after": "Congasta" },
-      { "entryId": 36, "jp": "ソルプレーサ",           "before": "Ciervito Lindo",       "after": "Sorpresa" },
-      { "entryId": 39, "jp": "ハッピータウン",         "before": "Sister of Mine",       "after": "Happy Town" },
-      { "entryId": 41, "jp": "アスカ・スケイプ",       "before": "Lotus",                "after": "Asuka Scape" },
-      { "entryId": 42, "jp": "ヘブンリー17",           "before": "Bobby Sock Airwaves",  "after": "Heavenly 17" },
-      { "entryId": 45, "jp": "ああ！うるわしきひと",   "before": "Corsican Betrayal",    "after": "Oh, Beautiful One" },
-      { "entryId": 55, "jp": "ザッツ・ソウル",         "before": "Darlin' Oh Darlin'",   "after": "That's Soul" },
-      { "entryId": 56, "jp": "ダブ・ダイナミック",     "before": "Exoskeleton",          "after": "Dub Dynamic" },
-      { "entryId": 65, "jp": "ホット・ファンク",       "before": "Uh-huh, Uh-huh!",      "after": "Hot Funk" },
-      { "entryId": 69, "jp": "アドルフォのけむり",     "before": "Boss Drives",          "after": "Adolfo's Smoke" },
-      { "entryId": 71, "jp": "セーヌのおもいで",       "before": "Family Matters",       "after": "Seine Memories" },
-      { "entryId": 72, "jp": "ストラスペイ",           "before": "Moonlicht Nicht",      "after": "Strathspey" },
-      { "entryId": 73, "jp": "ブレイク・ジ・エアー",   "before": "Hear Me Now!",         "after": "Break the Air" },
-      { "entryId": 74, "jp": "プエルトリコ",           "before": "De Francisco Cobo",    "after": "Puerto Rico" },
-      { "entryId": 75, "jp": "ボルケーノダンス",       "before": "Moisture",             "after": "Volcano Dance" },
-      { "entryId": 77, "jp": "サンシャイン・ラブ",     "before": "Wine and Roses",       "after": "Sunshine Love" },
-      { "entryId": 78, "jp": "なつのゆうほどう",       "before": "Denim",                "after": "Summer Promenade" },
-      { "entryId": 79, "jp": "ライク・ア・ロール",     "before": "Like the End of Me",   "after": "Like a Roll" },
-      { "entryId": 82, "jp": "ははなるたいが",         "before": "!agiatan uranahah",    "after": "Mother Taiga" }
+      {
+        "entryId": 4,
+        "jp": "ブロークンティアーズ",
+        "before": "Ragin' Rivers",
+        "after": "Broken Tears"
+      },
+      {
+        "entryId": 7,
+        "jp": "なついろのコテージ",
+        "before": "Cottage Cheese",
+        "after": "Summer Cottage"
+      },
+      {
+        "entryId": 8,
+        "jp": "ワルガキパラダイス",
+        "before": "The Misfits",
+        "after": "Brat Paradise"
+      },
+      {
+        "entryId": 9,
+        "jp": "スウィートホーム",
+        "before": "See You on the Ranch",
+        "after": "Sweet Home"
+      },
+      {
+        "entryId": 12,
+        "jp": "デオ・グラティアス",
+        "before": "Latin Flava",
+        "after": "Deo Gratias"
+      },
+      {
+        "entryId": 13,
+        "jp": "プルアウト！",
+        "before": "Hang Five",
+        "after": "Pull Out!"
+      },
+      {
+        "entryId": 18,
+        "jp": "ウォーシャンニー！",
+        "before": "Bamboo Dream",
+        "after": "Wooshannie!"
+      },
+      {
+        "entryId": 19,
+        "jp": "タイトビート",
+        "before": "Dirty Hubcaps",
+        "after": "Tight Beat"
+      },
+      {
+        "entryId": 22,
+        "jp": "ブラックパイソン",
+        "before": "Bottom of the Barrel",
+        "after": "Black Python"
+      },
+      {
+        "entryId": 23,
+        "jp": "スタイリッシュフロア",
+        "before": "Volume Control",
+        "after": "Stylish Floor"
+      },
+      {
+        "entryId": 29,
+        "jp": "コンガスタ",
+        "before": "!atsugnoC",
+        "after": "Congasta"
+      },
+      {
+        "entryId": 36,
+        "jp": "ソルプレーサ",
+        "before": "Ciervito Lindo",
+        "after": "Sorpresa"
+      },
+      {
+        "entryId": 39,
+        "jp": "ハッピータウン",
+        "before": "Sister of Mine",
+        "after": "Happy Town"
+      },
+      {
+        "entryId": 41,
+        "jp": "アスカ・スケイプ",
+        "before": "Lotus",
+        "after": "Asuka Scape"
+      },
+      {
+        "entryId": 42,
+        "jp": "ヘブンリー17",
+        "before": "Bobby Sock Airwaves",
+        "after": "Heavenly 17"
+      },
+      {
+        "entryId": 45,
+        "jp": "ああ！うるわしきひと",
+        "before": "Corsican Betrayal",
+        "after": "Oh, Beautiful One"
+      },
+      {
+        "entryId": 55,
+        "jp": "ザッツ・ソウル",
+        "before": "Darlin' Oh Darlin'",
+        "after": "That's Soul"
+      },
+      {
+        "entryId": 56,
+        "jp": "ダブ・ダイナミック",
+        "before": "Exoskeleton",
+        "after": "Dub Dynamic"
+      },
+      {
+        "entryId": 65,
+        "jp": "ホット・ファンク",
+        "before": "Uh-huh, Uh-huh!",
+        "after": "Hot Funk"
+      },
+      {
+        "entryId": 69,
+        "jp": "アドルフォのけむり",
+        "before": "Boss Drives",
+        "after": "Adolfo's Smoke"
+      },
+      {
+        "entryId": 71,
+        "jp": "セーヌのおもいで",
+        "before": "Family Matters",
+        "after": "Seine Memories"
+      },
+      {
+        "entryId": 72,
+        "jp": "ストラスペイ",
+        "before": "Moonlicht Nicht",
+        "after": "Strathspey"
+      },
+      {
+        "entryId": 73,
+        "jp": "ブレイク・ジ・エアー",
+        "before": "Hear Me Now!",
+        "after": "Break the Air"
+      },
+      {
+        "entryId": 74,
+        "jp": "プエルトリコ",
+        "before": "De Francisco Cobo",
+        "after": "Puerto Rico"
+      },
+      {
+        "entryId": 75,
+        "jp": "ボルケーノダンス",
+        "before": "Moisture",
+        "after": "Volcano Dance"
+      },
+      {
+        "entryId": 77,
+        "jp": "サンシャイン・ラブ",
+        "before": "Wine and Roses",
+        "after": "Sunshine Love"
+      },
+      {
+        "entryId": 78,
+        "jp": "なつのゆうほどう",
+        "before": "Denim",
+        "after": "Summer Promenade"
+      },
+      {
+        "entryId": 79,
+        "jp": "ライク・ア・ロール",
+        "before": "Like the End of Me",
+        "after": "Like a Roll"
+      },
+      {
+        "entryId": 82,
+        "jp": "ははなるたいが",
+        "before": "!agiatan uranahah",
+        "after": "Mother Taiga"
+      }
     ]
   },
   "overlayEdits": {
-    "description": "The ARM9 string pool and 6 UI overlays carry the menu / button / prompt text shown directly by the engine (not from message files). These slot widths are fixed: each new English string must fit within its original byte budget. See _patch_arm9_overlays.py for the production patcher.",
+    "description": "v2.31 only changed ONE ARM9 / overlay text string compared to v2.3 — the shop label in overlay 96 was reverted from \"Berries\" to its possessive form \"Berry's\" to match the friend-chat dialog. Every other ARM9 / overlay string was set in v2.3 and is byte-identical here. The substantive v2.31 change in this layer is the compressed-flag fix (callout below) which resolved the v2.3 menu-crash regression without changing any text.",
     "compressedFlagFix": {
       "title": "Compressed-flag flip (new in v2.31)",
-      "description": "In v2.3 every menu housed in one of these overlays (ov47, ov59, ov65, ov96, ov170, ov171) crashed the game or froze the player out. Root cause: the patcher wrote plaintext UTF-16 LE bytes into overlay file slots whose overlay-table entry still claimed compressed = True. The boot ROM would then try to LZ-decompress plaintext, get garbage, and the menu would either crash on open or freeze partway through. Fix (in _patch_arm9_overlays.py's apply_all): after each overlay's bytes are rewritten, also update the overlay-table u32 at +0x1C of the entry — clearing bit 24 (the compressed flag) and setting compressedSize to the new length. Two strategies offered via the OVERLAY_PATCH_MODE env var: MODE=A (write plaintext, clear flag, ships as the \"regular\" patch) and MODE=B (re-compress with ndspy.codeCompression.compress, keep flag set, update compressedSize to the new compressed length, ships as the \"compressed overlay\" patch).",
-      "affectedOverlays": [47, 59, 65, 96, 170, 171]
+      "description": "In v2.3 every menu housed in one of these overlays (ov47, ov59, ov65, ov96, ov170, ov171) crashed the game or froze the player out. Root cause: the patcher wrote plaintext UTF-16 LE bytes into overlay file slots whose overlay-table entry still claimed compressed = True. The boot ROM would then try to LZ-decompress plaintext, get garbage, and the menu would either crash on open or freeze partway through. Fix: re-LZ-compress the patched overlay bytes and update the overlay-table compressedSize to match the new compressed length. v2.31 ships one patch per ROM revision; the flag and the bytes finally agree.",
+      "affectedOverlays": [
+        47,
+        59,
+        65,
+        96,
+        170,
+        171
+      ]
     },
     "groups": [
       {
-        "id": "arm9",
-        "label": "ARM9 string pool",
-        "note": "26 strings at file offset 0xa6e44 (RAM 0x020a6e44). Pointer table at 0xa6ddc..0xa6e40 (26 u32 entries). All code references go through that pointer table, so in-place patching is safe as long as each new string fits in its original slot. Slot byte budget = (slot_bytes / 2) - 1 characters because each glyph is 2 bytes UTF-16 LE plus a 2-byte NUL terminator.",
-        "rows": [
-          { "offset": "0xa6e44", "slotBytes": 8,  "jp": "もつ",          "before": "Hold",     "after": "Get",     "notes": "canon-G1 'Hold' (4) over by 1; 'Get' preserves meaning. CO" },
-          { "offset": "0xa6e4c", "slotBytes": 8,  "jp": "おく",          "before": "Place",    "after": "Put",     "notes": "canon-G1 'Place' (5) over by 2; 'Put' synonym fits. CO" },
-          { "offset": "0xa6e54", "slotBytes": 8,  "jp": "うめる",        "before": "Bury",     "after": "Dig",     "notes": "canon-G1 'Bury' (4) over by 1; 'Dig' closest verb fit. CO" },
-          { "offset": "0xa6e5c", "slotBytes": 8,  "jp": "すてる",        "before": "Discard",  "after": "Bin",     "notes": "canon-G1 'Discard' (7) over by 4; 'Bin' = throw-away. CO" },
-          { "offset": "0xa6e64", "slotBytes": 8,  "jp": "やめる",        "before": "Exit",     "after": "End",     "notes": "canon-G1 'Exit'/'Quit' (4) over by 1; 'End' fits. CO" },
-          { "offset": "0xa6e6c", "slotBytes": 8,  "jp": "うたう",        "before": "Sing",     "after": "Hum",     "notes": "no canon; 'Sing' (4) overflows; 'Hum' (3)" },
-          { "offset": "0xa6e74", "slotBytes": 8,  "jp": "つぎへ",        "before": "Next",     "after": "Nxt",     "notes": "canon-G1 'Next' (4) over by 1; 'Nxt' standard abbrev. CO" },
-          { "offset": "0xa6e7c", "slotBytes": 8,  "jp": "もどる",        "before": "Back",     "after": "<<<",     "notes": "canon-G1 'Back' (4) over by 1; '<<<' arrow fits. CO" },
-          { "offset": "0xa6e84", "slotBytes": 12, "jp": "とうろく",      "before": "Register", "after": "Save",    "notes": "corpus: G1 'Register' (8) / 'Save' (4); 'Save' fits" },
-          { "offset": "0xa6e90", "slotBytes": 12, "jp": "１リッチ",      "before": "1 Ritch",  "after": "1 R",     "notes": "canon-G1 'Ritch' currency; '1 R' (3). CO" },
-          { "offset": "0xa6e9c", "slotBytes": 12, "jp": "くちぶえ",      "before": "Whistle",  "after": "Call",    "notes": "canon-G1 'Whistle' (7) over by 2; 'Call' semantic. CO" },
-          { "offset": "0xa6ea8", "slotBytes": 12, "jp": "むしにがす",    "before": "Release insect", "after": "Free",  "notes": "canon-G1 'Release insect' (14) over by 9; 'Free' fits. CO" },
-          { "offset": "0xa6eb4", "slotBytes": 12, "jp": "みにつける",    "before": "Equip",    "after": "Equip",   "notes": "canon-G1 EXACT (5) — unchanged from v2.3" },
-          { "offset": "0xa6ec0", "slotBytes": 12, "jp": "１０リッチ",    "before": "10 Ritch", "after": "10 R",    "notes": "'10 R' (4) = 10 Ritch. CO" },
-          { "offset": "0xa6ecc", "slotBytes": 12, "jp": "かべかえる",    "before": "Change wall", "after": "Walls", "notes": "canon-G1 'Change wallpaper' (16) over by 11; 'Walls' fits. CO" },
-          { "offset": "0xa6ed8", "slotBytes": 12, "jp": "ゆかかえる",    "before": "Change floor", "after": "Floor", "notes": "canon-G1 'Change flooring' (15) over by 10; 'Floor' fits. CO" },
-          { "offset": "0xa6ee4", "slotBytes": 16, "jp": "おく/かえる",   "before": "Place/Swap", "after": "Swap",  "notes": "composite Place+Swap; 'Swap' (4) fits" },
-          { "offset": "0xa6ef4", "slotBytes": 16, "jp": "そうびはずす",  "before": "Unequip",  "after": "Unequip", "notes": "canon-G1 EXACT (7) — unchanged from v2.3" },
-          { "offset": "0xa6f04", "slotBytes": 16, "jp": "さかなにがす",  "before": "Release fish", "after": "Release", "notes": "canon-G1 'Release fish' (12) over by 5; 'Release' (7). CO" },
-          { "offset": "0xa6f14", "slotBytes": 16, "jp": "ぼうしはずす",  "before": "Remove hat","after": "Hat off", "notes": "canon-G1 'Remove hat' (10) over by 3; 'Hat off' (7). CO" },
-          { "offset": "0xa6f24", "slotBytes": 16, "jp": "めがねはずす",  "before": "Remove glasses", "after": "No spex", "notes": "canon-G1 'Remove glasses' (14) over by 7; 'No spex' (7). CO" },
-          { "offset": "0xa6f34", "slotBytes": 16, "jp": "１００リッチ",  "before": "100 Ritch","after": "100 R",   "notes": "'100 R' (5) = 100 Ritch. CO" },
-          { "offset": "0xa6f44", "slotBytes": 16, "jp": "１０００リッチ","before": "1000 Ritch","after": "1000 R", "notes": "'1000 R' (6) = 1000 Ritch. CO" },
-          { "offset": "0xa6f54", "slotBytes": 20, "jp": "１００００リッチ", "before": "10000 Ritch", "after": "10000 R", "notes": "'10000 R' (7) = 10000 Ritch. CO" },
-          { "offset": "0xa6f68", "slotBytes": 20, "jp": "ネックレスはずす", "before": "Remove necklace", "after": "Take off", "notes": "no canon; matches G1 'Remove [N]' pattern shortened" },
-          { "offset": "0xa6f7c", "slotBytes": 28, "jp": "１０００００リッチ", "before": "100000 Ritch", "after": "100000 Ritch", "notes": "canon-G1 FULL (12) fits slot 28 — unchanged from v2.3" }
-        ]
-      },
-      {
-        "id": "ov47",
-        "label": "Overlay 47 — 'show music'",
-        "note": "Single string at file offset 0x1c70, slot 20 bytes (max 9 chars).",
-        "rows": [
-          { "offset": "0x1c70", "slotBytes": 20, "jp": "ショーのおんがく", "before": "Show music", "after": "Show BGM", "notes": "'Show music' (10) over by 1; 'Show BGM' (8) fits" }
-        ]
-      },
-      {
-        "id": "ov59",
-        "label": "Overlay 59 — game-title segment",
-        "note": "Single string at file offset 0x1b2c, slot 12 bytes (max 5 chars). This is the 'Tongari' segment of the title splash.",
-        "rows": [
-          { "offset": "0x1b2c", "slotBytes": 12, "jp": "とんがり", "before": "Pointy", "after": "Magic", "notes": "G1 dropped literal 'Pointy'; 'Magic' (5) ties to series" }
-        ]
-      },
-      {
-        "id": "ov65",
-        "label": "Overlay 65 — confirm prompt",
-        "note": "Single string at file offset 0x3378, slot 40 bytes (max 19 chars).",
-        "rows": [
-          { "offset": "0x3378", "slotBytes": 40, "jp": "これでいいかい？", "before": "Are you sure?", "after": "Like this? (Y/N)", "notes": "confirm prompt (16) fits budget 19" }
-        ]
-      },
-      {
         "id": "ov96",
-        "label": "Overlay 96 — 20 NPC menu strings",
-        "note": "20 strings from file offset 0x540..0x67c. Slot sizes 8-32 bytes. Includes the Berry's fix (formerly 'Berries').",
+        "label": "Overlay 96 — friend-chat menu",
+        "note": "Single string changed in v2.31 — the shop name was reverted from \"Berries\" to its possessive form \"Berry's\" to match the friend-chat dialog references. Every other ov96 string is byte-identical to v2.3.",
         "rows": [
-          { "offset": "0x540", "slotBytes": 8,  "jp": "もどる",            "before": "Back",        "after": "<<<",         "notes": "canon-G1 'Back' (4) over by 1; arrow fits. CO" },
-          { "offset": "0x548", "slotBytes": 12, "jp": "オススメ",          "before": "Recommend",   "after": "Picks",       "notes": "'Recommendations' too long; 'Picks' (5)" },
-          { "offset": "0x554", "slotBytes": 12, "jp": "なんでも",          "before": "Anything",    "after": "Any",         "notes": "'Anything' (8) overflows; 'Any' (3)" },
-          { "offset": "0x560", "slotBytes": 16, "jp": "おみせのこと",      "before": "About shops", "after": "Shops",       "notes": "'About shops' (11) overflows; 'Shops' (5)" },
-          { "offset": "0x570", "slotBytes": 16, "jp": "はなしをきく",      "before": "Stories",     "after": "Stories",     "notes": "unchanged from v2.3" },
-          { "offset": "0x580", "slotBytes": 16, "jp": "なかよくする",      "before": "Befriend",    "after": "Hangout",     "notes": "'Befriend' (8) over; 'Hangout' (7)" },
-          { "offset": "0x590", "slotBytes": 16, "jp": "なんでもない",      "before": "Nothing",     "after": "Nothing",     "notes": "unchanged from v2.3" },
-          { "offset": "0x5a0", "slotBytes": 16, "jp": "おしゃれのこと",    "before": "Fashion",     "after": "Fashion",     "notes": "unchanged from v2.3" },
-          { "offset": "0x5b0", "slotBytes": 16, "jp": "フェアについて",    "before": "About fairs", "after": "Fairs",       "notes": "'About fairs' (11) over; 'Fairs' (5)" },
-          { "offset": "0x5c0", "slotBytes": 16, "jp": "あそびにいこう",    "before": "Let's play",  "after": "Go play",     "notes": "'Let's go play' (13) over; 'Go play' (7)" },
-          { "offset": "0x5d0", "slotBytes": 16, "jp": "ふしぎについて",    "before": "Mystery",     "after": "Mystery",     "notes": "G1 corpus ふしぎ→mystery; unchanged from v2.3" },
-          { "offset": "0x5e0", "slotBytes": 16, "jp": "ウワサについて",    "before": "Rumors",      "after": "Rumors",      "notes": "G1 ウワサ-rumor parallel; unchanged from v2.3" },
-          { "offset": "0x5f0", "slotBytes": 16, "jp": "いいモノあげる",    "before": "Give a gift", "after": "Gift",        "notes": "'Give a gift' (11) over; 'Gift' (4)" },
-          { "offset": "0x600", "slotBytes": 20, "jp": "ベリーズについて",  "before": "Berries",     "after": "Berry's",     "notes": "Shop is named Berry's (apostrophe, possessive). This is the v2.31 Berry's fix." },
-          { "offset": "0x614", "slotBytes": 20, "jp": "ようじはなぁに？",  "before": "Business?",   "after": "Errand?",     "notes": "ようじ = errand/business; 'Errand?' (7)" },
-          { "offset": "0x628", "slotBytes": 20, "jp": "がっこうにいこう",  "before": "School",      "after": "To school",   "notes": "canon-G1 'School' lemma; 'To school' (9)" },
-          { "offset": "0x63c", "slotBytes": 20, "jp": "りゅうこうについて","before": "Trends",      "after": "Trends",      "notes": "unchanged from v2.3" },
-          { "offset": "0x650", "slotBytes": 20, "jp": "ひょうばんについて","before": "Reviews",     "after": "Reviews",     "notes": "ひょうばん = reputation/review; unchanged from v2.3" },
-          { "offset": "0x664", "slotBytes": 24, "jp": "ショッピングにいこう","before": "Go shopping","after": "Go shopping", "notes": "unchanged from v2.3 — fits budget 11" },
-          { "offset": "0x67c", "slotBytes": 32, "jp": "ファッションチェック","before": "Style check","after": "Style check", "notes": "unchanged from v2.3 — slot 32B / 15 char" }
-        ]
-      },
-      {
-        "id": "ov170",
-        "label": "Overlay 170 — 'equip'",
-        "note": "Single string at file offset 0x1d50, slot 16 bytes.",
-        "rows": [
-          { "offset": "0x1d50", "slotBytes": 16, "jp": "みにつける", "before": "Equip", "after": "Equip", "notes": "canon-G1 EXACT (5); unchanged from v2.3" }
-        ]
-      },
-      {
-        "id": "ov171",
-        "label": "Overlay 171 — 5 equip/remake strings",
-        "note": "Two equip strings at 0x740 / 0x74c (slot 12 each) and three remake strings at 0x758 / 0x768 / 0x778 (slot 16 each).",
-        "rows": [
-          { "offset": "0x740", "slotBytes": 12, "jp": "みにつける",    "before": "Equip",  "after": "Equip",  "notes": "canon-G1 EXACT (5); unchanged from v2.3" },
-          { "offset": "0x74c", "slotBytes": 12, "jp": "みにつける",    "before": "Equip",  "after": "Equip",  "notes": "canon-G1 EXACT (5); unchanged from v2.3" },
-          { "offset": "0x758", "slotBytes": 16, "jp": "つくりなおす",  "before": "Remake", "after": "Remake", "notes": "'Remake' (6) preserves meaning over 'Redo'; unchanged" },
-          { "offset": "0x768", "slotBytes": 16, "jp": "つくりなおす",  "before": "Remake", "after": "Remake", "notes": "'Remake' (6); unchanged" },
-          { "offset": "0x778", "slotBytes": 16, "jp": "つくりなおす",  "before": "Remake", "after": "Remake", "notes": "'Remake' (6); unchanged" }
+          {
+            "offset": "0x600",
+            "slotBytes": 20,
+            "jp": "ベリーズについて",
+            "before": "Berries",
+            "after": "Berry's",
+            "notes": "Shop is named Berry's (apostrophe, possessive). Reverted to match the friend-chat dialog."
+          }
         ]
       }
     ]
   },
   "otherChanges": [
-    {
-      "title": "Two patch flavors shipped",
-      "body": "v2.31 is the first release to ship two parallel patch flavors. The regular patch (Path A) stores patched overlay bytes as plaintext and flips the overlay-table compressed flag off. The compressed-overlay patch (Path B) re-LZ-compresses the patched bytes and keeps the flag set, which produces a smaller .nds file (~7 KB saved across the 6 patched overlays) and preserves the on-disk shape closer to the original Konami layout. Both behave identically at runtime."
-    },
-    {
-      "title": "Overlay patcher mode controlled by env var",
-      "body": "_patch_arm9_overlays.py now reads OVERLAY_PATCH_MODE (default B). Mode A writes plaintext + clears the compressed flag; mode B re-compresses + keeps it. Mode B verifies the compress/decompress round-trip against the patched bytes before committing — any drift raises RuntimeError so a bad ndspy run can't silently corrupt an overlay."
-    },
     {
       "title": "Known issues — deferred",
       "body": "A wider sweep of leading-§ entries (865 rows with leading § + non-empty leading_cmds + no [MENU: token) was sampled and most turn out to be menu choice lists using [OP_0012:N] opcodes instead of [MENU:N], which are correct as-is. A small subset are dialog body without a trailing menu, which might render with an extra blank page before the body — not the same crash-on-open symptom as the 15 fixed entries, so deferred to a follow-up pass. Many other AI-generated song translations are stylistic interpretations rather than literal and were left alone unless they read as items (Cottage Cheese was the clear case)."

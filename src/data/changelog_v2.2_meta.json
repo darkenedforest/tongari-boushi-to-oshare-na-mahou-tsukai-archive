@@ -1,0 +1,12 @@
+{
+  "version": "2.2",
+  "date": "2026-05-10",
+  "headline": "AI retranslation + Freedomuniverse fixes",
+  "summary": "Retranslated game dialog using a current AI model with better context handling, imported Freedomuniverse's friend-code crash fix, and repaired 18 broken menus / text-overrun bug-info screens. Most of the work in v2.2 is byte-level (terminator patches in the friend-code path); only a handful of msg entries show row-level changes, most of them the bug-book menus.",
+  "previousVersionLabel": "v2.1",
+  "counts": {
+    "msgEdits": 24,
+    "itemNameEdits": 0,
+    "overlayEdits": 0
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "version": "2.1",
+  "date": "2026-05-10",
+  "headline": "Terminator fix for merged dialog",
+  "summary": "A targeted bug-fix release. Many dialog entries were missing page-terminators (§), causing adjacent screens to bleed into each other and overflow. The fix re-emits each affected entry with explicit §-terminators preserved. Most rows below show the same text on each side with only the trailing § added — that's the fix.",
+  "previousVersionLabel": "v2.0",
+  "counts": {
+    "msgEdits": 31142,
+    "itemNameEdits": 0,
+    "overlayEdits": 0
+  }
+}

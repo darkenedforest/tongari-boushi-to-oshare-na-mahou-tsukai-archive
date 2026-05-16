@@ -15,10 +15,10 @@ function formatDate(iso: string): string {
   });
 }
 
-const totalMsg = data.msgFileEdits.entries.length;
-const totalSongs = data.songRetranslations.entries.length;
-const totalOverlay = data.overlayEdits.groups.reduce((n: number, g: any) => n + g.rows.length, 0);
-const totalOther = data.otherChanges.length;
+const totalMsg = data.msgFileEdits?.entries.length ?? 0;
+const totalSongs = data.songRetranslations?.entries.length ?? 0;
+const totalOverlay = data.overlayEdits?.groups.reduce((n: number, g: any) => n + g.rows.length, 0) ?? 0;
+const totalOther = data.otherChanges?.length ?? 0;
 const totalRows = totalMsg + totalSongs + totalOverlay + totalOther;
 ---
 
@@ -53,12 +53,24 @@ const totalRows = totalMsg + totalSongs + totalOverlay + totalOther;
       <span><strong>{totalSongs}</strong> songs</span>
       <span class="dot">·</span>
       <span><strong>{totalOverlay}</strong> overlay/ARM9 strings</span>
-      <span class="dot">·</span>
-      <span><strong>{totalOther}</strong> byte-level fixes</span>
+      {totalOther > 0 && (
+        <>
+          <span class="dot">·</span>
+          <span><strong>{totalOther}</strong> byte-level fixes</span>
+        </>
+      )}
+    </p>
+    <p class="back-link">
+      <a href={`${base}/changelog/`}>← Back to changelog index</a>
     </p>
   </section>
 
-  <ChangelogDetail data={data as any} client:load />
+  <ChangelogDetail
+    data={data as any}
+    beforeLabel="v2.3"
+    afterLabel="v2.31"
+    client:load
+  />
 </Layout>
 
 <style>
@@ -130,5 +142,17 @@ const totalRows = totalMsg + totalSongs + totalOverlay + totalOther;
   }
   .counters .dot {
     opacity: 0.5;
+  }
+  .back-link {
+    margin: 14px 0 0;
+    font-size: 0.92rem;
+  }
+  .back-link a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .back-link a:hover {
+    color: var(--color-pink-600);
   }
 </style>

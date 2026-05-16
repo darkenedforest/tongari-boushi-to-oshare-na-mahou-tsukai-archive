@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // ─────────────────────────────────────────────────────────────────────
 // Types — mirror the shape of src/data/changelog_<version>.json
+// (or public/data/changelog_v<version>.json for lazy-loaded variants)
 // ─────────────────────────────────────────────────────────────────────
 
 interface MsgEntry {
@@ -11,6 +12,13 @@ interface MsgEntry {
   before: string;
   after: string;
   context?: string;
+}
+
+interface ItemNameEntry {
+  rowid: number;
+  itemId: number;
+  before: string;
+  after: string;
 }
 
 interface SongEntry {
@@ -39,30 +47,43 @@ interface OverlayGroup {
 interface ChangelogData {
   version: string;
   date: string;
-  msgFileEdits: {
+  headline?: string;
+  summary?: string;
+  previousVersionLabel?: string;
+  msgFileEdits?: {
     description: string;
     entries: MsgEntry[];
     entryIdNote?: string;
   };
-  songRetranslations: {
+  itemNameEdits?: {
+    description: string;
+    entries: ItemNameEntry[];
+  };
+  songRetranslations?: {
     file: string;
     description: string;
     entries: SongEntry[];
   };
-  overlayEdits: {
+  overlayEdits?: {
     description: string;
-    compressedFlagFix: {
+    compressedFlagFix?: {
       title: string;
       description: string;
       affectedOverlays: number[];
     };
     groups: OverlayGroup[];
   };
-  otherChanges: { title: string; body: string }[];
+  otherChanges?: { title: string; body: string }[];
 }
 
 interface Props {
-  data: ChangelogData;
+  // Caller may either provide pre-loaded data (for tiny releases that fit
+  // inline at build time) or a URL to fetch on mount (for big releases
+  // like v2.0 that hold tens of thousands of rows).
+  data?: ChangelogData;
+  dataUrl?: string;
+  beforeLabel?: string;
+  afterLabel?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -106,17 +127,23 @@ function SearchableTable<T>({
   rows,
   initialSort,
   emptyText = 'No matching rows.',
+  pageSize = 200,
 }: {
   caption?: React.ReactNode;
   columns: Column<T>[];
   rows: T[];
   initialSort?: { key: string; dir: 'asc' | 'desc' };
   emptyText?: string;
+  // Render at most this many rows before showing a "show N more" button.
+  // Keeps the page snappy on huge tables (v2.0 has 76k+ rows). The
+  // user can either narrow with the filter or click to render more.
+  pageSize?: number;
 }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<{ key: string; dir: 'asc' | 'desc' } | null>(
     initialSort ?? null,
   );
+  const [visible, setVisible] = useState<number>(pageSize);
 
   const filtered = useMemo(() => {
     const q = query.trim();
@@ -147,6 +174,16 @@ function SearchableTable<T>({
     return r;
   }, [rows, columns, query, sort]);
 
+  // Reset the visible window when the filter changes — otherwise typing
+  // a query that produces 30 hits would still gate them behind a "show
+  // more" button if the user had previously expanded the window.
+  useEffect(() => {
+    setVisible(pageSize);
+  }, [query, pageSize]);
+
+  const pageRows = filtered.slice(0, visible);
+  const remaining = Math.max(0, filtered.length - pageRows.length);
+
   function toggleSort(key: string) {
     setSort((cur) => {
       if (!cur || cur.key !== key) return { key, dir: 'asc' };
@@ -168,7 +205,9 @@ function SearchableTable<T>({
           aria-label="Filter rows in this table"
         />
         <span className="cl-count">
-          {filtered.length} / {rows.length} row{rows.length === 1 ? '' : 's'}
+          {pageRows.length === filtered.length
+            ? `${filtered.length} / ${rows.length} row${rows.length === 1 ? '' : 's'}`
+            : `showing ${pageRows.length} of ${filtered.length} (${rows.length} total)`}
         </span>
       </div>
       <div className="cl-scroll">
@@ -202,12 +241,12 @@ function SearchableTable<T>({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {pageRows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="cl-empty">{emptyText}</td>
               </tr>
             ) : (
-              filtered.map((row, i) => (
+              pageRows.map((row, i) => (
                 <tr key={i}>
                   {columns.map((c) => (
                     <td key={c.key} className={c.className}>
@@ -220,6 +259,21 @@ function SearchableTable<T>({
           </tbody>
         </table>
       </div>
+      {remaining > 0 && (
+        <div className="cl-page-more">
+          <button
+            type="button"
+            className="cl-more-btn"
+            onClick={() => setVisible((v) => v + pageSize)}
+          >
+            Show {Math.min(remaining, pageSize).toLocaleString()} more
+            <span aria-hidden="true"> ↓</span>
+          </button>
+          <span className="cl-more-hint">
+            ({remaining.toLocaleString()} remaining — or narrow with the filter above)
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -236,7 +290,15 @@ function parseMaybeNumber(s: string): number | null {
 // Section: msg file edits
 // ─────────────────────────────────────────────────────────────────────
 
-function MsgSection({ data }: { data: ChangelogData['msgFileEdits'] }) {
+function MsgSection({
+  data,
+  beforeLabel,
+  afterLabel,
+}: {
+  data: NonNullable<ChangelogData['msgFileEdits']>;
+  beforeLabel: string;
+  afterLabel: string;
+}) {
   const cols: Column<MsgEntry>[] = [
     {
       key: 'file',
@@ -254,14 +316,14 @@ function MsgSection({ data }: { data: ChangelogData['msgFileEdits'] }) {
     },
     {
       key: 'rowid',
-      label: 'rowid',
+      label: '#',
       width: '8%',
       render: (r) => <span className="cl-muted">{r.rowid}</span>,
       text: (r) => String(r.rowid),
     },
     {
       key: 'before',
-      label: 'Before (v2.3)',
+      label: `Before (${beforeLabel})`,
       render: (r) => (
         <div className="cl-cell-text cl-before">
           <pre>{escapeForDisplay(r.before)}</pre>
@@ -272,7 +334,7 @@ function MsgSection({ data }: { data: ChangelogData['msgFileEdits'] }) {
     },
     {
       key: 'after',
-      label: 'After (v2.31)',
+      label: `After (${afterLabel})`,
       render: (r) => (
         <div className="cl-cell-text cl-after">
           <pre>{escapeForDisplay(r.after)}</pre>
@@ -295,10 +357,63 @@ function MsgSection({ data }: { data: ChangelogData['msgFileEdits'] }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Section: item name edits (new for v2.0..v2.3 — itemname.ofs)
+// ─────────────────────────────────────────────────────────────────────
+
+function ItemNameSection({
+  data,
+  beforeLabel,
+  afterLabel,
+}: {
+  data: NonNullable<ChangelogData['itemNameEdits']>;
+  beforeLabel: string;
+  afterLabel: string;
+}) {
+  const cols: Column<ItemNameEntry>[] = [
+    {
+      key: 'itemId',
+      label: 'Item ID',
+      width: '10%',
+      render: (r) => <code className="cl-mono">{r.itemId}</code>,
+      text: (r) => String(r.itemId),
+    },
+    {
+      key: 'before',
+      label: `Before (${beforeLabel})`,
+      render: (r) => <span className="cl-before-inline">{r.before || '(empty)'}</span>,
+      text: (r) => r.before,
+    },
+    {
+      key: 'after',
+      label: `After (${afterLabel})`,
+      render: (r) => <span className="cl-after-inline">{r.after || '(empty)'}</span>,
+      text: (r) => r.after,
+    },
+  ];
+
+  return (
+    <SearchableTable<ItemNameEntry>
+      caption={<p className="cl-desc">{data.description}</p>}
+      columns={cols}
+      rows={data.entries}
+      initialSort={{ key: 'itemId', dir: 'asc' }}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Section: song retranslations
 // ─────────────────────────────────────────────────────────────────────
 
-function SongSection({ data }: { data: ChangelogData['songRetranslations'] }) {
+function SongSection({
+  data,
+  beforeLabel,
+  afterLabel,
+}: {
+  data: NonNullable<ChangelogData['songRetranslations']>;
+  beforeLabel: string;
+  afterLabel: string;
+}) {
   const cols: Column<SongEntry>[] = [
     {
       key: 'entryId',
@@ -316,13 +431,13 @@ function SongSection({ data }: { data: ChangelogData['songRetranslations'] }) {
     },
     {
       key: 'before',
-      label: 'Before (v2.3)',
+      label: `Before (${beforeLabel})`,
       render: (r) => <span className="cl-before-inline">{r.before}</span>,
       text: (r) => r.before,
     },
     {
       key: 'after',
-      label: 'After (v2.31)',
+      label: `After (${afterLabel})`,
       render: (r) => <span className="cl-after-inline">{r.after}</span>,
       text: (r) => r.after,
     },
@@ -349,7 +464,15 @@ function SongSection({ data }: { data: ChangelogData['songRetranslations'] }) {
 // Section: overlay / ARM9 edits
 // ─────────────────────────────────────────────────────────────────────
 
-function OverlayGroupCard({ group }: { group: OverlayGroup }) {
+function OverlayGroupCard({
+  group,
+  beforeLabel,
+  afterLabel,
+}: {
+  group: OverlayGroup;
+  beforeLabel: string;
+  afterLabel: string;
+}) {
   const cols: Column<OverlayRow>[] = [
     {
       key: 'offset',
@@ -374,14 +497,14 @@ function OverlayGroupCard({ group }: { group: OverlayGroup }) {
     },
     {
       key: 'before',
-      label: 'Before (v2.3)',
+      label: `Before (${beforeLabel})`,
       width: '16%',
       render: (r) => <span className="cl-before-inline">{r.before}</span>,
       text: (r) => r.before,
     },
     {
       key: 'after',
-      label: 'After (v2.31)',
+      label: `After (${afterLabel})`,
       width: '16%',
       render: (r) => <span className="cl-after-inline">{r.after}</span>,
       text: (r) => r.after,
@@ -410,26 +533,41 @@ function OverlayGroupCard({ group }: { group: OverlayGroup }) {
   );
 }
 
-function OverlaySection({ data }: { data: ChangelogData['overlayEdits'] }) {
+function OverlaySection({
+  data,
+  beforeLabel,
+  afterLabel,
+}: {
+  data: NonNullable<ChangelogData['overlayEdits']>;
+  beforeLabel: string;
+  afterLabel: string;
+}) {
   return (
     <>
       <p className="cl-desc">{data.description}</p>
-      <div className="cl-callout">
-        <h3>{data.compressedFlagFix.title}</h3>
-        <p>{data.compressedFlagFix.description}</p>
-        <p className="cl-affected">
-          <strong>Affected overlays:</strong>{' '}
-          {data.compressedFlagFix.affectedOverlays.map((id, i) => (
-            <span key={id}>
-              <code className="cl-mono">ov{id}</code>
-              {i < data.compressedFlagFix.affectedOverlays.length - 1 ? ', ' : ''}
-            </span>
-          ))}
-        </p>
-      </div>
+      {data.compressedFlagFix && (
+        <div className="cl-callout">
+          <h3>{data.compressedFlagFix.title}</h3>
+          <p>{data.compressedFlagFix.description}</p>
+          <p className="cl-affected">
+            <strong>Affected overlays:</strong>{' '}
+            {data.compressedFlagFix.affectedOverlays.map((id, i) => (
+              <span key={id}>
+                <code className="cl-mono">ov{id}</code>
+                {i < data.compressedFlagFix!.affectedOverlays.length - 1 ? ', ' : ''}
+              </span>
+            ))}
+          </p>
+        </div>
+      )}
       <div className="cl-overlay-groups">
         {data.groups.map((g) => (
-          <OverlayGroupCard key={g.id} group={g} />
+          <OverlayGroupCard
+            key={g.id}
+            group={g}
+            beforeLabel={beforeLabel}
+            afterLabel={afterLabel}
+          />
         ))}
       </div>
     </>
@@ -457,29 +595,53 @@ function OtherSection({ items }: { items: ChangelogData['otherChanges'] }) {
 // Top-level
 // ─────────────────────────────────────────────────────────────────────
 
-export default function ChangelogDetail({ data }: Props) {
-  const sections = [
-    {
+function Detail({
+  data,
+  beforeLabel,
+  afterLabel,
+}: {
+  data: ChangelogData;
+  beforeLabel: string;
+  afterLabel: string;
+}) {
+  // Build the TOC dynamically — only sections present in this release
+  // appear in the index and get rendered.
+  const sections: { id: string; label: string; count: number }[] = [];
+  if (data.msgFileEdits) {
+    sections.push({
       id: 'msg',
       label: 'msg file edits',
       count: data.msgFileEdits.entries.length,
-    },
-    {
+    });
+  }
+  if (data.itemNameEdits) {
+    sections.push({
+      id: 'items',
+      label: 'Item name edits',
+      count: data.itemNameEdits.entries.length,
+    });
+  }
+  if (data.songRetranslations) {
+    sections.push({
       id: 'songs',
       label: 'Song retranslations',
       count: data.songRetranslations.entries.length,
-    },
-    {
+    });
+  }
+  if (data.overlayEdits) {
+    sections.push({
       id: 'overlays',
       label: 'Overlay / ARM9 edits',
       count: data.overlayEdits.groups.reduce((n, g) => n + g.rows.length, 0),
-    },
-    {
+    });
+  }
+  if (data.otherChanges && data.otherChanges.length > 0) {
+    sections.push({
       id: 'other',
       label: 'Other byte-level changes',
       count: data.otherChanges.length,
-    },
-  ];
+    });
+  }
 
   return (
     <>
@@ -487,51 +649,182 @@ export default function ChangelogDetail({ data }: Props) {
         {sections.map((s) => (
           <a key={s.id} href={`#${s.id}`} className="cl-toc-item">
             <span className="cl-toc-label">{s.label}</span>
-            <span className="cl-toc-count">{s.count}</span>
+            <span className="cl-toc-count">{s.count.toLocaleString()}</span>
           </a>
         ))}
       </nav>
 
-      <section id="msg" className="cl-section">
-        <h2>
-          msg file edits
-          <span className="cl-section-count">{data.msgFileEdits.entries.length}</span>
-        </h2>
-        <MsgSection data={data.msgFileEdits} />
-        {data.msgFileEdits.entryIdNote && (
-          <p className="cl-footnote">{data.msgFileEdits.entryIdNote}</p>
-        )}
-      </section>
+      {data.msgFileEdits && (
+        <section id="msg" className="cl-section">
+          <h2>
+            msg file edits
+            <span className="cl-section-count">
+              {data.msgFileEdits.entries.length.toLocaleString()}
+            </span>
+          </h2>
+          <MsgSection
+            data={data.msgFileEdits}
+            beforeLabel={beforeLabel}
+            afterLabel={afterLabel}
+          />
+          {data.msgFileEdits.entryIdNote && (
+            <p className="cl-footnote">{data.msgFileEdits.entryIdNote}</p>
+          )}
+        </section>
+      )}
 
-      <section id="songs" className="cl-section">
-        <h2>
-          Song retranslations
-          <span className="cl-section-count">{data.songRetranslations.entries.length}</span>
-        </h2>
-        <SongSection data={data.songRetranslations} />
-      </section>
+      {data.itemNameEdits && (
+        <section id="items" className="cl-section">
+          <h2>
+            Item name edits
+            <span className="cl-section-count">
+              {data.itemNameEdits.entries.length.toLocaleString()}
+            </span>
+          </h2>
+          <ItemNameSection
+            data={data.itemNameEdits}
+            beforeLabel={beforeLabel}
+            afterLabel={afterLabel}
+          />
+        </section>
+      )}
 
-      <section id="overlays" className="cl-section">
-        <h2>
-          Overlay / ARM9 edits
-          <span className="cl-section-count">
-            {data.overlayEdits.groups.reduce((n, g) => n + g.rows.length, 0)}
-          </span>
-        </h2>
-        <OverlaySection data={data.overlayEdits} />
-      </section>
+      {data.songRetranslations && (
+        <section id="songs" className="cl-section">
+          <h2>
+            Song retranslations
+            <span className="cl-section-count">
+              {data.songRetranslations.entries.length.toLocaleString()}
+            </span>
+          </h2>
+          <SongSection
+            data={data.songRetranslations}
+            beforeLabel={beforeLabel}
+            afterLabel={afterLabel}
+          />
+        </section>
+      )}
 
-      <section id="other" className="cl-section">
-        <h2>
-          Other byte-level changes
-          <span className="cl-section-count">{data.otherChanges.length}</span>
-        </h2>
-        <OtherSection items={data.otherChanges} />
-      </section>
+      {data.overlayEdits && (
+        <section id="overlays" className="cl-section">
+          <h2>
+            Overlay / ARM9 edits
+            <span className="cl-section-count">
+              {data.overlayEdits.groups.reduce((n, g) => n + g.rows.length, 0).toLocaleString()}
+            </span>
+          </h2>
+          <OverlaySection
+            data={data.overlayEdits}
+            beforeLabel={beforeLabel}
+            afterLabel={afterLabel}
+          />
+        </section>
+      )}
+
+      {data.otherChanges && data.otherChanges.length > 0 && (
+        <section id="other" className="cl-section">
+          <h2>
+            Other byte-level changes
+            <span className="cl-section-count">{data.otherChanges.length}</span>
+          </h2>
+          <OtherSection items={data.otherChanges} />
+        </section>
+      )}
 
       <style>{styles}</style>
     </>
   );
+}
+
+// Top-level public component. Accepts either pre-loaded `data` (small
+// releases inline at build time) or a `dataUrl` for lazy fetch on mount
+// (large releases — v2.0 is 22 MB of rows).
+export default function ChangelogDetail({
+  data,
+  dataUrl,
+  beforeLabel,
+  afterLabel,
+}: Props) {
+  const [loaded, setLoaded] = useState<ChangelogData | null>(data ?? null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (data || !dataUrl) return;
+    let cancelled = false;
+    fetch(dataUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} fetching ${dataUrl}`);
+        return r.json();
+      })
+      .then((d) => {
+        if (cancelled) return;
+        setLoaded(d as ChangelogData);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err?.message || String(err));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [data, dataUrl]);
+
+  if (error) {
+    return (
+      <div className="cl-banner cl-banner-warn">
+        <strong>Couldn't load the changelog.</strong> {error}{' '}
+        Try refreshing the page; if it keeps failing, the data file may
+        be missing from the server.
+        <style>{`
+          .cl-banner { padding: 14px 18px; border-radius: 14px; font-size: 0.92rem; line-height: 1.5; }
+          .cl-banner-warn { background: #fff1c4; color: #6b4d00; border: 1px solid #f0d68d; }
+        `}</style>
+      </div>
+    );
+  }
+
+  if (!loaded) {
+    return (
+      <div className="cl-loading">
+        <div className="cl-loading-card">
+          <div className="cl-loading-spinner" aria-hidden="true" />
+          <p>
+            Loading changelog data…
+            <br />
+            <span className="cl-loading-note">
+              Older releases can be several MB — this only downloads once
+              per visit.
+            </span>
+          </p>
+        </div>
+        <style>{`
+          .cl-loading { display: flex; justify-content: center; padding: 60px 20px; }
+          .cl-loading-card {
+            display: flex; flex-direction: column; align-items: center; gap: 14px;
+            color: var(--color-ink-soft); text-align: center;
+            background: var(--surface-strong);
+            border: 1px solid var(--color-pink-100);
+            border-radius: 18px;
+            padding: 32px 40px;
+            box-shadow: var(--shadow-soft);
+          }
+          .cl-loading-card p { margin: 0; line-height: 1.6; color: var(--color-ink); }
+          .cl-loading-note { font-size: 0.84rem; color: var(--color-ink-soft); }
+          .cl-loading-spinner {
+            width: 32px; height: 32px; border-radius: 50%;
+            border: 3px solid var(--color-pink-100);
+            border-top-color: var(--color-pink-400);
+            animation: cl-spin 0.9s linear infinite;
+          }
+          @keyframes cl-spin { to { transform: rotate(360deg); } }
+        `}</style>
+      </div>
+    );
+  }
+
+  const bl = beforeLabel ?? loaded.previousVersionLabel ?? 'before';
+  const al = afterLabel ?? `v${loaded.version}`;
+  return <Detail data={loaded} beforeLabel={bl} afterLabel={al} />;
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -840,6 +1133,36 @@ const styles = `
     padding: 24px 12px;
     color: var(--color-ink-soft);
     font-style: italic;
+  }
+
+  /* "Show N more" pagination footer (kicks in for huge tables) */
+  .cl-page-more {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin: 14px 0 4px;
+  }
+  .cl-more-btn {
+    cursor: pointer;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    border: none;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(155, 123, 217, 0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cl-more-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(155, 123, 217, 0.32);
+  }
+  .cl-more-hint {
+    font-size: 0.84rem;
+    color: var(--color-ink-soft);
   }
 
   /* Cell content variants */
