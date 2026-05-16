@@ -37,7 +37,7 @@ const base = import.meta.env.BASE_URL;
       <a href={`${base}/assets/`} class="section-card live">
         <span class="section-emoji">🖼️</span>
         <h3>2D Assets</h3>
-        <p>Item icons, NPC sprites, magic keyboard glyphs, shop screens, title art — every 2D image in the game, with palette and source-container metadata.</p>
+        <p>Item icons, NPC sprites, magic keyboard glyphs, shop screens, title art — plus the composed reference shots: NPC roster cards, pet life-stage charts, recipe flows, animated NSBVA furniture, outfit composites, hair and magazine catalogs.</p>
         <span class="section-cta">Browse →</span>
       </a>
       <a href={`${base}/field-guide/`} class="section-card live">
@@ -52,17 +52,29 @@ const base = import.meta.env.BASE_URL;
         <p>Every 3D model in the game — clothing, NPCs, furniture, caught bugs, environment, magic effects. Spin them in a browser-based viewer with orbit, zoom, and animation playback.</p>
         <span class="section-cta">Open viewer →</span>
       </a>
-      <a href={`${base}/scenes/`} class="section-card live">
-        <span class="section-emoji">🎬</span>
-        <h3>Scenes</h3>
-        <p>Composite renders that pull raw ROM tables into something a human can read — NPC roster cards, pet life-stage charts, recipe flows, animated NSBVA furniture, outfit composites, hair/magazine catalogs.</p>
-        <span class="section-cta">Browse →</span>
+      <a href={`${base}/translation/`} class="section-card live">
+        <span class="section-emoji">💬</span>
+        <h3>Translation</h3>
+        <p>Browse the in-progress dialog database — every textblock in the game with its Japanese source, working English translation, and per-row status.</p>
+        <span class="section-cta">Browse strings →</span>
+      </a>
+      <a href={`${base}/changelog/`} class="section-card live">
+        <span class="section-emoji">📜</span>
+        <h3>Changelog</h3>
+        <p>Every release of the patch, what changed in it, and a per-version detail page with before/after for every translation tweak that shipped.</p>
+        <span class="section-cta">See versions →</span>
       </a>
       <a href={`${base}/bug-reports/`} class="section-card live">
         <span class="section-emoji">🐛</span>
         <h3>Bug Reports</h3>
         <p>Hit something broken in the patch or the site? Drop a report with a screenshot, see what other people are running into, and hit "Me too" on the bugs you care about most.</p>
         <span class="section-cta">Open a report →</span>
+      </a>
+      <a href={`${base}/save-files/`} class="section-card live">
+        <span class="section-emoji">💾</span>
+        <h3>Save Files</h3>
+        <p>Upload your in-progress NDS save file to help debug late-game and save-state issues. Submissions go straight into the triage queue.</p>
+        <span class="section-cta">Submit a save →</span>
       </a>
     </div>
   </section>
