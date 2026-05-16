@@ -1,10 +1,27 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AssetGallery from '../../components/AssetGallery.tsx';
+import LazyImageGrid from '../../components/LazyImageGrid.tsx';
+import NsbvaGrid from '../../components/NsbvaGrid.tsx';
+import petSpecies from '../../data/scenes_pet_aging.json';
+import recipes from '../../data/scenes_cooking.json';
+import outfits from '../../data/scenes_composed.json';
 
-// Manifest is loaded client-side from /data/manifest.json so the
-// page stays static and the gallery only fetches data when visited.
 const base = import.meta.env.BASE_URL;
+const baseTrim = base.replace(/\/$/, '');
+
+const familyShots = [
+  {
+    file: 'hair-catalog.png',
+    caption: 'Hair Catalog',
+    desc: 'Every hairstyle the character creator offers, laid out grid-style with the in-game color palette applied to each.',
+  },
+  {
+    file: 'magazines.png',
+    caption: 'Magazines',
+    desc: 'The big editorial titles that appear on magazine pages — pulled out of the magazine assets and tiled into one spread.',
+  },
+];
 ---
 
 <Layout title="2D Assets">
@@ -25,13 +42,166 @@ const base = import.meta.env.BASE_URL;
     <p class="lede">
       Backgrounds, character creator, hair catalog, animations, design tool logos,
       magic-keyboard buttons, title screens, shop UI, minigame sprites — every 2D
-      image I've cracked out of the ROM and visually validated so far. More
-      categories shipping as their renders come clean (item icons, magazines,
-      NPC sprites, clothing are next).
+      image I've cracked out of the ROM and visually validated so far, plus the
+      composed reference shots built from the underlying tables (NPC roster
+      cards, pet life-stage charts, recipe flows, animated NSBVA furniture,
+      outfit composites, hair and magazine catalogs).
     </p>
+    <nav class="section-jump" aria-label="Asset sections">
+      <a href="#sprites-and-ui">Sprites & UI</a>
+      <a href="#npc-scenes">NPC Scenes</a>
+      <a href="#nsbva-previews">NSBVA Previews</a>
+      <a href="#pet-aging">Pet Aging</a>
+      <a href="#family-showcase">Family Showcase</a>
+      <a href="#cooking-progressions">Cooking Progressions</a>
+      <a href="#composed-outfits">Composed Outfits</a>
+    </nav>
   </section>
 
-  <AssetGallery client:load manifestUrl={`${base}/data/manifest.json`} />
+  <section id="sprites-and-ui" class="asset-section">
+    <h2 class="section-title">Sprites & UI ✦</h2>
+    <p class="section-lede">
+      The raw 2D pulls — item icons, NPC face portraits, magic-keyboard
+      glyphs, shop screens, title art — straight out of their NCGR/NCLR
+      containers, with palette and source metadata attached.
+    </p>
+    <AssetGallery client:load manifestUrl={`${base}/data/manifest.json`} />
+  </section>
+
+  <section id="npc-scenes" class="asset-section">
+    <h2 class="section-title">NPC Scenes ✦</h2>
+    <p class="section-lede">
+      Every speaker in the game has one of these — a single composite shot
+      built from the NPC's face portrait, signature outfit card, the four
+      expression sprites used during dialog, and a sample line in their
+      voice. 252 cards total, indexed by <code>speaker_id</code>. Search by
+      English or Japanese name.
+    </p>
+    <LazyImageGrid
+      client:load
+      manifestUrl={`${baseTrim}/data/scenes_npc.json`}
+      imagePrefix={`${baseTrim}/scenes/npc-scenes`}
+      fileField="file"
+      labelFields={['en', 'jp']}
+      searchFields={['en', 'jp', 'speaker_id']}
+      subField="speaker_id"
+      pageSize={60}
+    />
+  </section>
+
+  <section id="nsbva-previews" class="asset-section">
+    <h2 class="section-title">NSBVA Previews ✦</h2>
+    <p class="section-lede">
+      NSBVA is the DS visibility-bone-animation format — the format the game
+      uses to flip individual mesh shapes on and off across frames, so an
+      object can blink, flicker, open, or rotate without a full skeletal
+      animation. Each card here is one NSBVA entry, played back as an
+      animated APNG, with a contact-strip below showing every frame at a
+      glance. Filter by container to focus on rooms, items, NPCs, etc.
+    </p>
+    <NsbvaGrid
+      client:load
+      manifestUrl={`${baseTrim}/data/scenes_nsbva.json`}
+      imagePrefix={`${baseTrim}/scenes/nsbva-previews`}
+    />
+  </section>
+
+  <section id="pet-aging" class="asset-section">
+    <h2 class="section-title">Pet Aging ✦</h2>
+    <p class="section-lede">
+      How each of the 66 pet species changes across the five life stages —
+      Baby (levels 0–9), Adolescent (10–19), Adult (20–29), Senior (30–39),
+      and Master (40–49). Each row shows the face textures and the body
+      part that swaps in at that stage, with the XP threshold pulled from
+      <code>PcPromotion.bin</code>.
+    </p>
+    <div class="scenes-grid scenes-grid--wide">
+      {petSpecies.map((s: any) => (
+        <figure class="scene-card">
+          <div class="scene-img-wrap">
+            <img src={`${base}/scenes/pet-aging/${s.file}`} alt={`Species ${s.species_idx}`} loading="lazy" />
+          </div>
+          <figcaption>
+            <strong>Species #{String(s.species_idx).padStart(2, '0')}</strong>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <section id="family-showcase" class="asset-section">
+    <h2 class="section-title">Family Showcase ✦</h2>
+    <p class="section-lede">
+      Two big composite renders pulled from the family-showcases batch. The
+      hair catalog is the full hairstyle pool the character creator pulls
+      from. The magazines shot is the headline / banner art that floats
+      over magazine pages in the in-game shop.
+    </p>
+    <div class="family-grid">
+      {familyShots.map(s => (
+        <figure class="family-card">
+          <div class="family-img-wrap">
+            <img src={`${base}/scenes/family-showcase/${s.file}`} alt={s.caption} loading="lazy" />
+          </div>
+          <figcaption>
+            <strong>{s.caption}</strong>
+            <p>{s.desc}</p>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <section id="cooking-progressions" class="asset-section">
+    <h2 class="section-title">Cooking Progressions ✦</h2>
+    <p class="section-lede">
+      Every recipe from the cooking table, visualized as input item → glyph
+      operation → output item. The raw recipe names live in the binary as
+      packed bytes and don't decode cleanly to text yet — for now each
+      progression is labeled by its index in the recipe table, but the
+      state bytes (op code, glyph slot, parameters) are shown so the
+      mechanics of each transformation are legible.
+    </p>
+    <div class="scenes-grid scenes-grid--wide">
+      {recipes.map((r: any) => (
+        <figure class="scene-card">
+          <div class="scene-img-wrap">
+            <img src={`${base}/scenes/cooking-progressions/${r.file}`} alt={`Recipe ${r.recipe_index}`} loading="lazy" />
+          </div>
+          <figcaption>
+            <strong>Recipe #{String(r.recipe_index).padStart(2, '0')}</strong>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
+
+  <section id="composed-outfits" class="asset-section">
+    <h2 class="section-title">Composed Outfits ✦</h2>
+    <p class="section-lede">
+      Sample player outfits assembled from the clothing pool. Each card
+      shows the four equipment slots (top, bottom, hat, shoes) layered
+      into one composed look, with the slot indices used to build it. The
+      ROM doesn't store player save state, so these are illustrative
+      combinations that demonstrate the outfit-composer pipeline working
+      end-to-end against the actual clothing textures.
+    </p>
+    <div class="scenes-grid">
+      {outfits.map((o: any) => (
+        <figure class="scene-card scene-card--hover">
+          <div class="scene-img-wrap">
+            <img src={`${base}/scenes/composed-outfits/${o.file}`} alt={o.name} loading="lazy" />
+          </div>
+          <figcaption>
+            <strong>{o.name}</strong>
+            <p class="slots">
+              top {o.top_idx} · bottom {o.bottom_idx} · hat {o.hat_idx} · shoes {o.shoes_idx}
+            </p>
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  </section>
 </Layout>
 
 <style>
@@ -59,6 +229,15 @@ const base = import.meta.env.BASE_URL;
     color: var(--color-ink);
   }
 
+  .lede code,
+  .section-lede code {
+    background: var(--color-purple-50);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+    font-family: ui-monospace, monospace;
+  }
+
   .header-sprites {
     display: flex;
     align-items: center;
@@ -76,5 +255,156 @@ const base = import.meta.env.BASE_URL;
   .header-sprites img:nth-child(4) {
     width: 48px;
     height: 48px;
+  }
+
+  .section-jump {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .section-jump a {
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--color-purple-50);
+    color: var(--color-purple-600);
+    border: 1px solid var(--color-purple-100);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .section-jump a:hover {
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    border-color: transparent;
+  }
+
+  .asset-section {
+    padding: 36px 0 12px;
+    scroll-margin-top: 80px;
+  }
+
+  .asset-section + .asset-section {
+    border-top: 1px dashed var(--color-pink-100);
+  }
+
+  .section-title {
+    margin: 0 0 8px;
+    color: var(--color-purple-600);
+  }
+
+  .section-lede {
+    max-width: 70ch;
+    line-height: 1.6;
+    color: var(--color-ink-soft);
+    margin: 0 0 18px;
+  }
+
+  .scenes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 18px;
+    padding: 4px 0 20px;
+  }
+
+  .scenes-grid--wide {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+
+  .scene-card {
+    margin: 0;
+    background: var(--surface-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--color-pink-100);
+    overflow: hidden;
+  }
+
+  .scene-card--hover {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .scene-card--hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-pop);
+  }
+
+  .scene-img-wrap {
+    background: #1a1330;
+    display: flex;
+    justify-content: center;
+    padding: 8px;
+  }
+
+  .scene-img-wrap img {
+    max-width: 100%;
+    height: auto;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  .scene-card figcaption {
+    padding: 10px 14px 12px;
+    text-align: center;
+  }
+
+  .scene-card figcaption strong {
+    color: var(--color-purple-600);
+    font-size: 0.95rem;
+  }
+
+  .scene-card .slots {
+    margin: 4px 0 0;
+    color: var(--color-ink-soft);
+    font-size: 0.78rem;
+    font-family: ui-monospace, monospace;
+  }
+
+  .family-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 22px;
+    padding: 4px 0 20px;
+  }
+
+  .family-card {
+    margin: 0;
+    background: var(--surface-strong);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--color-pink-100);
+    overflow: hidden;
+  }
+
+  .family-img-wrap {
+    width: 100%;
+    background: #1a1330;
+    display: flex;
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .family-img-wrap img {
+    max-width: 100%;
+    height: auto;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  .family-card figcaption {
+    padding: 14px 18px 18px;
+  }
+
+  .family-card figcaption strong {
+    color: var(--color-purple-600);
+    font-size: 1.05rem;
+  }
+
+  .family-card figcaption p {
+    margin: 6px 0 0;
+    color: var(--color-ink-soft);
+    font-size: 0.92rem;
+    line-height: 1.5;
   }
 </style>
