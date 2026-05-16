@@ -78,7 +78,7 @@ const PATCH_VERSIONS = ['v2.31', 'v2.3', 'v2.2', 'v2.1', 'v2.0', 'Unpatched', 'U
 const PATCH_VERSION_LABELS: Record<string, string> = {
   Unpatched: 'Unpatched (JP ROM, no fan patch)',
 };
-const DEFAULT_PATCH = 'v2.31';
+const DEFAULT_PATCH = '';
 
 // Common DS save extensions. We don't enforce these strictly server-side
 // (Supabase Storage doesn't care), but the accept attribute keeps the
@@ -92,7 +92,7 @@ interface FileRow {
   id: string;
   file: File;
   source: string;       // resolved value: '' or full label or 'Other: ...'
-  patchVersion: string; // default 'v2.31'
+  patchVersion: string; // '' until user picks
   status: RowStatus;
   error: string | null;
   rowError: string | null; // inline validation error (e.g. missing dropdown)
@@ -488,6 +488,7 @@ export default function SaveFilesBatchForm() {
                           onChange={e => updateRow(row.id, { patchVersion: e.target.value, rowError: null })}
                           disabled={row.status === 'uploading' || row.status === 'done'}
                         >
+                          <option value="">- Pick one -</option>
                           {PATCH_VERSIONS.map(v => (
                             <option key={v} value={v}>{PATCH_VERSION_LABELS[v] || v}</option>
                           ))}
