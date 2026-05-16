@@ -319,6 +319,76 @@ current EN, proposed EN, char budget, overflow flag, and a blank
 "Verdict:" line. Mark verdicts in the Supabase dashboard (Table Editor
 → `edit_suggestions` → change `status`).
 
+## Save-files submission table + private bucket
+
+The `/save-files/` page lets visitors upload their NDS save file with a
+small amount of metadata so Tyler can use real-world saves for debugging
+the patch. Unlike bug-reports, **the bucket is private** — only the
+service-role key (Tyler's admin CLI) can read uploaded files. The page
+visitor never sees anyone else's submissions either.
+
+In the Supabase dashboard, open **SQL Editor → New query**, paste this,
+and click "Run":
+
+```sql
+-- Table -----------------------------------------------------------
+create table save_files (
+  id bigint primary key generated always as identity,
+  filename text not null,
+  file_path text not null,        -- path inside the 'save-files' bucket
+  file_size_bytes int not null,
+  save_source text not null,      -- e.g. "melonDS", "TWiLight Menu++ + nds-bootstrap (Luma3DS CFW)", "Other: my custom setup"
+  patch_version text,             -- "v2.31" / "Unsure" / null
+  debug_reason text,              -- user's explanation, nullable
+  game_progress text,             -- "Year 2, second-year class" / null
+  submitter text,                 -- handle / null
+  status text not null default 'pending'
+    check (status in ('pending','reviewed','useful','duplicate','archived')),
+  created_at timestamptz not null default now()
+);
+
+-- Row-Level Security ---------------------------------------------
+alter table save_files enable row level security;
+
+-- Anyone can insert (anonymous form submission).
+create policy insert_save_files on save_files
+  for insert with check (true);
+
+-- Nobody can read via the anon key — visitors don't see each other's
+-- submissions, and Tyler's CLI uses the service-role key which bypasses
+-- RLS. (Updates / deletes also only via service role — no policy needed.)
+create policy read_save_files_blocked on save_files
+  for select using (false);
+```
+
+## Save-files storage bucket
+
+1. In the dashboard, go to **Storage → New bucket**.
+2. Name it exactly `save-files`.
+3. **Leave "Public bucket" OFF.** These files contain user game data.
+4. Click "Create bucket".
+
+Then add storage policies. Open **SQL Editor → New query** and run:
+
+```sql
+-- Anyone (including anon) can upload INTO the save-files bucket.
+create policy save_files_insert on storage.objects
+  for insert with check (bucket_id = 'save-files');
+
+-- Nobody can read via anon. service_role bypasses RLS so Tyler's admin
+-- CLI still downloads fine.
+create policy save_files_owner_read on storage.objects
+  for select using (false);
+```
+
+That's it. The save-files submission form on `/save-files/` will now
+write metadata into `save_files` and upload the actual save into the
+`save-files` bucket under `<YYYY>/<MM>/<uuid>/<original-filename>`.
+
+To manage submissions: see `src/translator/_admin_save_files.py` in the
+translation repo (`list`, `download`, `set-status`, `delete`
+subcommands).
+
 ## Cost
 
 Free tier limits are generous for a fan-site bug board:

@@ -10,6 +10,7 @@ export const supabase: SupabaseClient | null = supabaseConfigured
   : null;
 
 export const BUG_BUCKET = 'bug-report-images';
+export const SAVE_FILES_BUCKET = 'save-files';
 
 const SESSION_KEY = 'tongari-anon-session';
 

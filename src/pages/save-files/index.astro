@@ -1,0 +1,94 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import SaveFilesForm from '../../components/SaveFilesForm.tsx';
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="Submit a save file">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>Save Files</span>
+    </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/key.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-tall.png`} alt="" />
+      <img src={`${base}/decorations/quill-pen.png`} alt="" />
+    </div>
+    <h1>Submit a save file ✦</h1>
+    <p class="lede">
+      Got a Tongari Boushi save file from anywhere — emulator, flashcart,
+      original cartridge dump? Send it over. Late-game saves are especially
+      useful for verifying menus, shop screens, and post-credits content
+      that early-game testers can't reach. The more variety we get, the
+      faster I can chase down bugs that only show up after years of in-game
+      progress.
+    </p>
+    <p class="privacy">
+      <strong>Heads-up on privacy:</strong> your save almost certainly
+      contains your in-game character name, your house decoration, and your
+      play history. Uploaded files are <em>not</em> public — only I can
+      access the bucket. But if you'd rather not share that data at all,
+      just skip the upload. No hard feelings.
+    </p>
+  </section>
+
+  <SaveFilesForm client:load />
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 20px;
+  }
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+  .header-sprites {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 6px 0 4px;
+    opacity: 0.78;
+  }
+  .header-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+  .header-sprites img:nth-child(2) {
+    width: 48px;
+    height: 48px;
+  }
+  .lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+  .privacy {
+    max-width: 64ch;
+    line-height: 1.55;
+    color: var(--color-ink);
+    background: linear-gradient(135deg, var(--color-pink-50), var(--color-purple-50));
+    border: 1px solid var(--color-pink-100);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 0.92rem;
+  }
+  .privacy strong {
+    color: var(--color-pink-600);
+  }
+  .privacy em {
+    color: var(--color-purple-600);
+    font-style: italic;
+  }
+</style>
