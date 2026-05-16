@@ -27,13 +27,14 @@ const baseNorm = base.replace(/\/$/, '');
     </a>
   </div>
   <nav class="site-nav" aria-label="Primary">
-    <details class="nav-collapser">
-      <summary class="nav-toggle" aria-label="Open navigation">
+    <div class="nav-inner">
+      <input type="checkbox" id="nav-toggle" class="nav-toggle-checkbox" aria-hidden="true" tabindex="-1" />
+      <label for="nav-toggle" class="nav-toggle" aria-label="Toggle navigation">
         <span class="nav-toggle-bars" aria-hidden="true">
           <span></span><span></span><span></span>
         </span>
         <span class="nav-toggle-label">Menu</span>
-      </summary>
+      </label>
       <ul class="nav-list">
         {sections.map(s => {
           const norm = s.href.replace(/\/$/, '');
@@ -48,7 +49,7 @@ const baseNorm = base.replace(/\/$/, '');
           );
         })}
       </ul>
-    </details>
+    </div>
   </nav>
 </header>
 
@@ -114,18 +115,26 @@ const baseNorm = base.replace(/\/$/, '');
     padding-bottom: 6px;
   }
 
-  /* Hide the <details> arrow + the toggle button on desktop. The list
-     just lays out horizontally. */
-  .nav-collapser {
+  .nav-inner {
     max-width: 1180px;
     margin: 0 auto;
     padding: 6px 24px 4px;
   }
 
-  /* Strip default <summary> styling. It's only used on mobile. */
+  /* CSS-only collapse: hidden checkbox drives a sibling :checked selector
+     to expand the list on mobile. The toggle label is the visible
+     hamburger pill. No <details>, no JS. */
+  .nav-toggle-checkbox {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .nav-toggle {
     display: none;
-    list-style: none;
     align-items: center;
     gap: 10px;
     padding: 10px 14px;
@@ -137,10 +146,8 @@ const baseNorm = base.replace(/\/$/, '');
     width: fit-content;
     border: 1px solid var(--color-purple-100);
     box-shadow: var(--shadow-soft);
+    user-select: none;
   }
-
-  .nav-toggle::-webkit-details-marker { display: none; }
-  .nav-toggle::marker { content: ''; }
 
   .nav-toggle-bars {
     display: inline-flex;
@@ -159,6 +166,7 @@ const baseNorm = base.replace(/\/$/, '');
     border-radius: 2px;
   }
 
+  /* Desktop default: list is always a horizontal flex strip. */
   .nav-list {
     display: flex;
     gap: 6px;
@@ -167,18 +175,6 @@ const baseNorm = base.replace(/\/$/, '');
     list-style: none;
     margin: 0;
     padding: 4px 0 6px;
-  }
-
-  /* Browsers hide <details> children (other than <summary>) by default
-     when the details is not [open]. On desktop the .nav-toggle summary
-     is hidden via display:none, so there's no way to open the details
-     and the list stays invisible. Force the list visible on desktop
-     regardless of details state. The mobile media query below restores
-     the collapse-by-default behavior. */
-  @media (min-width: 721px) {
-    details.nav-collapser > .nav-list {
-      display: flex !important;
-    }
   }
 
   .nav-link {
@@ -200,7 +196,8 @@ const baseNorm = base.replace(/\/$/, '');
     color: white;
   }
 
-  /* Mobile: show the hamburger summary, collapse the list under it. */
+  /* Mobile: show the hamburger label, collapse the list under it.
+     :checked sibling selector expands. */
   @media (max-width: 720px) {
     .header-brand-row {
       padding-top: 12px;
@@ -215,7 +212,7 @@ const baseNorm = base.replace(/\/$/, '');
       font-size: 0.7rem;
     }
 
-    .nav-collapser {
+    .nav-inner {
       padding: 6px 16px 10px;
     }
 
@@ -224,10 +221,19 @@ const baseNorm = base.replace(/\/$/, '');
     }
 
     .nav-list {
+      display: none;
       flex-direction: column;
       align-items: stretch;
       gap: 4px;
       padding: 10px 0 4px;
+    }
+
+    .nav-toggle-checkbox:checked ~ .nav-list {
+      display: flex;
+    }
+
+    .nav-toggle-checkbox:checked ~ .nav-toggle {
+      background: linear-gradient(135deg, var(--color-pink-100), var(--color-purple-100));
     }
 
     .nav-list li {
@@ -238,12 +244,6 @@ const baseNorm = base.replace(/\/$/, '');
       display: block;
       text-align: center;
       padding: 10px 14px;
-    }
-
-    /* When details is open, the chevron-style "Menu" pill stays visible
-       and the link list drops underneath it. */
-    details[open] .nav-toggle {
-      background: linear-gradient(135deg, var(--color-pink-100), var(--color-purple-100));
     }
   }
 </style>
