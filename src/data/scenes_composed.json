@@ -1,0 +1,122 @@
+[
+  {
+    "name": "Kimono Outfit",
+    "file": "kimono-outfit.png",
+    "top_idx": 0,
+    "bottom_idx": 0,
+    "hat_idx": 0,
+    "shoes_idx": 0
+  },
+  {
+    "name": "Casual Spring",
+    "file": "casual-spring.png",
+    "top_idx": 50,
+    "bottom_idx": 50,
+    "hat_idx": 20,
+    "shoes_idx": 10
+  },
+  {
+    "name": "Summer Beach",
+    "file": "summer-beach.png",
+    "top_idx": 100,
+    "bottom_idx": 80,
+    "hat_idx": 30,
+    "shoes_idx": 20
+  },
+  {
+    "name": "Sporty Look",
+    "file": "sporty-look.png",
+    "top_idx": 150,
+    "bottom_idx": 120,
+    "hat_idx": 40,
+    "shoes_idx": 30
+  },
+  {
+    "name": "Rocker Style",
+    "file": "rocker-style.png",
+    "top_idx": 200,
+    "bottom_idx": 150,
+    "hat_idx": 50,
+    "shoes_idx": 40
+  },
+  {
+    "name": "Idol Stage",
+    "file": "idol-stage.png",
+    "top_idx": 250,
+    "bottom_idx": 180,
+    "hat_idx": 60,
+    "shoes_idx": 50
+  },
+  {
+    "name": "Princess Dress",
+    "file": "princess-dress.png",
+    "top_idx": 300,
+    "bottom_idx": 0,
+    "hat_idx": 70,
+    "shoes_idx": 60
+  },
+  {
+    "name": "Autumn Walk",
+    "file": "autumn-walk.png",
+    "top_idx": 350,
+    "bottom_idx": 50,
+    "hat_idx": 80,
+    "shoes_idx": 10
+  },
+  {
+    "name": "Winter Layers",
+    "file": "winter-layers.png",
+    "top_idx": 400,
+    "bottom_idx": 100,
+    "hat_idx": 90,
+    "shoes_idx": 20
+  },
+  {
+    "name": "Magic Robe",
+    "file": "magic-robe.png",
+    "top_idx": 450,
+    "bottom_idx": 150,
+    "hat_idx": 100,
+    "shoes_idx": 30
+  },
+  {
+    "name": "Punk Edge",
+    "file": "punk-edge.png",
+    "top_idx": 500,
+    "bottom_idx": 180,
+    "hat_idx": 70,
+    "shoes_idx": 40
+  },
+  {
+    "name": "Cute Pop",
+    "file": "cute-pop.png",
+    "top_idx": 550,
+    "bottom_idx": 50,
+    "hat_idx": 60,
+    "shoes_idx": 50
+  },
+  {
+    "name": "Royal Court",
+    "file": "royal-court.png",
+    "top_idx": 0,
+    "bottom_idx": 200,
+    "hat_idx": 50,
+    "shoes_idx": 60
+  },
+  {
+    "name": "Sailor School",
+    "file": "sailor-school.png",
+    "top_idx": 100,
+    "bottom_idx": 100,
+    "hat_idx": 80,
+    "shoes_idx": 10
+  },
+  {
+    "name": "Festival Yukata",
+    "file": "festival-yukata.png",
+    "top_idx": 200,
+    "bottom_idx": 50,
+    "hat_idx": 20,
+    "shoes_idx": 20
+  }
+]

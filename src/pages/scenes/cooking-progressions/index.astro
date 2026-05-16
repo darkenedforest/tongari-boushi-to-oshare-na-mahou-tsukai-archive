@@ -1,0 +1,88 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import recipes from '../../../data/scenes_cooking.json';
+
+const base = import.meta.env.BASE_URL;
+---
+
+<Layout title="Cooking Progressions">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <a href={`${base}/scenes/`}>Scenes</a>
+      <span aria-hidden="true">›</span>
+      <span>Cooking Progressions</span>
+    </p>
+    <h1>Cooking Progressions ✦</h1>
+    <p class="lede">
+      Every recipe from the cooking table, visualized as input item → glyph
+      operation → output item. The raw recipe names live in the binary as
+      packed bytes and don't decode cleanly to text yet — for now each
+      progression is labeled by its index in the recipe table, but the
+      state bytes (op code, glyph slot, parameters) are shown so the
+      mechanics of each transformation are legible.
+    </p>
+  </section>
+
+  <section class="grid">
+    {recipes.map((r: any) => (
+      <figure class="card">
+        <div class="img-wrap">
+          <img src={`${base}/scenes/cooking-progressions/${r.file}`} alt={`Recipe ${r.recipe_index}`} loading="lazy" />
+        </div>
+        <figcaption>
+          <strong>Recipe #{String(r.recipe_index).padStart(2, '0')}</strong>
+        </figcaption>
+      </figure>
+    ))}
+  </section>
+</Layout>
+
+<style>
+  .page-header { padding: 40px 0 12px; }
+  .breadcrumb {
+    display: flex; gap: 8px; align-items: center;
+    color: var(--color-ink-soft); font-size: 0.9rem; margin: 0 0 12px;
+  }
+  .breadcrumb a { color: var(--color-purple-400); font-weight: 600; }
+  .lede { max-width: 64ch; line-height: 1.6; color: var(--color-ink); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+    padding: 16px 0 60px;
+  }
+
+  .card {
+    margin: 0;
+    background: var(--surface-strong);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    border: 1px solid var(--color-pink-100);
+    overflow: hidden;
+  }
+
+  .img-wrap {
+    background: #1a1330;
+    display: flex; justify-content: center;
+    padding: 8px;
+  }
+
+  .img-wrap img {
+    max-width: 100%;
+    height: auto;
+    image-rendering: -webkit-optimize-contrast;
+  }
+
+  figcaption {
+    padding: 8px 14px 12px;
+    text-align: center;
+  }
+
+  figcaption strong {
+    color: var(--color-purple-600);
+    font-size: 0.92rem;
+  }
+</style>
