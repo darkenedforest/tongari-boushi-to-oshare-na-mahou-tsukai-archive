@@ -340,12 +340,15 @@ create table save_files (
   save_source text not null,      -- e.g. "melonDS", "TWiLight Menu++ + nds-bootstrap (Luma3DS CFW)", "Other: my custom setup"
   patch_version text,             -- "v2.31" / "Unsure" / null
   debug_reason text,              -- user's explanation, nullable
-  game_progress text,             -- "Year 2, second-year class" / null
   submitter text,                 -- handle / null
   status text not null default 'pending'
     check (status in ('pending','reviewed','useful','duplicate','archived')),
   created_at timestamptz not null default now()
 );
+
+-- If you already created save_files with an earlier schema that had a
+-- game_progress column, drop it (the form no longer sends that field):
+alter table save_files drop column if exists game_progress;
 
 -- Row-Level Security ---------------------------------------------
 alter table save_files enable row level security;

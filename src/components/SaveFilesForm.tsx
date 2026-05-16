@@ -71,7 +71,6 @@ const SAVE_SOURCE_OPTIONS: { label: string; items: string[] }[] = [
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB ceiling
 const MAX_REASON = 500;
-const MAX_PROGRESS = 200;
 const MAX_AUTHOR = 40;
 
 const OTHER_SENTINEL = '__OTHER__';
@@ -114,7 +113,6 @@ export default function SaveFilesForm() {
   const [source, setSource] = useState<string>('');
   const [patchVersion, setPatchVersion] = useState('');
   const [reason, setReason] = useState('');
-  const [progress, setProgress] = useState('');
   const [submitter, setSubmitter] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [busy, setBusy] = useState(false);
@@ -152,7 +150,6 @@ export default function SaveFilesForm() {
     setSource('');
     setPatchVersion('');
     setReason('');
-    setProgress('');
     setSubmitter('');
     if (fileInput.current) fileInput.current.value = '';
   }
@@ -208,7 +205,6 @@ export default function SaveFilesForm() {
         save_source: sourceTrimmed.slice(0, 120),
         patch_version: patchVersion ? patchVersion.slice(0, 40) : null,
         debug_reason: reason.trim() ? reason.trim().slice(0, MAX_REASON) : null,
-        game_progress: progress.trim() ? progress.trim().slice(0, MAX_PROGRESS) : null,
         submitter: submitter.trim() ? submitter.trim().slice(0, MAX_AUTHOR) : null,
       };
       const { error: insErr } = await supabase.from('save_files').insert(insertPayload);
@@ -333,17 +329,6 @@ export default function SaveFilesForm() {
             maxLength={MAX_REASON}
           />
           <span className="field-hint counter">{reason.length} / {MAX_REASON}</span>
-        </label>
-
-        <label className="field">
-          <span className="field-label">Where are you in the game? (optional)</span>
-          <input
-            type="text"
-            value={progress}
-            onChange={e => setProgress(e.target.value)}
-            placeholder="e.g. 'Year 2, just transferred to second-year class' or 'post-credits, all extras'."
-            maxLength={MAX_PROGRESS}
-          />
         </label>
 
         <label className="field">

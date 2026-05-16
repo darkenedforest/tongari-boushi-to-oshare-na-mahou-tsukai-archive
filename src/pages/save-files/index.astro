@@ -20,11 +20,14 @@ const base = import.meta.env.BASE_URL;
     <h1>Submit a save file ✦</h1>
     <p class="lede">
       Got a Tongari Boushi save file from anywhere — emulator, flashcart,
-      original cartridge dump? Send it over. Late-game saves are especially
-      useful for verifying menus, shop screens, and post-credits content
-      that early-game testers can't reach. The more variety we get, the
-      faster I can chase down bugs that only show up after years of in-game
-      progress.
+      original cartridge dump? Send it over. Any save helps for verifying
+      menus, shop screens, and event triggers. The more variety we get,
+      the faster I can chase down bugs.
+    </p>
+    <p class="jp-note">
+      <strong>JP-version saves are welcome too</strong> — any ROM revision,
+      any region. If you've been playing on the original Japanese cart or
+      a JP ROM dump, those saves are just as useful as patched-ROM saves.
     </p>
     <p class="privacy">
       <strong>Heads-up on privacy:</strong> your save almost certainly
@@ -73,6 +76,21 @@ const base = import.meta.env.BASE_URL;
     max-width: 64ch;
     line-height: 1.6;
     color: var(--color-ink);
+  }
+  .jp-note {
+    max-width: 64ch;
+    line-height: 1.55;
+    color: var(--color-ink);
+    background: var(--color-purple-50);
+    border: 1px solid var(--color-purple-100);
+    border-left: 4px solid var(--color-purple-400);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    font-size: 0.92rem;
+    margin: 8px 0;
+  }
+  .jp-note strong {
+    color: var(--color-purple-600);
   }
   .privacy {
     max-width: 64ch;
