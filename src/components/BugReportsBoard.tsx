@@ -434,6 +434,7 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [posted, setPosted] = useState(false);
 
   async function submit() {
     setErr(null);
@@ -450,9 +451,12 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
         author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
       });
       if (error) throw error;
-      setAuthor('');
+      // Clear the body but KEEP the form open so multiple replies in a row
+      // are easy. Keep the typed name too (people usually post under the same
+      // name in a thread). Show a brief 'Posted!' flash so the user knows.
       setBody('');
-      setOpen(false);
+      setPosted(true);
+      window.setTimeout(() => setPosted(false), 2500);
       onPosted();
     } catch (e: any) {
       setErr(e?.message || String(e));
@@ -487,9 +491,10 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
         required
       />
       {err && <div className="form-error">{err}</div>}
+      {posted && <div className="form-posted">✓ Posted. Type another reply or click Close.</div>}
       <div className="comment-form-actions">
-        <button type="button" className="cancel-btn small" onClick={() => setOpen(false)} disabled={busy}>Cancel</button>
-        <button type="submit" className="submit-btn small" disabled={busy}>{busy ? 'Posting…' : 'Add comment'}</button>
+        <button type="button" className="cancel-btn small" onClick={() => { setOpen(false); setPosted(false); }} disabled={busy}>Close</button>
+        <button type="submit" className="submit-btn small" disabled={busy}>{busy ? 'Posting…' : 'Post reply'}</button>
       </div>
     </form>
   );
@@ -901,6 +906,7 @@ export default function BugReportsBoard() {
           font: inherit; resize: vertical;
         }
         .comment-form-actions { display: flex; gap: 6px; justify-content: flex-end; }
+        .form-posted { color: #2c8a4a; background: #d9f3df; padding: 6px 10px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 600; }
 
         .comments {
           margin-top: 14px; padding-top: 14px;
