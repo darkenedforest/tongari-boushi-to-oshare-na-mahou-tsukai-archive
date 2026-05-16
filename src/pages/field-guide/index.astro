@@ -25,15 +25,15 @@ const base = import.meta.env.BASE_URL;
   <div class="fg-cards">
     <a href={`${base}/field-guide/2d-art/`} class="fg-card">
       <h3>2D Art</h3>
-      <p>The kinds of images in the game — item icons, magic glyphs, NPC portraits, background screens — and the rules for finding the right palette for each.</p>
+      <p>The kinds of images in the game — item icons, magic glyphs, NPC portraits, background screens, the 63-page magazine system, and the 140 NPC stamps — and the rules for finding the right palette for each.</p>
     </a>
     <a href={`${base}/field-guide/file-formats/`} class="fg-card">
       <h3>File Formats</h3>
-      <p>Every container and wire format I've decoded: RESO, RESC, LZ11, the Nintendo Nitro graphics formats, the game's custom Konami extensions.</p>
+      <p>Every container and wire format I've decoded: RESO, RESC, LZ11, the Nintendo Nitro graphics formats, the game's custom Konami extensions, and the SZL-wrapped <code>recipe/</code> folder.</p>
     </a>
     <a href={`${base}/field-guide/how-the-game-works/`} class="fg-card">
       <h3>How the Game Works</h3>
-      <p>How the engine actually runs: the overlay system, the content cache, how a 2D UI screen gets composed from a recipe, and how sprites reach the screen.</p>
+      <p>How the engine actually runs: the overlay system (with the per-overlay knowledgebase), the content cache, how a 2D UI screen gets composed from a recipe, and how sprites reach the screen.</p>
     </a>
     <a href={`${base}/field-guide/message-system/`} class="fg-card">
       <h3>The Message System</h3>
@@ -41,7 +41,7 @@ const base = import.meta.env.BASE_URL;
     </a>
     <a href={`${base}/field-guide/names-and-words/`} class="fg-card">
       <h3>Names &amp; Words</h3>
-      <p>The 377 magic glyphs on the player's keyboard, the cooking recipe slots with their variant keys, and the ARM9 menu pool that holds short action verbs like "Hold" and "Place."</p>
+      <p>The 377 magic glyphs on the player's keyboard (sourced from <code>2d/inputmagic/msg.ofs</code>), the cooking recipe slots with their variant keys, and the ARM9 menu pool that holds short action verbs like "Hold" and "Place."</p>
     </a>
     <a href={`${base}/field-guide/translation-canon/`} class="fg-card">
       <h3>Translation Canon</h3>

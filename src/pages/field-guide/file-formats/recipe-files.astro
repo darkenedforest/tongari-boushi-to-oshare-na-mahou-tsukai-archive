@@ -1,0 +1,143 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The recipe/ folder"
+  description="Three files behind cooking. A RESC-based recipe database, a custom-stride narration table, and a binary item_id lookup — all wrapped in Konami's SZL + LZ11 outer envelope."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'Recipe files' },
+  ]}
+>
+  <p>
+    The cooking minigame uses its own little ecosystem of files in
+    <code>data/recipe/</code>. Three files, three completely different
+    inner formats — but all wearing the same outer wrapper. Two of them
+    carry text; one is pure binary lookup.
+  </p>
+
+  <p>
+    This page is the file-format spec. The actual list of dish names and
+    variant keys lives on
+    <a href={`${base}/field-guide/names-and-words/food-recipes/`}>the UCC food recipe slots page</a>
+    — note that the UCC food slots are a <em>different</em> file
+    (<code>data/ucc/names.ofs</code>), even though the player-facing
+    feature overlaps.
+  </p>
+
+  <h2>The three files</h2>
+  <table>
+    <thead><tr><th>File</th><th>Packed → decompressed</th><th>Inner format</th><th>Contains</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>recipe/recipedata.lzs</code></td>
+        <td>1,536 → 2,272</td>
+        <td>RESC v3.11, 48-byte entry stride</td>
+        <td>10 category labels, 11 recipe names, 13 "Mysterious Soup" placeholder slots</td>
+      </tr>
+      <tr>
+        <td><code>recipe/recipemsg.lzs</code></td>
+        <td>1,576 → 3,658</td>
+        <td>Custom 34-record table (stride 56) + UTF-16-LE blob</td>
+        <td>87 unique cooking-procedure narration strings</td>
+      </tr>
+      <tr>
+        <td><code>recipe/mgcinfo.lzs</code></td>
+        <td>272 → 520</td>
+        <td>Pure binary <code>item_id</code> lookup</td>
+        <td>No text</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>The outer wrapper (all three files)</h2>
+  <p>
+    Every file in <code>recipe/</code> uses the same Konami outer envelope: a
+    16-byte <code>SZL</code> header followed by an
+    <a href={`${base}/field-guide/file-formats/lz11/`}>LZ11</a> stream.
+    The header layout is:
+  </p>
+  <pre><code>{`offset  size  meaning
+------  ----  ---------------------------------------------------
+0x00    4     "1.00"               version string, ASCII
+0x04    12    \\x00 × 12            padding (always zero)
+0x10    4     file-specific tag    distinguishes which inner format follows`}</code></pre>
+
+  <p>
+    The 4-byte tag is the only part that varies between the three files,
+    and it is <strong>load-bearing</strong> — the engine uses it to pick
+    the right inner parser. On re-emit, the tag must be preserved
+    byte-for-byte:
+  </p>
+
+  <table>
+    <thead><tr><th>File</th><th>Tag bytes (hex)</th><th>Reads as</th></tr></thead>
+    <tbody>
+      <tr><td><code>recipedata.lzs</code></td><td><code>00 73 65 72</code></td><td><code>\\x00ser</code></td></tr>
+      <tr><td><code>recipemsg.lzs</code></td><td><code>73 6D 63 72</code></td><td><code>smcr</code></td></tr>
+      <tr><td><code>mgcinfo.lzs</code></td><td><code>00 6E 69 62</code></td><td><code>\\x00nib</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2><code>recipedata.lzs</code> — RESC v3.11</h2>
+  <p>
+    Once the SZL + LZ11 layers are stripped, this file is an
+    <a href={`${base}/field-guide/file-formats/resc/`}>RESC container</a>
+    with magic <code>RESC</code> (not the more common <code>RESO</code>),
+    version <code>3.11</code>, 48-byte entry stride. The entries hold:
+  </p>
+  <ul>
+    <li><strong>10 category labels</strong> — top-level menu categories.</li>
+    <li><strong>11 recipe names</strong> — the actual named dishes.</li>
+    <li><strong>13 "Mysterious Soup" placeholder slots</strong> — generic fallbacks the engine fills in when the player makes something unrecognised.</li>
+  </ul>
+  <p>
+    Ingredient references inside <code>recipedata.lzs</code> are stored
+    as <code>item_id</code> integers, <em>not</em> as text. To know that
+    "egg" is at slot N you have to cross-reference the item table; you
+    cannot translate this file in isolation from items.
+  </p>
+
+  <h2><code>recipemsg.lzs</code> — custom 34-record table</h2>
+  <p>
+    This file does not reuse RESC. Instead it has its own bespoke layout:
+  </p>
+  <ul>
+    <li>34 records of stride 56 bytes each (1,904 bytes total).</li>
+    <li>Each record points into a UTF-16-LE string blob that follows the table.</li>
+    <li>The blob holds <strong>87 unique cooking-procedure narration strings</strong> — the descriptive lines the engine speaks while a dish is being made ("you carefully stir in the egg…").</li>
+    <li>The record-to-string mapping is many-to-many: a single narration line can be referenced by multiple records.</li>
+  </ul>
+
+  <h2><code>mgcinfo.lzs</code> — binary <code>item_id</code> lookup</h2>
+  <p>
+    After SZL + LZ11 strip-down this file is 520 bytes of pure binary
+    <code>item_id</code> data. There are no strings, no header, just
+    fixed-width integer slots used by the cooking minigame to map game
+    state to specific items. Nothing here needs translating.
+  </p>
+
+  <h2>Re-emit constraints (status: deferred)</h2>
+  <div class="fg-note">
+    Recipe pipeline integration is <strong>deferred to a follow-up
+    release</strong>. We have the format spec but no end-to-end re-emit
+    tooling that round-trips all three files yet. The format is documented
+    here so the work can be picked up later without re-deriving everything.
+  </div>
+  <ul>
+    <li>Preserve the 4-byte tag at SZL offset <code>+0x10</code> per file.</li>
+    <li><code>recipedata.lzs</code> entries must stay 48 bytes (RESC stride).</li>
+    <li><code>recipemsg.lzs</code> records must stay 56 bytes; the string blob can grow but every record's pointer needs to be recomputed.</li>
+    <li><code>mgcinfo.lzs</code> is read by offset, so its layout must not move.</li>
+  </ul>
+
+  <h2>Related</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/file-formats/resc/`}>RESC containers</a> — the inner format of <code>recipedata.lzs</code>.</li>
+    <li><a href={`${base}/field-guide/file-formats/lz11/`}>LZ11 compression</a> — what sits under the SZL wrapper.</li>
+    <li><a href={`${base}/field-guide/names-and-words/food-recipes/`}>UCC food recipe slots</a> — different file, but the player-facing feature overlaps.</li>
+  </ul>
+</FieldGuideLayout>

@@ -17,7 +17,7 @@ const baseNorm = base.replace(/\/$/, '');
 ---
 
 <header class="site-header">
-  <div class="container header-inner">
+  <div class="container header-brand-row">
     <a href={`${base}/`} class="brand">
       <span class="brand-hat" aria-hidden="true">🎩</span>
       <span class="brand-text">
@@ -25,7 +25,15 @@ const baseNorm = base.replace(/\/$/, '');
         <span class="brand-subtitle">to Oshare na Mahou Tsukai — Archive</span>
       </span>
     </a>
-    <nav>
+  </div>
+  <nav class="site-nav" aria-label="Primary">
+    <details class="nav-collapser">
+      <summary class="nav-toggle" aria-label="Open navigation">
+        <span class="nav-toggle-bars" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </span>
+        <span class="nav-toggle-label">Menu</span>
+      </summary>
       <ul class="nav-list">
         {sections.map(s => {
           const norm = s.href.replace(/\/$/, '');
@@ -40,8 +48,8 @@ const baseNorm = base.replace(/\/$/, '');
           );
         })}
       </ul>
-    </nav>
-  </div>
+    </details>
+  </nav>
 </header>
 
 <style>
@@ -54,16 +62,16 @@ const baseNorm = base.replace(/\/$/, '');
     border-bottom: 1px solid var(--color-pink-100);
   }
 
-  .header-inner {
+  .header-brand-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding-top: 14px;
-    padding-bottom: 14px;
+    justify-content: center;
+    padding-top: 16px;
+    padding-bottom: 10px;
   }
 
   .brand {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 12px;
     text-decoration: none;
@@ -71,7 +79,7 @@ const baseNorm = base.replace(/\/$/, '');
   }
 
   .brand-hat {
-    font-size: 1.6rem;
+    font-size: 1.9rem;
     filter: drop-shadow(0 2px 4px rgba(155, 123, 217, 0.3));
   }
 
@@ -79,29 +87,86 @@ const baseNorm = base.replace(/\/$/, '');
     display: flex;
     flex-direction: column;
     line-height: 1.05;
+    text-align: left;
   }
 
   .brand-title {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.15rem;
+    font-size: 1.35rem;
     color: var(--color-pink-600);
     letter-spacing: 0.01em;
   }
 
   .brand-subtitle {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     color: var(--color-ink-soft);
     font-weight: 600;
     margin-top: 2px;
   }
 
+  /* Nav row spans the full viewport width, with the link strip itself
+     centered inside the .container max width. */
+  .site-nav {
+    width: 100%;
+    border-top: 1px solid rgba(255, 174, 206, 0.35);
+    background: linear-gradient(180deg, rgba(255, 240, 246, 0.55), rgba(245, 240, 255, 0.45));
+    padding-bottom: 6px;
+  }
+
+  /* Hide the <details> arrow + the toggle button on desktop. The list
+     just lays out horizontally. */
+  .nav-collapser {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 6px 24px 4px;
+  }
+
+  /* Strip default <summary> styling. It's only used on mobile. */
+  .nav-toggle {
+    display: none;
+    list-style: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-strong);
+    color: var(--color-purple-600);
+    font-weight: 700;
+    cursor: pointer;
+    width: fit-content;
+    border: 1px solid var(--color-purple-100);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .nav-toggle::-webkit-details-marker { display: none; }
+  .nav-toggle::marker { content: ''; }
+
+  .nav-toggle-bars {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    width: 18px;
+    height: 14px;
+  }
+
+  .nav-toggle-bars span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: linear-gradient(90deg, var(--color-pink-400), var(--color-purple-400));
+    border-radius: 2px;
+  }
+
   .nav-list {
     display: flex;
     gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 4px 0 6px;
   }
 
   .nav-link {
@@ -121,5 +186,52 @@ const baseNorm = base.replace(/\/$/, '');
   .nav-link.active {
     background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
     color: white;
+  }
+
+  /* Mobile: show the hamburger summary, collapse the list under it. */
+  @media (max-width: 720px) {
+    .header-brand-row {
+      padding-top: 12px;
+      padding-bottom: 8px;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+    }
+
+    .brand-subtitle {
+      font-size: 0.7rem;
+    }
+
+    .nav-collapser {
+      padding: 6px 16px 10px;
+    }
+
+    .nav-toggle {
+      display: inline-flex;
+    }
+
+    .nav-list {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 4px;
+      padding: 10px 0 4px;
+    }
+
+    .nav-list li {
+      width: 100%;
+    }
+
+    .nav-link {
+      display: block;
+      text-align: center;
+      padding: 10px 14px;
+    }
+
+    /* When details is open, the chevron-style "Menu" pill stays visible
+       and the link list drops underneath it. */
+    details[open] .nav-toggle {
+      background: linear-gradient(135deg, var(--color-pink-100), var(--color-purple-100));
+    }
   }
 </style>

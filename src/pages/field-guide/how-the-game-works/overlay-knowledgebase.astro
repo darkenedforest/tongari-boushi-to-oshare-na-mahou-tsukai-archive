@@ -1,0 +1,113 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Overlay knowledgebase"
+  description="The high-level shape of the ~170 ARM9 overlays — what they are, how they load, and why patching them is delicate. The full per-overlay catalog is being assembled separately."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Overlay knowledgebase' },
+  ]}
+>
+  <p>
+    This page is the "what's an overlay" explainer. The
+    <a href={`${base}/field-guide/how-the-game-works/overlays/`}>overlay system</a>
+    page already covers the technical specifics (RAM slots, controller/body
+    pattern, persistent engines). What's missing — and being built now — is a
+    per-overlay catalog: one row per overlay, with a confirmed role, a list of
+    notable functions, and a note on whether patching it is known to be safe.
+    That catalog will be linked from this page when it's ready.
+  </p>
+
+  <h2>What is an overlay?</h2>
+  <p>
+    The DS has very little RAM (4 MB total) and Tongari Boushi is a fairly
+    large game. To fit, the engine breaks its code into <strong>overlays</strong>:
+    chunks of compiled ARM9 code that are loaded from the cartridge into a
+    shared RAM region only when they're needed. When the player moves between
+    game modes — exiting a shop, opening the mail box, entering the cooking
+    minigame — the engine evicts the current overlay and loads the next one
+    into the same address.
+  </p>
+  <p>
+    There are around <strong>170 overlays</strong> in this game (180 entries
+    in the table, with a small number unused). A handful are resident the
+    whole time the game is running (the 2D rendering engine
+    <code>ov137</code> is the big one); the rest swap in and out.
+  </p>
+
+  <h2>How an overlay loads</h2>
+  <ol>
+    <li>The state machine in the main ARM9 binary decides "we're now in mode X."</li>
+    <li>It looks up overlay X in the overlay table at ROM offset <code>0x8DE00</code>.</li>
+    <li>That table row says: load file <code>overlay/overlay_NNNN.bin</code>, decompress if needed, and copy it to address <code>ram_addr</code>.</li>
+    <li>If the destination RAM slot already holds a different overlay, that overlay is overwritten.</li>
+    <li>The new overlay's entrypoint runs; it sets up state, registers event handlers, and yields back to the main loop.</li>
+  </ol>
+
+  <h2>Why patching overlays is delicate</h2>
+  <p>
+    Most of our v2.x release work happens inside container files
+    (<code>data/*</code>) — the dialog strings, item tables, magic glyphs.
+    Those are safe to patch because the engine reads them at runtime and
+    doesn't care about their internal layout as long as the file format is
+    valid.
+  </p>
+  <p>
+    Overlays are different. An overlay is <em>compiled code</em>. It has
+    hard-coded addresses, fixed-stride data tables, and pointers into
+    <code>.rodata</code> that were resolved at link time. If you change a
+    string or a constant inside an overlay you have to either:
+  </p>
+  <ul>
+    <li><strong>Keep the patch byte-exact in length</strong> — replace 4 bytes
+      with exactly 4 bytes, never more — so nothing else in the overlay shifts; or</li>
+    <li><strong>Recompute every pointer in the overlay</strong> that pointed
+      past your edit, which means re-resolving the relocation table by hand.</li>
+  </ul>
+  <p>
+    Get either of those wrong and the game crashes, usually as soon as the
+    overlay is loaded. So overlay edits are surgical: the patch tools track
+    each overlay edit as a specific (file, offset, before-bytes, after-bytes)
+    tuple and refuse to apply if the original bytes don't match.
+  </p>
+
+  <h2>What v2.31 changed</h2>
+  <p>
+    Version <strong>2.31</strong> of the patch touches six overlays:
+    <code>ov047</code>, <code>ov059</code>, <code>ov065</code>,
+    <code>ov096</code>, <code>ov170</code>, <code>ov171</code>. Each edit is
+    a small, length-preserving string or constant change. The full list of
+    bytes changed lives in the patch metadata; see
+    <a href={`${base}/patches/`}>the patches page</a>.
+  </p>
+  <p>
+    Of the other ~164 overlays, none have been edited yet. Most are read-only
+    in the patch sense — we know what they do but we don't need to change them.
+    A handful are still labeled "TBD" in our internal notes; those are the
+    targets the per-overlay catalog work is filling in next.
+  </p>
+
+  <h2>Per-overlay catalog (placeholder)</h2>
+  <div class="fg-note">
+    <strong>Coming in a follow-up commit.</strong> A separate workstream is
+    currently building the full per-overlay knowledgebase — confirmed role,
+    notable functions, calling conventions, patch safety. That work will land
+    as a CSV + Markdown pair in the translation repo and be mirrored here as
+    a sortable table. When it's ready, this section will be replaced with the
+    catalog itself; until then, the
+    <a href={`${base}/field-guide/how-the-game-works/overlays/`}>overlays page</a>
+    has the technical details we currently have (RAM slots, controller/body
+    pattern, persistent engines).
+  </div>
+
+  <h2>Related</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/how-the-game-works/overlays/`}>The overlay system</a> — RAM slots, controller/body pattern, persistent engines.</li>
+    <li><a href={`${base}/field-guide/how-the-game-works/memory-map/`}>Memory map</a> — where overlays land in main RAM.</li>
+    <li><a href={`${base}/patches/`}>Patches</a> — which overlays each release touches.</li>
+  </ul>
+</FieldGuideLayout>

@@ -1,0 +1,85 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="NPC stamps"
+  description="140 character stamps used in mail and on bio sheets. Stored in a single RESO container with a shared 512-byte palette and a separate stamp-picker UI frame."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: '2D Art', href: `${base}/field-guide/2d-art/` },
+    { label: 'NPC stamps' },
+  ]}
+>
+  <p>
+    The little face stamps that appear on mail, gift tags, and the bio /
+    journal pages all live in one container. There are 140 of them, one
+    per recognised NPC plus a handful of generic / placeholder slots, and
+    they share a single palette file. The picker UI you see when you go
+    to attach a stamp is a separate file.
+  </p>
+
+  <h2>The three files</h2>
+  <table>
+    <thead><tr><th>File</th><th>Size</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>npcstamp/npcstamp.ofs</code></td>
+        <td>34 KB</td>
+        <td>RESO container with 140 entries — one stamp graphic per NPC.</td>
+      </tr>
+      <tr>
+        <td><code>npcstamp/npcstpcmn.lzs</code></td>
+        <td>512 bytes</td>
+        <td>Shared palette / sub-tileset used by every stamp. Tiny because all stamps re-use the same color ramp.</td>
+      </tr>
+      <tr>
+        <td><code>2d/stamp.lzs</code></td>
+        <td>14.5 KB</td>
+        <td>The stamp-picker UI frame — the screen the player sees when choosing which stamp to use.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Why the palette lives in a separate file</h2>
+  <p>
+    A 4bpp tile sheet plus its 32-byte palette is the normal NDS
+    arrangement; what makes stamps unusual is that the palette is
+    factored out so all 140 stamps share it. That keeps
+    <code>npcstamp.ofs</code> down to 34 KB instead of duplicating the
+    same color ramp 140 times. When rendering, the loader pairs each
+    NCGR inside <code>npcstamp.ofs</code> with the NCLR inside
+    <code>npcstpcmn.lzs</code> — see
+    <a href={`${base}/field-guide/2d-art/palettes/`}>finding the right palette</a>
+    for the general rule (Tier 2: container-shared palette).
+  </p>
+
+  <h2>Renders</h2>
+  <p>
+    All 140 stamps have been rendered out of the container as PNGs and
+    catalogued as <code>npc000_stamp.png</code> through
+    <code>npc139_stamp.png</code>. They live alongside the wider 2D
+    asset dump and are used by the NPC name canon, the bug-report
+    forms, and the
+    <a href={`${base}/scenes/`}>scenes browser</a> to thumbnail each
+    character.
+  </p>
+
+  <h2>Translation impact</h2>
+  <p>
+    The stamps themselves are just face graphics — they have no text and
+    don't need any translation work. The only Japanese the player ever
+    sees on this surface is the title on the
+    <code>2d/stamp.lzs</code> picker frame, which is one image rather
+    than a string table. That makes the stamp system effectively a
+    rendering-only feature for the patch: pull frames once, ship them.
+  </p>
+
+  <h2>Related</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/translation-canon/npc-names/`}>NPC name canon</a> — index into who each stamp slot is.</li>
+    <li><a href={`${base}/field-guide/2d-art/kinds-of-art/`}>Kinds of art</a> — stamps as a sprite-cell class.</li>
+    <li><a href={`${base}/field-guide/file-formats/reso/`}>RESO containers</a> — the format <code>npcstamp.ofs</code> uses.</li>
+  </ul>
+</FieldGuideLayout>

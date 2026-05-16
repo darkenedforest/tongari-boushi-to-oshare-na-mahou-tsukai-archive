@@ -80,6 +80,19 @@ const SRC_LABEL: Record<string,string> = {
     </tbody>
   </table>
 
+  <h2>How this file was found</h2>
+  <p>
+    <code>2d/inputmagic/msg.ofs</code> was discovered during the msg-file
+    audit. The audit walked every RESO container under <code>data/</code>
+    looking for ones that carried untranslated UTF-16 payloads and weren't
+    yet on the project's known-files list. <code>msg.ofs</code> stood out
+    because its payloads were all single-word: greetings, magic words,
+    emotional states, yes/no — exactly the vocabulary you'd expect behind
+    the in-game "type a magic word" feature. Before the audit, this file
+    had never been extracted; the 377 glyphs were all locked inside the
+    container.
+  </p>
+
   <h2>Source</h2>
   <ul>
     <li><code>notes/magic_glyph_ref.md</code> — full reference table</li>

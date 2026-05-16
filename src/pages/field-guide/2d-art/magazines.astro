@@ -1,0 +1,92 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="The magazine system"
+  description="63 in-game magazine pages plus an index, a frame, and a trophy table. Pure graphics — every word on a magazine page is baked into the pixels."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: '2D Art', href: `${base}/field-guide/2d-art/` },
+    { label: 'Magazines' },
+  ]}
+>
+  <p>
+    The game's in-world magazines (fashion tips, town gossip, trophy lists)
+    look like reading material, but technically there is <strong>no text</strong>
+    inside them. Every Japanese word a player sees on a magazine page was drawn
+    by Konami's art team and stored as artwork. There are no dialog strings,
+    no <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a> entries
+    holding sentences, no UTF-16 anywhere. Translating a magazine means
+    editing pixels.
+  </p>
+
+  <h2>What's in the <code>magazine/</code> folder</h2>
+  <table>
+    <thead><tr><th>File</th><th>Count</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>magazine/MG01.ofs</code> – <code>MG63.ofs</code></td>
+        <td>63</td>
+        <td>One per magazine page. Each is a RESO container of pure graphics.</td>
+      </tr>
+      <tr>
+        <td><code>magazine/magpage.ofs</code></td>
+        <td>1 (66 entries)</td>
+        <td>Index / table of contents pointing into the page set.</td>
+      </tr>
+      <tr>
+        <td><code>magazine/magazine.lzs</code></td>
+        <td>1</td>
+        <td>The shared frame artwork (page borders, the "page X of Y" furniture).</td>
+      </tr>
+      <tr>
+        <td><code>magazine/Trophy.ofs</code></td>
+        <td>1</td>
+        <td>Trophy / award listings. Same pure-graphics layout as the magazine pages.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Inside one page (<code>MGxx.ofs</code>)</h2>
+  <p>
+    Every <code>MGxx.ofs</code> is a RESO container whose entries are all
+    <a href={`${base}/field-guide/file-formats/nitro-graphics/`}>Nitro graphics</a>:
+  </p>
+  <ul>
+    <li><code>NCGR</code> — the tile sheet (the actual drawn pixels).</li>
+    <li><code>NCLR</code> — the palette.</li>
+    <li><code>NSCR</code> — the screen-map saying which tile goes where on the page.</li>
+    <li><code>NCER</code> — sprite cells for any animated bits or overlays.</li>
+  </ul>
+  <p>
+    There is no string table. There is no opcode stream. The Japanese
+    headlines, body copy, captions, and ingredient lists are all drawn
+    directly into the NCGR tiles. The engine just paints the page onto the
+    DS screens like any other static background.
+  </p>
+
+  <h2>What this means for translation</h2>
+  <div class="fg-note">
+    <strong>Magazines cannot be translated via DB / re-emit.</strong> They
+    have to be redrawn. Each magazine page is essentially a one-shot
+    illustration: pull the NCGR/NCLR/NSCR, render the page, paint English
+    over the Japanese in an image editor, then convert the result back into
+    NCGR/NSCR pairs that fit the original tile and palette constraints.
+  </div>
+  <p>
+    This is the same problem signboards have, just scaled up: 63 pages of
+    dense Japanese typography baked into the pixels. There is no shortcut,
+    and the cost is image-editor labor per page. The magazine pipeline is
+    therefore parked behind the main dialog translation work; it's filed as
+    a long-tail polish task rather than a release blocker.
+  </p>
+
+  <h2>Where this fits in the wider archive</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/2d-art/kinds-of-art/`}>Kinds of art</a> — magazines are one of the "BG-screen NSCR composites" classes.</li>
+    <li><a href={`${base}/field-guide/2d-art/palettes/`}>Finding the right palette</a> — every <code>MGxx.ofs</code> ships its own NCLR sibling, so palette resolution is Tier 1.</li>
+    <li><a href={`${base}/field-guide/file-formats/reso/`}>RESO</a> — the container the pages live in.</li>
+  </ul>
+</FieldGuideLayout>
