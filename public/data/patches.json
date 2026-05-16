@@ -33,43 +33,26 @@
         "Bug book / fish book / NPC dialog where the body text disappeared and the menu fired immediately is fixed — 15 dialogs restored.",
         "Berry's shop name fixed from \"Berries\" to \"Berry's\" in the friend-chat menu."
       ],
-      "notes": "Two patch variants offered per ROM revision. Both behave identically in-game. **regular** = larger file (extra ~5 KB), simpler internals. **compressed** = smaller, mirrors original Konami storage shape. Pick by preference.",
       "changelogUrl": "/changelog/v2.31/",
       "downloads": [
         {
-          "label": "Rev 1 — regular",
-          "url": "/patches/tongari-boushi-en-v2.31-rev1-regular.xdelta",
-          "isLocal": true,
-          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
-          "patchSizeBytes": 3846496,
-          "patchSha256": "71b6cefdd14633c7db450b9e8c6e24dca5cffbb756c77076fbd37e1a2312c653"
-        },
-        {
-          "label": "Rev 1 — compressed",
-          "url": "/patches/tongari-boushi-en-v2.31-rev1-compressed.xdelta",
-          "isLocal": true,
-          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
-          "patchSizeBytes": 3832935,
-          "patchSha256": "09a2ba70c0e18b2e9b5308002e03f8fda10553f13c8f75c39a105317792af7c0"
-        },
-        {
-          "label": "Rev 0 — regular",
-          "url": "/patches/tongari-boushi-en-v2.31-rev0-regular.xdelta",
-          "isLocal": true,
-          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
-          "patchSizeBytes": 15122134,
-          "patchSha256": "ec89e5f0df4baf6e972afc53c19129fbbff4bb96ef8f466cabd921678f7e9280"
-        },
-        {
-          "label": "Rev 0 — compressed",
-          "url": "/patches/tongari-boushi-en-v2.31-rev0-compressed.xdelta",
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.31-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 15122495,
           "patchSha256": "a9a33d648f73dabe44896fc643ddddf80269f13ba2b4062b80a1399f64efedbd"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.31-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3832935,
+          "patchSha256": "09a2ba70c0e18b2e9b5308002e03f8fda10553f13c8f75c39a105317792af7c0"
         }
       ],
-      "revGuidance": "Rev 1 is the most common dump; if your ROM filename has 'Rev 1' in it, use Rev 1. Otherwise use Rev 0."
+      "notes": "Patches for both ROM revisions are included. The Rev 0 patch bundles the Nintendo Rev 1 fixes so both endings produce the same patched ROM."
     },
     {
       "version": "2.3",

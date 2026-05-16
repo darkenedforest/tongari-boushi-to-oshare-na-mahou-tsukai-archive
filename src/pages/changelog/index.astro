@@ -1,0 +1,196 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import v231 from '../../data/changelog_v2.31.json';
+
+const base = import.meta.env.BASE_URL;
+
+// Each entry here = one release that has a detail page in this section.
+// Older releases (v2.0..v2.3) don't have row-level diffs captured; they
+// live on the /patches/ page only.
+const releases = [
+  {
+    version: v231.version,
+    date: v231.date,
+    href: `${base}/changelog/v2.31/`,
+  },
+];
+
+function formatDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+---
+
+<Layout title="Changelog">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>Changelog</span>
+    </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img src={`${base}/decorations/dragonfly.png`} alt="" />
+    </div>
+    <h1>Changelog ✦</h1>
+    <p class="lede">
+      Row-by-row before/after diffs for every translation patch release —
+      every <code>msg</code> file entry, overlay string, and ARM9 byte that
+      changed. Built for contributors and power users who want to see exactly
+      what moved. For the "what's new" summary of each release, head to{' '}
+      <a href={`${base}/patches/`}>Patches</a>.
+    </p>
+  </section>
+
+  <section class="releases">
+    <ul class="release-list">
+      {releases.map((r) => (
+        <li>
+          <a href={r.href} class="release-card">
+            <div class="release-left">
+              <span class="version-tag">v{r.version}</span>
+              <time datetime={r.date}>{formatDate(r.date)}</time>
+            </div>
+            <span class="cta">View full diff <span aria-hidden="true">→</span></span>
+          </a>
+        </li>
+      ))}
+    </ul>
+
+    <p class="older-note">
+      Detailed row-level diffs began with v2.31. For older releases (v2.0
+      through v2.3), the change summary lives on the{' '}
+      <a href={`${base}/patches/`}>Patches</a> page — per-row diffs weren't
+      captured at the time.
+    </p>
+  </section>
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 20px;
+  }
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+  .header-sprites {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 6px 0 4px;
+    opacity: 0.78;
+  }
+  .header-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+  .header-sprites img:nth-child(2) {
+    width: 48px;
+    height: 48px;
+  }
+  .lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+  .lede code {
+    background: var(--color-purple-50);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.88em;
+  }
+
+  .releases {
+    margin: 24px 0 50px;
+  }
+
+  .release-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 14px;
+  }
+
+  .release-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 22px 26px;
+    background: var(--surface-strong);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-pink-100);
+    box-shadow: var(--shadow-soft);
+    text-decoration: none;
+    color: var(--color-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .release-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-pop);
+    border-color: var(--color-pink-200);
+    color: var(--color-ink);
+  }
+
+  .release-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .version-tag {
+    display: inline-block;
+    padding: 5px 14px;
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    border-radius: var(--radius-pill);
+    box-shadow: 0 4px 12px rgba(155, 123, 217, 0.25);
+  }
+
+  time {
+    color: var(--color-ink-soft);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .cta {
+    font-weight: 700;
+    color: var(--color-pink-600);
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .older-note {
+    margin: 28px 0 0;
+    padding: 14px 18px;
+    background: var(--color-purple-50);
+    border: 1px solid var(--color-purple-100);
+    border-radius: var(--radius-md);
+    color: var(--color-ink);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    max-width: 720px;
+  }
+</style>
