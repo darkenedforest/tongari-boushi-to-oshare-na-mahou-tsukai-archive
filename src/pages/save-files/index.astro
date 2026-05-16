@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import SaveFilesForm from '../../components/SaveFilesForm.tsx';
+import SaveFilesBatchForm from '../../components/SaveFilesBatchForm.tsx';
 
 const base = import.meta.env.BASE_URL;
 ---
@@ -38,7 +38,7 @@ const base = import.meta.env.BASE_URL;
     </p>
   </section>
 
-  <SaveFilesForm client:load />
+  <SaveFilesBatchForm client:load />
 </Layout>
 
 <style>
