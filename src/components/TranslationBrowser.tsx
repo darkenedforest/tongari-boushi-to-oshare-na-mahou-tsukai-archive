@@ -70,6 +70,48 @@ function KindBadge({ kind }: { kind: Kind }) {
   return <span className={`kind-badge kind-${kind}`}>{KIND_LABEL[kind]}</span>;
 }
 
+// Wire format <-> edit format. The on-disk / in-DB strings keep the
+// in-game line-break (`▼`) and page-break (`§`) markers because the ROM
+// rebuild pipeline depends on them. For display and editing we swap them
+// for real whitespace, then round-trip back on submit.
+function wireToEdit(s: string): string {
+  // Order matters: replace page break (longer separator) first so a
+  // subsequent line-break pass doesn't touch the inserted newlines.
+  return s.replace(/§/g, '\n\n').replace(/▼/g, '\n');
+}
+
+function editToWire(s: string): string {
+  // Reverse direction: collapse `\n\n` (page break) before single `\n`
+  // (line break) so we don't turn a page break into two line breaks.
+  return s.replace(/\r\n/g, '\n').replace(/\n\n/g, '§').replace(/\n/g, '▼');
+}
+
+// Render the EN text for display. Splits on `§` into pages (separated by
+// a thin divider) and on `▼` into lines (separated by <br/>). Inline
+// tokens like `[NPC:1009]` are left as literal text on purpose so the
+// user can see the structure.
+function DisplayEN({ text }: { text: string }) {
+  const pages = text.split('§');
+  return (
+    <>
+      {pages.map((page, pi) => {
+        const lines = page.split('▼');
+        return (
+          <span key={pi} className="tr-page">
+            {pi > 0 && <span className="tr-pagebreak" aria-hidden="true" />}
+            {lines.map((line, li) => (
+              <span key={li}>
+                {li > 0 && <br />}
+                {line}
+              </span>
+            ))}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
 function MaxBadge({ max }: { max: number | null }) {
   if (max == null) return null;
   return <span className="max-badge">Max {max} chars</span>;
@@ -90,7 +132,10 @@ function EditForm({
   disabled: boolean;
   disabledReason: string;
 }) {
-  const [proposed, setProposed] = useState(row.en);
+  // The textarea works in "edit format" where the in-game line break
+  // (`▼`) becomes a real newline and the page break (`§`) becomes a
+  // blank-line separator. We round-trip back to wire format on submit.
+  const [proposed, setProposed] = useState(() => wireToEdit(row.en));
   const [reason, setReason] = useState('');
   const [submitter, setSubmitter] = useState('');
   const [busy, setBusy] = useState(false);
@@ -104,7 +149,8 @@ function EditForm({
       setErr('Suggestion is required.');
       return;
     }
-    if (proposed.trim() === row.en.trim()) {
+    const proposedWire = editToWire(proposed.trim());
+    if (proposedWire === row.en.trim()) {
       setErr("Suggestion is identical to the current text.");
       return;
     }
@@ -118,7 +164,7 @@ function EditForm({
         kind: row.kind,
         ref: row.ref,
         original_en: row.en,
-        proposed_en: proposed.trim(),
+        proposed_en: proposedWire,
         reason: reason.trim() ? reason.trim().slice(0, MAX_REASON) : null,
         submitter: submitter.trim() ? submitter.trim().slice(0, MAX_AUTHOR) : null,
       };
@@ -128,7 +174,7 @@ function EditForm({
       // refining (per spec). Don't update the displayed `row.en` — the
       // suggestion isn't accepted yet, so showing the unchanged original
       // is the honest state.
-      setProposed(row.en);
+      setProposed(wireToEdit(row.en));
       setReason('');
       setSubmitter('');
       setFlash(true);
@@ -140,7 +186,9 @@ function EditForm({
     }
   }
 
-  const proposedLen = [...proposed].length;
+  // Char-count is measured against the wire-format string so it lines
+  // up with the in-game budget (`▼` / `§` count as one char each there).
+  const proposedLen = [...editToWire(proposed)].length;
   const over = row.max_chars != null && proposedLen > row.max_chars;
 
   return (
@@ -240,7 +288,7 @@ function ResultRow({
       data-ref={row.ref}
     >
       <div className="tr-row-head">
-        <div className="tr-row-en">{row.en}</div>
+        <div className="tr-row-en"><DisplayEN text={row.en} /></div>
         <div className="tr-row-badges">
           <KindBadge kind={row.kind} />
           <MaxBadge max={row.max_chars} />
@@ -637,6 +685,18 @@ function Browser({ snapshot }: { snapshot: Snapshot }) {
           font-size: 0.96rem; line-height: 1.5;
           word-break: break-word;
           white-space: pre-wrap;
+        }
+        .tr-page { display: block; }
+        .tr-pagebreak {
+          display: block;
+          margin: 8px 0;
+          height: 1px;
+          background: linear-gradient(
+            to right,
+            transparent,
+            var(--color-purple-100),
+            transparent
+          );
         }
         .tr-row-badges {
           display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
