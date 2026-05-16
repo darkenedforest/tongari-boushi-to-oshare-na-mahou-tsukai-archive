@@ -70,8 +70,6 @@ const SAVE_SOURCE_OPTIONS: { label: string; items: string[] }[] = [
 ];
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB ceiling
-const MAX_REASON = 500;
-const MAX_AUTHOR = 40;
 
 const OTHER_SENTINEL = '__OTHER__';
 const OTHER_PREFIX = 'Other: ';
@@ -134,8 +132,6 @@ function truncateMid(name: string, max = 38): string {
 
 export default function SaveFilesBatchForm() {
   const [rows, setRows] = useState<FileRow[]>([]);
-  const [submitter, setSubmitter] = useState('');
-  const [reason, setReason] = useState('');
   const [honeypot, setHoneypot] = useState('');
   const [busy, setBusy] = useState(false);
   const [batchError, setBatchError] = useState<string | null>(null);
@@ -267,8 +263,10 @@ export default function SaveFilesBatchForm() {
         file_size_bytes: row.file.size,
         save_source: row.source.trim().slice(0, 120),
         patch_version: row.patchVersion ? row.patchVersion.slice(0, 40) : null,
-        debug_reason: reason.trim() ? reason.trim().slice(0, MAX_REASON) : null,
-        submitter: submitter.trim() ? submitter.trim().slice(0, MAX_AUTHOR) : null,
+        // submitter and debug_reason are admin-only columns now; the form
+        // no longer collects them. Inserts always leave them null.
+        debug_reason: null,
+        submitter: null,
       };
       const { error: insErr } = await supabase.from('save_files').insert(insertPayload);
       if (insErr) throw insErr;
@@ -321,9 +319,6 @@ export default function SaveFilesBatchForm() {
       setBatchPosted(true);
       window.setTimeout(() => {
         setRows(prev => prev.filter(r => !ids.includes(r.id)));
-        // Also wipe shared fields once the whole batch is done.
-        setSubmitter('');
-        setReason('');
       }, 900);
       window.setTimeout(() => setBatchPosted(false), 8000);
     }
@@ -543,34 +538,6 @@ export default function SaveFilesBatchForm() {
           </ul>
         )}
 
-        <div className="shared-fields">
-          <label className="field">
-            <span className="field-label">Your name / handle (optional)</span>
-            <input
-              type="text"
-              value={submitter}
-              onChange={e => setSubmitter(e.target.value)}
-              placeholder="Anonymous"
-              maxLength={MAX_AUTHOR}
-              disabled={busy}
-            />
-            <span className="field-hint">Shared across every file in this batch.</span>
-          </label>
-
-          <label className="field">
-            <span className="field-label">Why these saves matter / what to look for (optional)</span>
-            <textarea
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              placeholder="e.g. 'Garbled text on the Charm-shop tab' or 'just sharing in case it's useful'."
-              rows={3}
-              maxLength={MAX_REASON}
-              disabled={busy}
-            />
-            <span className="field-hint counter">{reason.length} / {MAX_REASON}</span>
-          </label>
-        </div>
-
         {batchError && <div className="form-error">{batchError}</div>}
         {batchPosted && (
           <div className="form-posted">
@@ -741,21 +708,9 @@ export default function SaveFilesBatchForm() {
         .status-badge.done { background: #d9f3df; color: #2c8a4a; border: 1px solid #b9e2c4; }
         .status-badge.failed { background: var(--color-pink-50); color: var(--color-pink-600); border: 1px solid var(--color-pink-200); }
 
-        .shared-fields { display: flex; flex-direction: column; gap: 14px; }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .field-label { font-weight: 600; color: var(--color-purple-600); font-size: 0.85rem; }
-        .field-hint { color: var(--color-ink-soft); font-size: 0.78rem; }
-        .field-hint.counter { align-self: flex-end; }
-        .field input[type="text"], .field textarea {
-          padding: 10px 14px; border-radius: var(--radius-md);
-          border: 1px solid var(--color-purple-100); background: var(--color-purple-50);
-          color: var(--color-ink); font: inherit; resize: vertical;
-        }
-        .field input:focus, .field textarea:focus {
-          outline: 2px solid var(--color-pink-200); background: white;
-        }
-        .field input:disabled, .field textarea:disabled { opacity: 0.7; }
+        /* Honeypot stays visually-hidden via the .field.hp class. */
         .field.hp { position: absolute; left: -9999px; }
+        .field.hp input { position: absolute; left: -9999px; }
 
         .form-error {
           color: var(--color-pink-600);
