@@ -604,42 +604,53 @@ function Detail({
   beforeLabel: string;
   afterLabel: string;
 }) {
-  // Build the TOC dynamically — only sections present in this release
-  // appear in the index and get rendered.
+  // Compute per-section row counts up front. A section with zero rows is
+  // hidden completely — no TOC entry, no header, no description, no empty
+  // table. The overlay section is an exception: it can also justify
+  // rendering on the strength of a compressedFlagFix callout alone.
+  const msgCount = data.msgFileEdits?.entries.length ?? 0;
+  const itemCount = data.itemNameEdits?.entries.length ?? 0;
+  const songCount = data.songRetranslations?.entries.length ?? 0;
+  const overlayRowCount =
+    data.overlayEdits?.groups.reduce((n, g) => n + g.rows.length, 0) ?? 0;
+  const hasOverlayCallout = !!data.overlayEdits?.compressedFlagFix;
+  const otherCount = data.otherChanges?.length ?? 0;
+
+  const showMsg = !!data.msgFileEdits && msgCount > 0;
+  const showItems = !!data.itemNameEdits && itemCount > 0;
+  const showSongs = !!data.songRetranslations && songCount > 0;
+  const showOverlays =
+    !!data.overlayEdits && (overlayRowCount > 0 || hasOverlayCallout);
+  const showOther = !!data.otherChanges && otherCount > 0;
+
+  // Build the TOC dynamically — only non-empty sections appear in the
+  // index and get rendered.
   const sections: { id: string; label: string; count: number }[] = [];
-  if (data.msgFileEdits) {
-    sections.push({
-      id: 'msg',
-      label: 'msg file edits',
-      count: data.msgFileEdits.entries.length,
-    });
+  if (showMsg) {
+    sections.push({ id: 'msg', label: 'msg file edits', count: msgCount });
   }
-  if (data.itemNameEdits) {
-    sections.push({
-      id: 'items',
-      label: 'Item name edits',
-      count: data.itemNameEdits.entries.length,
-    });
+  if (showItems) {
+    sections.push({ id: 'items', label: 'Item name edits', count: itemCount });
   }
-  if (data.songRetranslations) {
+  if (showSongs) {
     sections.push({
       id: 'songs',
       label: 'Song retranslations',
-      count: data.songRetranslations.entries.length,
+      count: songCount,
     });
   }
-  if (data.overlayEdits) {
+  if (showOverlays) {
     sections.push({
       id: 'overlays',
       label: 'Overlay / ARM9 edits',
-      count: data.overlayEdits.groups.reduce((n, g) => n + g.rows.length, 0),
+      count: overlayRowCount,
     });
   }
-  if (data.otherChanges && data.otherChanges.length > 0) {
+  if (showOther) {
     sections.push({
       id: 'other',
       label: 'Other byte-level changes',
-      count: data.otherChanges.length,
+      count: otherCount,
     });
   }
 
@@ -654,78 +665,78 @@ function Detail({
         ))}
       </nav>
 
-      {data.msgFileEdits && (
+      {showMsg && (
         <section id="msg" className="cl-section">
           <h2>
             msg file edits
             <span className="cl-section-count">
-              {data.msgFileEdits.entries.length.toLocaleString()}
+              {msgCount.toLocaleString()}
             </span>
           </h2>
           <MsgSection
-            data={data.msgFileEdits}
+            data={data.msgFileEdits!}
             beforeLabel={beforeLabel}
             afterLabel={afterLabel}
           />
-          {data.msgFileEdits.entryIdNote && (
-            <p className="cl-footnote">{data.msgFileEdits.entryIdNote}</p>
+          {data.msgFileEdits!.entryIdNote && (
+            <p className="cl-footnote">{data.msgFileEdits!.entryIdNote}</p>
           )}
         </section>
       )}
 
-      {data.itemNameEdits && (
+      {showItems && (
         <section id="items" className="cl-section">
           <h2>
             Item name edits
             <span className="cl-section-count">
-              {data.itemNameEdits.entries.length.toLocaleString()}
+              {itemCount.toLocaleString()}
             </span>
           </h2>
           <ItemNameSection
-            data={data.itemNameEdits}
+            data={data.itemNameEdits!}
             beforeLabel={beforeLabel}
             afterLabel={afterLabel}
           />
         </section>
       )}
 
-      {data.songRetranslations && (
+      {showSongs && (
         <section id="songs" className="cl-section">
           <h2>
             Song retranslations
             <span className="cl-section-count">
-              {data.songRetranslations.entries.length.toLocaleString()}
+              {songCount.toLocaleString()}
             </span>
           </h2>
           <SongSection
-            data={data.songRetranslations}
+            data={data.songRetranslations!}
             beforeLabel={beforeLabel}
             afterLabel={afterLabel}
           />
         </section>
       )}
 
-      {data.overlayEdits && (
+      {showOverlays && (
         <section id="overlays" className="cl-section">
           <h2>
             Overlay / ARM9 edits
             <span className="cl-section-count">
-              {data.overlayEdits.groups.reduce((n, g) => n + g.rows.length, 0).toLocaleString()}
+              {overlayRowCount.toLocaleString()}
             </span>
           </h2>
           <OverlaySection
-            data={data.overlayEdits}
+            data={data.overlayEdits!}
             beforeLabel={beforeLabel}
             afterLabel={afterLabel}
           />
         </section>
       )}
 
-      {data.otherChanges && data.otherChanges.length > 0 && (
+      {showOther && (
         <section id="other" className="cl-section">
           <h2>
             Other byte-level changes
-            <span className="cl-section-count">{data.otherChanges.length}</span>
+            <span className="cl-section-count">{otherCount}</span>
           </h2>
           <OtherSection items={data.otherChanges} />
         </section>
