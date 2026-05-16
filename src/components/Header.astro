@@ -169,6 +169,18 @@ const baseNorm = base.replace(/\/$/, '');
     padding: 4px 0 6px;
   }
 
+  /* Browsers hide <details> children (other than <summary>) by default
+     when the details is not [open]. On desktop the .nav-toggle summary
+     is hidden via display:none, so there's no way to open the details
+     and the list stays invisible. Force the list visible on desktop
+     regardless of details state. The mobile media query below restores
+     the collapse-by-default behavior. */
+  @media (min-width: 721px) {
+    details.nav-collapser > .nav-list {
+      display: flex !important;
+    }
+  }
+
   .nav-link {
     display: inline-block;
     padding: 8px 16px;
