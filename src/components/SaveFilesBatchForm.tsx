@@ -49,6 +49,7 @@ const SAVE_SOURCE_OPTIONS: { label: string; items: string[] }[] = [
     label: 'DS game on 3DS / 2DS family',
     items: [
       'TWiLight Menu++ + nds-bootstrap (Luma3DS CFW)',
+      '3DS GodMode9 (.sav from cartridge dump)',
       'TWLMenu++ on DSi mode (DSi/3DS native)',
       'Cartridge played through 3DS DS-mode',
     ],
