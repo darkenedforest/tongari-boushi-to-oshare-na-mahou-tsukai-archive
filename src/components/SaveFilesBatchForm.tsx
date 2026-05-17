@@ -94,6 +94,10 @@ interface FileRow {
   file: File;
   source: string;       // resolved value: '' or full label or 'Other: ...'
   patchVersion: string; // '' until user picks
+  // Per-row in-game values the save-format research agent uses to localize
+  // unknown offsets. Both optional - blank string = "user didn't say".
+  ritch: string;        // string-typed to preserve "" vs "0"; numeric coerce at insert time
+  wizardLevel: string;  // same pattern
   status: RowStatus;
   error: string | null;
   rowError: string | null; // inline validation error (e.g. missing dropdown)
@@ -164,6 +168,8 @@ export default function SaveFilesBatchForm() {
         file: f,
         source: '',
         patchVersion: DEFAULT_PATCH,
+        ritch: '',
+        wizardLevel: '',
         status: 'pending',
         error: null,
         rowError: null,
@@ -258,12 +264,22 @@ export default function SaveFilesBatchForm() {
         });
       if (upErr) throw upErr;
 
+      // Parse optional numeric fields. Empty string / NaN -> null so the
+      // research agent can distinguish "user didn't say" from "user said 0".
+      // Note: if the Supabase project hasn't had the ritch_amount /
+      // wizard_level columns migrated yet, the insert will 400 with
+      // "column does not exist". Apply the migration in SUPABASE_SETUP.md
+      // before the form goes live.
+      const ritchParsed = row.ritch.trim() === '' ? null : Number.parseInt(row.ritch.trim(), 10);
+      const wizardParsed = row.wizardLevel.trim() === '' ? null : Number.parseInt(row.wizardLevel.trim(), 10);
       const insertPayload = {
         filename: cleaned,
         file_path: filePath,
         file_size_bytes: row.file.size,
         save_source: row.source.trim().slice(0, 120),
         patch_version: row.patchVersion ? row.patchVersion.slice(0, 40) : null,
+        ritch_amount: Number.isFinite(ritchParsed as number) ? ritchParsed : null,
+        wizard_level: Number.isFinite(wizardParsed as number) ? wizardParsed : null,
         // submitter and debug_reason are admin-only columns now; the form
         // no longer collects them. Inserts always leave them null.
         debug_reason: null,
@@ -495,6 +511,35 @@ export default function SaveFilesBatchForm() {
                           ))}
                         </select>
                       </label>
+                      <label className="row-field row-field-num">
+                        <span className="row-field-label">Ritch (optional)</span>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          min={0}
+                          step={1}
+                          placeholder="e.g. 12345"
+                          value={row.ritch}
+                          onChange={e => updateRow(row.id, { ritch: e.target.value })}
+                          disabled={row.status === 'uploading' || row.status === 'done'}
+                        />
+                      </label>
+                      <label className="row-field row-field-num">
+                        <span className="row-field-label">Wizard Level (optional)</span>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          /* min=1, max=99 are loose sanity bounds — the
+                             actual in-game cap isn't confirmed yet. */
+                          min={1}
+                          max={99}
+                          step={1}
+                          placeholder="e.g. 24"
+                          value={row.wizardLevel}
+                          onChange={e => updateRow(row.id, { wizardLevel: e.target.value })}
+                          disabled={row.status === 'uploading' || row.status === 'done'}
+                        />
+                      </label>
                     </div>
                     <div className="row-status-cell">
                       <StatusBadge status={row.status} />
@@ -633,7 +678,7 @@ export default function SaveFilesBatchForm() {
         .file-row.has-row-error { border-color: var(--color-pink-400); }
         .row-main {
           display: grid;
-          grid-template-columns: minmax(180px, 1.4fr) minmax(260px, 2fr) auto;
+          grid-template-columns: minmax(180px, 1.2fr) minmax(420px, 3fr) auto;
           gap: 12px;
           align-items: center;
         }
@@ -646,7 +691,7 @@ export default function SaveFilesBatchForm() {
         .file-size { color: var(--color-ink-soft); font-size: 0.78rem; }
         .row-selects {
           display: grid;
-          grid-template-columns: minmax(160px, 1fr) 110px;
+          grid-template-columns: minmax(160px, 1.4fr) 110px minmax(90px, 0.7fr) minmax(110px, 0.8fr);
           gap: 8px;
           min-width: 0;
         }
@@ -655,16 +700,19 @@ export default function SaveFilesBatchForm() {
           font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
           color: var(--color-purple-600); font-weight: 600;
         }
-        .row-field select {
+        .row-field select,
+        .row-field input[type="number"] {
           padding: 7px 10px; border-radius: var(--radius-md);
           border: 1px solid var(--color-purple-100); background: white;
           color: var(--color-ink); font: inherit; font-size: 0.85rem;
           min-width: 0; width: 100%;
         }
-        .row-field select:focus {
+        .row-field select:focus,
+        .row-field input[type="number"]:focus {
           outline: 2px solid var(--color-pink-200);
         }
-        .row-field select:disabled { opacity: 0.7; cursor: not-allowed; }
+        .row-field select:disabled,
+        .row-field input[type="number"]:disabled { opacity: 0.7; cursor: not-allowed; }
         .row-other-input {
           padding: 7px 10px; border-radius: var(--radius-md);
           border: 1px solid var(--color-purple-100); background: white;
@@ -750,7 +798,9 @@ export default function SaveFilesBatchForm() {
             grid-template-columns: 1fr;
             align-items: stretch;
           }
-          .row-selects { grid-template-columns: 1fr 110px; }
+          .row-selects {
+            grid-template-columns: 1fr 1fr;
+          }
           .row-status-cell { justify-content: flex-end; }
         }
       `}</style>

@@ -350,6 +350,14 @@ create table save_files (
 -- game_progress column, drop it (the form no longer sends that field):
 alter table save_files drop column if exists game_progress;
 
+-- Per-row in-game values the save-format research agent uses to localize
+-- offsets for Ritch (currency) and Wizard Level. Both nullable - the form
+-- treats them as optional. ritch_amount is bigint because the in-game cap
+-- is unconfirmed and Ritch can theoretically run high; wizard_level is a
+-- plain int.
+alter table save_files add column if not exists ritch_amount bigint;
+alter table save_files add column if not exists wizard_level integer;
+
 -- Row-Level Security ---------------------------------------------
 alter table save_files enable row level security;
 
