@@ -84,8 +84,21 @@ const DEFAULT_PATCH = '';
 // Common DS save extensions. We don't enforce these strictly server-side
 // (Supabase Storage doesn't care), but the accept attribute keeps the
 // file picker filtered to plausible candidates on most OSes.
+//
+// We deliberately do NOT include application/octet-stream here: browsers
+// treat that MIME type as "anything", which makes the picker accept any
+// file (including screenshots). Save files frequently have wrong / missing
+// MIME types, so we gate on the extension list below in addFiles() as the
+// real check.
 const ACCEPT_EXT =
-  '.sav,.dsv,.duc,.savn,.dat,.bin,.SAV,.DSV,.DUC,.SAVN,.DAT,.BIN,application/octet-stream';
+  '.sav,.dsv,.duc,.savn,.dat,.bin,.SAV,.DSV,.DUC,.SAVN,.DAT,.BIN';
+
+const ALLOWED_EXTENSIONS = ['.sav', '.dsv', '.duc', '.savn', '.dat', '.bin'];
+
+function hasAllowedExtension(name: string): boolean {
+  const lower = name.toLowerCase();
+  return ALLOWED_EXTENSIONS.some(ext => lower.endsWith(ext));
+}
 
 type RowStatus = 'pending' | 'uploading' | 'done' | 'failed';
 
@@ -153,6 +166,12 @@ export default function SaveFilesBatchForm() {
     const fresh: FileRow[] = [];
 
     for (const f of items) {
+      if (!hasAllowedExtension(f.name)) {
+        errors.push(
+          `${f.name}: not a save file - expected .sav/.dsv/.duc/.savn/.dat/.bin - skipped.`
+        );
+        continue;
+      }
       if (f.size === 0) {
         errors.push(`${f.name}: empty (0 bytes) - skipped.`);
         continue;
@@ -419,6 +438,17 @@ export default function SaveFilesBatchForm() {
   const dzClass = ['drop-zone', dragOver ? 'is-over' : '', rows.length > 0 ? 'has-files' : ''].join(' ').trim();
   const pendingCount = rows.filter(r => r.status !== 'done').length;
 
+  // A row counts as "ready" only when BOTH dropdowns hold a real value.
+  // This drives the badge label so it doesn't claim "Ready" before the
+  // user has picked Source / Patch. Submit-time validation logic is
+  // untouched - this is purely the badge surface.
+  function rowReady(r: FileRow): boolean {
+    const src = r.source.trim();
+    const sourcePicked = !!src && src !== OTHER_PREFIX.trim() && src !== OTHER_PREFIX;
+    const patchPicked = !!r.patchVersion;
+    return sourcePicked && patchPicked;
+  }
+
   return (
     <div className="save-wrap">
       <form className="save-batch" onSubmit={submitBatch}>
@@ -542,7 +572,7 @@ export default function SaveFilesBatchForm() {
                       </label>
                     </div>
                     <div className="row-status-cell">
-                      <StatusBadge status={row.status} />
+                      <StatusBadge status={row.status} ready={rowReady(row)} />
                       {row.status === 'failed' && (
                         <button
                           type="button"
@@ -754,6 +784,7 @@ export default function SaveFilesBatchForm() {
           letter-spacing: 0.04em;
         }
         .status-badge.pending { background: white; color: var(--color-ink-soft); border: 1px solid var(--color-purple-100); }
+        .status-badge.pending.needs-info { background: var(--color-pink-50); color: var(--color-pink-600); border: 1px solid var(--color-pink-200); }
         .status-badge.uploading { background: var(--color-purple-50); color: var(--color-purple-600); border: 1px solid var(--color-purple-100); }
         .status-badge.done { background: #d9f3df; color: #2c8a4a; border: 1px solid #b9e2c4; }
         .status-badge.failed { background: var(--color-pink-50); color: var(--color-pink-600); border: 1px solid var(--color-pink-200); }
@@ -808,11 +839,18 @@ export default function SaveFilesBatchForm() {
   );
 }
 
-function StatusBadge({ status }: { status: RowStatus }) {
+function StatusBadge({ status, ready }: { status: RowStatus; ready?: boolean }) {
+  // For pending rows we differentiate between "Needs info" (Source / Patch
+  // not yet picked) and "Ready" (both picked). For all other statuses the
+  // `ready` flag is ignored.
   const label =
-    status === 'pending' ? 'Ready' :
+    status === 'pending' ? (ready ? 'Ready' : 'Needs info') :
     status === 'uploading' ? 'Uploading…' :
     status === 'done' ? 'Done' :
     'Failed';
-  return <span className={`status-badge ${status}`}>{label}</span>;
+  const cls =
+    status === 'pending' && !ready
+      ? `status-badge ${status} needs-info`
+      : `status-badge ${status}`;
+  return <span className={cls}>{label}</span>;
 }
