@@ -1,0 +1,31 @@
+{
+  "version": "2.32",
+  "date": "2026-05-17",
+  "headline": "Reproducible-from-DB build, with release-pipeline guardrails",
+  "summary": "No visible in-game text changes vs v2.31. v2.32 exists because the translation database had drifted out of sync with what v2.31 actually shipped — the 29 song-title retranslations had reverted in entries.en_text to their pre-v2.31 strings (Cottage Cheese, Ragin' Rivers, !atsugnoC, Adolfo's smoke, Memories of Seine, etc.). The shipped v2.31 ROM bytes were fine, but any developer rebuilding from the regressed DB would silently undo the v2.31 fix. v2.32 restores the database to its correct state and adds a build-time scaffold (fix manifests, sentinels, rebuild gate, release manifest, session accounting) that catches this class of regression automatically.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Overlay strings stored re-LZ-compressed with the fixed compressed-flag bookkeeping, same shape as v2.31. One patch per ROM revision (Rev 0 / Rev 1)."
+    }
+  ],
+  "shipNote": "v2.32 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's MD5.",
+  "otherChanges": [
+    {
+      "title": "Process-integrity scaffold (the actual content of this release)",
+      "body": "Five new tools in src/translator/: _fix_manifest_write.py (every database write logs before/after value + sha256 to notes/fixes/<step>.json), _check_sentinels.py (reads notes/sentinels.json invariants and asserts each holds against the DB; exits non-zero if any sentinel fails), _rebuild_gate.py (after rebuild_rom.py produces the patched ROM, walks every fix manifest and confirms its after_value bytes appear in the ROM; wired automatically as Phase 4 of rebuild_rom.py), _release_manifest_write.py (produces releases/v<version>.json with byte verification + sha256 of every candidate ROM mode, refuses to write unless sentinels + gate both pass), and _session_account.py (writes notes/_session_handoff.md listing every modified + untracked file at session end with a disposition checklist). CLAUDE.md gained a 'Process integrity (HARD RULE — no exceptions)' section codifying these as policy. notes/sentinels.json holds 40 invariants backfilled from CHANGELOG_v2.31."
+    },
+    {
+      "title": "Reconciliation — restored 29 reverted song retranslations",
+      "body": "step-227-reapply-v231-song-retranslations restored msg99020.ofs entries 4, 7, 8, 9, 12, 13, 18, 19, 22, 23, 29, 36, 39, 41, 42, 45, 55, 56, 65, 69, 71, 72, 73, 74, 75, 77, 78, 79, 82 to their v2.31 canon. Each row's before/after captured in notes/fixes/step-227-reapply-v231-song-retranslations.json with sha256 hashes. All 40 sentinels now pass; the rebuild gate verifies all 29 fix-row after_value substrings are present in both Mode A and Mode B candidate ROMs."
+    },
+    {
+      "title": "Identical to v2.31 in-game",
+      "body": "v2.32 ROMs are byte-level distinct from v2.31 (~137 MB differing bytes) but textually identical on every checked invariant: same 29 song titles, same 58 His Majesty occurrences (0 Her Majesty), same 378 Berry's occurrences, same 69 Reginald occurrences, same 4 Summer Cottage occurrences. The byte mismatch is reemit non-determinism (offset shifts inside RESO containers when dedup ordering varies); translation strings sit at different file offsets but the text is the same."
+    },
+    {
+      "title": "Known issues — deferred",
+      "body": "Tetsu still appears in 3 entries.en_text rows (msg52056.ofs entries 62/69/78 — Reginald self-introduction dialog). Cross-game canon points at 'Reginald' but this is outside v2.31 / v2.32 scope, deferred to v2.33+. Same v2.31-era deferrals also continue to apply: ~865 entries with leading § that don't match the strict bug pattern, many AI-generated song translations that are stylistic interpretations rather than literal."
+    }
+  ]
+}

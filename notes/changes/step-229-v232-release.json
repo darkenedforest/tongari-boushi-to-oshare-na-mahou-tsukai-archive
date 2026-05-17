@@ -1,0 +1,55 @@
+{
+  "step": "step-229-v232-release",
+  "timestamp": "2026-05-17T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "public/patches/tongari-boushi-en-v2.32-rev0.xdelta",
+      "file_path": "public/patches/tongari-boushi-en-v2.32-rev0.xdelta",
+      "offset": null,
+      "before": "(absent)",
+      "after": "v2.32 Rev 0 Mode B xdelta3 patch (14,388,817 bytes; sha256 530f6112915b7ce3c8340ed6019632ea1e5abd758ac0e7699fd3c4d7de71eb37). Source ROM MD5 a37fc3e00813fd05d47cd770e4f9e958.",
+      "reason": "v2.32 Rev 0 download for archive site"
+    },
+    {
+      "ref": "public/patches/tongari-boushi-en-v2.32-rev1.xdelta",
+      "file_path": "public/patches/tongari-boushi-en-v2.32-rev1.xdelta",
+      "offset": null,
+      "before": "(absent)",
+      "after": "v2.32 Rev 1 Mode B xdelta3 patch (3,250,948 bytes; sha256 b61ee2597ac6390daf763768523ad73b1260d0378a9a64a26ce9f6299482fbca). Source ROM MD5 bef1d8ad5f80ceb8886331ecf33bc467.",
+      "reason": "v2.32 Rev 1 download for archive site"
+    },
+    {
+      "ref": "public/data/patches.json",
+      "file_path": "public/data/patches.json",
+      "offset": null,
+      "before": "releases[0].version = '2.31'",
+      "after": "releases[0].version = '2.32' -- v2.32 entry prepended with full metadata (headline, summary, 3-item changes list explaining the developer-pipeline overhaul, both Rev downloads with sha256 + size, note clarifying no in-game text changed)",
+      "reason": "archive Patches page now surfaces v2.32 as the newest release"
+    },
+    {
+      "ref": "src/data/changelog_v2.32.json",
+      "file_path": "src/data/changelog_v2.32.json",
+      "offset": null,
+      "before": "(absent)",
+      "after": "v2.32 detail JSON. Four otherChanges sections: (1) process-integrity scaffold, (2) reconciliation of 29 reverted songs, (3) byte-distinct but textually identical to v2.31, (4) deferred Tetsu->Reginald + leading-§ tail.",
+      "reason": "feeds the ChangelogDetail React component at /changelog/v2.32/"
+    },
+    {
+      "ref": "src/pages/changelog/v2.32/index.astro",
+      "file_path": "src/pages/changelog/v2.32/index.astro",
+      "offset": null,
+      "before": "(absent)",
+      "after": "new Astro page rendering the v2.32 detail JSON through ChangelogDetail. Header notes this is a developer-pipeline release with 0 in-game text changes vs v2.31. beforeLabel=v2.31 afterLabel=v2.32.",
+      "reason": "/changelog/v2.32/ now resolves"
+    },
+    {
+      "ref": "src/pages/changelog/index.astro",
+      "file_path": "src/pages/changelog/index.astro",
+      "offset": null,
+      "before": "release list started at v2.31",
+      "after": "release list prepended with v2.32 card (totalChanges = otherChanges length)",
+      "reason": "v2.32 card now appears at top of /changelog/"
+    }
+  ]
+}
