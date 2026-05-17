@@ -14,6 +14,12 @@ import {
   RESIDENT_NAME_MAX_CHARS,
   type PendingEdit,
 } from '../lib/savefile/editor';
+import {
+  loadSavefileLookups,
+  lookupPlantName,
+  resolveInventoryItem,
+  type SavefileLookups,
+} from '../lib/savefile/lookups';
 import type {
   Confidence,
   SaveParse,
@@ -565,6 +571,9 @@ interface SlotViewProps {
    *  one we expose edit controls on. We only allow editing on slot A;
    *  every edit mirrors to both slots automatically. */
   editable: boolean;
+  /** Lookup tables for ID -> EN-name cross-referencing. `null` until the
+   *  fetch finishes; sections that need names should fall back gracefully. */
+  lookups: SavefileLookups | null;
 }
 
 function SlotView({
@@ -575,6 +584,7 @@ function SlotView({
   payloadSha,
   editCtx,
   editable,
+  lookups,
 }: SlotViewProps) {
   if (slot.uninitialised) {
     return (
@@ -664,10 +674,16 @@ function SlotView({
         {...labelArgs}
       >
         <p>
-          <strong>{slot.eventFlags.setBits.toLocaleString()}</strong> bits set across{' '}
-          <strong>{slot.eventFlags.totalBytes}</strong> bytes. First 64 bytes:
+          <strong>{slot.eventFlags.setBits.toLocaleString()}</strong> event
+          flags set out of ~{(slot.eventFlags.totalBytes * 8).toLocaleString()}{' '}
+          total flag bits. Per-flag meanings (which quests are complete,
+          which cutscenes have played, etc.) aren&apos;t individually mapped
+          yet.
         </p>
-        <HexPreview hex={slot.eventFlags.previewHex} max={192} />
+        <details className="tile-details">
+          <summary>Show raw bytes (first 64)</summary>
+          <HexPreview hex={slot.eventFlags.previewHex} max={192} />
+        </details>
       </Section>
 
       {/* Profile */}
@@ -801,27 +817,58 @@ function SlotView({
           <table className="data-table">
             <thead>
               <tr>
-                <th>Body offset</th>
-                <th>Category</th>
-                <th>Sub-index</th>
-                <th>Trailing 6 bytes</th>
+                <th>Slot</th>
+                <th>Item</th>
+                <th className="col-right">Raw (cat, sub)</th>
               </tr>
             </thead>
             <tbody>
-              {slot.activeInventory.map(slotRow => (
-                <tr key={slotRow.bodyOffset}>
-                  <td><code>{hex(slotRow.bodyOffset)}</code></td>
-                  <td>{slotRow.category}</td>
-                  <td>{slotRow.subIndex}</td>
-                  <td><code className="hex-cell">{slotRow.trailingHex}</code></td>
-                </tr>
-              ))}
+              {slot.activeInventory.map((slotRow, idx) => {
+                const resolved = lookups
+                  ? resolveInventoryItem(lookups, slotRow.category, slotRow.subIndex)
+                  : { itemId: null, name: null };
+                const displayName =
+                  resolved.name ??
+                  `Unknown item (cat=${slotRow.category}, sub=${slotRow.subIndex})`;
+                const known = resolved.itemId !== null;
+                return (
+                  <tr key={slotRow.bodyOffset}>
+                    <td>{idx + 1}</td>
+                    <td>
+                      {known ? (
+                        <>
+                          <strong>{displayName}</strong>{' '}
+                          <span className="muted small">
+                            (item_id {resolved.itemId})
+                          </span>
+                        </>
+                      ) : (
+                        <span className="muted">{displayName}</span>
+                      )}
+                    </td>
+                    <td className="col-right">
+                      <code className="muted">
+                        ({slotRow.category}, {slotRow.subIndex})
+                      </code>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
         <p className="note-text">
-          Item-name lookup table isn&apos;t built yet — these are raw
-          (category, sub-index) pairs from the packed u16.
+          Known limitation: the full (category, sub-index) &rarr; item_id
+          dispatch table hasn&apos;t been exported yet. Only confirmed
+          mappings (e.g. Transmitter at cat 2, sub 6) show a name; others
+          render as &quot;Unknown item (cat, sub)&quot; honestly rather than
+          guessing.
+          {lookups && !lookups.ok && (
+            <>
+              {' '}
+              <em>(Name lookup table failed to load — names unavailable.)</em>
+            </>
+          )}
         </p>
       </Section>
 
@@ -834,35 +881,40 @@ function SlotView({
         parsedSnapshot={`${slot.activityLog.filter(r => !r.sentinel).length} non-sentinel records / ${slot.activityLog.length} total slots`}
         {...labelArgs}
       >
-        <p className="note-text">
-          {slot.activityLog.filter(r => !r.sentinel).length} non-sentinel records
-          out of {slot.activityLog.length} slots. Semantics unconfirmed — showing
-          first 16 non-empty rows.
+        <p>
+          <strong>{slot.activityLog.filter(r => !r.sentinel).length}</strong>{' '}
+          populated records out of {slot.activityLog.length} total slots.
+          Field semantics (date / sequence / count) aren&apos;t pinned yet, so
+          the underlying bytes are surfaced as labelled integers rather than
+          named events.
         </p>
         {(() => {
           const rows = slot.activityLog.filter(r => !r.sentinel).slice(0, 16);
           if (rows.length === 0) return <p className="muted">No populated records.</p>;
           return (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Offset</th>
-                  <th>Header (3 b)</th>
-                  <th>Date/seq (u32 LE)</th>
-                  <th>Count/state (u16 LE)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map(r => (
-                  <tr key={r.bodyOffset}>
-                    <td><code>{hex(r.bodyOffset)}</code></td>
-                    <td><code className="hex-cell">{r.headerHex}</code></td>
-                    <td>{r.dateOrSequence}</td>
-                    <td>{r.countOrState}</td>
+            <details className="tile-details">
+              <summary>Show first {rows.length} populated record{rows.length === 1 ? '' : 's'} (raw fields)</summary>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Date or sequence</th>
+                    <th>Count or state</th>
+                    <th>Header bytes</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((r, i) => (
+                    <tr key={r.bodyOffset}>
+                      <td>{i + 1}</td>
+                      <td>{r.dateOrSequence.toLocaleString()}</td>
+                      <td>{r.countOrState.toLocaleString()}</td>
+                      <td><code className="muted hex-cell">{r.headerHex}</code></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
           );
         })()}
       </Section>
@@ -879,24 +931,33 @@ function SlotView({
         {slot.collectionStats.length === 0 ? (
           <p className="muted">No records in this region.</p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Offset</th>
-                <th>14 bytes (hex)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slot.collectionStats.map(r => (
-                <tr key={r.bodyOffset}>
-                  <td>{r.index}</td>
-                  <td><code>{hex(r.bodyOffset)}</code></td>
-                  <td><code className="hex-cell">{r.rawHex}</code></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <p>
+              <strong>{slot.collectionStats.length}</strong> fixed-size
+              collection-stat slots tracked. Per-field semantics
+              (creature counts, set bits, etc.) haven&apos;t been pinned
+              down yet — raw bytes are kept behind a toggle for debugging.
+            </p>
+            <details className="tile-details">
+              <summary>Show raw bytes (14 per slot)</summary>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Slot</th>
+                    <th>Raw bytes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {slot.collectionStats.map(r => (
+                    <tr key={r.bodyOffset}>
+                      <td>{r.index + 1}</td>
+                      <td><code className="hex-cell muted">{r.rawHex}</code></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </details>
+          </>
         )}
       </Section>
 
@@ -909,32 +970,55 @@ function SlotView({
         parsedSnapshot={`${slot.npcRecords.filter(r => !r.uninit && !r.vacant).length} populated records (sampled)`}
         {...labelArgs}
       >
-        <p className="note-text">
-          Sampling stride 0x500 across body[0x119C0:0x12400]. The real records
-          have variable layout — this preview gives a rough roster.
+        <p>
+          Sampled roster of NPCs your player has interacted with. Names
+          decode directly from the record header (UTF-16 LE) — no ID
+          lookup needed. Per-NPC heart level / gift history fields
+          haven&apos;t been pinned yet.
         </p>
         <table className="data-table">
           <thead>
             <tr>
               <th>#</th>
-              <th>Offset</th>
-              <th>Name (UTF-16 LE, first 16 b)</th>
+              <th>NPC name</th>
               <th>State</th>
-              <th>Next 32 b hex</th>
             </tr>
           </thead>
           <tbody>
-            {slot.npcRecords.map(r => (
+            {slot.npcRecords.map((r, i) => (
               <tr key={r.bodyOffset}>
-                <td>{r.index}</td>
-                <td><code>{hex(r.bodyOffset)}</code></td>
-                <td>{r.name || <span className="muted">{r.uninit ? '(uninit)' : r.vacant ? '(vacant)' : '(empty)'}</span>}</td>
-                <td>{r.uninit ? 'uninit' : r.vacant ? 'vacant' : 'populated'}</td>
-                <td><HexPreview hex={r.previewHex} max={64} /></td>
+                <td>{i + 1}</td>
+                <td>
+                  {r.name
+                    ? <strong>{r.name}</strong>
+                    : <span className="muted">{r.uninit ? '(never met)' : r.vacant ? '(record cleared)' : '(empty)'}</span>}
+                </td>
+                <td>{r.uninit ? 'never met' : r.vacant ? 'cleared' : 'known'}</td>
               </tr>
             ))}
           </tbody>
         </table>
+        {slot.npcRecords.some(r => !r.uninit && !r.vacant) && (
+          <details className="tile-details">
+            <summary>Show raw record-header bytes (debug)</summary>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>NPC name</th>
+                  <th>Next 32 bytes after name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slot.npcRecords.filter(r => !r.uninit && !r.vacant).map(r => (
+                  <tr key={r.bodyOffset}>
+                    <td>{r.name}</td>
+                    <td><HexPreview hex={r.previewHex} max={64} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        )}
       </Section>
 
       {/* Garden */}
@@ -956,48 +1040,63 @@ function SlotView({
               Show {slot.garden.tiles.length} populated tile
               {slot.garden.tiles.length === 1 ? '' : 's'}
             </summary>
+            <p className="note-text">
+              plant_id &rarr; name mapping isn&apos;t built yet, so each
+              tile shows &quot;Plant ID NN (mapping pending)&quot; rather
+              than a guessed name. grow_time is a small 0..255 counter
+              the game advances as the plant matures.
+            </p>
             <table className="data-table">
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Offset</th>
-                  <th>plant_id</th>
-                  <th>grow_time</th>
+                  <th>Plant</th>
+                  <th>Grow time</th>
                   {editable && <th>Edit (beta)</th>}
                 </tr>
               </thead>
               <tbody>
-                {slot.garden.tiles.slice(0, 64).map(tile => {
+                {slot.garden.tiles.slice(0, 64).map((tile, i) => {
                   const pending = editCtx.edits.gardenTile[tile.bodyOffset];
+                  const currentPlantId =
+                    pending !== undefined ? pending.plantId : tile.plantId;
+                  const currentGrow =
+                    pending !== undefined ? pending.growTime : tile.growTime;
+                  const plantName = lookups
+                    ? lookupPlantName(lookups, currentPlantId)
+                    : null;
+                  const plantLabel =
+                    plantName ?? `Plant ID ${currentPlantId} (mapping pending)`;
                   return (
                     <tr key={tile.bodyOffset}>
-                      <td>{tile.index}</td>
-                      <td><code>{hex(tile.bodyOffset)}</code></td>
+                      <td>{i + 1}</td>
                       <td>
                         {pending !== undefined ? (
                           <>
-                            <span className="muted strike">{tile.plantId}</span>{' '}
-                            <strong>{pending.plantId}</strong>
+                            <span className="muted strike">
+                              Plant ID {tile.plantId}
+                            </span>{' '}
+                            <strong>{plantLabel}</strong>
                           </>
                         ) : (
-                          tile.plantId
+                          <strong>{plantLabel}</strong>
                         )}
                       </td>
                       <td>
                         {pending !== undefined ? (
                           <>
                             <span className="muted strike">{tile.growTime}</span>{' '}
-                            <strong>{pending.growTime}</strong>
+                            <strong>{currentGrow}</strong>
                           </>
                         ) : (
-                          tile.growTime
+                          currentGrow
                         )}
                       </td>
                       {editable && (
                         <td>
                           <GardenTileEditor
-                            currentPlantId={pending?.plantId ?? tile.plantId}
-                            currentGrowTime={pending?.growTime ?? tile.growTime}
+                            currentPlantId={currentPlantId}
+                            currentGrowTime={currentGrow}
                             hasPending={pending !== undefined}
                             onCommit={(plantId, growTime) => {
                               editCtx.setEdits(prev => ({
@@ -1023,7 +1122,7 @@ function SlotView({
                 })}
                 {slot.garden.tiles.length > 64 && (
                   <tr>
-                    <td colSpan={editable ? 5 : 4}>
+                    <td colSpan={editable ? 4 : 3}>
                       <span className="muted">
                         … {slot.garden.tiles.length - 64} more tile
                         {slot.garden.tiles.length - 64 === 1 ? '' : 's'} not shown
@@ -1050,13 +1149,12 @@ function SlotView({
           <p className="muted">No catalog entries decoded.</p>
         ) : (
           <ol className="entries-list">
-            {slot.catalogEntries.map(e => {
+            {slot.catalogEntries.map((e, i) => {
               const pending = editCtx.edits.catalog[e.bodyOffset];
               return (
                 <li key={e.bodyOffset}>
                   <div className="entry-meta">
-                    <code>{hex(e.bodyOffset)}</code>
-                    <span className="entry-header">hdr: <code>{e.headerHex}</code></span>
+                    <span>Announcement #{i + 1}</span>
                   </div>
                   <div className="entry-text">{e.text}</div>
                   {editable && (
@@ -1106,13 +1204,12 @@ function SlotView({
           <p className="muted">No mail bodies decoded.</p>
         ) : (
           <ol className="entries-list">
-            {slot.mailEntries.map(e => {
+            {slot.mailEntries.map((e, i) => {
               const pending = editCtx.edits.mail[e.bodyOffset];
               return (
                 <li key={e.bodyOffset}>
                   <div className="entry-meta">
-                    <code>{hex(e.bodyOffset)}</code>
-                    <span className="entry-header">hdr: <code>{e.headerHex}</code></span>
+                    <span>Letter #{i + 1}</span>
                   </div>
                   <div className="entry-text">{e.text}</div>
                   {editable && (
@@ -1161,24 +1258,44 @@ function SlotView({
         {slot.bankLog.length === 0 ? (
           <p className="muted">No populated bank records.</p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Offset</th>
-                <th>6 bytes (hex)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slot.bankLog.slice(0, 32).map(r => (
-                <tr key={r.bodyOffset}>
-                  <td>{r.index}</td>
-                  <td><code>{hex(r.bodyOffset)}</code></td>
-                  <td><code className="hex-cell">{r.rawHex}</code></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <>
+            <p>
+              <strong>{slot.bankLog.length}</strong> bank transaction
+              record{slot.bankLog.length === 1 ? '' : 's'} on file. Per-field
+              decoding (deposit / withdraw / balance) isn&apos;t mapped yet,
+              so the raw 6-byte payload is available behind a toggle for
+              future analysis.
+            </p>
+            <details className="tile-details">
+              <summary>Show raw transaction bytes</summary>
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Txn</th>
+                    <th>Raw bytes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {slot.bankLog.slice(0, 32).map((r, i) => (
+                    <tr key={r.bodyOffset}>
+                      <td>{i + 1}</td>
+                      <td><code className="hex-cell muted">{r.rawHex}</code></td>
+                    </tr>
+                  ))}
+                  {slot.bankLog.length > 32 && (
+                    <tr>
+                      <td colSpan={2}>
+                        <span className="muted">
+                          … {slot.bankLog.length - 32} more transaction
+                          {slot.bankLog.length - 32 === 1 ? '' : 's'} not shown
+                        </span>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </details>
+          </>
         )}
       </Section>
 
@@ -1194,22 +1311,32 @@ function SlotView({
         <table className="data-table">
           <thead>
             <tr>
-              <th>Slot</th>
-              <th>Offset</th>
+              <th>House</th>
+              <th>Resident name</th>
               <th>State</th>
-              <th>Name</th>
               {editable && <th>Edit name (beta)</th>}
             </tr>
           </thead>
           <tbody>
             {slot.residents.map(r => {
               const pending = editCtx.edits.residentName[r.bodyOffset];
+              const stateLabel =
+                r.state === 'active'
+                  ? 'occupied'
+                  : r.state === 'vacant'
+                    ? 'vacant'
+                    : 'never built';
               return (
                 <tr key={r.bodyOffset} className={`resident-${r.state}`}>
-                  <td>{r.index}</td>
-                  <td><code>{hex(r.bodyOffset)}</code></td>
-                  <td>{r.state}</td>
-                  <td>{r.state === 'active' ? r.name : <span className="muted">—</span>}</td>
+                  <td>{r.index + 1}</td>
+                  <td>
+                    {r.state === 'active' ? (
+                      <strong>{r.name}</strong>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                  <td>{stateLabel}</td>
                   {editable && (
                     <td>
                       {r.state === 'active' ? (
@@ -1272,6 +1399,20 @@ export default function SaveFileInspector() {
   const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  // Lookup tables (item / NPC / UCC names) loaded once on mount from
+  // /data/savefile_lookups.json. While unloaded, the inspector renders
+  // raw IDs with an honest "(loading names…)" caveat instead of fake names.
+  const [lookups, setLookups] = useState<SavefileLookups | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadSavefileLookups().then(result => {
+      if (!cancelled) setLookups(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const editCtx = useMemo<EditCtx>(() => ({ edits, setEdits }), [edits]);
   const editCount = pendingEditCount(edits);
@@ -1573,6 +1714,7 @@ export default function SaveFileInspector() {
                 payloadSha={payloadSha}
                 editCtx={editCtx}
                 editable={activeSlotTab === 'A' && !slotForTab.uninitialised}
+                lookups={lookups}
               />
             )}
 
@@ -1909,6 +2051,8 @@ export default function SaveFileInspector() {
         .data-table tr.resident-active { background: rgba(217, 243, 223, 0.4); }
         .data-table tr.resident-uninit { color: var(--color-ink-soft); }
         .data-table tr.resident-vacant { color: var(--color-ink-soft); font-style: italic; }
+        .data-table .col-right { text-align: right; }
+        .data-table .small { font-size: 0.74rem; }
         .hex-cell, .hex-preview {
           font-family: var(--font-mono, monospace);
           font-size: 0.78rem;
