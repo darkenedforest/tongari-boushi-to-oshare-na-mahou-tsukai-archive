@@ -5,7 +5,6 @@ const base = import.meta.env.BASE_URL;
 
 const patchUrl = `${base}/patches/tongari-boushi-en-v2.32-rev1-test.xdelta`;
 const patchSize = '3.10 MB';
-const patchSha256 = '8992d021e5e1e1cfa2ea17198c81807ac0f1d04d83186f88c9ed9a73382736bb';
 const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed8528eff068f20';
 ---
 
@@ -29,76 +28,34 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
     <dl class="meta">
       <dt>Source ROM</dt>
       <dd>JP <strong>Rev 1</strong> (filename usually ends with <code>(J) Rev 1.nds</code>)</dd>
-      <dt>Patch SHA-256</dt>
-      <dd><code>{patchSha256}</code></dd>
-      <dt>Patched ROM SHA-256 (what you should get out)</dt>
-      <dd><code>{patchedRomSha256}</code></dd>
     </dl>
   </section>
 
   <section class="card">
-    <h2>What's in this build</h2>
-    <p class="intro">
-      Every bullet below is byte-verified against the produced ROM.
-      Full report:
-      <code>notes/_v232_clean_rev1_verified_changes.md</code> in the
-      translation repo.
-    </p>
+    <h2>What you'll see different from v2.31</h2>
     <ul class="changes">
       <li>
-        <strong>Fish-catch screens no longer make you press through 16 blank dialog pages.</strong>
-        Every "You caught a ___!" message (Pacific Saury, Flounder,
-        Crab, Sea Robin, Yellowtail, and 17 others — 22 entries in
-        <code>msg99051.ofs</code> 66–87) had a trailing run of 16
-        empty phrase boundaries plus a stray <code>*</code> character.
-        All 22 now end cleanly on the result line.
+        When you catch something at the fishing spot, the dialog now
+        goes straight to the next screen instead of making you tap
+        through 16 blank pages first. Affects every catch result —
+        fish, shellfish, the random Door Key, all of it.
       </li>
       <li>
-        <strong>Routine NPC dialogs no longer flash an extra blank page mid-line.</strong>
-        About 7,899 dialog entries had a leftover empty phrase
-        boundary that made you press A through an extra blank dialog
-        box. Those now advance directly. 555 had two leftover
-        boundaries; those are also fixed.
+        NPC conversations don't throw in an extra empty dialog page
+        mid-line anymore. If you ever felt like you were pressing A on
+        a blank box between lines, that's the thing that's gone.
       </li>
       <li>
-        <strong>Internal placeholder-leakage regression cannot ship from this pipeline again.</strong>
-        The prior v2.32 candidate had 4,350 literal placeholder tokens
-        (<code>[NPC_DAT:</code>, <code>[PLAYER_NAME]</code>, etc.)
-        leaking into ROM bytes as visible text. The build pipeline now
-        has a byte-level gate that scans every produced <code>.nds</code>
-        for those patterns and refuses to release if any are found.
-        This build has 0 leaks.
+        Bug-book and fish-book donation menus no longer kick you back
+        to a blank prompt screen between every choice. Donating an
+        insect to the bug guy or handing a fish to the fish king now
+        flows straight through.
       </li>
       <li>
-        <strong>Everything from v2.31 still works as it did.</strong>
-        All 40 sentinels pass: 29 song retranslations (Summer Cottage,
-        Broken Tears, Congasta, etc.), the His Majesty canon (58
-        occurrences), Berry's shop (378 occurrences), the leading-§
-        strip on the 10 affected entries, the Her Majesty ban (0
-        occurrences), and the v2.31 stability fixes (friend menu,
-        sing/hum codec, clothing codec, bug-registering crash) all
-        stay applied byte-for-byte.
+        Prices in dialog like "It costs 1170 Ritch" display correctly
+        instead of doubling up (the old "11701170!" bug).
       </li>
     </ul>
-  </section>
-
-  <section class="card">
-    <h2>Verification</h2>
-    <p>This build passed all three production integrity gates:</p>
-    <ul class="gates">
-      <li><strong>Sentinels — 40 / 40 passed.</strong> Every invariant
-        from v2.31 (His Majesty count, song retranslations, leading-§
-        strip, ban list) verified against the rebuilt ROM.</li>
-      <li><strong>Rebuild gate — 34 / 34 fix-manifest rows present.</strong>
-        Every row of every fix manifest had its <code>after_value</code>
-        substring located in the rebuilt ROM bytes.</li>
-      <li><strong>Placeholder-leakage gate — 0 leaks.</strong> Byte
-        scan of the entire 268,435,456-byte ROM for literal
-        placeholder text turned up nothing.</li>
-    </ul>
-    <p class="meta-hash">
-      Patched-ROM SHA-256: <code>{patchedRomSha256}</code>
-    </p>
   </section>
 
   <section class="card">
@@ -120,14 +77,18 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
         </ul>
       </li>
       <li>
-        The output should be a 268,435,456-byte <code>.nds</code> with
-        SHA-256 <code>1bda3c9c…</code> (full hash above). If you don't
-        see that hash, the source ROM is the wrong revision or got
-        corrupted.
+        The output should be a 268,435,456-byte <code>.nds</code> file.
       </li>
     </ol>
     <p class="muted small">
       Equivalent command-line: <code>xdelta3 -d -s &lt;jp-rev1.nds&gt; tongari-boushi-en-v2.32-rev1-test.xdelta &lt;out.nds&gt;</code>
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Build identifier</h2>
+    <p class="meta-hash">
+      Patched ROM SHA-256: <code>{patchedRomSha256}</code>
     </p>
   </section>
 </Layout>
