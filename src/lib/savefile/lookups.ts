@@ -134,24 +134,25 @@ export function lookupPlantName(
 // ---------------------------------------------------------------------------
 // Inventory cat/sub_index -> item_id mapping.
 //
-// The active inventory stores each slot as a packed u16 where the top
-// byte is a category and the low byte is a sub-index within that
-// category. The ROM holds a per-category dispatch table that maps
-// (cat, sub) to an item_id, but the full mapping has NOT been exported
-// for browser use yet — that needs either ARM9 disassembly of the
-// per-category dispatch routine or a corpus of targeted differential
-// saves large enough to derive each pair from context. Neither has
-// happened yet.
+// step-232 withdrew the single previously-shipped mapping
+// `(2:6) -> 1887 (Transmitter)`. The full evidence is in the translation
+// repo at `notes/save_analysis/_blockers.md` (step-232 entry). Short
+// version: the (cat<<8)|sub framework itself is unsupported by ARM9
+// disassembly — there is no accessor at body+0x4300..0x4480, and the
+// "confirmed" Transmitter pair was an artifact of misreading a u16 LE
+// item ID as a packed (cat, sub) tuple. The save that supposedly
+// contained a Transmitter does not contain the bytes 0x5F 0x07 anywhere.
 //
-// What IS confirmed today (shipped in savefile_lookups.json under
-// inventory_cat_sub.confirmed):
-//   - (category=2, sub_index=6) -> item_id 1887 (Transmitter), via
-//     differential save analysis on step-176 / step-177.
+// `inventory_cat_sub.confirmed` therefore ships EMPTY today. A real
+// mapping requires either ARM9 disassembly of the actual inventory
+// routine (still unidentified) or a controlled before/after differential
+// save corpus that shows a single item appearing.
 //
-// step-223 added the observed-pairs table (inventory_cat_sub.observed) so
-// the inspector can at least tell the user "this (cat, sub) exists in N
-// other saves we've seen — we just don't know which item yet" rather
-// than the bare "Unknown" the previous build showed.
+// `inventory_cat_sub.observed` still ships the corpus statistic so the
+// inspector can tell the user "this byte pattern recurs at the
+// predecessor's inventory offsets in N saves" — useful even though we
+// know the (cat, sub) decoding itself is suspect. Treat the counts as a
+// byte-pattern recurrence stat, not as actual inventory pairs.
 // ---------------------------------------------------------------------------
 
 export interface InventoryResolution {
