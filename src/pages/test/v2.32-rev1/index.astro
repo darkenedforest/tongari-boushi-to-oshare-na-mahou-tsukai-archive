@@ -5,7 +5,7 @@ const base = import.meta.env.BASE_URL;
 
 const patchUrl = `${base}/patches/tongari-boushi-en-v2.32-rev1-test.xdelta`;
 const patchSize = '3.10 MB';
-const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed8528eff068f20';
+const patchedRomSha256 = 'bd0a1e87ee75b5c00c11e0a245ed346cdb72d186a4f17523ea05005b72f2e5af';
 ---
 
 <Layout title="v2.32 Rev 1 test build">
@@ -54,6 +54,16 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
       <li>
         Prices in dialog like "It costs 1170 Ritch" display correctly
         instead of doubling up (the old "11701170!" bug).
+      </li>
+      <li>
+        The item called "Jewelry Case" is now "Jewelry Box" — in your
+        inventory, in shop catalogs, in recipe results, and anywhere
+        an NPC references it in dialog.
+      </li>
+      <li>
+        The item called "Relaxing Tea" is now "Calming Tea" — same
+        scope: inventory, shops, recipe results, NPC dialog
+        references.
       </li>
     </ul>
   </section>
