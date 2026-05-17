@@ -22,6 +22,26 @@ export interface InventoryCatSubLookup {
   observed: Record<string, number>;
 }
 
+/** Step-237 inventory-bitmap descriptor. See parser.ts for the
+ *  ARM9-disassembly trace that pins this region. */
+export interface InventoryBitmapLookup {
+  /** Slot-relative byte offset of the bitmap's first byte. */
+  slot_rel_offset: number;
+  /** Bitmap length in bytes (always 22). */
+  byte_length: number;
+  /** Number of meaningful bits (always 173 = 140 cat-0 + 33 cat-1). */
+  bit_count: number;
+  /** Per-category metadata mirroring the ARM9 tables. */
+  categories: Array<{
+    id: number;
+    item_id_base: number;
+    count: number;
+    bit_index_base: number;
+  }>;
+  /** Reverse lookup: ROM item_id -> bit_index within the bitmap. */
+  item_id_to_bit: Record<string, number>;
+}
+
 export interface SavefileLookups {
   items: Record<string, string>;
   ucc: Record<string, string>;
@@ -34,8 +54,10 @@ export interface SavefileLookups {
     plants: number;
     cat_sub_pairs_confirmed?: number;
     cat_sub_pairs_observed?: number;
+    inventory_bitmap_items?: number;
   };
   inventory_cat_sub: InventoryCatSubLookup;
+  inventory_bitmap: InventoryBitmapLookup | null;
   generated_at: string;
   /** True if the JSON loaded successfully; false on fetch / parse error. */
   ok: boolean;
@@ -48,6 +70,7 @@ const EMPTY: SavefileLookups = {
   plants: {},
   counts: { items: 0, ucc: 0, npcs: 0, plants: 0 },
   inventory_cat_sub: { confirmed: {}, observed: {} },
+  inventory_bitmap: null,
   generated_at: '',
   ok: false,
 };
@@ -78,6 +101,7 @@ export async function loadSavefileLookups(
           confirmed: data.inventory_cat_sub?.confirmed ?? {},
           observed: data.inventory_cat_sub?.observed ?? {},
         },
+        inventory_bitmap: data.inventory_bitmap ?? null,
         generated_at: data.generated_at ?? '',
         ok: true,
       };

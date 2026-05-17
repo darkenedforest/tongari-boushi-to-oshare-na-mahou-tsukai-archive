@@ -902,6 +902,90 @@ function SlotView({
         )}
       </Section>
 
+      {/* Inventory bitmap (step-237 — the REAL inventory).
+          173-bit packed bitmap at slot_rel 0x1CDF2 (file 0x1CEF2 slot A
+          / 0x5CDF2 slot B) covering clothing (item_ids 1000..1139) and
+          garden decorations (item_ids 2000..2032). Confirmed via ARM9
+          disassembly: setter at 0x0201B56C, primitives 0x02006E44/E5C,
+          bounds dispatcher 0x0201BCB0(svC+2, max=173). */}
+      <Section
+        regionId={`${slot.label}-inventoryBitmap`}
+        title={REGION_DESCRIPTORS.inventoryBitmap.title}
+        range={REGION_DESCRIPTORS.inventoryBitmap.range}
+        confidence={REGION_DESCRIPTORS.inventoryBitmap.confidence}
+        parsedSnapshot={`${slot.inventoryBitmap.ownedBitsSet} owned items (of 173 trackable; raw bits set: ${slot.inventoryBitmap.totalBitsSet})`}
+        {...labelArgs}
+      >
+        <p className="note-text" style={{ marginTop: 0 }}>
+          The game stores ownership of <strong>clothing</strong> (140
+          item_ids 1000..1139) and <strong>garden decorations</strong>
+          (33 item_ids 2000..2032) as a 173-bit packed bitmap inside the
+          FAMILY-C extra-record. Bit n is owned-flag for the n-th item
+          across both categories. Confirmed via ARM9 disassembly (see
+          translation repo at <code>notes/save_analysis/_inventory_found.md</code>).
+        </p>
+        <p className="muted small" style={{ marginTop: 4 }}>
+          Raw 22 bytes: <code>{slot.inventoryBitmap.rawHex || '(empty)'}</code>
+        </p>
+        {slot.inventoryBitmap.entries.length === 0 ? (
+          <p className="muted">No owned items decoded from the bitmap.</p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th className="col-right">Bit</th>
+                <th>Item</th>
+                <th className="col-right">Item ID</th>
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slot.inventoryBitmap.entries.map(entry => {
+                const name = lookups
+                  ? lookups.items[String(entry.itemId)] ?? null
+                  : null;
+                const catLabel =
+                  entry.category === 0
+                    ? 'Clothing'
+                    : entry.category === 1
+                      ? 'Garden decoration'
+                      : `cat ${entry.category}`;
+                return (
+                  <tr key={entry.bitIndex}>
+                    <td className="col-right">
+                      <code className="muted">{entry.bitIndex}</code>
+                    </td>
+                    <td>
+                      {name ? (
+                        <strong>{name}</strong>
+                      ) : (
+                        <span className="muted">
+                          (item_id {entry.itemId} — name unavailable)
+                        </span>
+                      )}
+                    </td>
+                    <td className="col-right">
+                      <code className="muted">{entry.itemId}</code>
+                    </td>
+                    <td>
+                      <span className="muted small">
+                        {catLabel} (sub {entry.subIndex})
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+        <p className="note-text">
+          Cats 2 (fabrics, item_ids 3000..3012) and 3 (item_ids
+          4000..4065) are tracked in different save regions — they are
+          NOT part of this bitmap. Bits 173..175 in the last byte are
+          unused padding (the game's bounds-check trips at max=173).
+        </p>
+      </Section>
+
       {/* Region at body 0x4300 — semantics unconfirmed.
           Previously mis-labelled "Active inventory". Step-232 rejected
           that framework: no ARM9 accessor reads or writes body+0x4300,

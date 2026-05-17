@@ -155,6 +155,30 @@ export interface BankRecord {
   rawHex: string;
 }
 
+/** One owned-item entry decoded from the inventory bitmap at slot_rel
+ *  0x1CDF2 (file 0x1CEF2 slot A / 0x5CDF2 slot B). step-237. */
+export interface InventoryBitmapEntry {
+  /** Flat bit index 0..172. */
+  bitIndex: number;
+  /** Category id (0 = clothing, 1 = garden decoration). */
+  category: number;
+  /** Sub-index within category (0..139 for cat 0, 0..32 for cat 1). */
+  subIndex: number;
+  /** ROM item id (cat_base + sub_index). */
+  itemId: number;
+}
+
+export interface InventoryBitmapSummary {
+  /** Total bits set in the 22-byte bitmap (including bits 173..175 padding). */
+  totalBitsSet: number;
+  /** Bits set in the meaningful range 0..172. */
+  ownedBitsSet: number;
+  /** Decoded owned-item entries (cat 0 = clothing, cat 1 = garden). */
+  entries: InventoryBitmapEntry[];
+  /** Raw 22-byte bitmap as hex (for debugging). */
+  rawHex: string;
+}
+
 export interface EventFlagSummary {
   /** Total bytes in the region 0x18..0x460. */
   totalBytes: number;
@@ -253,6 +277,11 @@ export interface SlotParse {
 
   // Wizard-level candidate (body 0x11488 + 0x5a). Read-only.
   wizardLevelCandidate: WizardLevelCandidate;
+
+  // Inventory bitmap (slot_rel 0x1CDF2 = save_buffer_C+2). step-237.
+  // 173-bit bitmap covering item_ids 1000..1139 (clothing) and 2000..2032
+  // (garden decorations). Confirmed via ARM9 disassembly trace.
+  inventoryBitmap: InventoryBitmapSummary;
 }
 
 export interface SaveParse {
