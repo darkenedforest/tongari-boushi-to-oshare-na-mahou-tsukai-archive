@@ -101,9 +101,20 @@ export interface NpcRecord {
   previewHex: string;
 }
 
+export interface GardenTile {
+  index: number;
+  bodyOffset: number;
+  plantId: number;
+  growTime: number;
+  /** Hex of the full 12-byte record for context. */
+  rawHex: string;
+}
+
 export interface GardenSummary {
   totalTiles: number;
   populatedTiles: number;
+  /** Populated tiles only — empty tiles (all 0x00 or 0xFF) are filtered. */
+  tiles: GardenTile[];
 }
 
 export interface ActivityRecord {

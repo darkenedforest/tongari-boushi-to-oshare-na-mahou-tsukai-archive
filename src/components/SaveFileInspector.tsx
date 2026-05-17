@@ -1,9 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FORMAT_MAGIC_EXPECTED,
   REGION_DESCRIPTORS,
   parseSaveFile,
 } from '../lib/savefile/parser';
+import {
+  applyEdits,
+  rewrapForDownload,
+  suffixFilenameForEdit,
+  CATALOG_TEXT_MAX_CHARS,
+  MAIL_TEXT_MAX_CHARS,
+  PLAYER_NAME_MAX_CHARS,
+  RESIDENT_NAME_MAX_CHARS,
+  type PendingEdit,
+} from '../lib/savefile/editor';
 import type {
   Confidence,
   SaveParse,
@@ -62,6 +72,315 @@ function saveNotes(sha: string, notes: NotesByRegion) {
   } catch {
     /* quota errors are non-fatal */
   }
+}
+
+// ---------------------------------------------------------------------------
+// Pending-edit state shared with SlotView
+// ---------------------------------------------------------------------------
+
+interface PendingEditMap {
+  ritch?: { value: number };
+  playerName?: { value: string };
+  /** Keyed by entry's body offset within slot A. */
+  catalog: Record<number, string>;
+  mail: Record<number, string>;
+  /** Keyed by resident slot's body offset. */
+  residentName: Record<number, string>;
+  /** Keyed by garden record's body offset. */
+  gardenTile: Record<number, { plantId: number; growTime: number }>;
+}
+
+function makeEmptyEdits(): PendingEditMap {
+  return {
+    catalog: {},
+    mail: {},
+    residentName: {},
+    gardenTile: {},
+  };
+}
+
+interface EditCtx {
+  edits: PendingEditMap;
+  setEdits: React.Dispatch<React.SetStateAction<PendingEditMap>>;
+}
+
+function pendingEditCount(edits: PendingEditMap): number {
+  let n = 0;
+  if (edits.ritch !== undefined) n++;
+  if (edits.playerName !== undefined) n++;
+  n += Object.keys(edits.catalog).length;
+  n += Object.keys(edits.mail).length;
+  n += Object.keys(edits.residentName).length;
+  n += Object.keys(edits.gardenTile).length;
+  return n;
+}
+
+function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
+  const out: PendingEdit[] = [];
+  if (edits.ritch !== undefined) {
+    out.push({ kind: 'ritch', value: edits.ritch.value });
+  }
+  if (edits.playerName !== undefined) {
+    out.push({ kind: 'player_name', value: edits.playerName.value });
+  }
+  for (const [k, v] of Object.entries(edits.catalog)) {
+    out.push({ kind: 'catalog', entryOffset: Number(k), text: v });
+  }
+  for (const [k, v] of Object.entries(edits.mail)) {
+    out.push({ kind: 'mail', entryOffset: Number(k), text: v });
+  }
+  for (const [k, v] of Object.entries(edits.residentName)) {
+    out.push({ kind: 'resident_name', recordOffset: Number(k), name: v });
+  }
+  for (const [k, v] of Object.entries(edits.gardenTile)) {
+    out.push({
+      kind: 'garden_tile',
+      recordOffset: Number(k),
+      plantId: v.plantId,
+      growTime: v.growTime,
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Inline-edit primitive
+// ---------------------------------------------------------------------------
+
+interface InlineEditProps {
+  label: string;
+  pendingLabel?: string;
+  beta?: boolean;
+  // The currently-pending value, or null if no pending edit.
+  pendingValue: string | null;
+  // Default value shown in the input when the editor is opened with no
+  // pending edit yet.
+  initialDraft: string;
+  /** Validation + commit handler. Return a string error to reject the
+   *  edit, or null on success — the parent updates its edit state. */
+  onCommit: (draft: string) => string | null;
+  /** Remove any pending edit for this field. */
+  onClear: () => void;
+  /** Optional max chars for an <input>; if omitted renders a <textarea>. */
+  maxChars?: number;
+  multiline?: boolean;
+}
+
+function InlineEdit({
+  label,
+  pendingLabel,
+  beta,
+  pendingValue,
+  initialDraft,
+  onCommit,
+  onClear,
+  maxChars,
+  multiline,
+}: InlineEditProps) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(pendingValue ?? initialDraft);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDraft(pendingValue ?? initialDraft);
+  }, [pendingValue, initialDraft]);
+
+  function commit() {
+    const e = onCommit(draft);
+    if (e) {
+      setErr(e);
+      return;
+    }
+    setErr(null);
+    setOpen(false);
+  }
+
+  function clear() {
+    onClear();
+    setDraft(initialDraft);
+    setErr(null);
+  }
+
+  return (
+    <div className={`inline-edit ${pendingValue !== null ? 'has-pending' : ''}`}>
+      {!open && (
+        <button
+          type="button"
+          className="inline-edit-trigger"
+          onClick={() => setOpen(true)}
+        >
+          {pendingValue !== null
+            ? `Edit (pending: ${pendingLabel ?? pendingValue})`
+            : `Edit ${label}`}
+          {beta && <span className="beta-pill">BETA</span>}
+        </button>
+      )}
+      {open && (
+        <div className="inline-edit-body">
+          {multiline ? (
+            <textarea
+              className="inline-edit-input"
+              rows={3}
+              maxLength={maxChars}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+            />
+          ) : (
+            <input
+              className="inline-edit-input"
+              type="text"
+              maxLength={maxChars}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+            />
+          )}
+          {maxChars !== undefined && (
+            <span className="inline-edit-counter">
+              {draft.length}/{maxChars} chars
+            </span>
+          )}
+          {err && <span className="inline-edit-error">{err}</span>}
+          <div className="inline-edit-actions">
+            <button type="button" className="inline-edit-save" onClick={commit}>
+              Stage edit
+            </button>
+            <button
+              type="button"
+              className="inline-edit-cancel"
+              onClick={() => {
+                setDraft(pendingValue ?? initialDraft);
+                setErr(null);
+                setOpen(false);
+              }}
+            >
+              Cancel
+            </button>
+            {pendingValue !== null && (
+              <button type="button" className="inline-edit-clear" onClick={clear}>
+                Drop pending
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Garden tile editor — slightly different layout (two numeric fields)
+// ---------------------------------------------------------------------------
+
+interface GardenTileEditorProps {
+  currentPlantId: number;
+  currentGrowTime: number;
+  hasPending: boolean;
+  onCommit: (plantId: number, growTime: number) => void;
+  onClear: () => void;
+}
+
+function GardenTileEditor({
+  currentPlantId,
+  currentGrowTime,
+  hasPending,
+  onCommit,
+  onClear,
+}: GardenTileEditorProps) {
+  const [open, setOpen] = useState(false);
+  const [plantDraft, setPlantDraft] = useState(currentPlantId.toString());
+  const [growDraft, setGrowDraft] = useState(currentGrowTime.toString());
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPlantDraft(currentPlantId.toString());
+    setGrowDraft(currentGrowTime.toString());
+  }, [currentPlantId, currentGrowTime]);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        className="inline-edit-trigger"
+        onClick={() => setOpen(true)}
+      >
+        {hasPending ? 'Edit (pending)' : 'Edit'}
+        <span className="beta-pill">BETA</span>
+      </button>
+    );
+  }
+
+  function commit() {
+    const p = Number.parseInt(plantDraft, 10);
+    const g = Number.parseInt(growDraft, 10);
+    if (!Number.isFinite(p) || p < 0 || p > 255) {
+      setErr('plant_id must be 0..255.');
+      return;
+    }
+    if (!Number.isFinite(g) || g < 0 || g > 255) {
+      setErr('grow_time must be 0..255.');
+      return;
+    }
+    setErr(null);
+    onCommit(p, g);
+    setOpen(false);
+  }
+
+  return (
+    <div className="inline-edit-body">
+      <label className="inline-edit-label">
+        plant_id
+        <input
+          className="inline-edit-input narrow"
+          type="number"
+          min={0}
+          max={255}
+          step={1}
+          value={plantDraft}
+          onChange={e => setPlantDraft(e.target.value)}
+        />
+      </label>
+      <label className="inline-edit-label">
+        grow_time
+        <input
+          className="inline-edit-input narrow"
+          type="number"
+          min={0}
+          max={255}
+          step={1}
+          value={growDraft}
+          onChange={e => setGrowDraft(e.target.value)}
+        />
+      </label>
+      {err && <span className="inline-edit-error">{err}</span>}
+      <div className="inline-edit-actions">
+        <button type="button" className="inline-edit-save" onClick={commit}>
+          Stage edit
+        </button>
+        <button
+          type="button"
+          className="inline-edit-cancel"
+          onClick={() => {
+            setOpen(false);
+            setErr(null);
+          }}
+        >
+          Cancel
+        </button>
+        {hasPending && (
+          <button
+            type="button"
+            className="inline-edit-clear"
+            onClick={() => {
+              onClear();
+              setOpen(false);
+            }}
+          >
+            Drop pending
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -241,9 +560,22 @@ interface SlotViewProps {
   setNotes: (n: NotesByRegion) => void;
   fileLabel: string;
   payloadSha: string;
+  editCtx: EditCtx;
+  /** True iff this is the slot the user is currently inspecting AND the
+   *  one we expose edit controls on. We only allow editing on slot A;
+   *  every edit mirrors to both slots automatically. */
+  editable: boolean;
 }
 
-function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProps) {
+function SlotView({
+  slot,
+  notes,
+  setNotes,
+  fileLabel,
+  payloadSha,
+  editCtx,
+  editable,
+}: SlotViewProps) {
   if (slot.uninitialised) {
     return (
       <div className="slot-uninit">
@@ -353,6 +685,31 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
             <strong className="player-name">
               {slot.playerName || <span className="muted">(empty)</span>}
             </strong>
+            {editable && (
+              <InlineEdit
+                label="player name"
+                pendingValue={editCtx.edits.playerName?.value ?? null}
+                initialDraft={slot.playerName}
+                maxChars={PLAYER_NAME_MAX_CHARS}
+                onCommit={draft => {
+                  if (draft.length > PLAYER_NAME_MAX_CHARS) {
+                    return `Max ${PLAYER_NAME_MAX_CHARS} characters.`;
+                  }
+                  editCtx.setEdits(e => ({
+                    ...e,
+                    playerName: { value: draft },
+                  }));
+                  return null;
+                }}
+                onClear={() =>
+                  editCtx.setEdits(e => {
+                    const next = { ...e };
+                    delete next.playerName;
+                    return next;
+                  })
+                }
+              />
+            )}
           </dd>
         </dl>
       </Section>
@@ -395,6 +752,37 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
           <p className="ritch-value">
             <strong>{slot.ritch.toLocaleString()}</strong> Ritch
           </p>
+        )}
+        {editable && (
+          <InlineEdit
+            label="Ritch"
+            pendingValue={
+              editCtx.edits.ritch !== undefined
+                ? editCtx.edits.ritch.value.toString()
+                : null
+            }
+            pendingLabel={
+              editCtx.edits.ritch !== undefined
+                ? editCtx.edits.ritch.value.toLocaleString()
+                : undefined
+            }
+            initialDraft={slot.ritch?.toString() ?? '0'}
+            onCommit={draft => {
+              const v = Number.parseInt(draft, 10);
+              if (!Number.isFinite(v) || v < 0 || v > 0xffffffff) {
+                return 'Must be a whole number 0..4294967295.';
+              }
+              editCtx.setEdits(e => ({ ...e, ritch: { value: v } }));
+              return null;
+            }}
+            onClear={() =>
+              editCtx.setEdits(e => {
+                const next = { ...e };
+                delete next.ritch;
+                return next;
+              })
+            }
+          />
         )}
       </Section>
 
@@ -562,6 +950,91 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
           <strong>{slot.garden.populatedTiles.toLocaleString()}</strong>{' '}
           populated tiles out of <strong>{slot.garden.totalTiles.toLocaleString()}</strong> slots.
         </p>
+        {slot.garden.tiles.length > 0 && (
+          <details className="tile-details">
+            <summary>
+              Show {slot.garden.tiles.length} populated tile
+              {slot.garden.tiles.length === 1 ? '' : 's'}
+            </summary>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Offset</th>
+                  <th>plant_id</th>
+                  <th>grow_time</th>
+                  {editable && <th>Edit (beta)</th>}
+                </tr>
+              </thead>
+              <tbody>
+                {slot.garden.tiles.slice(0, 64).map(tile => {
+                  const pending = editCtx.edits.gardenTile[tile.bodyOffset];
+                  return (
+                    <tr key={tile.bodyOffset}>
+                      <td>{tile.index}</td>
+                      <td><code>{hex(tile.bodyOffset)}</code></td>
+                      <td>
+                        {pending !== undefined ? (
+                          <>
+                            <span className="muted strike">{tile.plantId}</span>{' '}
+                            <strong>{pending.plantId}</strong>
+                          </>
+                        ) : (
+                          tile.plantId
+                        )}
+                      </td>
+                      <td>
+                        {pending !== undefined ? (
+                          <>
+                            <span className="muted strike">{tile.growTime}</span>{' '}
+                            <strong>{pending.growTime}</strong>
+                          </>
+                        ) : (
+                          tile.growTime
+                        )}
+                      </td>
+                      {editable && (
+                        <td>
+                          <GardenTileEditor
+                            currentPlantId={pending?.plantId ?? tile.plantId}
+                            currentGrowTime={pending?.growTime ?? tile.growTime}
+                            hasPending={pending !== undefined}
+                            onCommit={(plantId, growTime) => {
+                              editCtx.setEdits(prev => ({
+                                ...prev,
+                                gardenTile: {
+                                  ...prev.gardenTile,
+                                  [tile.bodyOffset]: { plantId, growTime },
+                                },
+                              }));
+                            }}
+                            onClear={() =>
+                              editCtx.setEdits(prev => {
+                                const next = { ...prev.gardenTile };
+                                delete next[tile.bodyOffset];
+                                return { ...prev, gardenTile: next };
+                              })
+                            }
+                          />
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+                {slot.garden.tiles.length > 64 && (
+                  <tr>
+                    <td colSpan={editable ? 5 : 4}>
+                      <span className="muted">
+                        … {slot.garden.tiles.length - 64} more tile
+                        {slot.garden.tiles.length - 64 === 1 ? '' : 's'} not shown
+                      </span>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </details>
+        )}
       </Section>
 
       {/* Catalog */}
@@ -577,15 +1050,45 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
           <p className="muted">No catalog entries decoded.</p>
         ) : (
           <ol className="entries-list">
-            {slot.catalogEntries.map(e => (
-              <li key={e.bodyOffset}>
-                <div className="entry-meta">
-                  <code>{hex(e.bodyOffset)}</code>
-                  <span className="entry-header">hdr: <code>{e.headerHex}</code></span>
-                </div>
-                <div className="entry-text">{e.text}</div>
-              </li>
-            ))}
+            {slot.catalogEntries.map(e => {
+              const pending = editCtx.edits.catalog[e.bodyOffset];
+              return (
+                <li key={e.bodyOffset}>
+                  <div className="entry-meta">
+                    <code>{hex(e.bodyOffset)}</code>
+                    <span className="entry-header">hdr: <code>{e.headerHex}</code></span>
+                  </div>
+                  <div className="entry-text">{e.text}</div>
+                  {editable && (
+                    <InlineEdit
+                      label="catalog text"
+                      beta
+                      multiline
+                      pendingValue={pending ?? null}
+                      initialDraft={e.text}
+                      maxChars={CATALOG_TEXT_MAX_CHARS}
+                      onCommit={draft => {
+                        if (draft.length > CATALOG_TEXT_MAX_CHARS) {
+                          return `Max ${CATALOG_TEXT_MAX_CHARS} characters.`;
+                        }
+                        editCtx.setEdits(prev => ({
+                          ...prev,
+                          catalog: { ...prev.catalog, [e.bodyOffset]: draft },
+                        }));
+                        return null;
+                      }}
+                      onClear={() =>
+                        editCtx.setEdits(prev => {
+                          const next = { ...prev.catalog };
+                          delete next[e.bodyOffset];
+                          return { ...prev, catalog: next };
+                        })
+                      }
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ol>
         )}
       </Section>
@@ -603,15 +1106,45 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
           <p className="muted">No mail bodies decoded.</p>
         ) : (
           <ol className="entries-list">
-            {slot.mailEntries.map(e => (
-              <li key={e.bodyOffset}>
-                <div className="entry-meta">
-                  <code>{hex(e.bodyOffset)}</code>
-                  <span className="entry-header">hdr: <code>{e.headerHex}</code></span>
-                </div>
-                <div className="entry-text">{e.text}</div>
-              </li>
-            ))}
+            {slot.mailEntries.map(e => {
+              const pending = editCtx.edits.mail[e.bodyOffset];
+              return (
+                <li key={e.bodyOffset}>
+                  <div className="entry-meta">
+                    <code>{hex(e.bodyOffset)}</code>
+                    <span className="entry-header">hdr: <code>{e.headerHex}</code></span>
+                  </div>
+                  <div className="entry-text">{e.text}</div>
+                  {editable && (
+                    <InlineEdit
+                      label="mail text"
+                      beta
+                      multiline
+                      pendingValue={pending ?? null}
+                      initialDraft={e.text}
+                      maxChars={MAIL_TEXT_MAX_CHARS}
+                      onCommit={draft => {
+                        if (draft.length > MAIL_TEXT_MAX_CHARS) {
+                          return `Max ${MAIL_TEXT_MAX_CHARS} characters.`;
+                        }
+                        editCtx.setEdits(prev => ({
+                          ...prev,
+                          mail: { ...prev.mail, [e.bodyOffset]: draft },
+                        }));
+                        return null;
+                      }}
+                      onClear={() =>
+                        editCtx.setEdits(prev => {
+                          const next = { ...prev.mail };
+                          delete next[e.bodyOffset];
+                          return { ...prev, mail: next };
+                        })
+                      }
+                    />
+                  )}
+                </li>
+              );
+            })}
           </ol>
         )}
       </Section>
@@ -665,17 +1198,53 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
               <th>Offset</th>
               <th>State</th>
               <th>Name</th>
+              {editable && <th>Edit name (beta)</th>}
             </tr>
           </thead>
           <tbody>
-            {slot.residents.map(r => (
-              <tr key={r.bodyOffset} className={`resident-${r.state}`}>
-                <td>{r.index}</td>
-                <td><code>{hex(r.bodyOffset)}</code></td>
-                <td>{r.state}</td>
-                <td>{r.state === 'active' ? r.name : <span className="muted">—</span>}</td>
-              </tr>
-            ))}
+            {slot.residents.map(r => {
+              const pending = editCtx.edits.residentName[r.bodyOffset];
+              return (
+                <tr key={r.bodyOffset} className={`resident-${r.state}`}>
+                  <td>{r.index}</td>
+                  <td><code>{hex(r.bodyOffset)}</code></td>
+                  <td>{r.state}</td>
+                  <td>{r.state === 'active' ? r.name : <span className="muted">—</span>}</td>
+                  {editable && (
+                    <td>
+                      {r.state === 'active' ? (
+                        <InlineEdit
+                          label="resident name"
+                          beta
+                          pendingValue={pending ?? null}
+                          initialDraft={r.name}
+                          maxChars={RESIDENT_NAME_MAX_CHARS}
+                          onCommit={draft => {
+                            if (draft.length > RESIDENT_NAME_MAX_CHARS) {
+                              return `Max ${RESIDENT_NAME_MAX_CHARS} characters.`;
+                            }
+                            editCtx.setEdits(e => ({
+                              ...e,
+                              residentName: { ...e.residentName, [r.bodyOffset]: draft },
+                            }));
+                            return null;
+                          }}
+                          onClear={() =>
+                            editCtx.setEdits(e => {
+                              const next = { ...e.residentName };
+                              delete next[r.bodyOffset];
+                              return { ...e, residentName: next };
+                            })
+                          }
+                        />
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </Section>
@@ -690,12 +1259,22 @@ function SlotView({ slot, notes, setNotes, fileLabel, payloadSha }: SlotViewProp
 export default function SaveFileInspector() {
   const [fileMeta, setFileMeta] = useState<{ name: string; size: number } | null>(null);
   const [parse, setParse] = useState<SaveParse | null>(null);
+  /** The raw bytes of the originally-supplied file, retained so we can
+   *  preserve the .dsv footer when downloading edited saves. */
+  const [originalFile, setOriginalFile] = useState<Uint8Array | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
   const [activeSlotTab, setActiveSlotTab] = useState<SlotLabel>('A');
   const [notes, setNotes] = useState<NotesByRegion>({});
+  const [edits, setEdits] = useState<PendingEditMap>(makeEmptyEdits);
+  const [betaBackedUp, setBetaBackedUp] = useState(false);
+  const [downloadState, setDownloadState] = useState<'idle' | 'downloading' | 'done' | 'error'>('idle');
+  const [downloadMsg, setDownloadMsg] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+
+  const editCtx = useMemo<EditCtx>(() => ({ edits, setEdits }), [edits]);
+  const editCount = pendingEditCount(edits);
 
   // Reload notes whenever the parsed payload SHA changes.
   useEffect(() => {
@@ -705,6 +1284,11 @@ export default function SaveFileInspector() {
     } else {
       setNotes({});
     }
+    // Each new file resets the pending-edit slate and the backup checkbox.
+    setEdits(makeEmptyEdits());
+    setBetaBackedUp(false);
+    setDownloadState('idle');
+    setDownloadMsg(null);
   }, [parse?.payloadSha256, parse?.activeSlot]);
 
   // Persist notes back to localStorage whenever they change.
@@ -731,6 +1315,7 @@ export default function SaveFileInspector() {
       const buf = new Uint8Array(await file.arrayBuffer());
       const result = await parseSaveFile(buf);
       setParse(result);
+      setOriginalFile(buf);
       if (result.wrapper.error) {
         setError(result.wrapper.error);
       }
@@ -761,7 +1346,51 @@ export default function SaveFileInspector() {
   function clearFile() {
     setFileMeta(null);
     setParse(null);
+    setOriginalFile(null);
     setError(null);
+    setEdits(makeEmptyEdits());
+    setBetaBackedUp(false);
+    setDownloadState('idle');
+    setDownloadMsg(null);
+  }
+
+  function discardAllEdits() {
+    setEdits(makeEmptyEdits());
+    setDownloadState('idle');
+    setDownloadMsg(null);
+  }
+
+  async function applyAndDownload() {
+    if (!parse?.wrapper.payload || !originalFile || !fileMeta) return;
+    setDownloadState('downloading');
+    setDownloadMsg(null);
+    try {
+      const editList = editsToPendingList(edits);
+      const result = applyEdits(parse.wrapper.payload, editList);
+      const wrapperKind: 'dsv' | 'raw' =
+        parse.wrapper.kind === 'dsv' ? 'dsv' : 'raw';
+      const finalBytes = rewrapForDownload(result.payload, wrapperKind, originalFile);
+      const outName = suffixFilenameForEdit(fileMeta.name);
+      // Coerce to a fresh ArrayBuffer so Blob is happy in strict envs.
+      const ab = new ArrayBuffer(finalBytes.byteLength);
+      new Uint8Array(ab).set(finalBytes);
+      const blob = new Blob([ab], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = outName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.setTimeout(() => URL.revokeObjectURL(url), 5000);
+      setDownloadState('done');
+      setDownloadMsg(
+        `Wrote ${outName} (${finalBytes.byteLength.toLocaleString()} bytes). New checksums: slot A ${result.slotAChecksumHex}, slot B ${result.slotBChecksumHex}.`,
+      );
+    } catch (e: any) {
+      setDownloadState('error');
+      setDownloadMsg(e?.message || String(e));
+    }
   }
 
   const slotForTab = activeSlotTab === 'A' ? parse?.slotA : parse?.slotB;
@@ -942,8 +1571,65 @@ export default function SaveFileInspector() {
                 setNotes={setNotes}
                 fileLabel={fileLabel}
                 payloadSha={payloadSha}
+                editCtx={editCtx}
+                editable={activeSlotTab === 'A' && !slotForTab.uninitialised}
               />
             )}
+
+            <section className="editor-footer">
+              <div className="editor-banner">
+                <strong>BETA — back up your original save first.</strong>{' '}
+                Editing fields beyond Ritch and player name has not been
+                tested in-game yet. If the modified save breaks something,
+                you&apos;ll want the original to fall back to. Edits are
+                applied to both slot A and slot B, with the 20-byte header
+                checksum recomputed.
+              </div>
+              <label className="backup-check">
+                <input
+                  type="checkbox"
+                  checked={betaBackedUp}
+                  onChange={e => setBetaBackedUp(e.target.checked)}
+                />
+                <span>I have backed up my save.</span>
+              </label>
+              <div className="editor-actions">
+                <span className="editor-count">
+                  {editCount === 0
+                    ? 'No pending edits.'
+                    : `${editCount} pending edit${editCount === 1 ? '' : 's'}.`}
+                </span>
+                <button
+                  type="button"
+                  className="editor-discard"
+                  onClick={discardAllEdits}
+                  disabled={editCount === 0}
+                >
+                  Discard all pending edits
+                </button>
+                <button
+                  type="button"
+                  className="editor-save"
+                  onClick={applyAndDownload}
+                  disabled={
+                    editCount === 0 ||
+                    !betaBackedUp ||
+                    downloadState === 'downloading'
+                  }
+                >
+                  {downloadState === 'downloading'
+                    ? 'Writing…'
+                    : 'Save & download'}
+                </button>
+              </div>
+              {downloadMsg && (
+                <div
+                  className={`download-msg ${downloadState === 'error' ? 'is-error' : downloadState === 'done' ? 'is-done' : ''}`}
+                >
+                  {downloadMsg}
+                </div>
+              )}
+            </section>
           </>
         )}
       </div>
@@ -1252,6 +1938,156 @@ export default function SaveFileInspector() {
           font-size: 0.8rem; color: var(--color-ink-soft); font-style: italic;
         }
         .muted { color: var(--color-ink-soft); }
+        .strike { text-decoration: line-through; }
+
+        .tile-details summary {
+          cursor: pointer;
+          color: var(--color-purple-600);
+          font-size: 0.85rem;
+          font-weight: 600;
+          padding: 4px 0;
+        }
+        .tile-details summary:hover { color: var(--color-pink-600); }
+
+        /* Inline-edit primitives */
+        .inline-edit { display: inline-block; margin-top: 4px; }
+        .inline-edit-trigger {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 3px 10px; border-radius: var(--radius-pill);
+          background: white; border: 1px solid var(--color-purple-100);
+          color: var(--color-purple-600);
+          font: inherit; font-size: 0.78rem; font-weight: 600;
+          cursor: pointer;
+        }
+        .inline-edit-trigger:hover {
+          background: var(--color-purple-50);
+        }
+        .inline-edit.has-pending .inline-edit-trigger {
+          background: #fffbe6;
+          border-color: #f3d774;
+          color: #8a6a14;
+        }
+        .beta-pill {
+          font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em;
+          padding: 1px 6px; border-radius: var(--radius-pill);
+          background: var(--color-pink-50); color: var(--color-pink-600);
+          border: 1px solid var(--color-pink-200);
+        }
+        .inline-edit-body {
+          margin-top: 6px;
+          padding: 8px 10px;
+          background: white;
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+          display: flex; flex-direction: column; gap: 6px;
+          max-width: 420px;
+        }
+        .inline-edit-input {
+          width: 100%;
+          padding: 6px 10px;
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+          background: white;
+          font: inherit; font-size: 0.88rem;
+          color: var(--color-ink);
+        }
+        .inline-edit-input.narrow { width: 90px; }
+        .inline-edit-input:focus { outline: 2px solid var(--color-purple-100); }
+        .inline-edit-label {
+          display: inline-flex; gap: 6px; align-items: center;
+          font-size: 0.78rem; color: var(--color-purple-600); font-weight: 600;
+        }
+        .inline-edit-counter {
+          font-size: 0.72rem; color: var(--color-ink-soft);
+          align-self: flex-end;
+        }
+        .inline-edit-error {
+          font-size: 0.78rem; color: var(--color-pink-600);
+        }
+        .inline-edit-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .inline-edit-save, .inline-edit-cancel, .inline-edit-clear {
+          padding: 4px 10px; border-radius: var(--radius-pill);
+          font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        }
+        .inline-edit-save {
+          background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+          color: white; border: none;
+        }
+        .inline-edit-save:hover { transform: translateY(-1px); }
+        .inline-edit-cancel {
+          background: white; border: 1px solid var(--color-purple-100);
+          color: var(--color-purple-600);
+        }
+        .inline-edit-cancel:hover { background: var(--color-purple-50); }
+        .inline-edit-clear {
+          background: white; border: 1px solid var(--color-pink-200);
+          color: var(--color-pink-600);
+        }
+        .inline-edit-clear:hover { background: var(--color-pink-50); }
+
+        /* Editor footer */
+        .editor-footer {
+          margin-top: 10px;
+          padding: 14px 16px;
+          background: white;
+          border: 2px solid #f3d774;
+          border-radius: var(--radius-lg);
+          display: flex; flex-direction: column; gap: 10px;
+        }
+        .editor-banner {
+          padding: 10px 14px;
+          background: #fff7d6;
+          border-left: 4px solid #d99e1f;
+          border-radius: var(--radius-md);
+          color: #5c4413;
+          font-size: 0.88rem;
+          line-height: 1.5;
+        }
+        .editor-banner strong { color: #b3700c; }
+        .backup-check {
+          display: inline-flex; align-items: center; gap: 8px;
+          color: var(--color-ink); font-size: 0.9rem;
+        }
+        .backup-check input { width: 16px; height: 16px; }
+        .editor-actions {
+          display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+        }
+        .editor-count {
+          color: var(--color-ink); font-size: 0.9rem;
+          margin-right: auto;
+        }
+        .editor-discard {
+          padding: 6px 14px; border-radius: var(--radius-pill);
+          background: white; border: 1px solid var(--color-purple-100);
+          color: var(--color-purple-600); font-weight: 600;
+          font: inherit; font-size: 0.85rem; cursor: pointer;
+        }
+        .editor-discard:hover { background: var(--color-purple-50); }
+        .editor-discard:disabled { opacity: 0.4; cursor: not-allowed; }
+        .editor-save {
+          padding: 8px 18px; border-radius: var(--radius-pill);
+          background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+          color: white; border: none; font-weight: 700;
+          font: inherit; font-size: 0.95rem; cursor: pointer;
+          box-shadow: 0 6px 16px rgba(155, 123, 217, 0.35);
+        }
+        .editor-save:hover { transform: translateY(-1px); }
+        .editor-save:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+        .download-msg {
+          padding: 8px 12px;
+          background: var(--color-purple-50);
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+          color: var(--color-ink);
+          font-size: 0.85rem;
+          word-break: break-word;
+        }
+        .download-msg.is-done {
+          background: #d9f3df; color: #2c8a4a; border-color: #b9e2c4;
+        }
+        .download-msg.is-error {
+          background: var(--color-pink-50); color: var(--color-pink-600); border-color: var(--color-pink-200);
+        }
       `}</style>
     </div>
   );
