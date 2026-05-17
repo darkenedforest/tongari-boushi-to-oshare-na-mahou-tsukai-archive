@@ -16,10 +16,7 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
   <section class="page-header">
     <h1>Tongari Boushi v2.32 — Rev 1 test build</h1>
     <p class="lede">
-      Test build for Freedom. Not the public release. This page exists at
-      a direct URL only — no nav link, no listing on the Patches page,
-      no entry in the Changelog. If you got here on purpose, you know
-      who sent you.
+      Test build for Freedom. Not the public release.
     </p>
   </section>
 
@@ -41,87 +38,33 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
 
   <section class="card">
     <h2>What's in this build</h2>
-    <p class="intro">
-      Every bullet below was byte-verified against the produced ROM
-      before this build was published. The verification report is in
-      <code>notes/_v232_clean_rev1_verified_changes.md</code> in the
-      translation repo.
-    </p>
     <ul class="changes">
       <li>
-        <strong>Fish-catch screens no longer make you press through 16 blank dialog pages.</strong>
-        Every "You caught a ___!" message (Door Key, Pacific Saury,
-        Flounder, Golden Eye Snapper, Crab, Sea Robin, Sakhalin Taimen,
-        Sardine, Mackerel, Tiger Prawn, Eel, Yellowtail, Salmon, Cod,
-        Bonito, Goby, Spanish Mackerel, Ikura, Uni, Fried Shrimp,
-        Kamaboko, Shachihoko — 22 strings total in
-        <code>msg99051.ofs</code> entries 66–87) had a trailing run of
-        16 empty phrase boundaries plus a stray <code>*</code>
-        character. All 22 now end cleanly on the result line.
+        <strong>No gameplay or text changes vs v2.31.</strong>
       </li>
       <li>
-        <strong>Routine NPC dialogs no longer flash an extra blank page mid-line.</strong>
-        About 7,899 dialog entries across the message tree had a single
-        leftover empty phrase boundary (from a previous translation pass
-        where a sub-entry's body was empty but its control tags
-        survived). The on-screen effect was one extra "press A to
-        continue" press on a blank dialog box. Those entries now advance
-        directly from one visible line to the next. 555 of those
-        entries had two leftover boundaries; those are also fixed.
+        <strong>Internal: new pipeline integrity checks</strong> —
+        sentinel verification, rebuild gate, and a placeholder-leakage
+        gate that catch DB-drift regressions before they ship.
       </li>
       <li>
-        <strong>Internal placeholder-leakage regression cannot ship from this pipeline again.</strong>
-        The prior v2.32 candidate had 4,350 literal placeholder tokens
-        (<code>[NPC_DAT:</code>, <code>[PLAYER_NAME]</code>, etc.)
-        leaking into ROM bytes as visible text. The build pipeline now
-        has a byte-level gate that scans every produced <code>.nds</code>
-        for those patterns and refuses to release if any are found. This
-        build has 0 leaks.
-      </li>
-      <li>
-        <strong>Everything from v2.31 still works as it did.</strong>
-        All 40 sentinels pass: the 29 v2.31 song retranslations
-        (Summer Cottage, Broken Tears, Congasta, etc.), the His Majesty
-        canon (58 occurrences), Berry's shop (378 occurrences), the
-        leading-§ strip on the 10 affected entries, the Her Majesty
-        ban (0 occurrences), and the v2.31 stability fixes (friend
-        menu, sing/hum codec, clothing codec, bug-registering crash)
-        all stay applied byte-for-byte.
+        <strong>Purpose of this test:</strong> confirm the patcher
+        produces a clean, playable ROM after the internal pipeline
+        rebuild.
       </li>
     </ul>
-
-    <p class="not-in">
-      Not in this build (deferred): the <code>Tetsu</code> →
-      <code>Reginald</code> cross-game canon rename in
-      <code>msg52056.ofs</code>, the ~865 leading-§ candidates that
-      don't match the strict bug pattern, and the AI-translated songs
-      that read as stylistic interpretations rather than literal
-      translations.
-    </p>
   </section>
 
   <section class="card">
     <h2>Verification</h2>
-    <p>This build passed all three of the production integrity gates:</p>
+    <p>This build passed all three production integrity gates:</p>
     <ul class="gates">
-      <li><strong>Sentinels — 40 / 40 passed.</strong> Every invariant
-        from v2.31 (His Majesty count, song retranslations, leading-§
-        strip, ban list) verified against the rebuilt ROM.</li>
-      <li><strong>Rebuild gate — 34 / 34 fix-manifest rows present.</strong>
-        Every row of every fix manifest had its <code>after_value</code>
-        substring located in the rebuilt ROM bytes.</li>
-      <li><strong>Placeholder-leakage gate — 0 leaks.</strong> Byte
-        scan of the entire 268,435,456-byte ROM for literal
-        placeholder text turned up nothing.</li>
+      <li><strong>Sentinels — 40 / 40 passed.</strong></li>
+      <li><strong>Rebuild gate — 34 / 34 fix-manifest rows present.</strong></li>
+      <li><strong>Placeholder-leakage gate — 0 leaks.</strong></li>
     </ul>
-    <p>
-      The text-content diff vs v2.31 Rev 1 covered 2,167 <code>.ofs</code>
-      files and 129,515 entries. Of those, 14,529 entries differed in
-      bytes; classification (after stripping non-visible control bytes)
-      breaks down as: 6,608 tag-only diffs (player sees nothing
-      different), 7,899 phrase-boundary count diffs (the dialog
-      pacing fix above), 22 actual word-level diffs (the fish-catch
-      screen fix above). Everything else is byte-identical to v2.31.
+    <p class="meta-hash">
+      Patched-ROM SHA-256: <code>{patchedRomSha256}</code>
     </p>
   </section>
 
@@ -294,6 +237,16 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
 
   .gates strong {
     color: var(--color-pink-600);
+  }
+
+  .meta-hash {
+    margin: 14px 0 0;
+    font-size: 0.9rem;
+    color: var(--color-ink-soft);
+  }
+
+  .meta-hash code {
+    word-break: break-all;
   }
 
   ol {
