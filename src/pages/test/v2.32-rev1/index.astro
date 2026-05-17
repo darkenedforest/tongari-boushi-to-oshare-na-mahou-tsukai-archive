@@ -1,0 +1,334 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+
+const base = import.meta.env.BASE_URL;
+
+const patchUrl = `${base}/patches/tongari-boushi-en-v2.32-rev1-test.xdelta`;
+const patchSize = '3.10 MB';
+const patchSha256 = '8992d021e5e1e1cfa2ea17198c81807ac0f1d04d83186f88c9ed9a73382736bb';
+const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed8528eff068f20';
+---
+
+<Layout title="v2.32 Rev 1 test build">
+  <!-- NOTE: this page is unlinked from the rest of the site.
+       Header.astro nav does not include /test/. Patches page does not
+       reference v2.32-rev1-test. It is reachable only by direct URL. -->
+  <section class="page-header">
+    <h1>Tongari Boushi v2.32 — Rev 1 test build</h1>
+    <p class="lede">
+      Test build for Freedom. Not the public release. This page exists at
+      a direct URL only — no nav link, no listing on the Patches page,
+      no entry in the Changelog. If you got here on purpose, you know
+      who sent you.
+    </p>
+  </section>
+
+  <section class="card download-card">
+    <h2>Download</h2>
+    <a class="big-button" href={patchUrl} download>
+      tongari-boushi-en-v2.32-rev1-test.xdelta&nbsp;
+      <span class="size">({patchSize})</span>
+    </a>
+    <dl class="meta">
+      <dt>Source ROM</dt>
+      <dd>JP <strong>Rev 1</strong> (filename usually ends with <code>(J) Rev 1.nds</code>)</dd>
+      <dt>Patch SHA-256</dt>
+      <dd><code>{patchSha256}</code></dd>
+      <dt>Patched ROM SHA-256 (what you should get out)</dt>
+      <dd><code>{patchedRomSha256}</code></dd>
+    </dl>
+  </section>
+
+  <section class="card">
+    <h2>What's in this build</h2>
+    <p class="intro">
+      Every bullet below was byte-verified against the produced ROM
+      before this build was published. The verification report is in
+      <code>notes/_v232_clean_rev1_verified_changes.md</code> in the
+      translation repo.
+    </p>
+    <ul class="changes">
+      <li>
+        <strong>Fish-catch screens no longer make you press through 16 blank dialog pages.</strong>
+        Every "You caught a ___!" message (Door Key, Pacific Saury,
+        Flounder, Golden Eye Snapper, Crab, Sea Robin, Sakhalin Taimen,
+        Sardine, Mackerel, Tiger Prawn, Eel, Yellowtail, Salmon, Cod,
+        Bonito, Goby, Spanish Mackerel, Ikura, Uni, Fried Shrimp,
+        Kamaboko, Shachihoko — 22 strings total in
+        <code>msg99051.ofs</code> entries 66–87) had a trailing run of
+        16 empty phrase boundaries plus a stray <code>*</code>
+        character. All 22 now end cleanly on the result line.
+      </li>
+      <li>
+        <strong>Routine NPC dialogs no longer flash an extra blank page mid-line.</strong>
+        About 7,899 dialog entries across the message tree had a single
+        leftover empty phrase boundary (from a previous translation pass
+        where a sub-entry's body was empty but its control tags
+        survived). The on-screen effect was one extra "press A to
+        continue" press on a blank dialog box. Those entries now advance
+        directly from one visible line to the next. 555 of those
+        entries had two leftover boundaries; those are also fixed.
+      </li>
+      <li>
+        <strong>Internal placeholder-leakage regression cannot ship from this pipeline again.</strong>
+        The prior v2.32 candidate had 4,350 literal placeholder tokens
+        (<code>[NPC_DAT:</code>, <code>[PLAYER_NAME]</code>, etc.)
+        leaking into ROM bytes as visible text. The build pipeline now
+        has a byte-level gate that scans every produced <code>.nds</code>
+        for those patterns and refuses to release if any are found. This
+        build has 0 leaks.
+      </li>
+      <li>
+        <strong>Everything from v2.31 still works as it did.</strong>
+        All 40 sentinels pass: the 29 v2.31 song retranslations
+        (Summer Cottage, Broken Tears, Congasta, etc.), the His Majesty
+        canon (58 occurrences), Berry's shop (378 occurrences), the
+        leading-§ strip on the 10 affected entries, the Her Majesty
+        ban (0 occurrences), and the v2.31 stability fixes (friend
+        menu, sing/hum codec, clothing codec, bug-registering crash)
+        all stay applied byte-for-byte.
+      </li>
+    </ul>
+
+    <p class="not-in">
+      Not in this build (deferred): the <code>Tetsu</code> →
+      <code>Reginald</code> cross-game canon rename in
+      <code>msg52056.ofs</code>, the ~865 leading-§ candidates that
+      don't match the strict bug pattern, and the AI-translated songs
+      that read as stylistic interpretations rather than literal
+      translations.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Verification</h2>
+    <p>This build passed all three of the production integrity gates:</p>
+    <ul class="gates">
+      <li><strong>Sentinels — 40 / 40 passed.</strong> Every invariant
+        from v2.31 (His Majesty count, song retranslations, leading-§
+        strip, ban list) verified against the rebuilt ROM.</li>
+      <li><strong>Rebuild gate — 34 / 34 fix-manifest rows present.</strong>
+        Every row of every fix manifest had its <code>after_value</code>
+        substring located in the rebuilt ROM bytes.</li>
+      <li><strong>Placeholder-leakage gate — 0 leaks.</strong> Byte
+        scan of the entire 268,435,456-byte ROM for literal
+        placeholder text turned up nothing.</li>
+    </ul>
+    <p>
+      The text-content diff vs v2.31 Rev 1 covered 2,167 <code>.ofs</code>
+      files and 129,515 entries. Of those, 14,529 entries differed in
+      bytes; classification (after stripping non-visible control bytes)
+      breaks down as: 6,608 tag-only diffs (player sees nothing
+      different), 7,899 phrase-boundary count diffs (the dialog
+      pacing fix above), 22 actual word-level diffs (the fish-catch
+      screen fix above). Everything else is byte-identical to v2.31.
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>How to apply</h2>
+    <ol>
+      <li>
+        Get the JP <strong>Rev 1</strong> ROM of <em>Tongari Boushi to
+        Oshare na Mahou Tsukai</em>. The filename usually ends in
+        <code>(J) Rev 1.nds</code>. Confirm with an MD5 / SHA256 of the
+        clean dump if you have one to compare against.
+      </li>
+      <li>
+        Use <a href="https://www.romhacking.net/utilities/704/" target="_blank" rel="noopener">Delta Patcher</a>
+        (or any xdelta3-compatible tool):
+        <ul class="bare">
+          <li>Original file → your JP Rev 1 ROM</li>
+          <li>XDelta patch → the <code>.xdelta</code> downloaded above</li>
+          <li>Apply</li>
+        </ul>
+      </li>
+      <li>
+        The output should be a 268,435,456-byte <code>.nds</code> with
+        SHA-256 <code>1bda3c9c…</code> (full hash above). If you don't
+        see that hash, the source ROM is the wrong revision or got
+        corrupted.
+      </li>
+    </ol>
+    <p class="muted small">
+      Equivalent command-line: <code>xdelta3 -d -s &lt;jp-rev1.nds&gt; tongari-boushi-en-v2.32-rev1-test.xdelta &lt;out.nds&gt;</code>
+    </p>
+  </section>
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 12px;
+  }
+
+  .page-header h1 {
+    margin: 0 0 14px;
+    font-size: 1.9rem;
+  }
+
+  .lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 1.05rem;
+  }
+
+  .card {
+    background: var(--surface-strong);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-pink-100);
+    box-shadow: var(--shadow-soft);
+    padding: 24px 28px;
+    margin: 22px 0;
+  }
+
+  .card h2 {
+    margin: 0 0 14px;
+    font-size: 1.2rem;
+    color: var(--color-purple-600);
+  }
+
+  .download-card {
+    text-align: left;
+  }
+
+  .big-button {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 14px 22px;
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1rem;
+    box-shadow: 0 6px 16px rgba(155, 123, 217, 0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .big-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(155, 123, 217, 0.35);
+    color: white;
+  }
+
+  .big-button .size {
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0.85;
+  }
+
+  .meta {
+    margin: 18px 0 0;
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 16px;
+    font-size: 0.92rem;
+  }
+
+  .meta dt {
+    color: var(--color-ink-soft);
+    font-weight: 600;
+  }
+
+  .meta dd {
+    margin: 0;
+  }
+
+  .meta code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.82rem;
+    color: var(--color-purple-600);
+    background: var(--color-purple-50);
+    padding: 2px 8px;
+    border-radius: 6px;
+    word-break: break-all;
+    border: 1px solid var(--color-purple-100);
+  }
+
+  .intro {
+    margin: 0 0 14px;
+    line-height: 1.55;
+    color: var(--color-ink);
+  }
+
+  .changes {
+    margin: 0;
+    padding-left: 22px;
+    line-height: 1.65;
+  }
+
+  .changes li {
+    margin: 12px 0;
+  }
+
+  .changes li::marker {
+    color: var(--color-pink-400);
+  }
+
+  .changes strong {
+    color: var(--color-purple-600);
+  }
+
+  .not-in {
+    margin: 18px 0 0;
+    padding: 12px 14px;
+    background: var(--color-purple-50);
+    border-left: 3px solid var(--color-purple-400);
+    border-radius: var(--radius-sm);
+    font-size: 0.92rem;
+    color: var(--color-ink);
+  }
+
+  .gates {
+    margin: 0;
+    padding-left: 22px;
+    line-height: 1.6;
+  }
+
+  .gates li {
+    margin: 6px 0;
+  }
+
+  .gates strong {
+    color: var(--color-pink-600);
+  }
+
+  ol {
+    padding-left: 22px;
+    line-height: 1.6;
+  }
+
+  ol li {
+    margin: 8px 0;
+  }
+
+  .bare {
+    list-style: disc;
+    padding-left: 20px;
+    margin: 6px 0;
+  }
+
+  .bare li {
+    margin: 2px 0;
+  }
+
+  .muted {
+    color: var(--color-ink-soft);
+  }
+
+  .small {
+    font-size: 0.88rem;
+  }
+
+  code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 0.88em;
+    background: var(--color-purple-50);
+    padding: 1px 6px;
+    border-radius: 6px;
+    color: var(--color-purple-600);
+  }
+</style>
