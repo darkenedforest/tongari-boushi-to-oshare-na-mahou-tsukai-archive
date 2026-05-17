@@ -664,6 +664,40 @@ function SlotView({
         </p>
       </Section>
 
+      {/* Extra[0] checksum — step-234 discovery, fixes Ritch-edit regression */}
+      <Section
+        regionId={`${slot.label}-extra0Checksum`}
+        title={REGION_DESCRIPTORS.extra0Checksum.title}
+        range={REGION_DESCRIPTORS.extra0Checksum.range}
+        confidence={REGION_DESCRIPTORS.extra0Checksum.confidence}
+        parsedSnapshot={`stored=${slot.extra0Checksum.storedHex} computed=${slot.extra0Checksum.computedHex} → ${slot.extra0Checksum.ok ? 'PASS' : 'FAIL'}`}
+        {...labelArgs}
+      >
+        <div className={`csum-row ${slot.extra0Checksum.ok ? 'pass' : 'fail'}`}>
+          <span className="csum-status">{slot.extra0Checksum.ok ? 'PASS' : 'FAIL'}</span>
+          <div className="csum-detail">
+            <span>Stored: <code>{slot.extra0Checksum.storedHex}</code></span>
+            <span>Computed: <code>{slot.extra0Checksum.computedHex}</code></span>
+          </div>
+        </div>
+        {!slot.extra0Checksum.ok && (
+          <p className="csum-warn">
+            Extra[0] checksum mismatch. This is the third integrity check
+            the game performs (the per-slot Family-C meta record). Ritch
+            (slot+0x1CFD0 = extra[0]+0x1E0) lives inside this region, so
+            any Ritch edit must recompute this csum in addition to the
+            body and header csums. Failing here is the most-likely cause
+            of an in-game "save data is corrupt" message after a wallet
+            edit.
+          </p>
+        )}
+        <p className="note-text">
+          RFC1071 over extra[0][0..0x22F8] with the first 2 bytes zeroed.
+          Confirmed step-234 against 36/36 initialised extra[0] regions
+          in our corpus.
+        </p>
+      </Section>
+
       {/* Version magic */}
       <Section
         regionId={`${slot.label}-versionMagic`}
@@ -930,10 +964,13 @@ function SlotView({
           </table>
         )}
         <p className="note-text">
-          Known limitation: the full (category, sub-index) &rarr; item_id
-          dispatch table hasn&apos;t been exported yet. Only confirmed
-          mappings (e.g. Transmitter at cat 2, sub 6) show a name; others
-          render as &quot;Unknown item (cat, sub)&quot; honestly rather than
+          Known limitation: the (category, sub-index) &rarr; item_id
+          decoding for the active-inventory region is unresolved. Step-232
+          withdrew the only previously-shipped mapping after finding it
+          was an artifact of misreading a u16 LE item ID as a packed
+          (cat, sub) tuple; no ARM9 accessor for body+0x4300 has been
+          identified. Every slot currently renders as &quot;Unknown item
+          (cat, sub)&quot; with a corpus-recurrence hint instead of
           guessing.
           {lookups && !lookups.ok && (
             <>
@@ -1600,7 +1637,8 @@ export default function SaveFileInspector() {
       setDownloadMsg(
         `Wrote ${outName} (${finalBytes.byteLength.toLocaleString()} bytes). ` +
           `New header csums: slot A ${result.slotAChecksumHex}, slot B ${result.slotBChecksumHex}. ` +
-          `New body csums: slot A ${result.slotABodyChecksumHex}, slot B ${result.slotBBodyChecksumHex}.`,
+          `New body csums: slot A ${result.slotABodyChecksumHex}, slot B ${result.slotBBodyChecksumHex}. ` +
+          `New extra[0] csums: slot A ${result.slotAExtra0ChecksumHex}, slot B ${result.slotBExtra0ChecksumHex}.`,
       );
     } catch (e: any) {
       setDownloadState('error');

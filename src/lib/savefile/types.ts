@@ -176,8 +176,17 @@ export interface SlotParse {
   /** Body-level RFC1071 checksum over body[0x14..0x14+0x1CDDC] with the
    *  first 2 bytes zeroed, stored at body[0x14:0x16]. Phase-7 step-219
    *  discovery; step-223 validation confirmed against 53/55 corpus saves.
-   *  Any editor touching bytes >= body[0x14] MUST recompute this. */
+   *  Any editor touching bytes >= body[0x14] (and inside the body-csum
+   *  range) MUST recompute this. */
   bodyChecksum: ChecksumInfo;
+  /** Extra[0] RFC1071 checksum over extra[0][0..0x22F8] with the first 2
+   *  bytes zeroed, stored at extra[0][0:2]. extra[0] is the per-slot
+   *  Family-C meta record starting at slot+0x1CDF0 (file 0x01CEF0 for
+   *  slot A, 0x05CDF0 for slot B). Ritch (slot+0x1CFD0 = extra[0]+0x1E0)
+   *  lives inside this region, so any Ritch edit invalidates this csum.
+   *  step-234 discovery — the previous editor.ts did NOT recompute this
+   *  csum after Ritch edits, producing saves the game refuses to load. */
+  extra0Checksum: ChecksumInfo;
   /** body[0x02:0x04] LE — expected 0x0161. */
   formatVersionMagic: number;
   /** body[0x06] active-flag. */

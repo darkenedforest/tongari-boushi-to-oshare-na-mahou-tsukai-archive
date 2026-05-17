@@ -11,19 +11,33 @@
 //   - Garden plant tile (plant_id byte + grow_time byte) — beta
 //
 // All edits write to BOTH slot A and slot B (mirror), then recompute the
-// TWO levels of checksum the game checks:
+// THREE levels of checksum the game checks:
 //
 //   1. The 20-byte slot-header checksum at body[0x00..0x02], computed over
 //      body[0x00..0x14] with body[0x00..0x02] zeroed. RFC1071 Internet
-//      Checksum (ARM9 0x02078A0C).
+//      Checksum (ARM9 0x02078A0C). Confirmed step-173.
 //   2. The body-level checksum at body[0x14..0x16], computed over
 //      body[0x14..0x14+0x1CDDC] with body[0x14..0x16] zeroed. Same RFC1071
 //      algorithm. Phase-7 step-219 discovery; step-223 confirmed this is
 //      required (53/55 corpus saves match the stored value, so the game
-//      reads/writes it). The PREVIOUS round of edits did NOT touch this
-//      and would have produced saves the game refused to load. Order: do
-//      the body csum FIRST (because it inputs body[0x14:0x16] zeroed,
-//      independent of the header csum word), THEN the header csum.
+//      reads/writes it).
+//   3. The extra[0] checksum at extra[0][0..0x02], computed over
+//      extra[0][0..0x22F8] with extra[0][0..0x02] zeroed. Same RFC1071
+//      algorithm. extra[0] starts at slot+0x1CDF0 (file 0x01CEF0 for
+//      slot A, 0x05CDF0 for slot B). Confirmed step-234 against 36/36
+//      initialised extra[0] regions in the corpus. Ritch
+//      (body 0x1CFD0 = extra[0]+0x1E0) lives INSIDE extra[0], so any
+//      Ritch edit MUST recompute this csum or the game rejects the slot.
+//      The previous editor only fixed (1) + (2) and silently produced
+//      Ritch-edited saves the game refused to load — this commit is the
+//      fix.
+//
+// Order — bottom-up by scope:
+//   1. extra[0] csum first (smallest nested region; though it lives just
+//      OUTSIDE the body-csum range, doing it first keeps the order
+//      monotonic in scope size).
+//   2. body csum second.
+//   3. header csum last.
 //
 // The DeSmuME .dsv wrapper (122-byte footer) is metadata only and is
 // preserved verbatim when present.
@@ -33,6 +47,8 @@ import {
   RAW_SIZE,
   DSV_FOOTER_LEN,
   BODY_CSUM_RANGE_LEN,
+  EXTRA0_OFFSET,
+  EXTRA0_LEN,
   inetCsum16,
 } from './parser';
 
@@ -84,6 +100,9 @@ export interface ApplyResult {
   /** Updated stored body-level checksum hex strings per slot. */
   slotABodyChecksumHex: string;
   slotBBodyChecksumHex: string;
+  /** Updated stored extra[0] checksum hex strings per slot. */
+  slotAExtra0ChecksumHex: string;
+  slotBExtra0ChecksumHex: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -171,6 +190,41 @@ function fixBodyChecksum(payload: Uint8Array, slot: 'A' | 'B'): number {
   // result.
   const region = new Uint8Array(BODY_CSUM_RANGE_LEN);
   for (let i = 0; i < BODY_CSUM_RANGE_LEN; i++) region[i] = payload[start + i];
+  region[0] = 0;
+  region[1] = 0;
+  const csum = inetCsum16(region);
+  payload[start] = csum & 0xff;
+  payload[start + 1] = (csum >>> 8) & 0xff;
+  return csum;
+}
+
+/** Recompute the extra[0] RFC1071 checksum at extra[0][0:2] over
+ *  extra[0][0..0x22F8] with extra[0][0:2] zeroed, then store the result
+ *  back as u16 LE at extra[0][0:2].
+ *
+ *  extra[0] starts at slot+0x1CDF0 (file 0x01CEF0 for slot A, 0x05CDF0
+ *  for slot B). Ritch (body 0x1CFD0 = extra[0]+0x1E0) lives INSIDE this
+ *  region, so any Ritch edit invalidates this csum. The previous editor
+ *  did NOT touch this csum, so Ritch-edited saves were rejected by the
+ *  game's load-time integrity check; step-234 added it.
+ *
+ *  This csum is independent of both the body csum (extra[0] sits
+ *  entirely OUTSIDE the body-csum range, which ends at body 0x1CDF0 =
+ *  the same offset where extra[0] starts) and the header csum, so
+ *  ordering within the three-level repair doesn't matter for
+ *  correctness — we do it first for clarity. */
+function fixExtra0Checksum(payload: Uint8Array, slot: 'A' | 'B'): number {
+  const base = slot === 'A' ? SLOT_A_BASE : SLOT_B_BASE;
+  const start = base + EXTRA0_OFFSET;
+  const end = start + EXTRA0_LEN;
+  if (end > payload.length) {
+    throw new Error(
+      `Extra[0] range [0x${start.toString(16)}..0x${end.toString(16)}) ` +
+      `exceeds payload length ${payload.length}.`,
+    );
+  }
+  const region = new Uint8Array(EXTRA0_LEN);
+  for (let i = 0; i < EXTRA0_LEN; i++) region[i] = payload[start + i];
   region[0] = 0;
   region[1] = 0;
   const csum = inetCsum16(region);
@@ -308,13 +362,18 @@ export function applyEdits(
     }
   }
 
-  // Fix both checksums for both slots, in the right order:
-  //   1. Body-level csum first (covers body[0x14..]; independent of the
-  //      header csum word at body[0x00..0x02]).
-  //   2. Header csum second (covers body[0x00..0x14] with body[0x00..0x02]
-  //      zeroed; only protects the 20-byte header).
-  // step-223 added the body-csum step — without it the previous editor
-  // silently shipped saves the game refuses to load.
+  // Fix all three checksums for both slots, in the right order. All three
+  // are independent of each other (extra[0] sits outside the body-csum
+  // range, body-csum sits outside the header-csum range), so any order
+  // works for correctness — we go bottom-up by scope for clarity:
+  //   1. extra[0] csum  — covers extra[0][0..0x22F8], stored at +0
+  //      (step-234 added this; previously missing → Ritch edits broke saves).
+  //   2. body csum      — covers body[0x14..0x14+0x1CDDC], stored at +0x14
+  //      (step-223 added this; previously missing → most edits broke saves).
+  //   3. header csum    — covers body[0x00..0x14], stored at +0
+  //      (step-173 — the original csum that the predecessor knew about).
+  const extra0CsumA = fixExtra0Checksum(payload, 'A');
+  const extra0CsumB = fixExtra0Checksum(payload, 'B');
   const bodyCsumA = fixBodyChecksum(payload, 'A');
   const bodyCsumB = fixBodyChecksum(payload, 'B');
   const csumA = fixHeaderChecksum(payload, 'A');
@@ -326,6 +385,8 @@ export function applyEdits(
     slotBChecksumHex: '0x' + csumB.toString(16).padStart(4, '0'),
     slotABodyChecksumHex: '0x' + bodyCsumA.toString(16).padStart(4, '0'),
     slotBBodyChecksumHex: '0x' + bodyCsumB.toString(16).padStart(4, '0'),
+    slotAExtra0ChecksumHex: '0x' + extra0CsumA.toString(16).padStart(4, '0'),
+    slotBExtra0ChecksumHex: '0x' + extra0CsumB.toString(16).padStart(4, '0'),
   };
 }
 
