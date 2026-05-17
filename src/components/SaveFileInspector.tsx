@@ -762,48 +762,45 @@ function SlotView({
         </details>
       </Section>
 
-      {/* Profile */}
+      {/* Profile — step-250: player name is at body 0x1149C (inside the
+          character record), NOT at body 0x47E. The body 0x47E slot
+          holds the SCHOOL name. Tyler's melonDS-confirmed save14
+          showed Player="Lamb" (body 0x1149C) + School="Revere"
+          (body 0x482). */}
       <Section
         regionId={`${slot.label}-profile`}
         title={REGION_DESCRIPTORS.profile.title}
         range={REGION_DESCRIPTORS.profile.range}
         confidence={REGION_DESCRIPTORS.profile.confidence}
-        parsedSnapshot={`name=${JSON.stringify(slot.playerName)} last_save=${slot.lastSaveTimestamp.decoded} create=${slot.characterCreateTimestamp.decoded}`}
+        parsedSnapshot={`player=${JSON.stringify(slot.playerName)} school=${JSON.stringify(slot.schoolName)}`}
         {...labelArgs}
       >
         <dl className="kv">
-          <dt>Player name (UTF-16 LE × 5)</dt>
+          <dt>Player name <span className="muted small">(body 0x1149C, UTF-16 LE × 11)</span></dt>
           <dd>
             <strong className="player-name">
               {slot.playerName || <span className="muted">(empty)</span>}
             </strong>
-            {editable && (
-              <InlineEdit
-                label="player name"
-                pendingValue={editCtx.edits.playerName?.value ?? null}
-                initialDraft={slot.playerName}
-                maxChars={PLAYER_NAME_MAX_CHARS}
-                onCommit={draft => {
-                  if (draft.length > PLAYER_NAME_MAX_CHARS) {
-                    return `Max ${PLAYER_NAME_MAX_CHARS} characters.`;
-                  }
-                  editCtx.setEdits(e => ({
-                    ...e,
-                    playerName: { value: draft },
-                  }));
-                  return null;
-                }}
-                onClear={() =>
-                  editCtx.setEdits(e => {
-                    const next = { ...e };
-                    delete next.playerName;
-                    return next;
-                  })
-                }
-              />
-            )}
+          </dd>
+          <dt>School name <span className="muted small">(body 0x482, UTF-16 LE × 6)</span></dt>
+          <dd>
+            <strong className="player-name">
+              {slot.schoolName || <span className="muted">(empty)</span>}
+            </strong>
           </dd>
         </dl>
+        <p className="note-text" style={{ marginTop: 8 }}>
+          <strong>step-250 reclassification:</strong> the field at body
+          0x47E that the inspector previously labeled "Player name" is
+          actually the <em>school name</em> the player chose during
+          character creation (verified against Tyler's save14 in
+          melonDS: in-game player "Lamb", school "Revere Magic
+          School"). The real player display name lives inside the
+          character record at body 0x1149C (intra offset +0x14 of the
+          0x11488 record). The inline "Edit player name" affordance
+          has been removed pending editor.ts updates that target the
+          correct offset.
+        </p>
       </Section>
 
       {/* Timestamps */}

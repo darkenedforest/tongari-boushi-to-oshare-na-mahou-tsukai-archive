@@ -235,8 +235,13 @@ export interface SlotParse {
   /** body[0x16:0x18] LE — format version sub-code (0x0900=v2.31, 0x102C=3DS). */
   formatVersionSubcode: number;
 
-  // Profile region (body 0x460..0x4B0)
+  // Profile region (body 0x460..0x4B0). step-250: this slot stores the
+  // SCHOOL name, not the player's display name. The actual player name
+  // lives inside the character record at body 0x1149C.
+  /** Player display name from the character record at body 0x1149C. */
   playerName: string;
+  /** School name from body 0x482 (UTF-16 LE, up to 6 chars). */
+  schoolName: string;
   lastSaveTimestamp: DateTimeInfo;
   characterCreateTimestamp: DateTimeInfo;
 

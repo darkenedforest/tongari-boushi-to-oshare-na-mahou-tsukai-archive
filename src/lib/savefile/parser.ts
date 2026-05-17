@@ -75,11 +75,24 @@ export const OFFSETS = {
   eventFlagsStart: 0x18,
   eventFlagsEnd: 0x460,
 
-  // Player profile (0x460..0x4B0)
-  playerName: 0x47e,
-  playerNameLen: 10, // 5 UTF-16 LE chars
+  // Player + school name (body 0x460..0x4B0). step-250 reclassification:
+  // body 0x47E was previously labelled "player name", but Tyler's
+  // melonDS-confirmed save14 reveals it's actually the SCHOOL name
+  // (the title shown on the save-load screen — save14 shows "Revere"
+  // here while the in-dialog player name is "Lamb"). The real player
+  // display name lives inside the character record at body 0x11488 +
+  // 0x14 = body 0x1149C, per phase-7's character-record decode.
+  schoolName: 0x47e,
+  schoolNameLen: 12, // 6 UTF-16 LE chars (max)
   lastSaveTs: 0x494,
   charCreateTs: 0x4a4,
+
+  /** Body offset of the player's display name (inside the character
+   *  record at body 0x11488, intra offset +0x14). Verified against
+   *  save14: "Lamb" sits at body 0x1149C. Length 0x16 = 11 UTF-16
+   *  LE chars max per phase-7. */
+  playerName: 0x1149c,
+  playerNameLen: 22, // 11 UTF-16 LE chars (per phase-7 layout)
 
   // Unconfirmed region — body[0x4300..0x4480], stride 8. Previously
   // (step-176/177) labelled "active inventory" with a (cat<<8)|sub
@@ -925,6 +938,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       perSaveFingerprint: 0xffff,
       formatVersionSubcode: 0xffff,
       playerName: '',
+      schoolName: '',
       lastSaveTimestamp: { rawHex: '', decoded: '(uninit)' },
       characterCreateTimestamp: { rawHex: '', decoded: '(uninit)' },
       ritch: null,
@@ -955,7 +969,12 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
 
   const playerName = decodeUtf16Le(
     body.subarray(OFFSETS.playerName, OFFSETS.playerName + OFFSETS.playerNameLen),
-    5,
+    11,
+  );
+
+  const schoolName = decodeUtf16Le(
+    body.subarray(OFFSETS.schoolName, OFFSETS.schoolName + OFFSETS.schoolNameLen),
+    6,
   );
 
   const lastSaveTimestamp = decodeDatetime(
@@ -981,6 +1000,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     perSaveFingerprint: u16le(view, OFFSETS.perSaveFingerprint),
     formatVersionSubcode: u16le(view, OFFSETS.formatSubcode),
     playerName,
+    schoolName,
     lastSaveTimestamp,
     characterCreateTimestamp,
     ritch,
@@ -1092,7 +1112,7 @@ export const REGION_DESCRIPTORS = {
   versionMagic: { id: 'versionMagic', title: 'Format version magic + sub-code', range: 'body[0x02:0x04] + body[0x16:0x18]', confidence: 'confirmed' as const },
   wizardLevelCandidate: { id: 'wizardLevelCandidate', title: 'Wizard level candidate (read-only — please test)', range: 'body[0x11488 + 0x5a]', confidence: 'candidate' as const },
   eventFlags: { id: 'eventFlags', title: 'Event flag region', range: 'body[0x18:0x460], ~1 KiB bit-flags', confidence: 'candidate' as const },
-  profile: { id: 'profile', title: 'Player profile (name + timestamps)', range: 'body[0x460:0x4B0]', confidence: 'confirmed' as const },
+  profile: { id: 'profile', title: 'Player + school name', range: 'school body[0x47E:0x48A]; player body[0x1149C:0x114B2]', confidence: 'confirmed' as const },
   inventoryBitmap: { id: 'inventoryBitmap', title: 'Inventory bitmap (clothing + garden decorations)', range: 'slot_rel 0x1CDF2 (file 0x1CEF2 / 0x5CDF2), 173-bit packed bitmap', confidence: 'confirmed' as const },
   inventory: { id: 'inventory', title: 'Region at body 0x4300 — semantics unconfirmed (previously labelled "active inventory")', range: 'body[0x4300:0x4480], 8-byte stride', confidence: 'disputed' as const },
   activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
