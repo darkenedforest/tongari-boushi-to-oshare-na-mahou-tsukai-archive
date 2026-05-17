@@ -91,17 +91,17 @@ const base = import.meta.env.BASE_URL;
     targets the per-overlay catalog work is filling in next.
   </p>
 
-  <h2>Per-overlay catalog (placeholder)</h2>
+  <h2>Per-overlay catalog</h2>
   <div class="fg-note">
-    <strong>Coming in a follow-up commit.</strong> A separate workstream is
-    currently building the full per-overlay knowledgebase — confirmed role,
-    notable functions, calling conventions, patch safety. That work will land
-    as a CSV + Markdown pair in the translation repo and be mirrored here as
-    a sortable table. When it's ready, this section will be replaced with the
-    catalog itself; until then, the
-    <a href={`${base}/field-guide/how-the-game-works/overlays/`}>overlays page</a>
-    has the technical details we currently have (RAM slots, controller/body
-    pattern, persistent engines).
+    <strong>The full per-overlay catalog is now live.</strong>
+    All 180 overlays have been put through a Ghidra-based reverse-engineering
+    pass and have their own page with the function listing Ghidra found, the
+    container files each overlay references, and any Japanese strings baked
+    directly into the overlay binary. For deeper technical detail on any
+    individual overlay, jump to the
+    <a href={`${base}/overlays/`}>overlays section</a>. The landing page has a
+    searchable / filterable index; each row drills into the per-overlay
+    detail page.
   </div>
 
   <h2>Related</h2>

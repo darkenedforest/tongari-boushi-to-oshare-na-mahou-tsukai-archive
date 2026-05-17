@@ -49,6 +49,41 @@ const base = import.meta.env.BASE_URL;
     </a>
   </div>
 
+  <h2>Where to go next</h2>
+  <p>
+    The Field Guide is the "how it works" layer. Several of the topics it
+    introduces have their own dedicated sections in the archive with the
+    actual data, tooling, or browsable catalog behind the explanation:
+  </p>
+  <ul class="fg-pointers">
+    <li>
+      <a href={`${base}/overlays/`}><strong>Overlays section</strong></a> —
+      for deeper technical detail on each of the 180 overlays. Per-overlay
+      pages with function listings, container references, and embedded JP
+      strings, indexed and searchable.
+    </li>
+    <li>
+      <a href={`${base}/save-files/`}><strong>Save Files inspector</strong></a> —
+      for inspecting and (eventually) editing your own save. The inspector
+      runs entirely in your browser; what we know about the save format
+      lives there.
+    </li>
+    <li>
+      <a href={`${base}/translation/`}><strong>Translation browser</strong></a> —
+      for searching every dialog line in the game. JP source, working EN,
+      per-row status, filterable by file and speaker.
+    </li>
+    <li>
+      <a href={`${base}/changelog/`}><strong>Changelog</strong></a> — for the
+      full version history with before/after diffs of every row that
+      changed in each release.
+    </li>
+    <li>
+      <a href={`${base}/patches/`}><strong>Patches</strong></a> — for the
+      latest patch download and the MD5 / Delta Patcher how-to.
+    </li>
+  </ul>
+
   <h2>A note on confidence</h2>
   <p>
     Some of what's here is verified at the byte level — round-trip tested,
@@ -59,3 +94,17 @@ const base = import.meta.env.BASE_URL;
     "working theory," it explains the data we have but might still be wrong.
   </p>
 </FieldGuideLayout>
+
+<style>
+  .fg-pointers {
+    margin: 12px 0 24px;
+    padding-left: 22px;
+    line-height: 1.6;
+  }
+  .fg-pointers li {
+    margin: 8px 0;
+  }
+  .fg-pointers a strong {
+    color: var(--color-purple-600);
+  }
+</style>
