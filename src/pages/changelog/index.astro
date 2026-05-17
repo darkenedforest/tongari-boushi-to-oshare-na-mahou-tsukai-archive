@@ -1,6 +1,5 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import v232 from '../../data/changelog_v2.32.json';
 import v231 from '../../data/changelog_v2.31.json';
 import v23meta from '../../data/changelog_v2.3_meta.json';
 import v22meta from '../../data/changelog_v2.2_meta.json';
@@ -22,13 +21,6 @@ type ReleaseCard = {
 };
 
 const releases: ReleaseCard[] = [
-  {
-    version: v232.version,
-    date: v232.date,
-    href: `${base}/changelog/v2.32/`,
-    headline: v232.headline,
-    totalChanges: v232.otherChanges?.length ?? 0,
-  },
   {
     version: v231.version,
     date: v231.date,

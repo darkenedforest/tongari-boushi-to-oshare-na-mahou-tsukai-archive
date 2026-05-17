@@ -23,37 +23,6 @@
   },
   "releases": [
     {
-      "version": "2.32",
-      "date": "2026-05-17",
-      "headline": "Reproducible-from-DB build, with release-pipeline guardrails",
-      "summary": "No visible game text changes vs v2.31. v2.32 exists because the translation database had drifted out of sync with what v2.31 shipped — specifically the 29 song-title retranslations had reverted to their pre-v2.31 strings, so any developer running the rebuild would have silently regressed Cottage Cheese / Ragin' Rivers / !atsugnoC / etc. v2.32 restores the database to its correct state and adds a build-time scaffold (fix manifests, sentinels, rebuild gate, release manifest, session accounting) that catches this class of regression automatically. If you're already on v2.31 there's no gameplay reason to update.",
-      "changes": [
-        "All 29 song-title retranslations from v2.31 (Summer Cottage, Broken Tears, Wooshannie!, etc.) are now anchored to the database with sha256 before/after fingerprints and re-verified against the patched ROM bytes on every rebuild. They cannot silently regress again.",
-        "New build-time integrity pipeline: fix manifests (every database write logged), sentinels (40 invariants that must hold), rebuild gate (every fix verified in the rebuilt ROM bytes before the build is accepted), release manifest (releases/v2.32.json is the source of truth for what shipped, not the CHANGELOG markdown).",
-        "Same patched text as v2.31 — Summer Cottage stays Summer Cottage, His Majesty stays His Majesty, Berry's stays Berry's, the leading-§ strip fix stays applied, the overlay-compressed-flag crash fix stays applied."
-      ],
-      "changelogUrl": "/changelog/v2.32/",
-      "downloads": [
-        {
-          "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.32-rev0.xdelta",
-          "isLocal": true,
-          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
-          "patchSizeBytes": 14388817,
-          "patchSha256": "530f6112915b7ce3c8340ed6019632ea1e5abd758ac0e7699fd3c4d7de71eb37"
-        },
-        {
-          "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.32-rev1.xdelta",
-          "isLocal": true,
-          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
-          "patchSizeBytes": 3250948,
-          "patchSha256": "b61ee2597ac6390daf763768523ad73b1260d0378a9a64a26ce9f6299482fbca"
-        }
-      ],
-      "notes": "No visible game text changed. This release is a developer-pipeline overhaul to prevent regressions; users already on v2.31 have no gameplay reason to update."
-    },
-    {
       "version": "2.31",
       "date": "2026-05-16",
       "headline": "Menu crashes fixed — friend menu, sing/hum, clothing codec, and bug-register no longer crash or freeze the game.",
