@@ -6,8 +6,12 @@
 //   - 'confirmed'  : exact byte semantics nailed down via differential test
 //                    saves or ARM9 disassembly.
 //   - 'candidate'  : structure clear but field semantics unverified.
+//   - 'disputed'   : a previously-shipped interpretation has been rejected
+//                    by later evidence; the raw bytes still display but
+//                    their meaning is unknown. See per-region note text
+//                    for the rejection trail.
 
-export type Confidence = 'confirmed' | 'candidate';
+export type Confidence = 'confirmed' | 'candidate' | 'disputed';
 
 export type SlotLabel = 'A' | 'B';
 
@@ -50,14 +54,21 @@ export interface DateTimeInfo {
   decoded: string;
 }
 
+/** Raw 8-byte record at body[0x4300:0x4480] stride 8. The "category /
+ *  sub_index" decomposition is a HOLDOVER from the rejected step-176/177
+ *  framework — step-232 found no ARM9 accessor touches this region and
+ *  the (cat<<8)|sub mapping was an artifact of misreading a u16 LE item
+ *  ID. We retain the fields purely so the UI can keep showing the raw
+ *  bytes; their semantics are unknown. See `notes/save_analysis/
+ *  _blockers.md` (step-232 entry) for the full rejection trail. */
 export interface InventorySlot {
   /** Slot offset relative to slot body. */
   bodyOffset: number;
-  /** Top byte of packed u16 — item category. */
+  /** High byte of the first u16 at this offset. Semantics unconfirmed. */
   category: number;
-  /** Low byte of packed u16 — item sub-index within category. */
+  /** Low byte of the first u16 at this offset. Semantics unconfirmed. */
   subIndex: number;
-  /** Hex of the remaining 6 trailing bytes (acquisition time/flags). */
+  /** Hex of the remaining 6 trailing bytes. Semantics unconfirmed. */
   trailingHex: string;
 }
 
@@ -208,7 +219,9 @@ export interface SlotParse {
   // Wallet (body 0x1CFD0..0x1CFD4)
   ritch: number | null;
 
-  // Active inventory (body 0x4300..0x4480)
+  // Raw 8-byte records at body[0x4300..0x4480]. Previously labelled
+  // "active inventory"; step-232 rejected that framework. Surfaced read-
+  // only as a research region (see InventorySlot doc above).
   activeInventory: InventorySlot[];
 
   // Catalog announcements (0x163F2 stride 0xA8)

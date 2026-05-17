@@ -394,9 +394,15 @@ function GardenTileEditor({
 // ---------------------------------------------------------------------------
 
 function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
+  const label =
+    confidence === 'confirmed'
+      ? 'Confirmed'
+      : confidence === 'candidate'
+        ? 'Candidate'
+        : 'Disputed';
   return (
     <span className={`conf-badge conf-${confidence}`}>
-      {confidence === 'confirmed' ? 'Confirmed' : 'Candidate'}
+      {label}
     </span>
   );
 }
@@ -896,66 +902,77 @@ function SlotView({
         )}
       </Section>
 
-      {/* Active inventory */}
+      {/* Region at body 0x4300 — semantics unconfirmed.
+          Previously mis-labelled "Active inventory". Step-232 rejected
+          that framework: no ARM9 accessor reads or writes body+0x4300,
+          and the only previously-"confirmed" (cat,sub)->item mapping
+          was an artifact of misreading a u16 LE item ID. We keep
+          surfacing the raw bytes here READ-ONLY for ongoing research
+          but no longer pretend they decode to inventory items. */}
       <Section
         regionId={`${slot.label}-inventory`}
         title={REGION_DESCRIPTORS.inventory.title}
         range={REGION_DESCRIPTORS.inventory.range}
         confidence={REGION_DESCRIPTORS.inventory.confidence}
-        parsedSnapshot={`${slot.activeInventory.length} occupied slots`}
+        parsedSnapshot={`${slot.activeInventory.length} non-empty 8-byte records (raw — semantics unconfirmed)`}
         {...labelArgs}
       >
+        <p className="note-text" style={{ marginTop: 0 }}>
+          <strong>Previously misidentified as inventory slots.</strong> ARM9
+          disassembly found no accessor touching this offset. The bytes
+          shown below are real but their meaning is unknown — the
+          (category, sub-index) &rarr; item_id decoding shipped through
+          step-231 was an artifact of misreading a u16 LE item ID as a
+          packed (cat&nbsp;&lt;&lt;&nbsp;8)|sub tuple, and the only save
+          supposedly containing the &quot;confirmed&quot; Transmitter
+          mapping does not contain that item ID anywhere in its payload.
+          Inventory location is still being researched. Surfaced
+          read-only as a research region; do not interpret the byte
+          values as items.
+        </p>
         {slot.activeInventory.length === 0 ? (
-          <p className="muted">No items in active inventory.</p>
+          <p className="muted">No non-empty 8-byte records at body[0x4300:0x4480].</p>
         ) : (
           <table className="data-table">
             <thead>
               <tr>
-                <th>Slot</th>
-                <th>Item</th>
-                <th className="col-right">Raw (cat, sub)</th>
+                <th>Body offset</th>
+                <th className="col-right">First u16 LE</th>
+                <th className="col-right">Trailing 6 bytes</th>
+                <th>Corpus recurrence</th>
               </tr>
             </thead>
             <tbody>
-              {slot.activeInventory.map((slotRow, idx) => {
-                const resolved = lookups
-                  ? resolveInventoryItem(lookups, slotRow.category, slotRow.subIndex)
-                  : { itemId: null, name: null, seenInSaves: 0 };
-                const displayName =
-                  resolved.name ??
-                  `Unknown item (cat=${slotRow.category}, sub=${slotRow.subIndex})`;
-                const known = resolved.itemId !== null;
+              {slot.activeInventory.map(slotRow => {
+                const u16 = ((slotRow.category << 8) | slotRow.subIndex) & 0xffff;
+                const seenInSaves = lookups
+                  ? resolveInventoryItem(lookups, slotRow.category, slotRow.subIndex).seenInSaves
+                  : 0;
                 return (
                   <tr key={slotRow.bodyOffset}>
-                    <td>{idx + 1}</td>
                     <td>
-                      {known ? (
-                        <>
-                          <strong>{displayName}</strong>{' '}
-                          <span className="muted small">
-                            (item_id {resolved.itemId})
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="muted">{displayName}</span>
-                          {resolved.seenInSaves > 0 && (
-                            <>
-                              {' '}
-                              <span className="muted small">
-                                (seen in {resolved.seenInSaves}{' '}
-                                {resolved.seenInSaves === 1 ? 'save' : 'saves'} in
-                                our corpus)
-                              </span>
-                            </>
-                          )}
-                        </>
-                      )}
+                      <code>{hex(slotRow.bodyOffset, 4)}</code>
                     </td>
                     <td className="col-right">
-                      <code className="muted">
-                        ({slotRow.category}, {slotRow.subIndex})
-                      </code>
+                      <code>
+                        {hex(u16, 4)}
+                      </code>{' '}
+                      <span className="muted small">({u16})</span>
+                    </td>
+                    <td className="col-right">
+                      <code className="muted">{slotRow.trailingHex}</code>
+                    </td>
+                    <td>
+                      {seenInSaves > 0 ? (
+                        <span className="muted small">
+                          first u16 byte-pattern recurs in {seenInSaves}{' '}
+                          {seenInSaves === 1 ? 'save' : 'saves'} in our
+                          corpus (byte-pattern stat only, not an item
+                          decoding)
+                        </span>
+                      ) : (
+                        <span className="muted small">—</span>
+                      )}
                     </td>
                   </tr>
                 );
@@ -963,22 +980,6 @@ function SlotView({
             </tbody>
           </table>
         )}
-        <p className="note-text">
-          Known limitation: the (category, sub-index) &rarr; item_id
-          decoding for the active-inventory region is unresolved. Step-232
-          withdrew the only previously-shipped mapping after finding it
-          was an artifact of misreading a u16 LE item ID as a packed
-          (cat, sub) tuple; no ARM9 accessor for body+0x4300 has been
-          identified. Every slot currently renders as &quot;Unknown item
-          (cat, sub)&quot; with a corpus-recurrence hint instead of
-          guessing.
-          {lookups && !lookups.ok && (
-            <>
-              {' '}
-              <em>(Name lookup table failed to load — names unavailable.)</em>
-            </>
-          )}
-        </p>
       </Section>
 
       {/* Activity log */}
@@ -2033,6 +2034,9 @@ export default function SaveFileInspector() {
         .conf-candidate {
           background: var(--color-pink-50); color: var(--color-pink-600);
           border: 1px solid var(--color-pink-200);
+        }
+        .conf-disputed {
+          background: #fde4d2; color: #a64a1a; border: 1px solid #f5c69e;
         }
 
         .flag-btn {
