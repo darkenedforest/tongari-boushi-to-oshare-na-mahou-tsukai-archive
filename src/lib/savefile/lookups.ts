@@ -78,14 +78,28 @@ const EMPTY: SavefileLookups = {
 let cached: SavefileLookups | null = null;
 let inflight: Promise<SavefileLookups> | null = null;
 
+/** Default URL for the lookups JSON. The Astro site is served under a
+ *  base path (see `astro.config.mjs`); using a bare `/data/...` URL
+ *  resolves to the site root, which 404s on GitHub Pages. Prepend
+ *  `import.meta.env.BASE_URL` so the request goes to the correct
+ *  subdirectory. step-249 fix — before this change, the inventory-bitmap
+ *  rows in the inspector showed `(item_id N — name unavailable)` for
+ *  every item because the lookups payload never loaded. */
+function defaultLookupsUrl(): string {
+  let base = (import.meta.env.BASE_URL ?? '/').toString();
+  if (!base.endsWith('/')) base += '/';
+  return `${base}data/savefile_lookups.json`;
+}
+
 export async function loadSavefileLookups(
-  url = '/data/savefile_lookups.json',
+  url?: string,
 ): Promise<SavefileLookups> {
   if (cached) return cached;
   if (inflight) return inflight;
+  const resolvedUrl = url ?? defaultLookupsUrl();
   inflight = (async () => {
     try {
-      const res = await fetch(url, { cache: 'force-cache' });
+      const res = await fetch(resolvedUrl, { cache: 'force-cache' });
       if (!res.ok) {
         cached = EMPTY;
         return cached;

@@ -228,7 +228,7 @@ function u32le(view: DataView, offset: number): number {
 }
 
 /** Decode up to `maxChars` UTF-16 LE characters from `data` starting at
- *  byte offset 0, stopping at the first   pair. */
+ *  byte offset 0, stopping at the first NUL pair. */
 function decodeUtf16Le(data: Uint8Array, maxChars: number): string {
   const decoder = new TextDecoder('utf-16le');
   // Trim to maxChars * 2 bytes, then stop at first null pair.
@@ -661,22 +661,37 @@ function parseStridedTextEntries(
 }
 
 function parseCatalog(body: Uint8Array): CatalogEntry[] {
+  // step-249: catalog records use a 6-byte header (status + date),
+  // not 8. Empirical verification against save14_v2.31_11772ritch:
+  // with headerLen=8 the parser truncated "Sorry I left without..."
+  // to "orry I left without..." (lost the leading "S"). The on-disk
+  // layout, per per-record dump, is:
+  //   +0x00..+0x05: 6-byte header (00 00 status-byte 04 month day)
+  //   +0x06..+0x86: main UTF-16 LE body text (max ~64 chars)
+  //   +0x88..+0xA7: trailing sender / addressee NPC name (UTF-16 LE)
   return parseStridedTextEntries(
     body,
     OFFSETS.catalogStart,
     OFFSETS.catalogEnd,
     OFFSETS.catalogStride,
-    8,
+    6,
   );
 }
 
 function parseMail(body: Uint8Array): MailEntry[] {
+  // step-249: mail bodies use the same 6-byte header structure as catalog
+  // entries. With headerLen=8 the inspector rendered the last 10 bytes
+  // of a record (e.g. "iva" — tail of "Aint no diva" in save14). Going
+  // to 6 surfaces the full text body. Note that the mail-region bytes in
+  // our corpus look more like shop/NPC metadata than free-form letters
+  // for many records — the inspector will still show few populated rows
+  // even after the fix because most slots are genuinely empty.
   return parseStridedTextEntries(
     body,
     OFFSETS.mailStart,
     OFFSETS.mailEnd,
     OFFSETS.mailStride,
-    8,
+    6,
   );
 }
 
@@ -685,6 +700,14 @@ function parseMail(body: Uint8Array): MailEntry[] {
 // ---------------------------------------------------------------------------
 
 function parseNpcRecords(body: Uint8Array): NpcRecord[] {
+  // step-249: these records do NOT store inline UTF-16 NPC names. Per-save
+  // dumps at body 0x119C0+0x500*N show packed ID/state bytes (e.g.
+  // `07 13 00 00 00 00 00 00 00 00 00 00 00 ff 00 00 44 61 ...`) — no
+  // UTF-16 LE name field exists at +0x00. The previous decoder produced
+  // single-character garbage like "ጇ" by reinterpreting two state bytes
+  // as a UTF-16 codepoint, so we now treat every populated record as
+  // name-less and surface only the raw bytes. A future revision can add
+  // an NPC-ID-to-name lookup once the record's ID-field offset is pinned.
   const out: NpcRecord[] = [];
   let idx = 0;
   for (
@@ -696,7 +719,11 @@ function parseNpcRecords(body: Uint8Array): NpcRecord[] {
     const preview = body.subarray(off + 16, off + 48);
     const uninit = allBytesEqual(head, 0xff);
     const vacant = allBytesEqual(head, 0x00);
-    const name = uninit || vacant ? '' : decodeUtf16Le(head, 8);
+    // step-249: intentionally NOT decoding `head` as UTF-16 — that
+    // produced mojibake on every save in our corpus. The first 16
+    // bytes are packed state bytes, not a UTF-16 name field. We leave
+    // `name` empty so the inspector renders "(empty)" honestly.
+    const name = '';
     out.push({
       index: idx,
       bodyOffset: off,

@@ -1165,10 +1165,14 @@ function SlotView({
         {...labelArgs}
       >
         <p>
-          Sampled roster of NPCs your player has interacted with. Names
-          decode directly from the record header (UTF-16 LE) — no ID
-          lookup needed. Per-NPC heart level / gift history fields
-          haven&apos;t been pinned yet.
+          Sampled roster of records at the per-NPC-state offset. Per
+          step-249 investigation these records do <strong>NOT</strong>{' '}
+          store UTF-16 LE inline names — the bytes contain packed
+          NPC-ID + state fields whose layout hasn&apos;t been pinned yet.
+          The previous decoder produced single-character mojibake by
+          mis-reading state bytes as a UTF-16 codepoint; we now leave
+          the name column empty until the real ID-to-name lookup is
+          wired up.
         </p>
         <table className="data-table">
           <thead>
