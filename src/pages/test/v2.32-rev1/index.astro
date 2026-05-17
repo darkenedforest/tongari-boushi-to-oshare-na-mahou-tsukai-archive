@@ -38,19 +38,46 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
 
   <section class="card">
     <h2>What's in this build</h2>
+    <p class="intro">
+      Every bullet below is byte-verified against the produced ROM.
+      Full report:
+      <code>notes/_v232_clean_rev1_verified_changes.md</code> in the
+      translation repo.
+    </p>
     <ul class="changes">
       <li>
-        <strong>No gameplay or text changes vs v2.31.</strong>
+        <strong>Fish-catch screens no longer make you press through 16 blank dialog pages.</strong>
+        Every "You caught a ___!" message (Pacific Saury, Flounder,
+        Crab, Sea Robin, Yellowtail, and 17 others — 22 entries in
+        <code>msg99051.ofs</code> 66–87) had a trailing run of 16
+        empty phrase boundaries plus a stray <code>*</code> character.
+        All 22 now end cleanly on the result line.
       </li>
       <li>
-        <strong>Internal: new pipeline integrity checks</strong> —
-        sentinel verification, rebuild gate, and a placeholder-leakage
-        gate that catch DB-drift regressions before they ship.
+        <strong>Routine NPC dialogs no longer flash an extra blank page mid-line.</strong>
+        About 7,899 dialog entries had a leftover empty phrase
+        boundary that made you press A through an extra blank dialog
+        box. Those now advance directly. 555 had two leftover
+        boundaries; those are also fixed.
       </li>
       <li>
-        <strong>Purpose of this test:</strong> confirm the patcher
-        produces a clean, playable ROM after the internal pipeline
-        rebuild.
+        <strong>Internal placeholder-leakage regression cannot ship from this pipeline again.</strong>
+        The prior v2.32 candidate had 4,350 literal placeholder tokens
+        (<code>[NPC_DAT:</code>, <code>[PLAYER_NAME]</code>, etc.)
+        leaking into ROM bytes as visible text. The build pipeline now
+        has a byte-level gate that scans every produced <code>.nds</code>
+        for those patterns and refuses to release if any are found.
+        This build has 0 leaks.
+      </li>
+      <li>
+        <strong>Everything from v2.31 still works as it did.</strong>
+        All 40 sentinels pass: 29 song retranslations (Summer Cottage,
+        Broken Tears, Congasta, etc.), the His Majesty canon (58
+        occurrences), Berry's shop (378 occurrences), the leading-§
+        strip on the 10 affected entries, the Her Majesty ban (0
+        occurrences), and the v2.31 stability fixes (friend menu,
+        sing/hum codec, clothing codec, bug-registering crash) all
+        stay applied byte-for-byte.
       </li>
     </ul>
   </section>
@@ -59,9 +86,15 @@ const patchedRomSha256 = '1bda3c9cab336554dca91c8403b2417ece512becf6aed585eed852
     <h2>Verification</h2>
     <p>This build passed all three production integrity gates:</p>
     <ul class="gates">
-      <li><strong>Sentinels — 40 / 40 passed.</strong></li>
-      <li><strong>Rebuild gate — 34 / 34 fix-manifest rows present.</strong></li>
-      <li><strong>Placeholder-leakage gate — 0 leaks.</strong></li>
+      <li><strong>Sentinels — 40 / 40 passed.</strong> Every invariant
+        from v2.31 (His Majesty count, song retranslations, leading-§
+        strip, ban list) verified against the rebuilt ROM.</li>
+      <li><strong>Rebuild gate — 34 / 34 fix-manifest rows present.</strong>
+        Every row of every fix manifest had its <code>after_value</code>
+        substring located in the rebuilt ROM bytes.</li>
+      <li><strong>Placeholder-leakage gate — 0 leaks.</strong> Byte
+        scan of the entire 268,435,456-byte ROM for literal
+        placeholder text turned up nothing.</li>
     </ul>
     <p class="meta-hash">
       Patched-ROM SHA-256: <code>{patchedRomSha256}</code>
