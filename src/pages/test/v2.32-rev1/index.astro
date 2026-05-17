@@ -1,11 +1,37 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
+import messageData from '../../../data/v232_messages.json';
 
 const base = import.meta.env.BASE_URL;
 
 const patchUrl = `${base}/patches/tongari-boushi-en-v2.32-rev1-test.xdelta`;
 const patchSize = '3.10 MB';
 const patchedRomSha256 = 'bd0a1e87ee75b5c00c11e0a245ed346cdb72d186a4f17523ea05005b72f2e5af';
+
+type ReviewEntry = {
+  entry_id: number;
+  sub_entry_id: number;
+  title: string | null;
+  body_html: string;
+};
+type ReviewGroup = {
+  file_path: string;
+  label: string;
+  entries: ReviewEntry[];
+};
+type ReviewBucket = {
+  key: string;
+  title: string;
+  intro: string;
+  groups: ReviewGroup[];
+};
+const reviewBuckets = messageData.buckets as ReviewBucket[];
+const reviewCounts = messageData.counts as {
+  shop: number;
+  letters: number;
+  messageboard: number;
+  total: number;
+};
 ---
 
 <Layout title="v2.32 Rev 1 test build">
@@ -100,6 +126,53 @@ const patchedRomSha256 = 'bd0a1e87ee75b5c00c11e0a245ed346cdb72d186a4f17523ea0500
     <p class="meta-hash">
       Patched ROM SHA-256: <code>{patchedRomSha256}</code>
     </p>
+  </section>
+
+  <section class="card review-card">
+    <h2>All shop messages and letters in this build (for review)</h2>
+    <p class="intro">
+      Below: every shop announcement, letter, and message-board post in this
+      build, rendered the way it appears in-game. Review for anything that
+      reads wrong, has stray placeholder text, or doesn't fit the screen.
+    </p>
+    <p class="muted small">
+      {reviewCounts.shop} shop messages &middot; {reviewCounts.letters} letter
+      templates &middot; {reviewCounts.messageboard} message-board posts
+      &middot; {reviewCounts.total} entries total. Names shown in
+      <em>italics</em> are filled in at delivery time from the relevant
+      NPC, player, item, or event.
+    </p>
+
+    <p class="muted small">
+      Click any heading to expand or collapse that group. The smaller letter
+      template groups expand by default; long bulletin lists start collapsed.
+    </p>
+
+    {reviewBuckets.map((bucket) => (
+      <div class="bucket" id={`bucket-${bucket.key}`}>
+        <h3 class="bucket-title">{bucket.title}</h3>
+        <p class="bucket-intro">{bucket.intro}</p>
+        {bucket.groups.map((group) => (
+          <details class="group" open={group.entries.length <= 20}>
+            <summary class="group-summary">
+              <span class="group-label">{group.label}</span>
+              <span class="group-count">{group.entries.length} entries</span>
+            </summary>
+            <ol class="entry-list">
+              {group.entries.map((entry, idx) => (
+                <li class="entry">
+                  {entry.title && (
+                    <h4 class="entry-title">{entry.title}</h4>
+                  )}
+                  <div class="entry-body" set:html={entry.body_html} />
+                  {idx < group.entries.length - 1 && <hr class="entry-sep" />}
+                </li>
+              ))}
+            </ol>
+          </details>
+        ))}
+      </div>
+    ))}
   </section>
 </Layout>
 
@@ -287,5 +360,135 @@ const patchedRomSha256 = 'bd0a1e87ee75b5c00c11e0a245ed346cdb72d186a4f17523ea0500
     padding: 1px 6px;
     border-radius: 6px;
     color: var(--color-purple-600);
+  }
+
+  /* ---- Message-review section ---- */
+  .review-card {
+    /* same .card base */
+  }
+
+  .review-card .bucket {
+    margin: 28px 0 8px;
+  }
+
+  .review-card .bucket:first-of-type {
+    margin-top: 22px;
+  }
+
+  .review-card .bucket-title {
+    margin: 0 0 6px;
+    font-size: 1.08rem;
+    color: var(--color-pink-600);
+    border-bottom: 2px solid var(--color-pink-100);
+    padding-bottom: 6px;
+  }
+
+  .review-card .bucket-intro {
+    margin: 0 0 14px;
+    font-size: 0.95rem;
+    color: var(--color-ink-soft);
+    line-height: 1.55;
+    max-width: 70ch;
+  }
+
+  .review-card .group {
+    background: white;
+    border: 1px solid var(--color-purple-100);
+    border-radius: var(--radius-md);
+    margin: 10px 0;
+    overflow: hidden;
+  }
+
+  .review-card .group[open] {
+    background: var(--surface-strong);
+  }
+
+  .review-card .group-summary {
+    padding: 10px 14px;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-weight: 600;
+    color: var(--color-purple-600);
+    user-select: none;
+  }
+
+  .review-card .group-summary::-webkit-details-marker { display: none; }
+
+  .review-card .group-summary::before {
+    content: '\25B8';   /* small right triangle */
+    display: inline-block;
+    margin-right: 8px;
+    color: var(--color-purple-400);
+    transition: transform 0.15s ease;
+  }
+
+  .review-card .group[open] > .group-summary::before {
+    transform: rotate(90deg);
+  }
+
+  .review-card .group-label {
+    flex: 1 1 auto;
+    font-size: 0.97rem;
+  }
+
+  .review-card .group-count {
+    flex: 0 0 auto;
+    font-size: 0.82rem;
+    color: var(--color-ink-soft);
+    background: var(--color-purple-50);
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+
+  .review-card .entry-list {
+    list-style: none;
+    margin: 0;
+    padding: 6px 18px 14px 18px;
+  }
+
+  .review-card .entry {
+    padding: 8px 0 4px 0;
+  }
+
+  .review-card .entry-title {
+    margin: 6px 0 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    letter-spacing: 0.01em;
+  }
+
+  .review-card .entry-body {
+    font-size: 0.95rem;
+    line-height: 1.55;
+    color: var(--color-ink);
+  }
+
+  .review-card .entry-body p {
+    margin: 0 0 9px;
+  }
+
+  .review-card .entry-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  .review-card .entry-body em {
+    font-style: italic;
+    color: var(--color-purple-600);
+    background: var(--color-purple-50);
+    padding: 0 4px;
+    border-radius: 4px;
+    font-size: 0.9em;
+  }
+
+  .review-card .entry-sep {
+    border: none;
+    border-top: 1px dashed var(--color-pink-100);
+    margin: 14px 0 4px;
   }
 </style>
