@@ -634,6 +634,36 @@ function SlotView({
         )}
       </Section>
 
+      {/* Body-level checksum — phase-7 / step-220 discovery, step-223 confirmed */}
+      <Section
+        regionId={`${slot.label}-bodyChecksum`}
+        title={REGION_DESCRIPTORS.bodyChecksum.title}
+        range={REGION_DESCRIPTORS.bodyChecksum.range}
+        confidence={REGION_DESCRIPTORS.bodyChecksum.confidence}
+        parsedSnapshot={`stored=${slot.bodyChecksum.storedHex} computed=${slot.bodyChecksum.computedHex} → ${slot.bodyChecksum.ok ? 'PASS' : 'FAIL'}`}
+        {...labelArgs}
+      >
+        <div className={`csum-row ${slot.bodyChecksum.ok ? 'pass' : 'fail'}`}>
+          <span className="csum-status">{slot.bodyChecksum.ok ? 'PASS' : 'FAIL'}</span>
+          <div className="csum-detail">
+            <span>Stored: <code>{slot.bodyChecksum.storedHex}</code></span>
+            <span>Computed: <code>{slot.bodyChecksum.computedHex}</code></span>
+          </div>
+        </div>
+        {!slot.bodyChecksum.ok && (
+          <p className="csum-warn">
+            Body-level checksum mismatch. This is the second integrity check
+            the game performs after the slot-header csum; if it fails the
+            game treats the slot as corrupt. Any editor that writes past
+            body[0x14] must recompute this in addition to the header csum.
+          </p>
+        )}
+        <p className="note-text">
+          RFC1071 over body[0x14..0x14+0x1CDDC] with body[0x14:0x16] zeroed.
+          Confirmed via 53/55 saves in our corpus.
+        </p>
+      </Section>
+
       {/* Version magic */}
       <Section
         regionId={`${slot.label}-versionMagic`}
@@ -659,8 +689,14 @@ function SlotView({
           <dd><code>{hex(slot.activeFlag, 2)}</code></dd>
           <dt>Other-slot byte (body[0x07])</dt>
           <dd><code>{hex(slot.otherSlotByte, 2)}</code></dd>
-          <dt>Per-save fingerprint (body[0x14:0x16])</dt>
-          <dd><code>{hex(slot.perSaveFingerprint)}</code></dd>
+          <dt>Body-csum word (body[0x14:0x16])</dt>
+          <dd>
+            <code>{hex(slot.perSaveFingerprint)}</code>{' '}
+            <span className="muted small">
+              (this is the stored body-level checksum, not a fingerprint —
+              see body checksum section above)
+            </span>
+          </dd>
         </dl>
       </Section>
 
@@ -753,6 +789,30 @@ function SlotView({
         </dl>
       </Section>
 
+      {/* Wizard-level candidate — read-only, please test */}
+      <Section
+        regionId={`${slot.label}-wizardLevelCandidate`}
+        title={REGION_DESCRIPTORS.wizardLevelCandidate.title}
+        range={REGION_DESCRIPTORS.wizardLevelCandidate.range}
+        confidence={REGION_DESCRIPTORS.wizardLevelCandidate.confidence}
+        parsedSnapshot={`byte=0x${slot.wizardLevelCandidate.rawByte.toString(16).padStart(2, '0')} (${slot.wizardLevelCandidate.rawByte})`}
+        {...labelArgs}
+      >
+        <dl className="kv">
+          <dt>Raw byte value</dt>
+          <dd>
+            <code>0x{slot.wizardLevelCandidate.rawByte.toString(16).padStart(2, '0')}</code>{' '}
+            ({slot.wizardLevelCandidate.rawByte})
+          </dd>
+        </dl>
+        <p className="note-text">{slot.wizardLevelCandidate.note}</p>
+        <p className="note-text">
+          <strong>Read-only.</strong> No edit affordance until semantics are
+          confirmed. If you can produce two saves at known different wizard
+          ranks, that will pin this offset for the editor.
+        </p>
+      </Section>
+
       {/* Ritch */}
       <Section
         regionId={`${slot.label}-ritch`}
@@ -826,7 +886,7 @@ function SlotView({
               {slot.activeInventory.map((slotRow, idx) => {
                 const resolved = lookups
                   ? resolveInventoryItem(lookups, slotRow.category, slotRow.subIndex)
-                  : { itemId: null, name: null };
+                  : { itemId: null, name: null, seenInSaves: 0 };
                 const displayName =
                   resolved.name ??
                   `Unknown item (cat=${slotRow.category}, sub=${slotRow.subIndex})`;
@@ -843,7 +903,19 @@ function SlotView({
                           </span>
                         </>
                       ) : (
-                        <span className="muted">{displayName}</span>
+                        <>
+                          <span className="muted">{displayName}</span>
+                          {resolved.seenInSaves > 0 && (
+                            <>
+                              {' '}
+                              <span className="muted small">
+                                (seen in {resolved.seenInSaves}{' '}
+                                {resolved.seenInSaves === 1 ? 'save' : 'saves'} in
+                                our corpus)
+                              </span>
+                            </>
+                          )}
+                        </>
                       )}
                     </td>
                     <td className="col-right">
@@ -1526,7 +1598,9 @@ export default function SaveFileInspector() {
       window.setTimeout(() => URL.revokeObjectURL(url), 5000);
       setDownloadState('done');
       setDownloadMsg(
-        `Wrote ${outName} (${finalBytes.byteLength.toLocaleString()} bytes). New checksums: slot A ${result.slotAChecksumHex}, slot B ${result.slotBChecksumHex}.`,
+        `Wrote ${outName} (${finalBytes.byteLength.toLocaleString()} bytes). ` +
+          `New header csums: slot A ${result.slotAChecksumHex}, slot B ${result.slotBChecksumHex}. ` +
+          `New body csums: slot A ${result.slotABodyChecksumHex}, slot B ${result.slotBBodyChecksumHex}.`,
       );
     } catch (e: any) {
       setDownloadState('error');

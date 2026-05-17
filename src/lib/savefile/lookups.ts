@@ -4,21 +4,38 @@
 //   src/translator/_export_savefile_lookups.py
 // and committed to this repo at `public/data/savefile_lookups.json`.
 // It contains:
-//   - items   : ROM item_id   -> EN name   (3322 entries)
-//   - ucc     : ROM slot_index -> EN craft name (168 entries)
-//   - npcs    : ROM npc_id    -> EN name   (252 entries)
-//   - plants  : plant_id      -> EN name   (0 entries today — mapping pending)
+//   - items             : ROM item_id   -> EN name   (3322 entries)
+//   - ucc               : ROM slot_index -> EN craft name (168 entries)
+//   - npcs              : ROM npc_id    -> EN name   (252 entries)
+//   - plants            : plant_id      -> EN name   (0 entries — pending)
+//   - inventory_cat_sub : packed cat:sub -> ROM item_id (confirmed) +
+//                         packed cat:sub -> N-saves-seen-in (observed)
 //
 // We do a single fetch on first use and cache the parsed object in memory
 // for the lifetime of the page. Network failure falls back to empty
 // tables so the inspector still renders (it just shows raw IDs).
+
+export interface InventoryCatSubLookup {
+  /** (cat, sub) -> ROM item_id, only verified pairs. */
+  confirmed: Record<string, number>;
+  /** (cat, sub) -> count of saves the pair appears in (corpus statistic). */
+  observed: Record<string, number>;
+}
 
 export interface SavefileLookups {
   items: Record<string, string>;
   ucc: Record<string, string>;
   npcs: Record<string, string>;
   plants: Record<string, string>;
-  counts: { items: number; ucc: number; npcs: number; plants: number };
+  counts: {
+    items: number;
+    ucc: number;
+    npcs: number;
+    plants: number;
+    cat_sub_pairs_confirmed?: number;
+    cat_sub_pairs_observed?: number;
+  };
+  inventory_cat_sub: InventoryCatSubLookup;
   generated_at: string;
   /** True if the JSON loaded successfully; false on fetch / parse error. */
   ok: boolean;
@@ -30,6 +47,7 @@ const EMPTY: SavefileLookups = {
   npcs: {},
   plants: {},
   counts: { items: 0, ucc: 0, npcs: 0, plants: 0 },
+  inventory_cat_sub: { confirmed: {}, observed: {} },
   generated_at: '',
   ok: false,
 };
@@ -56,6 +74,10 @@ export async function loadSavefileLookups(
         npcs: data.npcs ?? {},
         plants: data.plants ?? {},
         counts: data.counts ?? { items: 0, ucc: 0, npcs: 0, plants: 0 },
+        inventory_cat_sub: {
+          confirmed: data.inventory_cat_sub?.confirmed ?? {},
+          observed: data.inventory_cat_sub?.observed ?? {},
+        },
         generated_at: data.generated_at ?? '',
         ok: true,
       };
@@ -115,31 +137,42 @@ export function lookupPlantName(
 // The active inventory stores each slot as a packed u16 where the top
 // byte is a category and the low byte is a sub-index within that
 // category. The ROM holds a per-category dispatch table that maps
-// (category, sub_index) to an item_id, but we have not yet exported that
-// mapping for browser use.
+// (cat, sub) to an item_id, but the full mapping has NOT been exported
+// for browser use yet — that needs either ARM9 disassembly of the
+// per-category dispatch routine or a corpus of targeted differential
+// saves large enough to derive each pair from context. Neither has
+// happened yet.
 //
-// What IS confirmed today:
+// What IS confirmed today (shipped in savefile_lookups.json under
+// inventory_cat_sub.confirmed):
 //   - (category=2, sub_index=6) -> item_id 1887 (Transmitter), via
 //     differential save analysis on step-176 / step-177.
 //
-// Until the full table ships, we expose this single entry plus a clear
-// "Unknown item (cat=N, sub=M)" framing for everything else. We do NOT
-// guess — names only show when the mapping is confirmed.
+// step-223 added the observed-pairs table (inventory_cat_sub.observed) so
+// the inspector can at least tell the user "this (cat, sub) exists in N
+// other saves we've seen — we just don't know which item yet" rather
+// than the bare "Unknown" the previous build showed.
 // ---------------------------------------------------------------------------
 
-const CONFIRMED_CAT_SUB_TO_ITEM_ID: Record<string, number> = {
-  '2:6': 1887, // Transmitter
-};
+export interface InventoryResolution {
+  /** Confirmed ROM item ID, when (cat, sub) is in the confirmed table. */
+  itemId: number | null;
+  /** Confirmed EN item name, when itemId is known AND items table has it. */
+  name: string | null;
+  /** Count of saves in our corpus where this (cat, sub) appeared. */
+  seenInSaves: number;
+}
 
 export function resolveInventoryItem(
   lookups: SavefileLookups,
   category: number,
   subIndex: number,
-): { itemId: number | null; name: string | null } {
+): InventoryResolution {
   const key = `${category}:${subIndex}`;
-  const itemId = CONFIRMED_CAT_SUB_TO_ITEM_ID[key];
+  const itemId = lookups.inventory_cat_sub.confirmed[key];
+  const seenInSaves = lookups.inventory_cat_sub.observed[key] ?? 0;
   if (itemId === undefined) {
-    return { itemId: null, name: null };
+    return { itemId: null, name: null, seenInSaves };
   }
-  return { itemId, name: lookupItemName(lookups, itemId) };
+  return { itemId, name: lookupItemName(lookups, itemId), seenInSaves };
 }

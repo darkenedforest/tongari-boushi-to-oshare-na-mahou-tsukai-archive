@@ -5,20 +5,36 @@
 //
 //   - Ritch (u32 LE at body 0x1CFD0) — confirmed safe
 //   - Player name (UTF-16 LE × 5 at body A 0x47E) — confirmed safe
-//   - Catalog announcement body text (body 0x163F2, stride 0xA8) — beta
+//   - Catalog announcement body text (body 0x162B6, stride 0xA8) — beta
 //   - Per-NPC mail body text (body 0x17400+, stride 0xA8) — beta
 //   - Resident name (body 0x1E0E0+ stride 0x22F8, first 16 bytes) — beta
 //   - Garden plant tile (plant_id byte + grow_time byte) — beta
 //
 // All edits write to BOTH slot A and slot B (mirror), then recompute the
-// 20-byte header checksum (RFC1071 Internet Checksum) for both slots. The
-// game only enforces that single header csum — everything past body[0x14]
-// is free-form.
+// TWO levels of checksum the game checks:
+//
+//   1. The 20-byte slot-header checksum at body[0x00..0x02], computed over
+//      body[0x00..0x14] with body[0x00..0x02] zeroed. RFC1071 Internet
+//      Checksum (ARM9 0x02078A0C).
+//   2. The body-level checksum at body[0x14..0x16], computed over
+//      body[0x14..0x14+0x1CDDC] with body[0x14..0x16] zeroed. Same RFC1071
+//      algorithm. Phase-7 step-219 discovery; step-223 confirmed this is
+//      required (53/55 corpus saves match the stored value, so the game
+//      reads/writes it). The PREVIOUS round of edits did NOT touch this
+//      and would have produced saves the game refused to load. Order: do
+//      the body csum FIRST (because it inputs body[0x14:0x16] zeroed,
+//      independent of the header csum word), THEN the header csum.
 //
 // The DeSmuME .dsv wrapper (122-byte footer) is metadata only and is
 // preserved verbatim when present.
 
-import { OFFSETS, RAW_SIZE, DSV_FOOTER_LEN, inetCsum16 } from './parser';
+import {
+  OFFSETS,
+  RAW_SIZE,
+  DSV_FOOTER_LEN,
+  BODY_CSUM_RANGE_LEN,
+  inetCsum16,
+} from './parser';
 
 const SLOT_A_BASE = 0x100;
 const SLOT_B_BASE = 0x40000;
@@ -62,9 +78,12 @@ export type PendingEdit =
 export interface ApplyResult {
   /** New 524288-byte raw payload with all edits applied + checksums fixed. */
   payload: Uint8Array;
-  /** Updated stored-checksum hex strings per slot, for UI confirmation. */
+  /** Updated stored slot-header checksum hex strings per slot. */
   slotAChecksumHex: string;
   slotBChecksumHex: string;
+  /** Updated stored body-level checksum hex strings per slot. */
+  slotABodyChecksumHex: string;
+  slotBBodyChecksumHex: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -124,6 +143,39 @@ function fixHeaderChecksum(payload: Uint8Array, slot: 'A' | 'B'): number {
   const csum = inetCsum16(headerCopy);
   payload[base] = csum & 0xff;
   payload[base + 1] = (csum >>> 8) & 0xff;
+  return csum;
+}
+
+/** Recompute the body-level RFC1071 checksum at body[0x14:0x16] over
+ *  body[0x14..0x14+0x1CDDC] with body[0x14:0x16] zeroed, then store the
+ *  result back as u16 LE at body[0x14:0x16].
+ *
+ *  Body offsets are relative to the slot body start (= file offset
+ *  SLOT_A_BASE for slot A, SLOT_B_BASE for slot B). Must run AFTER all
+ *  edits but BEFORE the slot-header csum (the header csum only covers
+ *  body[0x00..0x14] so it's independent — but doing this first keeps
+ *  the order matching the in-game write path documented in phase-7).
+ */
+function fixBodyChecksum(payload: Uint8Array, slot: 'A' | 'B'): number {
+  const base = slot === 'A' ? SLOT_A_BASE : SLOT_B_BASE;
+  const start = base + OFFSETS.bodyChecksum;
+  const end = start + BODY_CSUM_RANGE_LEN;
+  if (end > payload.length) {
+    throw new Error(
+      `Body-csum range [0x${start.toString(16)}..0x${end.toString(16)}) ` +
+      `exceeds payload length ${payload.length}.`,
+    );
+  }
+  // Copy the covered region so we can zero the first two bytes before
+  // computing without mutating the actual payload until we know the
+  // result.
+  const region = new Uint8Array(BODY_CSUM_RANGE_LEN);
+  for (let i = 0; i < BODY_CSUM_RANGE_LEN; i++) region[i] = payload[start + i];
+  region[0] = 0;
+  region[1] = 0;
+  const csum = inetCsum16(region);
+  payload[start] = csum & 0xff;
+  payload[start + 1] = (csum >>> 8) & 0xff;
   return csum;
 }
 
@@ -256,7 +308,15 @@ export function applyEdits(
     }
   }
 
-  // Fix both slot checksums.
+  // Fix both checksums for both slots, in the right order:
+  //   1. Body-level csum first (covers body[0x14..]; independent of the
+  //      header csum word at body[0x00..0x02]).
+  //   2. Header csum second (covers body[0x00..0x14] with body[0x00..0x02]
+  //      zeroed; only protects the 20-byte header).
+  // step-223 added the body-csum step — without it the previous editor
+  // silently shipped saves the game refuses to load.
+  const bodyCsumA = fixBodyChecksum(payload, 'A');
+  const bodyCsumB = fixBodyChecksum(payload, 'B');
   const csumA = fixHeaderChecksum(payload, 'A');
   const csumB = fixHeaderChecksum(payload, 'B');
 
@@ -264,6 +324,8 @@ export function applyEdits(
     payload,
     slotAChecksumHex: '0x' + csumA.toString(16).padStart(4, '0'),
     slotBChecksumHex: '0x' + csumB.toString(16).padStart(4, '0'),
+    slotABodyChecksumHex: '0x' + bodyCsumA.toString(16).padStart(4, '0'),
+    slotBBodyChecksumHex: '0x' + bodyCsumB.toString(16).padStart(4, '0'),
   };
 }
 

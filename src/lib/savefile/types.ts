@@ -153,6 +153,19 @@ export interface EventFlagSummary {
   previewHex: string;
 }
 
+export interface WizardLevelCandidate {
+  /** Body offset (= 0x11488 + 0x5a). */
+  bodyOffset: number;
+  /** Raw byte read from that offset. */
+  rawByte: number;
+  /** Heuristic flag — true if the value looks like a plausible level
+   *  (0..99 range across a corpus that spans fresh→heavily-played). False
+   *  today because all 55 saves in step-223's corpus stored 0x00. */
+  plausible: boolean;
+  /** Human-readable explanation surfaced in the UI next to the value. */
+  note: string;
+}
+
 export interface SlotParse {
   label: SlotLabel;
   /** True if the slot body is entirely 0xFF — never used. */
@@ -160,6 +173,11 @@ export interface SlotParse {
 
   // Header (body[0x00..0x14])
   checksum: ChecksumInfo;
+  /** Body-level RFC1071 checksum over body[0x14..0x14+0x1CDDC] with the
+   *  first 2 bytes zeroed, stored at body[0x14:0x16]. Phase-7 step-219
+   *  discovery; step-223 validation confirmed against 53/55 corpus saves.
+   *  Any editor touching bytes >= body[0x14] MUST recompute this. */
+  bodyChecksum: ChecksumInfo;
   /** body[0x02:0x04] LE — expected 0x0161. */
   formatVersionMagic: number;
   /** body[0x06] active-flag. */
@@ -210,6 +228,9 @@ export interface SlotParse {
 
   // Bank transaction log (0x1CFD4..0x1E0E0, 6-byte records)
   bankLog: BankRecord[];
+
+  // Wizard-level candidate (body 0x11488 + 0x5a). Read-only.
+  wizardLevelCandidate: WizardLevelCandidate;
 }
 
 export interface SaveParse {
