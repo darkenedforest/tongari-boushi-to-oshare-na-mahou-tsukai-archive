@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import SaveFilesBatchForm from '../../components/SaveFilesBatchForm.tsx';
+import SaveFileInspector from '../../components/SaveFileInspector.tsx';
 
 const base = import.meta.env.BASE_URL;
 ---
@@ -39,6 +40,26 @@ const base = import.meta.env.BASE_URL;
   </section>
 
   <SaveFilesBatchForm client:load />
+
+  <section class="inspector-section">
+    <div class="inspector-divider" aria-hidden="true"></div>
+    <h2>Inspect a save locally — read-only, never leaves your browser</h2>
+    <p class="inspector-lede">
+      A different tool from the upload form above. Drop in one of your own
+      save files and the page will decode the regions we currently know how
+      to parse — player name, Ritch, mail, residents, etc. — entirely in
+      your browser. Nothing is uploaded, nothing is logged. If you spot a
+      field that looks wrong, hit <em>Flag issue</em> on its section and
+      write a note; the tool copies a clean bug-report snippet to your
+      clipboard.
+    </p>
+    <p class="inspector-meta">
+      This is a verification tool while we map the save format. A real
+      editor (change Ritch, rename your character, etc.) comes later, once
+      the read path is rock-solid.
+    </p>
+    <SaveFileInspector client:load />
+  </section>
 </Layout>
 
 <style>
@@ -108,5 +129,38 @@ const base = import.meta.env.BASE_URL;
   .privacy em {
     color: var(--color-purple-600);
     font-style: italic;
+  }
+  .inspector-section {
+    margin: 56px 0 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .inspector-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--color-purple-100), transparent);
+    margin-bottom: 18px;
+  }
+  .inspector-section h2 {
+    margin: 0;
+    color: var(--color-purple-600);
+    font-size: 1.45rem;
+  }
+  .inspector-lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    margin: 0;
+  }
+  .inspector-lede em {
+    font-style: italic;
+    color: var(--color-pink-600);
+  }
+  .inspector-meta {
+    max-width: 64ch;
+    line-height: 1.55;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0;
   }
 </style>
