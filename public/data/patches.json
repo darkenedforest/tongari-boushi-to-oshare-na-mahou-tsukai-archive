@@ -32,10 +32,10 @@
         "70 bracketed bulletin titles unbracketed so the title uses its full character budget.",
         "86 bulletin titles retranslated to fit the 16-character title cap that the bulletin list display silently clips at.",
         "All 233 bulletin titles set to uppercase for visual distinction from the message body (167 actually changed, 66 were already all-caps).",
-        "First-character clipping bug on multiple-choice answer lists fixed (the Mr. Melisa class question and 10 others) — the answer-index opcode was at the start instead of the end of each answer.",
-        "Song-name list synced across msg99020, msg99023, and msg99135 so all three agree with the v2.31 canon (Summer Cottage, Happy Town, etc.).",
+        "First-character clipping bug on multiple-choice answer lists fixed (the Miss Melissa class question and 10 others) — the answer-index opcode was at the start instead of the end of each answer.",
+        "Song-name list synced across msg99020, msg99023, and msg99135 so all three agree (Summer Cottage, Happy Town, etc.).",
         "Seven DLC song names standardized between msg99023 and msg99135 (Chocolate Cosmos, Future with You, Wind’s Lost and Found, Beyond Sadness, That Rainy Day, Road to Tomorrow, On a Lovely Night).",
-        "Wizard rank names aligned with Magician’s Quest canon: Apprentice Wizard, Magnus Wizard, Great Wizard (re-placed), Corsair Wizard, A La Mode Wizard, Insect Wizard, Star Sign.",
+        "Wizard rank names aligned with Magician’s Quest Game 1: Apprentice Wizard, Magnus Wizard, Great Wizard (re-placed), Corsair Wizard, A La Mode Wizard, Insect Wizard, Star Sign.",
         "First-meeting NPC introduction line replaced with the Konami canon: \"The name’s [NPC]! Do remember to say hello the next time you see me!\"",
         "Three NPCs (Mr. Vlad, Mr. Oakley, Mr. Graves) corrected from \"Mr\" to \"Mr.\" with proper period and spacing.",
         "Two NPCs changed from Mr./Mrs. to Miss: Miss Strawe and Miss Melissa."
