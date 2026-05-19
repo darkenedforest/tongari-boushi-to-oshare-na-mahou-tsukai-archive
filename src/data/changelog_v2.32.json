@@ -29,7 +29,7 @@
     },
     {
       "title": "Translation canon corrections",
-      "body": "Wizard rank names and profile labels aligned with Magician’s Quest Game 1 (postlist_e.ofs): Apprentice → Apprentice Wizard, Great Wizard → Magnus Wizard, Skilled Wizard → Great Wizard (re-placed at idx 7), Righteous Wizard → Corsair Wizard, A LaMode Wizard → A La Mode Wizard, Bug Wizard → Insect Wizard, Sign → Star Sign. First-meeting NPC introduction line in msg00000 entry 4 replaced with the canon Konami translation: “The name’s [NPC]! Do remember to say hello the next time you see me!” (was “Please to remember!”)."
+      "body": "Wizard rank names and profile labels aligned with Magician’s Quest Game 1 (postlist_e.ofs): Apprentice → Apprentice Wizard, Great Wizard → Magnus Wizard, Skilled Wizard → Great Wizard (re-placed at idx 7), Righteous Wizard → Corsair Wizard, A LaMode Wizard → A La Mode Wizard, Bug Wizard → Insect Wizard, Sign → Star Sign. Some first-meeting NPC introduction lines replaced with the original Game 1 dialog."
     },
     {
       "title": "NPC name typography",
