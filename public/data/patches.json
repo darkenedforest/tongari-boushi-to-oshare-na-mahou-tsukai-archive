@@ -23,6 +23,47 @@
   },
   "releases": [
     {
+      "version": "2.32",
+      "date": "2026-05-19",
+      "headline": "Bulletin & letter rework, song-list sync, opcode-order fix, NPC name typography",
+      "summary": "A content-heavy round focused on the bulletin board and letter mail. 648 bulletin/letter posts retranslated to fit the engine’s on-screen caps. 86 bulletin titles retrimmed to the 16-character title cap; 233 titles set to all-caps for visual distinction. A long-standing first-character clipping bug on class-quiz answer lists is fixed. The song lists across all three reference files are synced to the v2.31 canon (Cottage Cheese → Summer Cottage, etc.). Wizard rank names and the first-meeting NPC line aligned with Konami’s official Magician’s Quest English release. Five NPC honorifics corrected (Mr./Miss).",
+      "changes": [
+        "648 bulletin and letter posts retranslated to fit the engine’s on-screen caps (34 columns wide, 80 total characters across 3-4 rows).",
+        "70 bracketed bulletin titles unbracketed so the title uses its full character budget.",
+        "86 bulletin titles retranslated to fit the 16-character title cap that the bulletin list display silently clips at.",
+        "All 233 bulletin titles set to uppercase for visual distinction from the message body (167 actually changed, 66 were already all-caps).",
+        "First-character clipping bug on multiple-choice answer lists fixed (the Mr. Melisa class question and 10 others) — the answer-index opcode was at the start instead of the end of each answer.",
+        "Song-name list synced across msg99020, msg99023, and msg99135 so all three agree with the v2.31 canon (Summer Cottage, Happy Town, etc.).",
+        "Seven DLC song names standardized between msg99023 and msg99135 (Chocolate Cosmos, Future with You, Wind’s Lost and Found, Beyond Sadness, That Rainy Day, Road to Tomorrow, On a Lovely Night).",
+        "Wizard rank names aligned with Magician’s Quest canon: Apprentice Wizard, Magnus Wizard, Great Wizard (re-placed), Corsair Wizard, A La Mode Wizard, Insect Wizard, Star Sign.",
+        "First-meeting NPC introduction line replaced with the Konami canon: \"The name’s [NPC]! Do remember to say hello the next time you see me!\"",
+        "Three NPCs (Mr. Vlad, Mr. Oakley, Mr. Graves) corrected from \"Mr\" to \"Mr.\" with proper period and spacing.",
+        "Two NPCs changed from Mr./Mrs. to Miss: Miss Strawe and Miss Melissa."
+      ],
+      "changelogUrl": "/changelog/v2.32/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.32-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 14380602,
+          "patchSha256": "7ea3710e64602ae5aa087bcafc9a033ca8786bbcae55f130d008f4967aec1221"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.32-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3242410,
+          "patchSha256": "3830a54b9de14feb5c15858e4d9dacbff95bd837d8fb2b5050b38c721ffe6611"
+        }
+      ],
+      "patchedRomMd5": "41610dee00c4cbb6cbe47a78ebcee1e1",
+      "patchedRomSha256": "da6e1ef765d58f1be6c8cb7ba125926beffde9f764db71ef84a7660cdd467867",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 da6e1ef7…d467867). Known issues deferred to v2.33+: Tetsu→Reginald rename remains in 3 dialog rows, NPC-name dialog body audit pending, Vivian’s Boutique crash (msg98070 entry 69) located but not resolved."
+    },
+    {
       "version": "2.31",
       "date": "2026-05-16",
       "headline": "Menu crashes fixed — friend menu, sing/hum, clothing codec, and bug-register no longer crash or freeze the game.",

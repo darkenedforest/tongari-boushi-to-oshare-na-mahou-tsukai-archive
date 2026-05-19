@@ -1,31 +1,51 @@
 {
   "version": "2.32",
-  "date": "2026-05-17",
-  "headline": "Reproducible-from-DB build, with release-pipeline guardrails",
-  "summary": "No visible in-game text changes vs v2.31. v2.32 exists because the translation database had drifted out of sync with what v2.31 actually shipped — the 29 song-title retranslations had reverted in entries.en_text to their pre-v2.31 strings (Cottage Cheese, Ragin' Rivers, !atsugnoC, Adolfo's smoke, Memories of Seine, etc.). The shipped v2.31 ROM bytes were fine, but any developer rebuilding from the regressed DB would silently undo the v2.31 fix. v2.32 restores the database to its correct state and adds a build-time scaffold (fix manifests, sentinels, rebuild gate, release manifest, session accounting) that catches this class of regression automatically.",
+  "date": "2026-05-19",
+  "headline": "Bulletin & letter rework, song-list sync, opcode-order fix, NPC name typography",
+  "summary": "v2.32 is a content release. Every v2.31 fix continues to ship intact — the friend-menu / sing / hum / clothing-codec / bug-registering crash fixes from the overlay compressed-flag bug, the leading-§ strip, the 29 song retranslations led by Cottage Cheese → Summer Cottage, the “His Majesty” canon sweep, and the Berry’s shop possessive all carry forward unchanged. On top of that baseline, v2.32 lands hundreds of new player-visible improvements concentrated on the bulletin board, letter mail, song lists, and several smaller translation-canon corrections.",
   "shipFormats": [
     {
       "label": "Released patch",
-      "description": "Overlay strings stored re-LZ-compressed with the fixed compressed-flag bookkeeping, same shape as v2.31. One patch per ROM revision (Rev 0 / Rev 1)."
+      "description": "Overlay strings stored re-LZ-compressed with the fixed compressed-flag bookkeeping (matches v2.31 production default). One patch per ROM revision; both produce the same patched ROM byte-for-byte."
     }
   ],
-  "shipNote": "v2.32 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's MD5.",
+  "shipNote": "v2.32 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM’s MD5.",
   "otherChanges": [
     {
-      "title": "Process-integrity scaffold (the actual content of this release)",
-      "body": "Five new tools in src/translator/: _fix_manifest_write.py (every database write logs before/after value + sha256 to notes/fixes/<step>.json), _check_sentinels.py (reads notes/sentinels.json invariants and asserts each holds against the DB; exits non-zero if any sentinel fails), _rebuild_gate.py (after rebuild_rom.py produces the patched ROM, walks every fix manifest and confirms its after_value bytes appear in the ROM; wired automatically as Phase 4 of rebuild_rom.py), _release_manifest_write.py (produces releases/v<version>.json with byte verification + sha256 of every candidate ROM mode, refuses to write unless sentinels + gate both pass), and _session_account.py (writes notes/_session_handoff.md listing every modified + untracked file at session end with a disposition checklist). CLAUDE.md gained a 'Process integrity (HARD RULE — no exceptions)' section codifying these as policy. notes/sentinels.json holds 40 invariants backfilled from CHANGELOG_v2.31."
+      "title": "Bulletin board and letter mail — the biggest visible change",
+      "body": "648 bulletin and letter posts retranslated to fit the engine’s on-screen caps. Bulletin combined title + body now stays within 80 characters across at most 3 rows of 34 columns each. Letter bodies stay within 80 characters across at most 4 rows of 34 columns, with greetings and signatures preserved verbatim. Names from the official Game 1 English release (Fungi Forest, Yeti, Warashi, Halogen) are applied wherever those characters appear."
     },
     {
-      "title": "Reconciliation — restored 29 reverted song retranslations",
-      "body": "step-227-reapply-v231-song-retranslations restored msg99020.ofs entries 4, 7, 8, 9, 12, 13, 18, 19, 22, 23, 29, 36, 39, 41, 42, 45, 55, 56, 65, 69, 71, 72, 73, 74, 75, 77, 78, 79, 82 to their v2.31 canon. Each row's before/after captured in notes/fixes/step-227-reapply-v231-song-retranslations.json with sha256 hashes. All 40 sentinels now pass; the rebuild gate verifies all 29 fix-row after_value substrings are present in both Mode A and Mode B candidate ROMs."
+      "title": "Bulletin titles — bracket strip, length cap, all-caps",
+      "body": "70 bracketed bulletin titles like [Halloween is Here!] and [Familiar Class] unbracketed so the title can use its full character budget. 86 bulletin titles retranslated to fit the 16-character title cap that the bulletin list display silently clips at — Tyler reviewed every one of the 86 picks in the in-repo bulletin viewer (50 user-picked alternatives, 35 agent proposals accepted, 1 implicit fallback). All 233 bulletin titles set to uppercase for visual distinction from the message body (167 actually changed, 66 were already all-caps)."
     },
     {
-      "title": "Identical to v2.31 in-game",
-      "body": "v2.32 ROMs are byte-level distinct from v2.31 (~137 MB differing bytes) but textually identical on every checked invariant: same 29 song titles, same 58 His Majesty occurrences (0 Her Majesty), same 378 Berry's occurrences, same 69 Reginald occurrences, same 4 Summer Cottage occurrences. The byte mismatch is reemit non-determinism (offset shifts inside RESO containers when dedup ordering varies); translation strings sit at different file offsets but the text is the same."
+      "title": "First-character clipping bug on multiple-choice answer lists",
+      "body": "Class quiz questions (Mr. Melisa class screenshot was the original repro) and 10 other answer-list entries had been translated with the answer-index opcode at the start rather than the end of each answer. The engine reads that opcode as a list-marker and eats the first visible character, so “Love / Romance / Secret” rendered as “ove / omance / ecret” on screen. All 11 affected entries reordered so the opcode sits after the answer text, matching the JP source."
     },
     {
-      "title": "Known issues — deferred",
-      "body": "Tetsu still appears in 3 entries.en_text rows (msg52056.ofs entries 62/69/78 — Reginald self-introduction dialog). Cross-game canon points at 'Reginald' but this is outside v2.31 / v2.32 scope, deferred to v2.33+. Same v2.31-era deferrals also continue to apply: ~865 entries with leading § that don't match the strict bug pattern, many AI-generated song translations that are stylistic interpretations rather than literal."
+      "title": "Song name fixes",
+      "body": "Song-name list synced across msg99020, msg99023, and msg99135. Two of the three lists were still carrying the pre-v2.31 song names — most visibly “Cottage Cheese” and “Sister of Mine” — even though the actual song-selection menu in v2.31 had been corrected to “Summer Cottage” and “Happy Town”. All three lists now agree on v2.31 canon. Seven DLC song names standardized between msg99023 and msg99135 (Chocolate Cosmos, Future with You, Wind’s Lost and Found, Beyond Sadness, That Rainy Day, Road to Tomorrow, On a Lovely Night)."
+    },
+    {
+      "title": "Translation canon corrections",
+      "body": "Wizard rank names and profile labels aligned with Konami’s official Magician’s Quest English release (Game 1’s postlist_e.ofs): Apprentice → Apprentice Wizard, Great Wizard → Magnus Wizard, Skilled Wizard → Great Wizard (re-placed at idx 7), Righteous Wizard → Corsair Wizard, A LaMode Wizard → A La Mode Wizard, Bug Wizard → Insect Wizard, Sign → Star Sign. First-meeting NPC introduction line in msg00000 entry 4 replaced with the canon Konami translation: “The name’s [NPC]! Do remember to say hello the next time you see me!” (was “Please to remember!”)."
+    },
+    {
+      "title": "NPC name typography",
+      "body": "Three NPCs (Mr. Vlad, Mr. Oakley, Mr. Graves) had their honorific written as “Mr” with no period; corrected to “Mr.” with a proper space. Two NPCs changed from Mr./Mrs. to Miss: Miss Strawe (was “Mrs. Strawe”) and Miss Melissa (was bare “Melissa”). DB, NpcData.lzs table, and NpcDataOfs.ofs container kept in sync."
+    },
+    {
+      "title": "Engine-integrity gates (under the hood)",
+      "body": "The v2.32 candidate built earlier in the cycle accidentally shipped 4,350 literal DB-representation tokens ([PLAYER_NAME], [NPC_DAT:N], [COLOR:N], etc.) as visible text across 281 OFS files. reemit.py now falls back to a reverse-lookup against the global opcode registry when a per-row inline-tag table is missing a tag. New byte-level placeholder-leakage gate (_check_no_placeholder_leakage.py) scans every rebuilt ROM for ~50 known tag patterns as UTF-16-LE bytes and exits non-zero if any are present; wired automatically as Phase 4b of rebuild_rom.py."
+    },
+    {
+      "title": "Message-length caps canon (under the hood)",
+      "body": "1,077 msg98 DB rows had their max_line_chars, max_total_chars, max_lines, and budget_class columns rewritten to the canonical values the engine actually enforces (34 cols x 80 chars x 3-4 rows). The 71 / 72 / 135 / 66 codepoint cap numbers that had crept into older audit docs are flagged as anti-rules and removed from the active validation path. Canonical reference written up at notes/_message_length_caps_canon.md."
+    },
+    {
+      "title": "Known issues — deferred to v2.33+",
+      "body": "Tetsu still appears in 3 entries.en_text rows (msg52056.ofs entries 62/69/78 — Reginald self-introduction dialog); cross-game canon points at Reginald but the sweep is out of v2.32 scope. A literal NPC-name references audit (notes/_npc_name_hardcoded_audit.md) flagged dialog body mentions of NPCs whose honorifics changed; sweep deferred. Vivian’s Boutique crash (msg98070 entry 69) located but not resolved. Same v2.31-era deferrals also continue to apply: ~865 entries with leading § that don’t match the strict bug pattern, many AI-generated song translations that are stylistic interpretations rather than literal."
     }
   ]
 }
