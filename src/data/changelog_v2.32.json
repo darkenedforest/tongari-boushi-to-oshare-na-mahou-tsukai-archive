@@ -44,8 +44,8 @@
       "body": "1,077 msg98 DB rows had their max_line_chars, max_total_chars, max_lines, and budget_class columns rewritten to the canonical values the engine actually enforces (34 cols x 80 chars x 3-4 rows). The 71 / 72 / 135 / 66 codepoint cap numbers that had crept into older audit docs are flagged as anti-rules and removed from the active validation path. Canonical reference written up at notes/_message_length_caps_canon.md."
     },
     {
-      "title": "Known issues — deferred to v2.33+",
-      "body": "Tetsu still appears in 3 entries.en_text rows (msg52056.ofs entries 62/69/78 — Reginald self-introduction dialog); cross-game canon points at Reginald but the sweep is out of v2.32 scope. A literal NPC-name references audit (notes/_npc_name_hardcoded_audit.md) flagged dialog body mentions of NPCs whose honorifics changed; sweep deferred. Vivian’s Boutique crash (msg98070 entry 69) located but not resolved. Same v2.31-era deferrals also continue to apply: ~865 entries with leading § that don’t match the strict bug pattern, many AI-generated song translations that are stylistic interpretations rather than literal."
+      "title": "Known issues — deferred",
+      "body": "Same v2.31-era deferrals continue to apply: ~865 entries with leading § that don’t match the strict bug pattern, many AI-generated song translations that are stylistic interpretations rather than literal."
     }
   ]
 }

@@ -61,7 +61,7 @@
       ],
       "patchedRomMd5": "41610dee00c4cbb6cbe47a78ebcee1e1",
       "patchedRomSha256": "da6e1ef765d58f1be6c8cb7ba125926beffde9f764db71ef84a7660cdd467867",
-      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 da6e1ef7…d467867). Known issues deferred to v2.33+: Tetsu→Reginald rename remains in 3 dialog rows, NPC-name dialog body audit pending, Vivian’s Boutique crash (msg98070 entry 69) located but not resolved."
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 da6e1ef7…d467867)."
     },
     {
       "version": "2.31",
