@@ -42,10 +42,6 @@
     {
       "title": "Message-length caps canon (under the hood)",
       "body": "1,077 msg98 DB rows had their max_line_chars, max_total_chars, max_lines, and budget_class columns rewritten to the canonical values the engine actually enforces (34 cols x 80 chars x 3-4 rows). The 71 / 72 / 135 / 66 codepoint cap numbers that had crept into older audit docs are flagged as anti-rules and removed from the active validation path. Canonical reference written up at notes/_message_length_caps_canon.md."
-    },
-    {
-      "title": "Known issues — deferred",
-      "body": "Same v2.31-era deferrals continue to apply: ~865 entries with leading § that don’t match the strict bug pattern, many AI-generated song translations that are stylistic interpretations rather than literal."
     }
   ]
 }
