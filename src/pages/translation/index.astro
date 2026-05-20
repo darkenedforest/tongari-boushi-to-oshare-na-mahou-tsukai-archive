@@ -64,6 +64,14 @@ const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
         </li>
       </ul>
     </details>
+    <p class="viewer-link">
+      <a href={`${base}/translation/viewer/`}>
+        Open the JP↔EN ROM viewer →
+      </a>
+      <span class="viewer-link-explain">
+        Browse your own ROM side-by-side with the published English.
+      </span>
+    </p>
   </section>
 
   <TranslationBrowser dataUrl={dataUrl} client:load />
@@ -144,5 +152,22 @@ const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
     border-radius: 4px;
     font-family: ui-monospace, monospace;
     font-size: 0.85rem;
+  }
+  .viewer-link {
+    margin: 10px 0 0;
+    font-size: 0.95rem;
+  }
+  .viewer-link a {
+    color: var(--color-pink-600);
+    font-weight: 700;
+  }
+  .viewer-link a:hover {
+    color: var(--color-purple-600);
+  }
+  .viewer-link-explain {
+    display: block;
+    color: var(--color-ink-soft);
+    font-size: 0.85rem;
+    margin-top: 2px;
   }
 </style>
