@@ -75,7 +75,7 @@ const MAX_FILE_BYTES = 4 * 1024 * 1024; // 4 MB ceiling
 const OTHER_SENTINEL = '__OTHER__';
 const OTHER_PREFIX = 'Other: ';
 
-const PATCH_VERSIONS = ['v2.31', 'v2.3', 'v2.2', 'v2.1', 'v2.0', 'Unpatched', 'Unsure'];
+const PATCH_VERSIONS = ['v2.32', 'v2.31', 'v2.3', 'v2.2', 'v2.1', 'v2.0', 'Unpatched', 'Unsure'];
 const PATCH_VERSION_LABELS: Record<string, string> = {
   Unpatched: 'Unpatched (JP ROM, no fan patch)',
 };
