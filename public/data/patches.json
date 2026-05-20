@@ -29,8 +29,7 @@
       "summary": "A small follow-up patch bundled on top of v2.4. Two surfaces that v2.4 missed are now in English: the recipe-menu category headers visible on the kitchen menu (Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes, plus the later-unlocked Outfit/Tiara/Necklace/Bouquet headers, a DLC Big Mac category, and a Mysterious Soup placeholder); and a comprehensive overlay-binary translation sweep across all 180 overlays (NPC default-name fallback “Nameless”, the locker outfit name-entry placeholder, and the workshop / re-make verb tables).",
       "changes": [
         "Recipe-menu category labels translated — Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes plus later-unlocked Outfit/Tiara/Necklace/Bouquet headers and the DLC Big Mac category. 23 records total (the 13 Mysterious Soup placeholder records share a single dedup pointer in the writer).",
-        "Comprehensive overlay-binary translation sweep — 1 ARM9 string + 23 overlay strings across all 180 overlays. Includes the NPC default-name fallback (“Nameless”), the locker outfit name-entry placeholder (AAAAAA), and the workshop / re-make verb tables (16 additional Put/Del/New/End/Bin buttons).",
-        "The storage menu open-button and the kitchen recipe-selector label visible on the same recipe menu remain in Japanese — those are baked sprite graphics in selectrecipe.lzs rather than text strings, and require a separate sprite-edit pipeline that is deferred."
+        "Comprehensive overlay-binary translation sweep — 1 ARM9 string + 23 overlay strings across all 180 overlays. Includes the NPC default-name fallback (“Nameless”), the locker outfit name-entry placeholder (AAAAAA), and the workshop / re-make verb tables (16 additional Put/Del/New/End/Bin buttons)."
       ],
       "changelogUrl": "/changelog/v2.4.1/",
       "downloads": [

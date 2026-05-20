@@ -13,7 +13,7 @@
   "otherChanges": [
     {
       "title": "Recipe-menu category labels translated (23 records)",
-      "body": "The kitchen recipe-menu category headers — Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes — plus later-unlocked categories (Outfit, Tiara, Necklace, Bouquet) and a Big Mac category, plus a Mysterious Soup placeholder label, now show in English. These labels live in the same RESC v3.11 file (recipedata.lzs) as the individual recipe names that were translated in v2.4; the category headers themselves were missed in the original v2.4 prep pass because that step only patched the recipe-name records and not the header records. Note: the storage-menu open-button and the kitchen recipe-selector label visible on the same menu remain in Japanese for now — those are baked sprite graphics in selectrecipe.lzs rather than text strings, and require a separate sprite-edit pipeline that is deferred."
+      "body": "The kitchen recipe-menu category headers — Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes — plus later-unlocked categories (Outfit, Tiara, Necklace, Bouquet) and a Big Mac category, plus a Mysterious Soup placeholder label, now show in English. These labels live in the same RESC v3.11 file (recipedata.lzs) as the individual recipe names that were translated in v2.4; the category headers themselves were missed in the original v2.4 prep pass because that step only patched the recipe-name records and not the header records."
     },
     {
       "title": "Comprehensive overlay-binary translation sweep (24 strings)",
