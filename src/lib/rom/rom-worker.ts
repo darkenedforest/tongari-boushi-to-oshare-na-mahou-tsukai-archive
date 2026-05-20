@@ -35,8 +35,8 @@ ctx.addEventListener('message', (event: MessageEvent<WorkerInbound>) => {
       expected_paths: msg.expected_paths,
       onProgress: (done, total) => {
         // Throttle to at most one progress message per percentage point so we
-        // don't flood the message channel for the 1k+ files in larger scopes.
-        // For msg98 (76 files) this still fires plenty of times.
+        // don't flood the message channel — at step-326 the full-ROM scope
+        // is ~1,300 files so a per-file post would be excessive.
         const pct = Math.floor((done / Math.max(total, 1)) * 100);
         if (pct === lastDone) return;
         lastDone = pct;

@@ -43,15 +43,28 @@ interface EnEntry {
 interface EnFile {
   file_path: string;
   label: string;
+  /** Category id (matches one of EnCategory.id). Older lookups built before
+   *  step-326 won't have this field; the viewer falls back to "other". */
+  category?: string;
   max_entry_id: number;
   entries: Record<string, Record<string, EnEntry>>;
+}
+
+interface EnCategory {
+  id: string;
+  label: string;
+  file_count: number;
+  entry_count: number;
 }
 
 interface EnLookup {
   generated_at: string;
   source_db_mtime: string;
   scope: string;
-  counts: { files: number; entries: number };
+  counts: { files: number; entries: number; categories?: number };
+  /** New in step-326. Older payloads don't have this — the viewer builds a
+   *  synthetic single "all" category in that case. */
+  categories?: EnCategory[];
   files: EnFile[];
 }
 
@@ -152,6 +165,8 @@ function RenderedWire({ text }: { text: string }) {
   );
 }
 
+/** Strip wire markers down to "plain prose" for substring search against
+ *  natural-language text only. Use this for the un-tagged JP / EN body. */
 function plainSearchable(text: string): string {
   if (!text) return '';
   return text
@@ -161,6 +176,64 @@ function plainSearchable(text: string): string {
     .replace(/§/g, ' ')
     .replace(/▼/g, ' ')
     .toLowerCase();
+}
+
+/** Searchable surface that KEEPS the opcode tokens visible so queries like
+ *  `[PLAYER_NAME]`, `[NPC_DAT:1]`, `[COLOR:*]` (with the wildcard helper
+ *  below) can match against the rendered wire markers. Furigana ruby is
+ *  reduced to its base kanji to match the natural-reading text. */
+function taggedSearchable(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/<i>[^<]*<\/i>/g, '')
+    .replace(/\{([^|}]+)\|[^}]+\}/g, '$1')
+    .replace(/§/g, ' ')
+    .replace(/▼/g, ' ')
+    .toLowerCase();
+}
+
+/** Build a search matcher from the user's query string.
+ *
+ *  - If the query contains `*` or `?`, it's a wildcard pattern:
+ *      `*`  -> `.*` (any chars, including empty)
+ *      `?`  -> `.`  (exactly one char)
+ *    Other regex specials are escaped so a pattern like `[NPC_DAT:*]`
+ *    is matched literally (square brackets and colon) with `*` standing
+ *    in for the arg. The match is case-insensitive and substring-based —
+ *    we DON'T anchor with `^...$`, so users get find-anywhere semantics
+ *    and can still prefix/suffix `*` themselves if they want.
+ *
+ *  - Otherwise the query is a plain case-insensitive substring match.
+ *
+ *  The returned matcher takes the haystack (already lower-cased — pass
+ *  output from `plainSearchable` / `taggedSearchable`) and returns a
+ *  boolean. */
+function buildMatcher(query: string): ((haystack: string) => boolean) | null {
+  const q = query.trim().toLowerCase();
+  if (!q) return null;
+  const hasWildcard = q.includes('*') || q.includes('?');
+  if (!hasWildcard) {
+    return (h: string) => h.includes(q);
+  }
+  // Escape regex specials EXCEPT * and ?, then map our globs.
+  // Order matters: do the escape first, then swap the literal escaped
+  // chars for our regex equivalents.
+  let re = q.replace(/[\\^$.+()|{}\[\]]/g, (m) => '\\' + m);
+  re = re.replace(/\*/g, '.*').replace(/\?/g, '.');
+  try {
+    const compiled = new RegExp(re, 'i');
+    return (h: string) => compiled.test(h);
+  } catch {
+    // Bad regex — fall back to plain substring against the original query
+    // so the search UI doesn't lock up while the user is mid-typing.
+    return (h: string) => h.includes(q);
+  }
+}
+
+/** Does this query target opcode tokens (i.e. contains a `[`)?
+ *  Used to pick which haystack to search against. */
+function queryIsOpcode(query: string): boolean {
+  return query.includes('[');
 }
 
 // ---------------------------------------------------------------------------
@@ -376,96 +449,172 @@ function LockedJp() {
   );
 }
 
+/** Test whether a single ViewerBlock matches the active search.
+ *
+ *  When the query contains `[` we treat it as an opcode-targeted query and
+ *  match against the wire-format text (which still has the `[TAG]` tokens
+ *  visible). Otherwise we match against the natural-prose haystack. */
+function blockMatches(
+  b: ViewerBlock,
+  matcher: (h: string) => boolean,
+  fields: { en: boolean; jp: boolean },
+  opcodeMode: boolean,
+): boolean {
+  const en = opcodeMode ? taggedSearchable(b.en) : plainSearchable(b.en);
+  const jp = opcodeMode ? taggedSearchable(b.jp) : plainSearchable(b.jp);
+  if (fields.en && matcher(en)) return true;
+  if (fields.jp && matcher(jp)) return true;
+  return false;
+}
+
+interface TreeGroup {
+  id: string;
+  label: string;
+  files: ViewerFile[];
+}
+
 function FileTree({
-  data,
+  groups,
+  totalFileCount,
   selected,
   onSelectFile,
   onSelectBlock,
   expanded,
   setExpanded,
+  expandedCategories,
+  setExpandedCategories,
   query,
   fields,
 }: {
-  data: ViewerFile[];
+  groups: TreeGroup[];
+  totalFileCount: number;
   selected: { file: string; blockId: string };
   onSelectFile: (file: ViewerFile) => void;
   onSelectBlock: (file: ViewerFile, b: ViewerBlock) => void;
   expanded: Set<string>;
   setExpanded: (s: Set<string>) => void;
+  expandedCategories: Set<string>;
+  setExpandedCategories: (s: Set<string>) => void;
   query: string;
   fields: { en: boolean; jp: boolean };
 }) {
-  const q = query.trim().toLowerCase();
-  const isMatch = (b: ViewerBlock) => {
-    if (!q) return false;
-    if (fields.en && plainSearchable(b.en).includes(q)) return true;
-    if (fields.jp && plainSearchable(b.jp).includes(q)) return true;
-    return false;
-  };
+  const matcher = useMemo(() => buildMatcher(query), [query]);
+  const opcodeMode = queryIsOpcode(query);
+  const isMatch = (b: ViewerBlock) =>
+    matcher ? blockMatches(b, matcher, fields, opcodeMode) : false;
+
+  const filteringActive = matcher !== null;
+  const shownFileCount = groups.reduce((n, g) => n + g.files.length, 0);
+
   return (
     <nav className="tree" aria-label="Dialog files">
       <div className="tree-head">
-        <span className="tree-head-files">Dialog Files</span>
+        <span className="tree-head-files">
+          Dialog Files
+          {filteringActive && (
+            <span className="tree-head-filter">
+              {' '}
+              · {shownFileCount} of {totalFileCount}
+            </span>
+          )}
+        </span>
         <span className="tree-head-blocks">Textblocks</span>
       </div>
-      <ol className="tree-list">
-        {data.map((file) => {
-          const isOpen = expanded.has(file.file_path);
-          const isSel = selected.file === file.file_path;
-          const fileMatches = q && file.blocks.some(isMatch);
-          return (
-            <li
-              key={file.file_path}
-              className={`tree-file ${isSel ? 'is-selected' : ''} ${
-                fileMatches ? 'is-match' : ''
-              }`}
-            >
-              <button
-                className="tree-file-btn"
-                onClick={() => {
-                  const next = new Set(expanded);
-                  if (next.has(file.file_path)) next.delete(file.file_path);
-                  else next.add(file.file_path);
-                  setExpanded(next);
-                  onSelectFile(file);
-                }}
-                aria-expanded={isOpen}
-              >
-                <span className="tree-disc" aria-hidden="true">
-                  {isOpen ? '▾' : '▸'}
-                </span>
-                <span className="tree-file-name">{file.file_path.split('/').pop()}</span>
-                <span className="tree-file-label">{file.label}</span>
-              </button>
-              {isOpen && (
-                <ol className="tree-blocks">
-                  {file.blocks.map((b) => {
-                    const empty = !b.en && !b.jp;
-                    const match = isMatch(b);
-                    const isCur = isSel && selected.blockId === b.id;
-                    const preview = plainSearchable(b.en).slice(0, 28);
-                    return (
-                      <li key={b.id}>
-                        <button
-                          className={`tree-block ${isCur ? 'is-current' : ''} ${
-                            empty ? 'is-empty' : ''
-                          } ${match ? 'is-match' : ''}`}
-                          onClick={() => onSelectBlock(file, b)}
-                        >
-                          <span className="tree-block-id">
-                            {String(b.entry_id).padStart(2, '0')}
-                          </span>
-                          {preview && <span className="tree-block-preview">{preview}</span>}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ol>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+      {groups.length === 0 && (
+        <div className="tree-empty">
+          {filteringActive
+            ? 'No files match this search.'
+            : 'No files loaded yet — wait for the lookup to finish loading.'}
+        </div>
+      )}
+      {groups.map((group) => {
+        const catOpen = expandedCategories.has(group.id) || filteringActive;
+        return (
+          <details
+            key={group.id}
+            className="tree-category"
+            open={catOpen}
+            onToggle={(e) => {
+              const target = e.currentTarget;
+              const next = new Set(expandedCategories);
+              if (target.open) next.add(group.id);
+              else next.delete(group.id);
+              setExpandedCategories(next);
+            }}
+          >
+            <summary className="tree-category-summary">
+              <span className="tree-category-label">{group.label}</span>
+              <span className="tree-category-count">{group.files.length}</span>
+            </summary>
+            <ol className="tree-list">
+              {group.files.map((file) => {
+                const isOpen = expanded.has(file.file_path) || filteringActive;
+                const isSel = selected.file === file.file_path;
+                const fileMatches = filteringActive && file.blocks.some(isMatch);
+                return (
+                  <li
+                    key={file.file_path}
+                    className={`tree-file ${isSel ? 'is-selected' : ''} ${
+                      fileMatches ? 'is-match' : ''
+                    }`}
+                  >
+                    <button
+                      className="tree-file-btn"
+                      onClick={() => {
+                        const next = new Set(expanded);
+                        if (next.has(file.file_path)) next.delete(file.file_path);
+                        else next.add(file.file_path);
+                        setExpanded(next);
+                        onSelectFile(file);
+                      }}
+                      aria-expanded={isOpen}
+                    >
+                      <span className="tree-disc" aria-hidden="true">
+                        {isOpen ? '▾' : '▸'}
+                      </span>
+                      <span className="tree-file-name">
+                        {file.file_path.split('/').pop()}
+                      </span>
+                      <span className="tree-file-label">{file.label}</span>
+                    </button>
+                    {isOpen && (
+                      <ol className="tree-blocks">
+                        {file.blocks.map((b) => {
+                          // When filtering, hide blocks that don't match.
+                          if (filteringActive && !isMatch(b)) return null;
+                          const empty = !b.en && !b.jp;
+                          const match = isMatch(b);
+                          const isCur = isSel && selected.blockId === b.id;
+                          const preview = plainSearchable(b.en).slice(0, 28);
+                          return (
+                            <li key={b.id}>
+                              <button
+                                className={`tree-block ${isCur ? 'is-current' : ''} ${
+                                  empty ? 'is-empty' : ''
+                                } ${match ? 'is-match' : ''}`}
+                                onClick={() => onSelectBlock(file, b)}
+                              >
+                                <span className="tree-block-id">
+                                  {b.sub_entry_id > 0
+                                    ? `${String(b.entry_id).padStart(2, '0')}.${b.sub_entry_id}`
+                                    : String(b.entry_id).padStart(2, '0')}
+                                </span>
+                                {preview && (
+                                  <span className="tree-block-preview">{preview}</span>
+                                )}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </details>
+        );
+      })}
     </nav>
   );
 }
@@ -648,10 +797,20 @@ function SearchBar({
         <input
           type="search"
           className="searchbar-input"
-          placeholder="Search the dialog database…"
+          placeholder="Search JP, EN, or [opcode] tokens. Use * for wildcards."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        {(query.includes('*') || query.includes('?')) && (
+          <span className="searchbar-mode" title="Wildcard mode active">
+            wildcard
+          </span>
+        )}
+        {query.includes('[') && (
+          <span className="searchbar-mode" title="Searching opcode tokens">
+            opcode
+          </span>
+        )}
         {query && (
           <button
             className="searchbar-clear"
@@ -717,6 +876,9 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
   const [query, setQuery] = useState('');
   const [fields, setFields] = useState({ en: true, jp: true });
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => new Set(),
+  );
   const [selected, setSelected] = useState<{ file: string; blockId: string } | null>(null);
   const [selectedPhraseIndex, setSelectedPhraseIndex] = useState(0);
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
@@ -742,6 +904,10 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
             const firstSub = Object.keys(first.entries[firstEntryId])[0];
             setSelected({ file: first.file_path, blockId: `${firstEntryId}.${firstSub}` });
             setExpanded(new Set([first.file_path]));
+            // Expand the first file's category by default so the user
+            // sees the same auto-selected file in the tree.
+            const cat = first.category ?? 'other';
+            setExpandedCategories(new Set([cat]));
           }
         }
       })
@@ -857,39 +1023,66 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
     () => ({ en: fields.en, jp: fields.jp && !!extraction }),
     [fields, extraction],
   );
+
+  const matcher = useMemo(() => buildMatcher(query), [query]);
+  const opcodeMode = useMemo(() => queryIsOpcode(query), [query]);
   const matchCount = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return 0;
+    if (!matcher) return 0;
     let n = 0;
     for (const f of viewerFiles) {
       for (const b of f.blocks) {
-        const hitEn = effectiveFields.en && plainSearchable(b.en).includes(q);
-        const hitJp = effectiveFields.jp && plainSearchable(b.jp).includes(q);
-        if (hitEn || hitJp) n += 1;
+        if (blockMatches(b, matcher, effectiveFields, opcodeMode)) n += 1;
       }
     }
     return n;
-  }, [query, viewerFiles, effectiveFields]);
+  }, [matcher, opcodeMode, viewerFiles, effectiveFields]);
 
-  // Auto-expand files that contain search matches.
-  useEffect(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return;
-    const next = new Set(expanded);
+  // Build category groups. When a search query is active we FILTER (not
+  // just highlight) to files that contain at least one matching block.
+  const groups = useMemo<TreeGroup[]>(() => {
+    if (!lookup) return [];
+    // Category registry — order + label come from the lookup if present,
+    // otherwise fall back to a single "all" group.
+    const cats: { id: string; label: string }[] =
+      lookup.categories?.map((c) => ({ id: c.id, label: c.label })) ?? [
+        { id: 'all', label: 'All files' },
+      ];
+    const idLabel = new Map(cats.map((c) => [c.id, c.label]));
+    // Make sure "other" / unknown categories still surface
+    const buckets = new Map<string, ViewerFile[]>();
+    for (const c of cats) buckets.set(c.id, []);
     for (const f of viewerFiles) {
-      if (
-        f.blocks.some(
-          (b) =>
-            (effectiveFields.en && plainSearchable(b.en).includes(q)) ||
-            (effectiveFields.jp && plainSearchable(b.jp).includes(q)),
-        )
-      ) {
-        next.add(f.file_path);
+      // ViewerFile doesn't carry category — look it up from the lookup.
+      const enFile = lookup.files.find((x) => x.file_path === f.file_path);
+      const cid = enFile?.category ?? (lookup.categories ? 'other' : 'all');
+      if (!buckets.has(cid)) buckets.set(cid, []);
+      // Apply the search filter at the file level.
+      if (matcher) {
+        const hit = f.blocks.some((b) =>
+          blockMatches(b, matcher, effectiveFields, opcodeMode),
+        );
+        if (!hit) continue;
       }
+      buckets.get(cid)!.push(f);
     }
-    setExpanded(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, viewerFiles, effectiveFields]);
+    const out: TreeGroup[] = [];
+    for (const c of cats) {
+      const files = buckets.get(c.id) ?? [];
+      if (files.length === 0) continue;
+      out.push({
+        id: c.id,
+        label: idLabel.get(c.id) ?? c.id,
+        files,
+      });
+    }
+    // Any "other" bucket not in the cats list
+    for (const [cid, files] of buckets) {
+      if (idLabel.has(cid)) continue;
+      if (files.length === 0) continue;
+      out.push({ id: cid, label: cid, files });
+    }
+    return out;
+  }, [lookup, viewerFiles, matcher, effectiveFields, opcodeMode]);
 
   const currentBlock = useMemo<ViewerBlock | null>(() => {
     if (!selected) return null;
@@ -978,12 +1171,15 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
       <div className="layout">
         <div className={`tree-col ${mobileTreeOpen ? 'is-open' : ''}`}>
           <FileTree
-            data={viewerFiles}
+            groups={groups}
+            totalFileCount={viewerFiles.length}
             selected={selected ?? { file: '', blockId: '' }}
             onSelectFile={onSelectFile}
             onSelectBlock={onSelectBlock}
             expanded={expanded}
             setExpanded={setExpanded}
+            expandedCategories={expandedCategories}
+            setExpandedCategories={setExpandedCategories}
             query={query}
             fields={fields}
           />
@@ -1261,6 +1457,21 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         display: flex; align-items: center; justify-content: center;
       }
       .viewer .searchbar-clear:hover { background: var(--ink-soft); }
+      .viewer .searchbar-mode {
+        position: absolute;
+        right: 40px;
+        font-family: var(--mono-local);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--plum-deep);
+        background: var(--plum-soft);
+        border: 1px solid var(--plum);
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+      .viewer .searchbar-mode + .searchbar-mode { right: 96px; }
       .viewer .searchbar-fields {
         display: flex; gap: 6px; border: none; padding: 0; margin: 0;
       }
@@ -1360,6 +1571,66 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         z-index: 1;
       }
       .viewer .tree-head-blocks { text-align: right; }
+      .viewer .tree-head-filter {
+        font-family: var(--mono-local);
+        font-style: normal;
+        font-size: 11.5px;
+        color: var(--ink-mute);
+      }
+      .viewer .tree-empty {
+        padding: 18px 14px;
+        font-size: 13px;
+        font-style: italic;
+        color: var(--ink-mute);
+        text-align: center;
+      }
+      .viewer .tree-category {
+        margin: 0;
+        border-bottom: 1px dotted var(--rule-soft);
+      }
+      .viewer .tree-category:last-of-type { border-bottom: none; }
+      .viewer .tree-category-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 14px 8px;
+        cursor: pointer;
+        list-style: none;
+        font-family: var(--serif-local);
+        font-style: italic;
+        font-size: 14px;
+        color: var(--plum-deep);
+        background: linear-gradient(180deg, var(--card-deep), var(--card));
+        user-select: none;
+      }
+      .viewer .tree-category-summary::-webkit-details-marker { display: none; }
+      .viewer .tree-category-summary::before {
+        content: '▸';
+        display: inline-block;
+        margin-right: 6px;
+        font-size: 10px;
+        color: var(--ink-mute);
+        transition: transform 0.12s;
+      }
+      .viewer .tree-category[open] > .tree-category-summary::before {
+        transform: rotate(90deg);
+      }
+      .viewer .tree-category-summary:hover {
+        background: var(--plum-soft);
+      }
+      .viewer .tree-category-label { flex: 1; }
+      .viewer .tree-category-count {
+        font-family: var(--mono-local);
+        font-style: normal;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--ink-soft);
+        background: var(--paper);
+        border: 1px solid var(--rule);
+        padding: 1px 8px;
+        border-radius: 999px;
+      }
       .viewer .tree-list { list-style: none; margin: 0; padding: 6px 6px 14px; }
       .viewer .tree-file-btn {
         width: 100%;

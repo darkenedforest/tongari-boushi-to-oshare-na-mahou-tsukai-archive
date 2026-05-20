@@ -1,6 +1,7 @@
 // In-browser parser for the Tongari Boushi NDS ROM. Reads the user-supplied
-// .nds file as a Uint8Array, walks the FAT/FNT, locates the msg98 RESO
-// containers, and extracts each entry's UTF-16-LE wire-format JP text.
+// .nds file as a Uint8Array, walks the FAT/FNT, locates RESO containers
+// across every translated surface, and extracts each entry's UTF-16-LE
+// wire-format JP text.
 //
 // This is intentionally read-only — the file never leaves the browser.
 //
@@ -10,8 +11,13 @@
 //   src/translator/wire_format.py — opcode tokenizer (TERMINATOR / CMD_OPEN / ARG_SEP / CMD_CLOSE)
 //   src/translator/opcode_registry.py — tag-name mapping (see opcodeRegistry.ts)
 //
-// Scope (step-319): msg98 family only. Files are stored uncompressed in
-// the FAT — no LZ11/BLZ decompression needed for this initial cut.
+// Scope (step-326): every translated `.ofs` container in the FAT — covers
+// `message/*` (story scripts, NPC dialog, personality variant chat,
+// bulletins, letters, lookups), `onemsg/*`, and `2d/inputmagic/msg.ofs`.
+// All are RESO v1.21 variant-1, stored uncompressed in the FAT — no
+// LZ11/BLZ decompression needed. Out-of-scope (have no JP↔EN entry
+// alignment in the DB): npc/, item/, recipe/, overlay binaries, ARM9
+// strings. Those surfaces have separate fix-manifest streams.
 
 import { formatTag } from './opcodeRegistry';
 import type {
@@ -430,9 +436,15 @@ export function extractRomFiles(rom: Uint8Array, params: ExtractParams): {
         const tokens = parseEntry(payload);
         const jp_wire = renderWire(tokens);
         const jp_plain = renderPlain(tokens);
-        // For msg98 files every entry is a single Textblock with sub_entry_id=0.
-        // We use the RESO entry index as the entry_id (matches what the
-        // DB stores for these files).
+        // Every RESO entry maps to one Textblock at sub_entry_id=0. Some
+        // surfaces (msg21-msg33, msg40-msg52) do have sub_entry_id > 0
+        // rows in the DB — those are speaker-split fragments that the
+        // browser parser doesn't yet split out of the wire-format payload,
+        // so they render as the full entry against the sub_entry=0 EN row.
+        // The viewer joins on `(entry_id, sub_entry_id)` and will show
+        // those higher sub_entry slots as text-only EN rows until the
+        // browser parser learns the split. See parser TODO in step-326
+        // report for the structural wire-format work that requires.
         const tb: Textblock = {
           entry_id: e.index,
           sub_entry_id: 0,
