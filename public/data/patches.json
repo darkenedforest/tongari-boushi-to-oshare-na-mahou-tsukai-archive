@@ -23,6 +23,47 @@
   },
   "releases": [
     {
+      "version": "2.4",
+      "date": "2026-05-20",
+      "headline": "Magic-language input UI, 655 NPC dialog rows, cooking narration, recipe menus, song-title audit, NPC typography sweep",
+      "summary": "A content release that builds on every v2.32 fix. Major surfaces added in English for the first time: the magic-language input UI (362 tile labels), 655 NPC fashion-talk and shop-recommendation dialog rows across 46 files, the cooking narration that plays during recipe creation, and the 11 recipe-menu labels. The 96-entry song-title list was audited for JP-faithfulness with Magician’s Quest Game 1 canon applied where it exists. Smaller polish landings include a Melissa typography sweep, にこみ→stew across the cooking flow, a Tetsu→Reginald canon rename, and a Charlie’s Noodles apostrophe drop to fit the 16-character bulletin title cap. The v2.32 wizard-rank canonical forms were reverted to the cap-fitting v2.31 forms after in-game UI overflow was confirmed.",
+      "changes": [
+        "Magic-language input UI fully translated (362 tile labels) — every tile in the spell-input picker is now English, including all DLC fashion vocabulary.",
+        "655 NPC dialog rows across 46 OFS files translated — fashion-talk closures, shop “recommend-me-something” sensory reactions, trend-product NPC monologues, plus two stragglers.",
+        "Cooking narration during recipe creation now in English — 84 fragments including the 13 mystery-soup spell-specific recipes.",
+        "11 recipe-menu labels translated — required reverse-engineering the RESC v3.11 format and building a new writer.",
+        "Song-title list audited for JP-faithfulness — 32 of the 67 previously-unrevised titles revised, Game 1 canon applied per the canon-is-inviolable rule (Tuxedos and Top Hats, Natural Disaster, Raise Me Up, Juno), Tyler’s final picks applied to 4 contested translations.",
+        "NPC name typography — Melissa canon sweep across 20 dialog rows; outdated forms (Ms. Melissa, Teacher Melissa, bare Melissa) normalized to Miss Melissa.",
+        "Cooking flow — the JP word にこみ mapped per-context to stew/simmer/stewed dish across 10 entries; cooking-minigame feedback rewritten to remove the mistranslated rice reference.",
+        "Deferred-list cleanup — Tetsu→Reginald rename in 3 dialog rows, NPC name typography sweep in 35 dialog bodies (Mr Vlad/Mr Oakley/Mr Graves), Vivian’s Boutique bulletin crash verified resolved.",
+        "Wizard rank names reverted from v2.32 canonical-but-overflowing forms back to v2.31 cap-fitting forms after in-game UI overflow confirmed.",
+        "Storage and recipe menu labels re-verified as already English.",
+        "Charlie’s Noodles → Charlies Noodles in the bulletin title and the magic-input UI tile to fit the 16-character cap (apostrophe dropped)."
+      ],
+      "changelogUrl": "/changelog/v2.4/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.4-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 15105777,
+          "patchSha256": "5c3a633fc927b3b934739baefa553e7e3d1d5784730bb821bb56daa848fe6715"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.4-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3814936,
+          "patchSha256": "043a89d5b28bbcb391751740da685c3885bb49d7bd866e0002b5484a4de4a149"
+        }
+      ],
+      "patchedRomMd5": "347142b39eed68ae281b5b3df83569a8",
+      "patchedRomSha256": "ea3c1b8ba9bfaa558a0fbf1699386b638073d013d757507889be99ee41976008",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 ea3c1b8b…e41976008)."
+    },
+    {
       "version": "2.32",
       "date": "2026-05-19",
       "headline": "Bulletin & letter rework, song-list sync, opcode-order fix, NPC name typography",

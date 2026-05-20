@@ -1,0 +1,19 @@
+{
+  "version": "2.4",
+  "date": "2026-05-20",
+  "headline": "Magic-language input UI, 655 NPC dialog rows, cooking narration, recipe menus, song-title audit",
+  "summary": "v2.4 is a content release built on top of every v2.32 fix. Major translation surfaces added: magic-language input UI (362 tiles), 655 NPC dialog rows across 46 message files, cooking narration during recipe creation, recipe-menu labels (11), and a song-title JP-faithfulness audit of all 96 entries.",
+  "previousVersionLabel": "v2.32",
+  "counts": {
+    "magicInputTiles": 362,
+    "npcDialogRows": 655,
+    "cookingNarrationFragments": 84,
+    "recipeMenuLabels": 11,
+    "songTitleRevisions": 32,
+    "melissaTypographyEdits": 20,
+    "wizardRankReverts": 7,
+    "deferredCleanupRows": 38,
+    "nikomiContextEdits": 10,
+    "charliesNoodlesCapFix": 2
+  }
+}

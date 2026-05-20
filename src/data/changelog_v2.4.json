@@ -1,0 +1,63 @@
+{
+  "version": "2.4",
+  "date": "2026-05-20",
+  "headline": "Magic-language input UI, 655 NPC dialog rows, cooking narration, recipe menus, song-title audit, NPC typography sweep",
+  "summary": "v2.4 is a content release built on top of every v2.32 fix. The biggest player-visible additions: the magic-language input UI (362 tile labels) is now fully in English, a previously-Japanese block of 655 NPC dialog rows across 46 message files is now in English, the cooking narration that plays during recipe creation now runs in English, the 11 recipe-menu labels are translated, and the 96-entry song-title list has been audited and revised for Japanese-faithfulness with Magician’s Quest Game 1 canon applied where it exists. Smaller landings include a Melissa typography sweep, にこみ→stew across the cooking flow, a Tetsu→Reginald canon rename, two UI menu labels (Storage / Recipe) confirmed English, a wizard-rank revert from the v2.32 canonical-but-overflowing forms back to the cap-fitting v2.31 forms, and one Charlie’s Noodles apostrophe drop to fit the 16-character bulletin title cap.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Overlay strings stored re-LZ-compressed with the fixed compressed-flag bookkeeping (matches v2.32 production default). One patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "v2.4 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM’s MD5.",
+  "otherChanges": [
+    {
+      "title": "Magic-language input UI translated (362 tiles)",
+      "body": "The magic-language input UI is now fully translated. Previously every tile in the spell-input picker showed Japanese. This surface now displays English labels for all 362 tile slots: core spell-words like “greeting”, “magic”, “yes” / “no”, “happy” / “sad”; people-words that route to canonical NPC names (Mr. Vlad, Reginald, Ben, Princess); location words (School, Beach, Lovers’ Point, Haunted House, Vivian’s Boutique); time-words (morning, now, Sunday through Saturday); item categories (item, money, clothes, fishing pole, mushroom); taste and style descriptors (sweet, spicy, Cute, Elegant); and the full DLC fashion vocabulary (Fashion Show, Brand, Photo Studio, Event Hall). The 15 slots left in their original form are full-width digits 0-9 (which the game renders as glyph icons regardless of locale), the acronym UMA, and 4 placeholder slots holding ‘-’ characters. Note: this surface’s character cap was not empirically verified before translation. If any tile label appears clipped, cut off, or overflowing into neighboring UI elements when entering spell names, please report which slot it appears on via the bug-report form so it can be tightened in a follow-up."
+    },
+    {
+      "title": "NPC dialog — 655 rows translated across 46 files",
+      "body": "A large block of pending NPC dialog that previously rendered in Japanese is now in English. The 655 rows span 46 OFS files across the message/msg20 through message/msg33 ranges and cover three distinct in-game surfaces. (1) Fashion-talk conversation closures: boutique and town NPCs who pull you into outfit conversations (“Hey [PLAYER_NAME], what kind of look do you think suits me?”) used to trail off into Japanese on the last beat of each scene — twelve NPC personality variants now finish their requests in English. (2) Shop “recommend me something” tasting and style reactions: all twelve personalities now have English reactions covering all five sensory axes — sweet, spicy, salty, sour, and the four perfume scents. The rank-rating line that follows the recommendation (TOP RANK!, Pretty average, etc.) is also in English across all twelve files. (3) Trend-product NPC banter: the “trend ranking” NPC monologues had a recurring closing line that was previously left in Japanese — all twelve personality variants are now in English. Plus two stragglers: the “Enjoy fall with a red outfit!?” theme intro and the lone Awoooooooooooo!! werewolf-howl line. Note: the underlying character cap for these dialog surfaces was inferred from the database schema rather than empirically tested. If any line is cut off, overflows the textbox boundary, or wraps awkwardly during NPC conversations, please note the speaker and context via the bug-report form."
+    },
+    {
+      "title": "Cooking narration in English",
+      "body": "The cooking narration that plays during recipe creation now shows in English. Previously the game displayed Japanese flavor-text while the player went through the recipe-creation animations; players now see English descriptions of each cooking action — “Mix it all together”, “Bake it -- done!”, “Plate it nicely -- done!”, “Chant the spell -- done!” and the rest. The 13 mystery-soup recipes (one per spell: Treasure Hunt, Transformation, Cloud Hammock, Sleep, Voice, Party Popper, Balloon, Magnetic, Shooting Star, Lightning, Spin, and Love Insight) now close with “Mysterious Soup is done!” and name the active spell in English instead of Japanese. Note: the cooking narration’s per-fragment cap was derived from format analysis rather than in-game testing. If any cooking narration line during recipe creation appears clipped or overflowing, please report it via the bug-report form."
+    },
+    {
+      "title": "Recipe-menu labels translated",
+      "body": "The recipe creation menu now shows English recipe names — Love Cake, Mood Cookie, Surprise Pie, and 8 others — instead of Japanese. Previously the recipe interface displayed these labels in Japanese because the format used to store them (RESC v3.11) wasn’t writable by the toolchain; this required reverse-engineering the format and building a new writer."
+    },
+    {
+      "title": "Song titles — JP-faithfulness audit + Game 1 canon applies",
+      "body": "The song-title list in the music-player menus has been audited for Japanese-faithfulness. v2.31’s retranslation pass had touched 29 of the 96 song entries; the remaining 67 had never been audited, and many carried English titles that drifted from what the Japanese title actually says. 32 song titles have been revised so the English now fits the Japanese phrasing more closely than the loose stylized translations that shipped before. Where the song appears in Magician’s Quest with an established translation that faithfully reflects the Japanese, that canonical name is kept; for the rest, the English has been rewritten to capture the JP imagery and structure. Examples: Gold Hoops → Golden Earrings, Kawaii!!! → Cute Balloon, Boogie Fever → Boogie My Life, Take My Hand → Girls’ Waltz, Cardiac Filter → Heart-Pounding Filter, Sao Paulo Senorita → Carioca’s Daughter, Spiral Rider → Spiral Ladder, Cerulean → Baby Blues. Four songs where Game 1 canon diverged stylistically were applied per the canon-is-inviolable rule: つえとボウシ → Tuxedos and Top Hats, タイフーン → Natural Disaster, グローリー → Raise Me Up, JUNO → Juno (title case). The cross-file sync that caused the original Cottage Cheese bug in v2.31 has been respected: every revision is applied uniformly to msg99020, msg99023, and msg99135."
+    },
+    {
+      "title": "NPC name typography — Melissa canon sweep",
+      "body": "Multiple dialog rows that referred to the NPC Melissa using outdated or inconsistent forms (Ms. Melissa, Teacher Melissa, or bare Melissa where formal context calls for Miss Melissa) have been normalized to the canonical name. Where adding Miss would have overflowed the row’s character cap, the surrounding sentence was rewritten to fit while preserving meaning. The character-voice exceptions — Melissa’s own self-introduction in class, where she goes by just her given name — are left untouched."
+    },
+    {
+      "title": "にこみ → stew across the cooking flow",
+      "body": "Multiple recipe and cooking-related entries that previously mixed Japanese and English (showing にこみ inside otherwise-English text) are now fully English. The word is adapted per-context to read as “stew”, “simmer”, or “stewed dish” depending on grammatical role — a blanket find-and-replace would have produced ungrammatical English, so each occurrence was reviewed by hand. The cooking-minigame feedback now says “Simmered it just right!” / “It didn’t simmer very well…” / “Perfect! Simmered up nice and tasty!” where it used to say “cooked the rice perfectly!” (the JP never mentioned rice). The mystery-soup ingredient status in the cauldron reads “The ingredients are simmering nicely!” where it previously said “blending together.” The Part-Time Cat’s simmer-status barks (“Simmering nicely, nya!”) replace the prior “packed” mistranslation. And in the King’s-soup story the over-cooked batch is now “over-simmered” to match the under-cooked twin line."
+    },
+    {
+      "title": "Deferred-list cleanup — Tetsu → Reginald, NPC body typography sweep, Vivian’s Boutique",
+      "body": "Three known-issue items finally got addressed. (1) The “Tetsu” name in three cleaning-mission dialogues was a romanized JP name that Magician’s Quest renders as Reginald (npc_names jp テツ = en Reginald). All three rows now say “this Reginald ain’t lettin’ it slide!” to match canon. A sentinel now bans the substring Tetsu from any en_text. (2) The NPC name typography sweep had previously fixed the canonical name fields themselves (Mr Vlad → Mr. Vlad, etc.) but hadn’t swept dialog body references. 35 bare-form references were found across 23 files — 14 Mr Vlad, 12 Mr Oakley, 9 Mr Graves — and all 35 now use the period-plus-space form. (3) The Vivian’s Boutique bulletin crash (msg98070 entry 69) — confirmed resolved by step-272’s earlier retitling to SALE AT VIVAN’S (15 chars, under cap). No new write was needed; this just closes the item from the deferred list."
+    },
+    {
+      "title": "Wizard rank names reverted to v2.31 cap-fitting forms",
+      "body": "Wizard rank names that had been updated to longer Magician’s Quest canonical forms in v2.32 (Apprentice Wizard, Magnus Wizard, etc.) caused the rank labels to overflow the profile-card and About-Me list UI fields, mashing text together and clipping at the right edge. The names have been reverted to the shorter pre-v2.32 forms (Apprentice, Great Wizard, Skilled Wizard, etc.) that fit the UI cleanly. The full canonical names will return in a future patch if the UI field can be widened or if shorter cap-respecting forms can be derived that still capture canon."
+    },
+    {
+      "title": "Storage and recipe menu labels — confirmed English",
+      "body": "Two UI menu labels that were flagged in the recipe investigation as potentially still showing in Japanese — the storage menu’s open-button and the kitchen’s recipe-selector — were re-investigated and confirmed to already render in English. The shop-prep menu in msg32113 and the tutorial shop-prep menu in msg32115 both carry a Storage item, and the cooking-pot menu in msg99138 carries a Recipe item. Three new sentinels guard the labels against regression."
+    },
+    {
+      "title": "Charlie’s Noodles → Charlies Noodles for cap fit",
+      "body": "The shop name Charlie’s Noodles (Game 1 canonical form, 17 characters) exceeded the 16-character bulletin title cap by one character. The apostrophe has been dropped — Charlies Noodles is now 16 characters and fits cleanly. The shop’s name in non-cap-constrained surfaces (NPC dialog, location labels, the magic-input UI tile) was updated to match for consistency. A new sentinel bans the apostrophe-form from any en_text field so this can’t regress."
+    },
+    {
+      "title": "Engine-integrity gates (under the hood)",
+      "body": "Every v2.32 gate continues to enforce on this release: the rebuild gate byte-verifies every fix manifest against the patched ROM (3,408 verifications passed), the placeholder-leakage gate scans for ~50 known DB-representation tags as UTF-16-LE bytes (zero leaks), and the approval-ledger gate refuses to release if any Tyler approval is left unresolved (120 entries resolved, 0 unresolved). The v2.4 release also adds a new change-list completeness audit (notes/_v24_release_change_list_audit.md) that verifies every CHANGELOG entry traces to a committed fix manifest with matching DB state — catching the “I made the change but never committed it” failure mode alongside the existing byte-level gates."
+    }
+  ]
+}

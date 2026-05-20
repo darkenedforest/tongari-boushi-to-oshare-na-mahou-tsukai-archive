@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import v24meta from '../../data/changelog_v2.4_meta.json';
 import v232meta from '../../data/changelog_v2.32_meta.json';
 import v231 from '../../data/changelog_v2.31.json';
 import v23meta from '../../data/changelog_v2.3_meta.json';
@@ -20,6 +21,24 @@ type ReleaseCard = {
 
 const releases: ReleaseCard[] = [
   {
+    version: v24meta.version,
+    date: v24meta.date,
+    href: `${base}/changelog/v2.4/`,
+    headline: v24meta.headline,
+    totalChanges:
+      v24meta.counts.magicInputTiles +
+      v24meta.counts.npcDialogRows +
+      v24meta.counts.cookingNarrationFragments +
+      v24meta.counts.recipeMenuLabels +
+      v24meta.counts.songTitleRevisions +
+      v24meta.counts.melissaTypographyEdits +
+      v24meta.counts.wizardRankReverts +
+      v24meta.counts.deferredCleanupRows +
+      v24meta.counts.nikomiContextEdits +
+      v24meta.counts.charliesNoodlesCapFix,
+    isLatest: true,
+  },
+  {
     version: v232meta.version,
     date: v232meta.date,
     href: `${base}/changelog/v2.32/`,
@@ -30,7 +49,6 @@ const releases: ReleaseCard[] = [
       v232meta.counts.answerListOpcodeFix +
       v232meta.counts.wizardRankCanonEdits +
       v232meta.counts.npcTypographyEdits,
-    isLatest: true,
   },
   {
     version: v231.version,
