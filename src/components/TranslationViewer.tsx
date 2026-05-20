@@ -12,7 +12,10 @@
 // in the design map to the project's permanent terminology:
 //
 //     Block          = Textblock (one (entry_id, sub_entry_id) record)
-//     Block Parts    = Phrases within a Textblock split on § / ▼
+//     Block Parts    = Phrases within a Textblock split on § (page break)
+//
+// `▼` is a Row (line break) inside a single Phrase, NOT a Phrase
+// boundary — Rows stay inside their Phrase and render as line breaks.
 //
 // We keep the design's class names so the CSS round-trips cleanly, but
 // the user-facing copy uses Textblock / Phrase / Row.
@@ -232,16 +235,23 @@ function buildViewerFiles(
   return files;
 }
 
-/** Split a block's text into "Phrases" — every § / ▼ becomes its own row.
+/** Split a Textblock into Phrases — one row per `§` page break.
+ *
+ *  `§` is the page-break marker (engine A-button advance, end of one
+ *  textbox / start of the next). `▼` and embedded `\n` are line breaks
+ *  WITHIN a single textbox (Rows inside the Phrase), so they MUST NOT
+ *  split here — they stay in the Phrase's text and the renderer turns
+ *  them into visible line breaks.
+ *
  *  This is the design's "Dialog Block Parts" table. */
 function splitPhrases(jp: string, en: string): { jp: string; en: string }[] {
   const splitOne = (text: string): string[] => {
     if (!text) return [];
-    // Treat § as a major boundary (page) and ▼ as a soft one (line). The
-    // designed UI shows them as separate rows either way.
+    // Split ONLY on § (page break). ▼ / \n are Rows inside a Phrase and
+    // are preserved in the output so the renderer can show them as line
+    // breaks within the row.
     return text
-      .replace(/\r\n/g, '\n')
-      .split(/§|▼|\n/)
+      .split('§')
       .map((s) => s.trim())
       .filter((s) => s.length > 0);
   };
@@ -463,9 +473,13 @@ function FileTree({
 function DialogPanels({
   block,
   romLoaded,
+  selectedPhraseIndex,
+  onSelectPhrase,
 }: {
   block: ViewerBlock | null;
   romLoaded: boolean;
+  selectedPhraseIndex: number;
+  onSelectPhrase: (i: number) => void;
 }) {
   if (!block) {
     return (
@@ -475,12 +489,26 @@ function DialogPanels({
     );
   }
   const phrases = splitPhrases(block.jp, block.en);
+  // Clamp selection to a valid Phrase. If the entry has no Phrases at
+  // all (empty), fall back to the whole block's text so the panels still
+  // show *something* useful.
+  const hasPhrases = phrases.length > 0;
+  const safeIndex = hasPhrases
+    ? Math.min(Math.max(selectedPhraseIndex, 0), phrases.length - 1)
+    : 0;
+  const shownJp = hasPhrases ? phrases[safeIndex].jp : block.jp;
+  const shownEn = hasPhrases ? phrases[safeIndex].en : block.en;
   return (
     <>
       <div className="pair">
         <section className="pair-col">
           <header className="pair-head">
             <span>Japanese</span>
+            {hasPhrases && (
+              <span className="pair-page" aria-hidden="true">
+                Page {safeIndex + 1} of {phrases.length}
+              </span>
+            )}
             {!romLoaded && (
               <span className="pair-lock" aria-hidden="true">
                 ROM required
@@ -490,8 +518,8 @@ function DialogPanels({
           <div className="pair-body mono">
             {!romLoaded ? (
               <LockedJp />
-            ) : block.jp ? (
-              <RenderedWire text={block.jp} />
+            ) : shownJp ? (
+              <RenderedWire text={shownJp} />
             ) : (
               <em className="muted">— empty —</em>
             )}
@@ -505,35 +533,48 @@ function DialogPanels({
             )}
           </header>
           <div className="pair-body mono">
-            {block.en ? <RenderedWire text={block.en} /> : <em className="muted">— empty —</em>}
+            {shownEn ? <RenderedWire text={shownEn} /> : <em className="muted">— empty —</em>}
           </div>
         </section>
       </div>
 
       <section className="parts">
         <header className="parts-head">
-          <span>Textblock Phrases</span>
+          <span>Textblock Pages (click to view)</span>
           <span className="parts-count">
-            {phrases.length} {phrases.length === 1 ? 'row' : 'rows'}
+            {phrases.length} {phrases.length === 1 ? 'page' : 'pages'}
           </span>
         </header>
-        {phrases.length === 0 && <div className="parts-empty">No phrases in this Textblock.</div>}
-        {phrases.map((p, i) => (
-          <div key={i} className="part-row">
-            <div className="part-cell mono">
-              {!romLoaded ? (
-                <LockedJp />
-              ) : p.jp ? (
-                <RenderedWire text={p.jp} />
-              ) : (
-                <em className="muted">— empty —</em>
-              )}
-            </div>
-            <div className="part-cell mono">
-              {p.en ? <RenderedWire text={p.en} /> : <em className="muted">— untranslated —</em>}
-            </div>
-          </div>
-        ))}
+        {phrases.length === 0 && <div className="parts-empty">No pages in this Textblock.</div>}
+        {phrases.map((p, i) => {
+          const isSelected = i === safeIndex;
+          return (
+            <button
+              key={i}
+              type="button"
+              className={`part-row ${isSelected ? 'is-selected' : ''}`}
+              onClick={() => onSelectPhrase(i)}
+              aria-pressed={isSelected}
+              aria-label={`Show page ${i + 1} of ${phrases.length}`}
+            >
+              <span className="part-index" aria-hidden="true">
+                {String(i + 1).padStart(2, '0')}
+              </span>
+              <div className="part-cell mono">
+                {!romLoaded ? (
+                  <LockedJp />
+                ) : p.jp ? (
+                  <RenderedWire text={p.jp} />
+                ) : (
+                  <em className="muted">— empty —</em>
+                )}
+              </div>
+              <div className="part-cell mono">
+                {p.en ? <RenderedWire text={p.en} /> : <em className="muted">— untranslated —</em>}
+              </div>
+            </button>
+          );
+        })}
       </section>
     </>
   );
@@ -677,6 +718,7 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
   const [fields, setFields] = useState({ en: true, jp: true });
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [selected, setSelected] = useState<{ file: string; blockId: string } | null>(null);
+  const [selectedPhraseIndex, setSelectedPhraseIndex] = useState(0);
   const [mobileTreeOpen, setMobileTreeOpen] = useState(false);
 
   const workerRef = useRef<Worker | null>(null);
@@ -856,6 +898,13 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
     return file.blocks.find((b) => b.id === selected.blockId) ?? null;
   }, [selected, viewerFiles]);
 
+  // Reset to Page 1 whenever the user navigates to a different Textblock.
+  // We key on the join of file + block id so switching back to the same
+  // entry doesn't churn the index (and re-trigger the effect needlessly).
+  useEffect(() => {
+    setSelectedPhraseIndex(0);
+  }, [selected?.file, selected?.blockId]);
+
   function onSelectFile(file: ViewerFile) {
     const firstBlock = file.blocks.find((b) => b.en || b.jp) ?? file.blocks[0];
     if (firstBlock) {
@@ -945,13 +994,23 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
             <span className="crumbs-file">{selectedFileName || '—'}</span>
             <span className="crumbs-sep">›</span>
             <span className="crumbs-block">{selectedBlockLabel}</span>
-            {currentBlock && (currentBlock.en || currentBlock.jp) && (
-              <span className="crumbs-pill">
-                {splitPhrases(currentBlock.jp, currentBlock.en).length} phrases
-              </span>
-            )}
+            {currentBlock && (currentBlock.en || currentBlock.jp) && (() => {
+              const total = splitPhrases(currentBlock.jp, currentBlock.en).length;
+              if (total === 0) return null;
+              const cur = Math.min(Math.max(selectedPhraseIndex, 0), total - 1) + 1;
+              return (
+                <span className="crumbs-pill">
+                  Page {cur} of {total}
+                </span>
+              );
+            })()}
           </div>
-          <DialogPanels block={currentBlock} romLoaded={!!extraction} />
+          <DialogPanels
+            block={currentBlock}
+            romLoaded={!!extraction}
+            selectedPhraseIndex={selectedPhraseIndex}
+            onSelectPhrase={setSelectedPhraseIndex}
+          />
         </main>
 
         <div className="preview-col">
@@ -1132,6 +1191,18 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         color: oklch(0.42 0.10 165);
         background: var(--mint-soft);
         border: 1px solid var(--mint);
+      }
+      .viewer .pair-page {
+        font-family: var(--sans-local);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        color: var(--plum-deep);
+        background: var(--plum-soft);
+        border: 1px solid var(--plum);
       }
 
       /* Search bar */
@@ -1501,12 +1572,50 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
       .viewer .parts-empty { padding: 22px; text-align: center; color: var(--ink-mute); font-style: italic; }
       .viewer .part-row {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 36px 1fr 1fr;
         gap: 1px;
+        width: 100%;
         background: var(--rule-soft);
+        border: none;
         border-top: 1px solid var(--rule-soft);
+        padding: 0;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+        color: inherit;
+        transition: background 0.1s, box-shadow 0.1s;
       }
       .viewer .part-row:first-of-type { border-top: none; }
+      .viewer .part-row:hover .part-cell,
+      .viewer .part-row:focus-visible .part-cell {
+        background: var(--plum-soft);
+      }
+      .viewer .part-row:focus-visible {
+        outline: 2px solid var(--plum);
+        outline-offset: -2px;
+      }
+      .viewer .part-row.is-selected {
+        background: var(--plum);
+      }
+      .viewer .part-row.is-selected .part-cell {
+        background: var(--plum-soft);
+        box-shadow: inset 3px 0 0 var(--plum);
+      }
+      .viewer .part-row.is-selected .part-index {
+        background: var(--plum);
+        color: white;
+      }
+      .viewer .part-index {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 0;
+        background: var(--paper-edge);
+        color: var(--plum-deep);
+        font-family: var(--mono-local);
+        font-size: 12px;
+        font-weight: 700;
+      }
       .viewer .part-cell {
         background: var(--card);
         padding: 12px 16px;
@@ -1677,7 +1786,8 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         .viewer .mobile-tree-toggle { display: flex; }
         .viewer .pair { grid-template-columns: 1fr; }
         .viewer .pair-col { min-height: 160px; }
-        .viewer .part-row { grid-template-columns: 1fr; }
+        .viewer .part-row { grid-template-columns: 36px 1fr; }
+        .viewer .part-cell:last-child { grid-column: 2; border-top: 1px dashed var(--rule); }
       }
     `}</style>
   );
