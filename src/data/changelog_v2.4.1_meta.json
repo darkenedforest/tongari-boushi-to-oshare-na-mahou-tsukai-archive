@@ -1,0 +1,11 @@
+{
+  "version": "2.4.1",
+  "date": "2026-05-20",
+  "headline": "Overlay translations sweep + recipe-menu category labels",
+  "summary": "Two surfaces that v2.4 missed are now in English: the recipe-menu category headers (Oven Recipes, Stew Recipes, and 8 more) plus a comprehensive overlay-binary translation sweep across all 180 overlays (NPC default-name fallback, locker name-entry placeholder, workshop verb tables).",
+  "previousVersionLabel": "v2.4",
+  "counts": {
+    "overlayStringEdits": 24,
+    "recipeMenuCategoryLabels": 23
+  }
+}

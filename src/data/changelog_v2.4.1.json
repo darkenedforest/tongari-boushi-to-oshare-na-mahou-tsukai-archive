@@ -1,0 +1,27 @@
+{
+  "version": "2.4.1",
+  "date": "2026-05-20",
+  "headline": "Overlay translations sweep + recipe-menu category labels",
+  "summary": "v2.4.1 is a small follow-up patch bundled with v2.4. Two surfaces that v2.4 missed are now in English: the recipe-menu category headers visible on the kitchen menu (Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes, plus the later-unlocked Outfit/Tiara/Necklace/Bouquet headers, a DLC Big Mac category, and a Mysterious Soup placeholder) — these labels live in the same RESC v3.11 file as the individual recipe names that were translated in v2.4 but were missed in the original patch pass. And a comprehensive overlay-binary translation sweep across all 180 overlays — the NPC default-name fallback (“Nameless”) shown when a slot has no assigned name, the locker outfit name-entry placeholder (AAAAAA prompt where you type your outfit name), and the workshop / re-make verb tables (16 additional Put/Del/New/End/Bin buttons shared with the existing ARM9 menu pool). All v2.4 gates continue to enforce, plus a new change-list completeness audit gates v2.4.1.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.4: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "v2.4.1 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's MD5.",
+  "otherChanges": [
+    {
+      "title": "Recipe-menu category labels translated (23 records)",
+      "body": "The kitchen recipe-menu category headers — Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes — plus later-unlocked categories (Outfit, Tiara, Necklace, Bouquet) and a Big Mac category, plus a Mysterious Soup placeholder label, now show in English. These labels live in the same RESC v3.11 file (recipedata.lzs) as the individual recipe names that were translated in v2.4; the category headers themselves were missed in the original v2.4 prep pass because that step only patched the recipe-name records and not the header records. Note: the storage-menu open-button and the kitchen recipe-selector label visible on the same menu remain in Japanese for now — those are baked sprite graphics in selectrecipe.lzs rather than text strings, and require a separate sprite-edit pipeline that is deferred."
+    },
+    {
+      "title": "Comprehensive overlay-binary translation sweep (24 strings)",
+      "body": "Translation pass across all overlay binaries. The earlier translation work in v2.32 / v2.4 had only covered six specific overlays containing menu text (Show-BGM, the game-title segment, the confirm prompt, the NPC interaction menu, and the Equip / Remake screens) plus the ARM9 menu pool. This sweep covers the remaining player-visible Japanese text across all 180 overlays that the prior catalog had identified but never translated. The player will now see English in: the locker outfit name-entry default placeholder (six-letter AAAAAA prompt where you type in your outfit name); every default-name fallback shown when an NPC slot has no assigned name (the ARM9 “Nameless” string plus four duplicates in the NPC-data overlay); and the workshop / re-make verb tables (16 additional Put/Del/New/End/Bin buttons in the workshop overlay and the matching Put button in the equip overlay that share their canon with the existing ARM9 menu pool). Internal mechanism strings (font tables, JP-keyboard layout data, profanity filter wordlists, structure-byte data that the UTF-16-LE decoder happens to interpret as Japanese characters but isn't actually text) were intentionally left unchanged because translating them would break engine logic. Total: 24 new player-visible JP strings translated to English (1 ARM9 + 23 overlay), bringing the running total of overlay+ARM9 strings shipped to 52."
+    },
+    {
+      "title": "Engine-integrity gates (under the hood)",
+      "body": "Every v2.4 gate continues to enforce on this release: the rebuild gate byte-verifies every fix manifest against the patched ROM (3,454 verifications passed, up from 3,408 in v2.4), the placeholder-leakage gate scans for known DB-representation tags as UTF-16-LE bytes (zero leaks), and the approval-ledger gate refuses to release if any Tyler approval is left unresolved (122 entries resolved, 0 unresolved). v2.4.1 also exercises the new change-list completeness audit (notes/_v2.4.1_release_change_list_audit.md) that verifies every CHANGELOG entry traces to a committed fix manifest with matching state."
+    }
+  ]
+}

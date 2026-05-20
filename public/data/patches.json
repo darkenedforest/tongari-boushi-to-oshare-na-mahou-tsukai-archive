@@ -23,6 +23,38 @@
   },
   "releases": [
     {
+      "version": "2.4.1",
+      "date": "2026-05-20",
+      "headline": "Overlay translations sweep + recipe-menu category labels",
+      "summary": "A small follow-up patch bundled on top of v2.4. Two surfaces that v2.4 missed are now in English: the recipe-menu category headers visible on the kitchen menu (Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes, plus the later-unlocked Outfit/Tiara/Necklace/Bouquet headers, a DLC Big Mac category, and a Mysterious Soup placeholder); and a comprehensive overlay-binary translation sweep across all 180 overlays (NPC default-name fallback “Nameless”, the locker outfit name-entry placeholder, and the workshop / re-make verb tables).",
+      "changes": [
+        "Recipe-menu category labels translated — Oven Recipes, Stew Recipes, Frozen Sweets Recipes, Frying Pan Recipes, Fried Food Recipes plus later-unlocked Outfit/Tiara/Necklace/Bouquet headers and the DLC Big Mac category. 23 records total (the 13 Mysterious Soup placeholder records share a single dedup pointer in the writer).",
+        "Comprehensive overlay-binary translation sweep — 1 ARM9 string + 23 overlay strings across all 180 overlays. Includes the NPC default-name fallback (“Nameless”), the locker outfit name-entry placeholder (AAAAAA), and the workshop / re-make verb tables (16 additional Put/Del/New/End/Bin buttons).",
+        "The storage menu open-button and the kitchen recipe-selector label visible on the same recipe menu remain in Japanese — those are baked sprite graphics in selectrecipe.lzs rather than text strings, and require a separate sprite-edit pipeline that is deferred."
+      ],
+      "changelogUrl": "/changelog/v2.4.1/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.4.1-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 15111612,
+          "patchSha256": "0b687fb61cab07d4da8571ccfb2930035a1f757995a47124bdad0d9113680d0b"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.4.1-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3969675,
+          "patchSha256": "348f1aaeb827ee849782b788ef57d3ef8e12d87c24e24362e91afafd86dd4529"
+        }
+      ],
+      "patchedRomSha256": "6363dd76f2fd5fb4ba4cd5b3d872fad4b401f6bd336d34b8495cb91fd6891691",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 6363dd76…d6891691)."
+    },
+    {
       "version": "2.4",
       "date": "2026-05-20",
       "headline": "Magic-language input UI, 655 NPC dialog rows, cooking narration, recipe menus, song-title audit, NPC typography sweep",

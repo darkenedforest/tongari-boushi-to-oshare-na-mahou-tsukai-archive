@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import v241meta from '../../data/changelog_v2.4.1_meta.json';
 import v24meta from '../../data/changelog_v2.4_meta.json';
 import v232meta from '../../data/changelog_v2.32_meta.json';
 import v231 from '../../data/changelog_v2.31.json';
@@ -21,6 +22,16 @@ type ReleaseCard = {
 
 const releases: ReleaseCard[] = [
   {
+    version: v241meta.version,
+    date: v241meta.date,
+    href: `${base}/changelog/v2.4.1/`,
+    headline: v241meta.headline,
+    totalChanges:
+      v241meta.counts.overlayStringEdits +
+      v241meta.counts.recipeMenuCategoryLabels,
+    isLatest: true,
+  },
+  {
     version: v24meta.version,
     date: v24meta.date,
     href: `${base}/changelog/v2.4/`,
@@ -36,7 +47,6 @@ const releases: ReleaseCard[] = [
       v24meta.counts.deferredCleanupRows +
       v24meta.counts.nikomiContextEdits +
       v24meta.counts.charliesNoodlesCapFix,
-    isLatest: true,
   },
   {
     version: v232meta.version,
