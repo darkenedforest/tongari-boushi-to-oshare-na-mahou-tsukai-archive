@@ -110,18 +110,16 @@ const base = import.meta.env.BASE_URL;
   <h2>Re-compression research</h2>
   <p>
     The plaintext-ARM9 trick is the simple path. For overlays we keep an
-    alternative path open: re-LZ-compress the patched overlay binary using
-    <code>ndspy.codeCompression.compress()</code> and ship the re-compressed
-    blob with the original <code>is_compressed</code> bit still set. v2.32
-    ships overlay patches this way (re-compressed, matching the Konami
-    on-disk shape closer than plaintext-overlay would). The per-overlay
-    fit/no-fit analysis lives at
-    <code>notes/_lz_compression_research.py</code> in the translation repo —
-    it round-trips each of the six v2.x-patched overlays through
-    ndspy.codeCompression, simulates the worst-case (slot filled with
-    placeholder x's) and the real EN translation, and reports whether the
-    re-compressed size fits inside the original on-disk slot. All six
-    overlays fit comfortably under the EN translation.
+    alternative path open: re-LZ-compress the modified overlay binary using
+    <code>ndspy.codeCompression.compress()</code> and emit the re-compressed
+    blob with the original <code>is_compressed</code> bit still set — this
+    matches the Konami on-disk shape more closely than a plaintext-overlay
+    payload. The per-overlay fit/no-fit analysis lives at
+    <code>notes/_lz_compression_research.py</code> in the translation repo;
+    it round-trips an overlay through ndspy.codeCompression, simulates the
+    worst-case body (slot filled with placeholder x's) and an alternate
+    EN-shaped body, and reports whether the re-compressed size fits inside
+    the overlay's original on-disk slot.
   </p>
 
   <h2>Source</h2>

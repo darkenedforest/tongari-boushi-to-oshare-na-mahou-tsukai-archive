@@ -210,19 +210,22 @@ const CO_LIST: CoRow[] = [
     <code>100000リッチ → 100000 Ritch</code>.
   </p>
 
-  <h2>Canon-overflow (CO) backlog — future pool relocator</h2>
+  <h2>Slot budgets vs canonical EN length</h2>
   <p>
-    20 slots ship a shortened EN that loses canon information because the
-    fixed slot stride cannot fit the full Konami EN. When the pool relocator
-    workstream lands (rewrite the pointer table + grow the string pool to
-    relax the per-slot byte budget), these slots will be restored to their
-    full canon names. The currency tiers and "Change wallpaper / Change
-    flooring" are the highest-information-loss cases; <code>Hat off</code>,
-    <code>No spex</code>, and <code>Release</code> are close-enough-to-canon
-    semantically.
+    20 slots cannot fit the full Konami EN canon within their fixed slot
+    stride. The constraint is structural: each slot is allocated a
+    pre-computed byte width in the pool, and any string longer than that
+    byte width would overrun into the next slot. A pool relocator that
+    rewrote the pointer table and grew the pool would relax these
+    per-slot byte budgets; that is not currently in scope. The table below
+    records the gap between the byte-budget-fitting EN and the longer
+    canonical Konami EN so the cost is visible. The currency tiers and
+    "Change wallpaper" / "Change flooring" are the highest-information-loss
+    cases; <code>Hat off</code>, <code>No spex</code>, and
+    <code>Release</code> are close-enough-to-canon semantically.
   </p>
   <table>
-    <thead><tr><th>Slot</th><th>Current (shipped)</th><th>Full Konami canon</th></tr></thead>
+    <thead><tr><th>Slot</th><th>Fits in slot</th><th>Full Konami canon</th></tr></thead>
     <tbody>
       {CO_LIST.map((r) => (
         <tr>

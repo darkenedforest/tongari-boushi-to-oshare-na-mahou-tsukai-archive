@@ -5,7 +5,7 @@ const base = import.meta.env.BASE_URL;
 
 <FieldGuideLayout
   title="Overlay knowledgebase"
-  description="The high-level shape of the ~170 ARM9 overlays — what they are, how they load, and why patching them is delicate. The full per-overlay catalog is live; see Overlays in the nav."
+  description="The plain-English shape of the 180 ARM9 overlays — what they are, how they load, and why their edits are delicate. The full per-overlay catalog lives at /field-guide/how-the-game-works/overlays/."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
@@ -14,12 +14,12 @@ const base = import.meta.env.BASE_URL;
 >
   <p>
     This page is the "what's an overlay" explainer. The
-    <a href={`${base}/field-guide/how-the-game-works/overlays/`}>overlay system</a>
+    <a href={`${base}/field-guide/how-the-game-works/overlays-system/`}>overlay system</a>
     page covers the technical specifics (RAM slots, controller/body
-    pattern, persistent engines). The full per-overlay catalog — one row per
-    overlay, with confirmed role, notable functions, container references,
-    and embedded JP strings — lives at
-    <a href={`${base}/overlays/`}>the Overlays section</a>.
+    pattern, persistent engines). The full per-overlay catalog — one page
+    per overlay, with descriptive role, notable functions, container
+    references, and embedded JP strings — lives at the
+    <a href={`${base}/field-guide/how-the-game-works/overlays/`}>per-overlay catalog</a>.
   </p>
 
   <h2>What is an overlay?</h2>
@@ -57,18 +57,16 @@ const base = import.meta.env.BASE_URL;
     <a href={`${base}/field-guide/file-formats/blz-arm9/`}>BLZ &amp; the plaintext-ARM9 trick</a>
     page covers the format details, the in-place backward decompression, the
     NitroSDK module-params layout, and the "flip <code>CompressedStaticEnd</code>"
-    trick the patcher uses to load ARM9 as plaintext.
+    trick used to load ARM9 as plaintext.
   </p>
   <p>
-    The same trick applies to overlays: flipping the per-overlay
+    The same idea applies per overlay: flipping the per-overlay
     <code>is_compressed</code> bit in the overlay table to <code>0</code> and
-    storing the overlay body uncompressed lets the patcher edit overlay code
-    in place without re-running the encoder. v2.31 fixed a long-standing crash
-    in the friend menu / sing / hum / clothing codec / bug-register flow that
-    came from this compressed-flag bookkeeping; v2.32 ships those fixes
-    intact, with overlay strings re-LZ-compressed via
-    <code>ndspy.codeCompression</code> for an on-disk shape closer to the
-    Konami original.
+    storing the body uncompressed makes the engine load the overlay as
+    plaintext. Both shapes are interchangeable on-disk and the engine
+    handles either; a re-LZ-compressed body via
+    <code>ndspy.codeCompression</code> yields the closest on-disk match to
+    the Konami original.
   </p>
 
   <h2>NitroSDK validation markers — none present</h2>
@@ -84,74 +82,51 @@ const base = import.meta.env.BASE_URL;
     re-emit them.
   </p>
 
-  <h2>Why patching overlays is delicate</h2>
+  <h2>Why editing overlays is delicate</h2>
   <p>
-    Most of our v2.x release work happens inside container files
-    (<code>data/*</code>) — the dialog strings, item tables, magic glyphs.
-    Those are safe to patch because the engine reads them at runtime and
-    doesn't care about their internal layout as long as the file format is
-    valid.
-  </p>
-  <p>
-    Overlays are different. An overlay is <em>compiled code</em>. It has
-    hard-coded addresses, fixed-stride data tables, and pointers into
-    <code>.rodata</code> that were resolved at link time. If you change a
-    string or a constant inside an overlay you have to either:
+    Container files in <code>data/*</code> (dialog strings, item tables,
+    magic glyphs) are read at runtime through a content cache that does not
+    care about their precise byte layout as long as the file format is
+    valid. Overlays are different: an overlay is <em>compiled code</em>. It
+    has hard-coded addresses, fixed-stride data tables, and pointers into
+    <code>.rodata</code> that were resolved at link time. Any byte-level
+    edit to an overlay has to either:
   </p>
   <ul>
-    <li><strong>Keep the patch byte-exact in length</strong> — replace 4 bytes
-      with exactly 4 bytes, never more — so nothing else in the overlay shifts; or</li>
-    <li><strong>Recompute every pointer in the overlay</strong> that pointed
-      past your edit, which means re-resolving the relocation table by hand.</li>
+    <li><strong>Stay byte-exact in length</strong> — replace 4 bytes with
+      exactly 4 bytes, never more — so nothing else in the overlay
+      shifts; or</li>
+    <li><strong>Recompute every pointer in the overlay</strong> that
+      pointed past the edit, which means re-resolving the relocation
+      table by hand.</li>
   </ul>
   <p>
-    Get either of those wrong and the game crashes, usually as soon as the
-    overlay is loaded. So overlay edits are surgical: the patch tools track
-    each overlay edit as a specific (file, offset, before-bytes, after-bytes)
-    tuple and refuse to apply if the original bytes don't match.
-  </p>
-
-  <h2>What v2.31 / v2.32 changed</h2>
-  <p>
-    Version <strong>2.31</strong> and <strong>2.32</strong> both touch the
-    same six overlays: <code>ov047</code>, <code>ov059</code>,
-    <code>ov065</code>, <code>ov096</code>, <code>ov170</code>, and
-    <code>ov171</code>. Each edit is a small, length-preserving string or
-    constant change. v2.31 also fixed the engine-side compressed-flag bug
-    that was preventing menus driven by these overlays (friend menu, sing/hum,
-    clothing codec, bug register) from loading reliably. v2.32 ships those
-    fixes intact and adds nothing new to the overlay surface — its content
-    work concentrates on the bulletin/letter corpus, song-name lists, and
-    NPC name typography (all of which live in container files, not overlay
-    code). See the
-    <a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`}>ARM9 menu pool</a>
-    page for the per-slot EN strings shipped in those six overlays.
-  </p>
-  <p>
-    Of the other 174 overlays, none have been edited yet. Most are read-only
-    in the patch sense — we know what they do but we don't need to change
-    them.
+    Get either of those wrong and the game crashes the first time the
+    overlay is loaded. That is the practical constraint behind any tool
+    that emits new overlay bytes — each edit is tracked as a specific
+    (file, offset, before-bytes, after-bytes) tuple, and the tool refuses
+    to apply if the original bytes don't match the expected shape.
   </p>
 
   <h2>Per-overlay catalog</h2>
   <div class="fg-note">
-    <strong>The full per-overlay catalog is live.</strong>
-    All 180 overlays have been put through a Ghidra-based reverse-engineering
-    pass and have their own page with the function listing Ghidra found, the
-    container files each overlay references, and any Japanese strings baked
-    directly into the overlay binary. For deeper technical detail on any
-    individual overlay, jump to the
-    <a href={`${base}/overlays/`}>overlays section</a>. The landing page has a
-    searchable / filterable index; each row drills into the per-overlay
-    detail page.
+    <strong>One descriptive page per overlay.</strong>
+    All 180 overlays have been put through a Ghidra-based
+    reverse-engineering pass and have their own page with the function
+    listing Ghidra found, the container files each overlay references, and
+    any Japanese strings baked directly into the overlay binary. Jump to
+    the
+    <a href={`${base}/field-guide/how-the-game-works/overlays/`}>per-overlay
+    catalog</a>; the landing page is searchable and filterable, and each
+    row drills into the per-overlay detail page.
   </div>
 
   <h2>Related</h2>
   <ul>
-    <li><a href={`${base}/field-guide/how-the-game-works/overlays/`}>The overlay system</a> — RAM slots, controller/body pattern, persistent engines.</li>
+    <li><a href={`${base}/field-guide/how-the-game-works/overlays-system/`}>The overlay system</a> — RAM slots, controller/body pattern, persistent engines.</li>
+    <li><a href={`${base}/field-guide/how-the-game-works/overlays/`}>Per-overlay catalog</a> — one descriptive page per overlay.</li>
     <li><a href={`${base}/field-guide/how-the-game-works/memory-map/`}>Memory map</a> — where overlays land in main RAM.</li>
     <li><a href={`${base}/field-guide/file-formats/blz-arm9/`}>BLZ &amp; the plaintext-ARM9 trick</a> — the executable-code compression used on ARM9 and overlays.</li>
-    <li><a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`}>ARM9 menu pool</a> — the 52 menu-string slots embedded in ARM9 + the 6 patched overlays.</li>
-    <li><a href={`${base}/patches/`}>Patches</a> — which overlays each release touches.</li>
+    <li><a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`}>ARM9 menu pool</a> — the 52 menu-string slots embedded in ARM9 and adjacent overlay slots.</li>
   </ul>
 </FieldGuideLayout>

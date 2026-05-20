@@ -148,13 +148,7 @@ const base = import.meta.env.BASE_URL;
     state to specific items. Nothing here needs translating.
   </p>
 
-  <h2>What shipped where</h2>
-  <ul>
-    <li><strong>v2.4 (in prep)</strong>: <code>recipedata.lzs</code> recipe names translated (step-294); <code>recipemsg.lzs</code> cooking narration translated (step-297). Both writers shipped to <code>src/archive/</code> and <code>src/translator/</code> respectively; both round-trip-safe on no-op (verified). The にこみ ("simmer") sweep in step-296 touched message-system files, not these.</li>
-    <li><strong>v2.32 and earlier</strong>: recipe and recipemsg shipped in Japanese — the format was not yet writable by the toolchain.</li>
-  </ul>
-
-  <h2>Re-emit constraints (active)</h2>
+  <h2>Re-emit constraints</h2>
   <ul>
     <li>Preserve the 4-byte SZL tag at <code>+0x10</code> per file.</li>
     <li><code>recipedata.lzs</code> entries must stay 48 bytes (RESC v3.11 stride); entry-1 bytes must pass through unchanged; the entry-0 string-blob can grow as long as the file is repadded to 0x10 alignment.</li>

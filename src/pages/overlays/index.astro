@@ -1,188 +1,41 @@
 ---
-import Layout from '../../layouts/Layout.astro';
-import OverlaysBrowser from '../../components/OverlaysBrowser.tsx';
-
+// Section moved: the per-overlay catalog used to live at /overlays/
+// (top-level). It is now a research-knowledge section inside the
+// Field Guide. The new home preserves the same per-overlay data with
+// reframed descriptive copy.
 const base = import.meta.env.BASE_URL;
 const baseNorm = base.replace(/\/$/, '');
-const dataUrl = `${baseNorm}/data/overlays.json`;
-const detailHrefBase = `${baseNorm}/overlays/`;
+const target = `${baseNorm}/field-guide/how-the-game-works/overlays/`;
 ---
-
-<Layout title="Overlays">
-  <section class="page-header">
-    <p class="breadcrumb">
-      <a href={`${base}/`}>Home</a>
-      <span aria-hidden="true">›</span>
-      <span>Overlays</span>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Overlays moved — Tongari Boushi Archive</title>
+    <link rel="canonical" href={target} />
+    <meta http-equiv="refresh" content={`0; url=${target}`} />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        max-width: 640px;
+        margin: 60px auto;
+        padding: 0 24px;
+        color: #3a2350;
+        line-height: 1.6;
+      }
+      a {
+        color: #6f3fa3;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Overlays moved</h1>
+    <p>
+      The overlays catalog now lives in the Field Guide as research
+      knowledge:
+      <a href={target}>{target}</a>
     </p>
-    <div class="header-sprites" aria-hidden="true">
-      <img src={`${base}/decorations/key.png`} alt="" />
-      <img src={`${base}/decorations/magic-lamp-tall.png`} alt="" />
-      <img src={`${base}/decorations/quill-pen.png`} alt="" />
-    </div>
-    <h1>Overlays Knowledgebase</h1>
-    <p class="lede">
-      The game's code is split into 180 "overlays" — little pieces of compiled
-      ARM9 that the DS swaps in and out of a shared RAM slot as you move between
-      shops, the mail box, the cooking minigame, and so on. Each overlay
-      handles one screen or one feature. This section is the per-overlay map
-      of what's inside each one — what assets it loads, which Japanese strings
-      are baked into its code, and which functions Ghidra found.
-    </p>
-
-    <div class="headline-stats">
-      <div class="stat">
-        <span class="stat-num">180</span>
-        <span class="stat-lbl">overlays analyzed</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">100</span>
-        <span class="stat-lbl">distinct unpatched reference files</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">79</span>
-        <span class="stat-lbl">overlays carry embedded JP text</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">122</span>
-        <span class="stat-lbl">total unpatched container references</span>
-      </div>
-      <div class="stat">
-        <span class="stat-num">6</span>
-        <span class="stat-lbl">overlays patched in v2.31/v2.32</span>
-      </div>
-    </div>
-
-    <details class="tips">
-      <summary>How to read this</summary>
-      <ul>
-        <li>
-          <strong>Overlay</strong> — the ROM ID; click through to the per-overlay
-          page with function listing, container references, and embedded
-          strings.
-        </li>
-        <li>
-          <strong>Purpose</strong> — the one-line summary derived from the
-          containers the overlay references. The pink pill is the prior-pass
-          role guess (the rough "what's this for" tag we had before the deep
-          Ghidra pass).
-        </li>
-        <li>
-          <strong>Fns</strong> — function count Ghidra auto-identified.
-          Many of those are small trampolines; the dispatcher / high-fan-out
-          functions are the meaty ones.
-        </li>
-        <li>
-          <strong>JP strings</strong> — UTF-16 LE strings baked into the overlay's
-          own binary. These are direct translation targets — they cannot be
-          fixed by editing a container file, the overlay itself has to be
-          patched.
-        </li>
-        <li>
-          <strong>Unpatched</strong> — container files referenced by the
-          overlay that are still the original Japanese in the latest patch.
-          These are the next-up translation backlog.
-        </li>
-        <li>
-          <strong>NitroCodeBE markers</strong> — the NitroSDK code footer
-          (<code>0xDEC00621</code>) used to validate plaintext ARM9 modules
-          is <strong>not present</strong> in any of the 180 overlays. Konami
-          stripped or never emitted them; this is normal for retail DS
-          titles where overlays ship BLZ-compressed. The patcher does not
-          need to re-emit them.
-        </li>
-      </ul>
-    </details>
-  </section>
-
-  <OverlaysBrowser dataUrl={dataUrl} detailHrefBase={detailHrefBase} client:load />
-</Layout>
-
-<style>
-  .page-header { padding: 40px 0 20px; }
-  .breadcrumb {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    color: var(--color-ink-soft);
-    font-size: 0.9rem;
-    margin: 0 0 12px;
-  }
-  .breadcrumb a {
-    color: var(--color-purple-400);
-    font-weight: 600;
-  }
-  .header-sprites {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    margin: 6px 0 4px;
-    opacity: 0.78;
-  }
-  .header-sprites img {
-    width: 40px;
-    height: 40px;
-  }
-  .header-sprites img:nth-child(2) {
-    width: 48px;
-    height: 48px;
-  }
-  .lede {
-    max-width: 64ch;
-    line-height: 1.6;
-    color: var(--color-ink);
-  }
-
-  .headline-stats {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px;
-    margin: 18px 0 14px;
-    max-width: 880px;
-  }
-  .stat {
-    background: var(--surface-strong);
-    border: 1px solid var(--color-pink-100);
-    border-radius: var(--radius-md);
-    padding: 12px 16px;
-    box-shadow: var(--shadow-soft);
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .stat-num {
-    font-family: var(--font-display, inherit);
-    font-size: 1.85rem;
-    font-weight: 700;
-    color: var(--color-pink-600);
-    line-height: 1.1;
-  }
-  .stat-lbl {
-    font-size: 0.82rem;
-    color: var(--color-ink-soft);
-    line-height: 1.35;
-  }
-
-  .tips {
-    background: var(--color-purple-50, rgba(232, 220, 255, 0.3));
-    border: 1px solid var(--color-purple-100);
-    border-radius: var(--radius-md);
-    padding: 10px 16px;
-    margin: 6px 0 8px;
-    max-width: 720px;
-  }
-  .tips summary {
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--color-purple-600);
-    font-size: 0.92rem;
-  }
-  .tips ul {
-    margin: 8px 0 4px;
-    padding-left: 20px;
-    color: var(--color-ink);
-    font-size: 0.92rem;
-    line-height: 1.55;
-  }
-  .tips li { margin-bottom: 6px; }
-</style>
+    <p>You will be redirected automatically.</p>
+  </body>
+</html>

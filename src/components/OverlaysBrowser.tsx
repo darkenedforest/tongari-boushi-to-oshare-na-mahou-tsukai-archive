@@ -69,15 +69,15 @@ interface Snapshot {
 
 interface Props {
   dataUrl: string;
-  detailHrefBase: string; // e.g. "/tongari-boushi-.../overlays/"
+  detailHrefBase: string; // e.g. "/tongari-boushi-.../field-guide/how-the-game-works/overlays/"
 }
 
 // ---------------------------------------------------------------------
 // Filter UI state
 // ---------------------------------------------------------------------
 
-type SurfaceFilter = 'any' | 'unpatched_containers' | 'embedded_strings' | 'pure_code';
-type SortKey = 'id' | 'functions' | 'strings' | 'unpatched';
+type SurfaceFilter = 'any' | 'has_containers' | 'embedded_strings' | 'pure_code';
+type SortKey = 'id' | 'functions' | 'strings' | 'containers';
 
 const PAGE_SIZE = 30;
 
@@ -122,7 +122,7 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
     const needle = q.trim().toLowerCase();
     const minFnsNum = minFns === '' ? 0 : Math.max(0, Number(minFns) || 0);
     let rows = snap.overlays.filter(o => {
-      if (surface === 'unpatched_containers' && o.unpatched_container_count <= 0) return false;
+      if (surface === 'has_containers' && o.containers_referenced.length <= 0) return false;
       if (surface === 'embedded_strings' && o.string_count <= 0) return false;
       if (surface === 'pure_code') {
         if (o.containers_referenced.length > 0 || o.embedded_jp_strings.length > 0) return false;
@@ -153,7 +153,7 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
           ? a.function_count
           : sortKey === 'strings'
           ? a.string_count
-          : a.unpatched_container_count;
+          : a.containers_referenced.length;
       const bv =
         sortKey === 'id'
           ? b.id
@@ -161,7 +161,7 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
           ? b.function_count
           : sortKey === 'strings'
           ? b.string_count
-          : b.unpatched_container_count;
+          : b.containers_referenced.length;
       const cmp = av - bv;
       return sortDesc ? -cmp : cmp;
     });
@@ -217,12 +217,12 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
         </label>
 
         <label className="ov-pick">
-          <span>Translation surface</span>
+          <span>Contents</span>
           <select value={surface} onChange={e => setSurface(e.target.value as SurfaceFilter)}>
             <option value="any">Any</option>
-            <option value="unpatched_containers">Has unpatched containers</option>
+            <option value="has_containers">References container files</option>
             <option value="embedded_strings">Has embedded JP strings</option>
-            <option value="pure_code">Pure code (no surface)</option>
+            <option value="pure_code">Pure code (no strings, no containers)</option>
           </select>
         </label>
 
@@ -257,17 +257,18 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
               <th className="ov-th-num ov-th-sort" onClick={() => setSort('strings')}>
                 JP strings{arrow('strings')}
               </th>
-              <th className="ov-th-num ov-th-sort" onClick={() => setSort('unpatched')}>
-                Unpatched{arrow('unpatched')}
+              <th className="ov-th-num ov-th-sort" onClick={() => setSort('containers')}>
+                Containers{arrow('containers')}
               </th>
             </tr>
           </thead>
           <tbody>
             {pageRows.map(o => {
               const href = `${detailHrefBase}${o.id}/`;
-              const isHotRow = o.unpatched_container_count > 0 || o.string_count > 0;
+              const containerCount = o.containers_referenced.length;
+              const hasContents = containerCount > 0 || o.string_count > 0;
               return (
-                <tr key={o.id} className={isHotRow ? 'ov-row ov-row-hot' : 'ov-row'}>
+                <tr key={o.id} className={hasContents ? 'ov-row ov-row-active' : 'ov-row'}>
                   <td className="ov-cell-id">
                     <a href={href}>ov{pad3(o.id)}</a>
                   </td>
@@ -286,9 +287,9 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
                     )}
                   </td>
                   <td className="ov-cell-num">
-                    {o.unpatched_container_count > 0 ? (
-                      <span className="ov-pill ov-pill-unpatched">
-                        {o.unpatched_container_count}
+                    {containerCount > 0 ? (
+                      <span className="ov-pill ov-pill-containers">
+                        {containerCount}
                       </span>
                     ) : (
                       <span className="ov-pill-dim">0</span>
@@ -409,7 +410,7 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
         .ov-cell-num { text-align: right; }
         .ov-th-sort { cursor: pointer; user-select: none; }
         .ov-th-sort:hover { color: var(--color-pink-600, #d63384); }
-        .ov-row-hot { background: rgba(255, 240, 246, 0.4); }
+        .ov-row-active { background: rgba(255, 240, 246, 0.4); }
         .ov-row:hover { background: rgba(232, 220, 255, 0.45); }
         .ov-cell-id a {
           font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
@@ -439,7 +440,7 @@ export default function OverlaysBrowser({ dataUrl, detailHrefBase }: Props) {
           font-size: 0.85rem;
         }
         .ov-pill-strings { background: #fff0d6; color: #8a5300; }
-        .ov-pill-unpatched { background: #ffd8e2; color: #a31049; }
+        .ov-pill-containers { background: #e8dcff; color: #5a3d8a; }
         .ov-pill-dim { color: var(--color-ink-soft, #9a87b8); }
         .ov-empty { text-align: center; padding: 30px; color: var(--color-ink-soft, #5a4470); }
 

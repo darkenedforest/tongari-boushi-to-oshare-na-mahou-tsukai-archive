@@ -1,0 +1,562 @@
+---
+import FieldGuideLayout from '../../../../components/FieldGuideLayout.astro';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+interface ContainerRef {
+  name: string;
+  path: string | null;
+  is_patched: boolean | null;
+  note: string | null;
+}
+
+interface EmbeddedString {
+  addr: string;
+  value: string;
+}
+
+interface FunctionRow {
+  index: number;
+  addr: string;
+  size: number;
+  calls: number;
+  strings: number;
+  role_hint: string;
+}
+
+interface Overlay {
+  id: number;
+  file_id: number | null;
+  ram_load_addr: string;
+  ram_size: number | null;
+  ram_size_hex: string | null;
+  bss_size: number | null;
+  size_compressed: number | null;
+  compression_flag: string;
+  function_count: number;
+  string_count: number;
+  unpatched_container_count: number;
+  external_call_count: number | null;
+  data_count: number | null;
+  jump_table_count: number | null;
+  prior_pass_role: string | null;
+  prior_pass_category: string | null;
+  containers_referenced: ContainerRef[];
+  embedded_jp_strings: EmbeddedString[];
+  function_list: FunctionRow[];
+  purpose_summary: string;
+  translation_surface_summary: string;
+  open_questions: string[];
+  conflicts: string[];
+}
+
+interface Snapshot {
+  generated_at: string;
+  total: number;
+  overlays: Overlay[];
+}
+
+export async function getStaticPaths() {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const snapPath = path.resolve(
+    here, '..', '..', '..', '..', '..', 'public', 'data', 'overlays.json'
+  );
+  const snapRaw = readFileSync(snapPath, 'utf-8');
+  const snap: Snapshot = JSON.parse(snapRaw);
+  const sortedIds = snap.overlays.map(o => o.id).sort((a, b) => a - b);
+  return snap.overlays.map(o => ({
+    params: { id: String(o.id) },
+    props: { overlay: o, sortedIds },
+  }));
+}
+
+interface Props {
+  overlay: Overlay;
+  sortedIds: number[];
+}
+
+const { overlay, sortedIds } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const baseNorm = base.replace(/\/$/, '');
+const catalogBase = `${baseNorm}/field-guide/how-the-game-works/overlays/`;
+
+function pad3(n: number): string {
+  return n.toString().padStart(3, '0');
+}
+function fmt(n: number | null | undefined): string {
+  return n == null ? '—' : n.toLocaleString();
+}
+function bytes(n: number | null | undefined): string {
+  return n == null ? '—' : `${n.toLocaleString()} bytes`;
+}
+
+const ovLabel = `ov${pad3(overlay.id)}`;
+
+// Prev / next — IDs are contiguous but look them up to be safe.
+const myIdx = sortedIds.indexOf(overlay.id);
+const prevId = myIdx > 0 ? sortedIds[myIdx - 1] : null;
+const nextId = myIdx >= 0 && myIdx < sortedIds.length - 1 ? sortedIds[myIdx + 1] : null;
+
+const hasStrings = overlay.embedded_jp_strings.length > 0;
+const hasContainers = overlay.containers_referenced.length > 0;
+const hasAnySurface = hasStrings || hasContainers;
+
+// Reframe: group containers by whether we have a file path resolution
+// in the clean extract (not by patched/unpatched).
+const resolvedContainers = overlay.containers_referenced.filter(c => !!c.path);
+const unresolvedContainers = overlay.containers_referenced.filter(c => !c.path);
+
+const totalFnBytes = overlay.function_list.reduce((s, f) => s + f.size, 0);
+const ramSize = overlay.ram_size ?? 0;
+const coveragePct = ramSize > 0 ? Math.round((totalFnBytes / ramSize) * 100) : null;
+---
+
+<FieldGuideLayout
+  title={`${ovLabel} — overlay detail`}
+  description={overlay.purpose_summary || 'Per-overlay descriptive page: header, embedded strings, container references, function listing.'}
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Per-overlay catalog', href: catalogBase },
+    { label: ovLabel },
+  ]}
+>
+  <div class="ov-detail-top">
+    <h2 class="ov-detail-title">
+      <span class="ov-id">{ovLabel}</span>
+      {overlay.prior_pass_role && (
+        <span class="role-pill">{overlay.prior_pass_role}</span>
+      )}
+    </h2>
+    <p class="lede">{overlay.purpose_summary || '(no purpose summary)'}</p>
+
+    <div class="prev-next">
+      {prevId != null ? (
+        <a href={`${catalogBase}${prevId}/`}>‹ ov{pad3(prevId)}</a>
+      ) : (
+        <span class="dim">‹ start</span>
+      )}
+      <a href={catalogBase} class="up">All overlays</a>
+      {nextId != null ? (
+        <a href={`${catalogBase}${nextId}/`}>ov{pad3(nextId)} ›</a>
+      ) : (
+        <span class="dim">end ›</span>
+      )}
+    </div>
+  </div>
+
+  <h2>Header</h2>
+  <p>
+    Numeric metadata for this overlay as read from the overlay table at ROM
+    offset <code>0x8DE00</code> (per-entry stride 32 bytes). Function
+    counts, data-item counts, and the call-graph fan-out are from a Ghidra
+    11.3.1 headless auto-analysis pass.
+  </p>
+  <div class="header-grid">
+    <div class="hg-cell">
+      <span class="hg-key">Overlay ID</span>
+      <span class="hg-val mono">{overlay.id}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">File ID</span>
+      <span class="hg-val mono">{overlay.file_id ?? '—'}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">RAM load address</span>
+      <span class="hg-val mono">{overlay.ram_load_addr || '—'}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">RAM size</span>
+      <span class="hg-val">
+        {bytes(overlay.ram_size)}
+        {overlay.ram_size_hex && <span class="hg-aux mono"> ({overlay.ram_size_hex})</span>}
+      </span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">BSS size</span>
+      <span class="hg-val">{bytes(overlay.bss_size)}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">On-disk compressed size</span>
+      <span class="hg-val">{bytes(overlay.size_compressed)}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">Compression flag</span>
+      <span class="hg-val mono">{overlay.compression_flag || '—'}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">Functions</span>
+      <span class="hg-val">{fmt(overlay.function_count)}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">External calls</span>
+      <span class="hg-val">{fmt(overlay.external_call_count)}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">Jump tables</span>
+      <span class="hg-val">{fmt(overlay.jump_table_count)}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">Data items</span>
+      <span class="hg-val">{fmt(overlay.data_count)}</span>
+    </div>
+    <div class="hg-cell">
+      <span class="hg-key">Code coverage</span>
+      <span class="hg-val">
+        {coveragePct == null ? '—' : `${coveragePct}%`}
+        <span class="hg-aux"> ({totalFnBytes.toLocaleString()} of {bytes(overlay.ram_size)})</span>
+      </span>
+    </div>
+  </div>
+
+  <h2>Reading the binary</h2>
+  <p>
+    The overlay ships on the cart at file ID <code>{overlay.file_id ?? '—'}</code>
+    {overlay.compression_flag && overlay.compression_flag.includes('BLZ-compressed')
+      ? ' under the BLZ code-LZ compression wrapper (the same backward-LZ scheme Nintendo uses for executable ARM9 code).'
+      : ' as plaintext (no compression wrapper).'}
+    At load time the engine reads the overlay table entry at ROM offset
+    <code>0x8DE00 + {overlay.id} * 0x20</code>, allocates the destination
+    RAM region at <code>{overlay.ram_load_addr || '—'}</code>, decompresses
+    the body in-place (if compressed), and resolves any external
+    relocations.
+  </p>
+  <p>
+    To inspect this overlay outside the running game, decompress
+    <code>overlay/overlay_{pad3(overlay.id)}.bin</code> with
+    <code>ndspy.codeCompression.decompress()</code> (Python ndspy library)
+    and load the resulting plaintext into Ghidra or
+    IDA at base address <code>{overlay.ram_load_addr || '—'}</code>. The
+    raw Ghidra auto-analysis dump used to populate this page lives at
+    <code>notes/overlay_knowledgebase/raw/ov{pad3(overlay.id)}.json</code>;
+    the per-overlay descriptive markdown is at
+    <code>notes/overlay_knowledgebase/ov{pad3(overlay.id)}.md</code>.
+  </p>
+
+  <h2>Embedded strings</h2>
+  {hasStrings ? (
+    <>
+      <p>
+        <strong>{overlay.embedded_jp_strings.length}</strong> UTF-16 LE
+        string{overlay.embedded_jp_strings.length === 1 ? '' : 's'} live
+        inside this overlay's compiled binary. These addresses are
+        absolute (inside the overlay's RAM image after load). The text is
+        stored as little-endian UTF-16 code units, NUL-terminated.
+      </p>
+      <div class="strings-list">
+        {overlay.embedded_jp_strings.map(s => (
+          <div class="string-row">
+            <span class="string-addr mono">{s.addr}</span>
+            <span class="string-val">{s.value}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  ) : (
+    <p class="hint">
+      No UTF-16 LE strings are embedded directly in this overlay's binary.
+      Any text it displays at runtime comes from a container file loaded
+      via the content cache.
+    </p>
+  )}
+
+  <h2>Container references</h2>
+  {hasContainers ? (
+    <>
+      <p>
+        Distinct container basenames referenced by this overlay. Each is
+        loaded via the content cache by passing the basename string to a
+        lookup that resolves it to a file ID in the ROM's FAT. The path
+        column shows the file's location in the clean extract, where
+        resolved.
+      </p>
+      {resolvedContainers.length > 0 && (
+        <ul class="container-list">
+          {resolvedContainers.map(c => (
+            <li>
+              <code>{c.name}</code>
+              <span class="container-path"> → <code>{c.path}</code></span>
+              {c.note && <span class="container-note"> — {c.note}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      {unresolvedContainers.length > 0 && (
+        <>
+          <h3>Unresolved</h3>
+          <p class="hint">
+            These container basenames appeared in the overlay's string
+            table but no file of that name was found in the clean extract.
+            Most are false-positive ASCII matches (function names, register
+            maps, fragments of other strings); a few may be containers
+            that the overlay names but never actually opens. Listed for
+            completeness.
+          </p>
+          <ul class="container-list container-list-dim">
+            {unresolvedContainers.map(c => (
+              <li>
+                <code>{c.name}</code>
+                {c.note && <span class="container-note"> — {c.note}</span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </>
+  ) : (
+    <p class="hint">
+      This overlay references no container files — it is pure code (or
+      reads only from globals shared with the persistent ARM9 binary).
+    </p>
+  )}
+
+  <h2>Function list</h2>
+  <p>
+    Functions Ghidra auto-identified inside this overlay's RAM range.
+    Names prefixed <code>FUN_</code> are auto-generated from the function's
+    entry address; size is in bytes; the "calls" column counts both
+    intra-overlay branches and external ARM9 call targets. The "strings"
+    column counts how many UTF-16 LE strings each function references.
+  </p>
+  <details class="fn-details">
+    <summary>
+      Show all {overlay.function_count} function{overlay.function_count === 1 ? '' : 's'}
+    </summary>
+    <div class="fn-table-wrap">
+      <table class="fn-table">
+        <thead>
+          <tr>
+            <th class="num">#</th>
+            <th>Address</th>
+            <th class="num">Size</th>
+            <th class="num">Calls</th>
+            <th class="num">Strings</th>
+            <th>Role hint</th>
+          </tr>
+        </thead>
+        <tbody>
+          {overlay.function_list.map(f => (
+            <tr>
+              <td class="num">{f.index}</td>
+              <td class="mono">{f.addr}</td>
+              <td class="num">{f.size.toLocaleString()}</td>
+              <td class="num">{f.calls}</td>
+              <td class="num">{f.strings}</td>
+              <td class="role">{f.role_hint}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  {(overlay.open_questions.length > 0 || overlay.conflicts.length > 0) && (
+    <>
+      <h2>Open questions &amp; conflicts</h2>
+      {overlay.open_questions.length > 0 && (
+        <>
+          <h3>Open questions / unknowns</h3>
+          <ul class="oq-list">
+            {overlay.open_questions.map(q => <li>{q}</li>)}
+          </ul>
+        </>
+      )}
+      {overlay.conflicts.length > 0 && (
+        <>
+          <h3>Conflicts with the prior shallow pass</h3>
+          <ul class="oq-list">
+            {overlay.conflicts.map(c => <li>{c}</li>)}
+          </ul>
+        </>
+      )}
+    </>
+  )}
+
+  <h2>Source</h2>
+  <ul>
+    <li>Per-overlay markdown: <code>notes/overlay_knowledgebase/ov{pad3(overlay.id)}.md</code></li>
+    <li>Raw Ghidra dump: <code>notes/overlay_knowledgebase/raw/ov{pad3(overlay.id)}.json</code></li>
+    <li>Overlay-system explainer: <a href={`${base}/field-guide/how-the-game-works/overlays-system/`}>overlays system</a></li>
+    <li>Plain-English overlay primer: <a href={`${base}/field-guide/how-the-game-works/overlay-knowledgebase/`}>overlay knowledgebase</a></li>
+  </ul>
+
+  <div class="prev-next prev-next-bottom">
+    {prevId != null ? (
+      <a href={`${catalogBase}${prevId}/`}>‹ ov{pad3(prevId)}</a>
+    ) : (
+      <span class="dim">‹ start</span>
+    )}
+    <a href={catalogBase} class="up">All overlays</a>
+    {nextId != null ? (
+      <a href={`${catalogBase}${nextId}/`}>ov{pad3(nextId)} ›</a>
+    ) : (
+      <span class="dim">end ›</span>
+    )}
+  </div>
+</FieldGuideLayout>
+
+<style>
+  .ov-detail-top { margin: 0 0 12px; }
+  .ov-detail-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 6px 0 8px;
+    font-size: 1.5rem;
+  }
+  .ov-id {
+    font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+    color: var(--color-pink-600);
+  }
+  .role-pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--color-pink-100), var(--color-purple-100));
+    color: var(--color-purple-600);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .lede {
+    max-width: 70ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 1.02rem;
+  }
+
+  .prev-next {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin: 12px 0 18px;
+    font-weight: 600;
+  }
+  .prev-next a {
+    color: var(--color-purple-600);
+    text-decoration: none;
+    border-bottom: 1px dashed rgba(111, 63, 163, 0.35);
+  }
+  .prev-next a:hover { color: var(--color-pink-600); }
+  .prev-next .up {
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--color-ink-soft);
+  }
+  .prev-next .dim { color: var(--color-ink-soft); opacity: 0.5; }
+  .prev-next-bottom { margin: 30px 0 12px; }
+
+  .hint { color: var(--color-ink-soft); font-size: 0.92rem; }
+  .mono { font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace; }
+
+  .header-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px 14px;
+    margin: 8px 0 12px;
+  }
+  .hg-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 10px;
+    background: rgba(255, 240, 246, 0.4);
+    border-radius: 8px;
+  }
+  .hg-key {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-purple-600);
+    font-weight: 700;
+  }
+  .hg-val { font-size: 0.95rem; color: var(--color-ink); }
+  .hg-aux { color: var(--color-ink-soft); font-size: 0.85rem; }
+
+  .strings-list { display: grid; gap: 4px; margin: 6px 0 12px; }
+  .string-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 12px;
+    padding: 6px 10px;
+    background: rgba(232, 220, 255, 0.32);
+    border-radius: 6px;
+    align-items: baseline;
+  }
+  .string-addr { color: var(--color-purple-600); font-size: 0.85rem; }
+  .string-val {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.05rem;
+    color: var(--color-ink);
+  }
+
+  .container-list {
+    list-style: none;
+    margin: 6px 0 12px;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+  }
+  .container-list li {
+    padding: 6px 10px;
+    background: rgba(255, 240, 246, 0.38);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .container-list-dim li { background: rgba(0, 0, 0, 0.02); }
+  .container-list code {
+    font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+    background: white;
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: var(--color-ink);
+    font-size: 0.88rem;
+  }
+  .container-path code { color: var(--color-purple-600); }
+  .container-note { color: var(--color-ink-soft); font-size: 0.85rem; }
+
+  .fn-details summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--color-purple-600);
+    padding: 6px 0;
+  }
+  .fn-table-wrap {
+    margin-top: 10px;
+    overflow-x: auto;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid var(--color-pink-100);
+  }
+  .fn-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  .fn-table thead {
+    background: linear-gradient(135deg, var(--color-pink-100), var(--color-purple-100));
+  }
+  .fn-table th, .fn-table td {
+    padding: 6px 10px;
+    text-align: left;
+    border-bottom: 1px solid var(--color-pink-100);
+  }
+  .fn-table th.num, .fn-table td.num { text-align: right; }
+  .fn-table .mono {
+    font-family: 'JetBrains Mono', 'Cascadia Code', Consolas, monospace;
+    color: var(--color-purple-600);
+  }
+  .fn-table .role { color: var(--color-ink-soft); font-size: 0.85rem; }
+
+  .oq-list { margin: 0; padding-left: 22px; }
+  .oq-list li {
+    color: var(--color-ink);
+    line-height: 1.55;
+    margin-bottom: 4px;
+  }
+</style>

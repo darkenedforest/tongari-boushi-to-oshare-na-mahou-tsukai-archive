@@ -1,0 +1,158 @@
+---
+import FieldGuideLayout from '../../../../components/FieldGuideLayout.astro';
+import OverlaysBrowser from '../../../../components/OverlaysBrowser.tsx';
+
+const base = import.meta.env.BASE_URL;
+const baseNorm = base.replace(/\/$/, '');
+const dataUrl = `${baseNorm}/data/overlays.json`;
+const detailHrefBase = `${baseNorm}/field-guide/how-the-game-works/overlays/`;
+---
+
+<FieldGuideLayout
+  title="Per-overlay catalog"
+  description="One descriptive page per ARM9 overlay: what it does at runtime, what assets it loads, which Japanese strings live in its binary, and the functions Ghidra found inside it."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Per-overlay catalog' },
+  ]}
+>
+  <p>
+    Tongari Boushi's code is split into <strong>180 ARM9 overlays</strong> —
+    small chunks of compiled ARM code that the DS swaps into a shared RAM slot
+    as the player moves between game modes. Each overlay handles one screen,
+    one feature, or one engine subsystem. This catalog is the per-overlay
+    field guide: one page per overlay, describing what it does at runtime,
+    what container files it pulls from disk, which UTF-16 LE strings are
+    baked into its own binary, and the function table Ghidra's
+    auto-analysis pass found inside it.
+  </p>
+
+  <p>
+    The <a href={`${base}/field-guide/how-the-game-works/overlays-system/`}>overlay
+    system</a> page covers the runtime mechanics (RAM slot map, the
+    controller/body pattern, the persistent rendering engine in ov137). The
+    <a href={`${base}/field-guide/how-the-game-works/overlay-knowledgebase/`}>overlay
+    knowledgebase</a> page is the plain-English "what's an overlay?"
+    explainer. This page is the searchable per-overlay index.
+  </p>
+
+  <h2>How the catalog reads</h2>
+  <ul>
+    <li>
+      <strong>Overlay</strong> — the ROM ID (ov000 through ov179). Click
+      through to the per-overlay page.
+    </li>
+    <li>
+      <strong>Purpose</strong> — a one-line summary drawn from the
+      container files the overlay references. The small pill is the
+      prior-pass role guess (the rough "what is this for" tag we had
+      before the deep Ghidra pass).
+    </li>
+    <li>
+      <strong>Fns</strong> — function count Ghidra auto-identified. Many
+      are small trampolines; the dispatcher and high-fan-out functions are
+      the meaty ones.
+    </li>
+    <li>
+      <strong>JP strings</strong> — UTF-16 LE strings baked into the
+      overlay's own binary. These live inside the compiled code section
+      itself, not in an external container file.
+    </li>
+    <li>
+      <strong>Containers</strong> — distinct container basenames (looking
+      like <code>buyitem.lzs</code>, <code>chest.lzs</code>) the overlay
+      references by string. These are the disk-side data files the
+      overlay loads at runtime.
+    </li>
+  </ul>
+
+  <h2>What's an overlay made of</h2>
+  <p>
+    Each overlay is a self-contained ARM module with five rough contents:
+  </p>
+  <ul>
+    <li>
+      <strong>Code</strong> — ARM/THUMB functions. Most overlays are
+      almost-entirely code; the actual translatable text lives in
+      container files loaded at runtime.
+    </li>
+    <li>
+      <strong>Data tables</strong> — fixed-stride sprite-placement
+      tables, dispatch tables, type tables. Read-only at runtime.
+    </li>
+    <li>
+      <strong>Container references</strong> — ASCII strings naming
+      <code>.lzs</code>, <code>.ofs</code>, <code>.nftr</code> files the
+      overlay's loader calls into the content cache for. The string is
+      passed to a lookup that resolves it to a file ID in the ROM's FAT.
+    </li>
+    <li>
+      <strong>Embedded UTF-16 LE strings</strong> — direct text, baked
+      into the overlay binary itself rather than loaded from a container.
+      These are typically short menu labels and confirm prompts.
+    </li>
+    <li>
+      <strong>External call targets</strong> — addresses in the persistent
+      ARM9 binary the overlay branches into for shared helpers (memory
+      management, OAM transfer, content cache lookups).
+    </li>
+  </ul>
+
+  <h2>RAM-slot map at a glance</h2>
+  <p>
+    Overlays sharing a RAM address are mutually exclusive — only one is
+    resident at a time. The dispatcher in the persistent ARM9 binary chooses
+    which overlay to load into each slot based on game-mode state.
+  </p>
+  <table>
+    <thead><tr><th>RAM address</th><th># overlays</th><th>Overlay IDs</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>0x02155a00</code></td><td>66</td><td>ov000–ov065</td><td>Game-mode controllers</td></tr>
+      <tr><td><code>0x021597a0</code></td><td>25</td><td>ov066–ov090</td><td>Renderer / body slot 1</td></tr>
+      <tr><td><code>0x0215c540</code></td><td>20</td><td>ov091–ov110</td><td>Renderer / body slot 2 (incl. NPC chat menu)</td></tr>
+      <tr><td><code>0x021fb3c0</code></td><td>18</td><td>ov160–ov177</td><td>Renderer / body slot 3 (incl. late-game extras)</td></tr>
+      <tr><td><code>0x021b1ba0</code></td><td>11</td><td>ov145–ov155</td><td>UCC / dress-up renderers</td></tr>
+      <tr><td><code>0x0215e4a0</code></td><td>10</td><td>ov111–ov120</td><td>Renderer / body slot 5</td></tr>
+      <tr><td><code>0x021a5ee0</code></td><td>6</td><td>ov139–ov144</td><td>Renderer / body slot 6</td></tr>
+      <tr><td><code>0x021601c0</code></td><td>5</td><td>ov121–ov125</td><td>Renderer / body slot 7</td></tr>
+      <tr><td><code>0x0216d120</code></td><td>5</td><td>ov132–ov136</td><td>Audio / system slot</td></tr>
+      <tr><td><code>0x0216cba0</code></td><td>4</td><td>ov128–ov131</td><td>System slot</td></tr>
+      <tr><td><code>0x0216da40</code></td><td>2</td><td>ov137, ov138</td><td>Rendering engine (2D / 3D map)</td></tr>
+      <tr><td><code>0x021b6080</code></td><td>2</td><td>ov156, ov157</td><td>Slot 4 bodies</td></tr>
+      <tr><td><code>0x021c3420</code></td><td>2</td><td>ov158, ov159</td><td>Slot 5 bodies</td></tr>
+      <tr><td><code>0x02161680</code></td><td>2</td><td>ov126, ov127</td><td>Map / world</td></tr>
+      <tr><td><code>0x021fd2c0</code></td><td>2</td><td>ov178, ov179</td><td>Tail bodies</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Functional groupings</h2>
+  <p>
+    Inferred from substring-keyword matches on container filenames plus the
+    deep Ghidra pass. Boundaries are approximate.
+  </p>
+  <ul>
+    <li><strong>2D UI screens</strong> — ov000–ov065 (game-mode controllers) and the slot-1/2/3 body renderers behind them. Shops, menus, chat panels.</li>
+    <li><strong>UCC / dress-up</strong> — ov108, ov141, ov148–ov155. Outfit-composition surface.</li>
+    <li><strong>Map / world</strong> — ov080, ov115–ov117, ov127, ov138, ov156. Field navigation, world map.</li>
+    <li><strong>Persistent engines</strong> — ov137 (2D rendering), ov138 (3D map engine). Co-located at <code>0x0216da40</code>; one resident at a time.</li>
+    <li><strong>Audio / system</strong> — ov132–ov136.</li>
+    <li><strong>Pure code / dispatch</strong> — many of ov018–ov024, ov094–ov099, ov102–ov107, ov128–ov136, ov160–ov179 have no embedded strings and no container references; they are pure logic.</li>
+  </ul>
+
+  <h2>Per-overlay catalog</h2>
+
+  <OverlaysBrowser dataUrl={dataUrl} detailHrefBase={detailHrefBase} client:load />
+
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/_overlay_knowledgebase.md</code> — high-level overlay survey.</li>
+    <li><code>notes/_overlay_knowledgebase.csv</code> — flat CSV of the same.</li>
+    <li><code>notes/overlay_knowledgebase/ov&lt;NN&gt;.md</code> — one descriptive markdown per overlay.</li>
+    <li><code>notes/overlay_knowledgebase/raw/ov&lt;NN&gt;.json</code> — raw Ghidra dump per overlay.</li>
+    <li><code>notes/phaseA_ghidra/overlay_role_final.json</code> — per-overlay role classification.</li>
+    <li><code>notes/phaseA_ghidra/container_to_overlay.json</code> — reverse map: container basename → overlays referencing it.</li>
+    <li><code>notes/phaseA_ghidra/overlay_string_inventory.json</code> — every overlay-embedded string with offset and encoding.</li>
+    <li><code>notes/phaseA_ghidra/DISCOVERIES.md</code> — aggregated reverse-engineering log.</li>
+  </ul>
+</FieldGuideLayout>
