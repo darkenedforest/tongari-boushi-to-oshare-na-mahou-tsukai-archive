@@ -5,7 +5,7 @@ const base = import.meta.env.BASE_URL;
 
 <FieldGuideLayout
   title="The recipe/ folder"
-  description="Three files behind cooking. A RESC-based recipe database, a custom-stride narration table, and a binary item_id lookup — all wrapped in Konami's SZL + LZ11 outer envelope."
+  description="Three files behind cooking. A RESC v3.11 recipe database, a pointer-deduplicated cooking-narration table, and a binary item_id lookup — all wearing Konami's SZL + LZ11 outer envelope. All three formats fully reverse-engineered and round-trip-safe as of v2.4 prep."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
@@ -14,14 +14,16 @@ const base = import.meta.env.BASE_URL;
 >
   <p>
     The cooking minigame uses its own little ecosystem of files in
-    <code>data/recipe/</code>. Three files, three completely different
-    inner formats — but all wearing the same outer wrapper. Two of them
-    carry text; one is pure binary lookup.
+    <code>data/recipe/</code>. Three files, three different inner formats —
+    but all wearing the same outer wrapper. Two carry text; one is pure
+    binary lookup. <strong>All three formats are now fully reverse-engineered
+    and round-trip-verified</strong>: <code>recipedata.lzs</code> (step-294)
+    and <code>recipemsg.lzs</code> (step-297) each shipped a dedicated writer
+    during v2.4 prep, and <code>mgcinfo.lzs</code> has no text to translate.
   </p>
 
   <p>
-    This page is the file-format spec. The actual list of dish names and
-    variant keys lives on
+    This page is the file-format spec. The actual list of dish names lives on
     <a href={`${base}/field-guide/names-and-words/food-recipes/`}>the UCC food recipe slots page</a>
     — note that the UCC food slots are a <em>different</em> file
     (<code>data/ucc/names.ofs</code>), even though the player-facing
@@ -36,13 +38,13 @@ const base = import.meta.env.BASE_URL;
         <td><code>recipe/recipedata.lzs</code></td>
         <td>1,536 → 2,272</td>
         <td>RESC v3.11, 48-byte entry stride</td>
-        <td>10 category labels, 11 recipe names, 13 "Mysterious Soup" placeholder slots</td>
+        <td>34 records: 10 category labels, 11 recipe names, 13 "Mysterious Soup" placeholder slots</td>
       </tr>
       <tr>
         <td><code>recipe/recipemsg.lzs</code></td>
         <td>1,576 → 3,658</td>
-        <td>Custom 34-record table (stride 56) + UTF-16-LE blob</td>
-        <td>87 unique cooking-procedure narration strings</td>
+        <td>Custom 34-record table (stride 56) + pointer-deduplicated UTF-16-LE blob</td>
+        <td>87 unique cooking-procedure narration strings, heavily reused</td>
       </tr>
       <tr>
         <td><code>recipe/mgcinfo.lzs</code></td>
@@ -58,27 +60,28 @@ const base = import.meta.env.BASE_URL;
     Every file in <code>recipe/</code> uses the same Konami outer envelope: a
     16-byte <code>SZL</code> header followed by an
     <a href={`${base}/field-guide/file-formats/lz11/`}>LZ11</a> stream.
-    The header layout is:
+    The header layout:
   </p>
   <pre><code>{`offset  size  meaning
 ------  ----  ---------------------------------------------------
 0x00    4     "1.00"               version string, ASCII
-0x04    12    \\x00 × 12            padding (always zero)
+0x04    12    \x00 × 12            padding (always zero)
 0x10    4     file-specific tag    distinguishes which inner format follows`}</code></pre>
 
   <p>
-    The 4-byte tag is the only part that varies between the three files,
-    and it is <strong>load-bearing</strong> — the engine uses it to pick
-    the right inner parser. On re-emit, the tag must be preserved
-    byte-for-byte:
+    The 4-byte tag at SZL <code>+0x0C..+0x10</code> is the only part that
+    varies between the three files, and it is <strong>load-bearing</strong>
+    — the engine uses it to pick the right inner parser. On re-emit, the tag
+    must be preserved byte-for-byte (using the default <code>b'sfo'</code>
+    from <code>lzs.compress()</code> will corrupt the file):
   </p>
 
   <table>
     <thead><tr><th>File</th><th>Tag bytes (hex)</th><th>Reads as</th></tr></thead>
     <tbody>
-      <tr><td><code>recipedata.lzs</code></td><td><code>00 73 65 72</code></td><td><code>\\x00ser</code></td></tr>
+      <tr><td><code>recipedata.lzs</code></td><td><code>00 73 65 72</code></td><td><code>\x00ser</code></td></tr>
       <tr><td><code>recipemsg.lzs</code></td><td><code>73 6D 63 72</code></td><td><code>smcr</code></td></tr>
-      <tr><td><code>mgcinfo.lzs</code></td><td><code>00 6E 69 62</code></td><td><code>\\x00nib</code></td></tr>
+      <tr><td><code>mgcinfo.lzs</code></td><td><code>00 6E 69 62</code></td><td><code>\x00nib</code></td></tr>
     </tbody>
   </table>
 
@@ -87,12 +90,12 @@ const base = import.meta.env.BASE_URL;
     Once the SZL + LZ11 layers are stripped, this file is an
     <a href={`${base}/field-guide/file-formats/resc/`}>RESC container</a>
     with magic <code>RESC</code> (not the more common <code>RESO</code>),
-    version <code>3.11</code>, 48-byte entry stride. The entries hold:
+    version <code>"3.11"</code>, 48-byte entry stride. The entries hold:
   </p>
   <ul>
     <li><strong>10 category labels</strong> — top-level menu categories.</li>
-    <li><strong>11 recipe names</strong> — the actual named dishes.</li>
-    <li><strong>13 "Mysterious Soup" placeholder slots</strong> — generic fallbacks the engine fills in when the player makes something unrecognised.</li>
+    <li><strong>11 recipe names</strong> — the actual named dishes (Love Cake, Mood Cookie, Surprise Pie, and 8 others, translated in step-294).</li>
+    <li><strong>13 "Mysterious Soup" placeholder slots</strong> — generic fallbacks the engine fills in when the player makes an unrecognised combination. All 13 deduplicate to one shared string in the blob.</li>
   </ul>
   <p>
     Ingredient references inside <code>recipedata.lzs</code> are stored
@@ -101,16 +104,41 @@ const base = import.meta.env.BASE_URL;
     cannot translate this file in isolation from items.
   </p>
 
-  <h2><code>recipemsg.lzs</code> — custom 34-record table</h2>
+  <h2><code>recipemsg.lzs</code> — pointer-deduplicated narration table</h2>
   <p>
-    This file does not reuse RESC. Instead it has its own bespoke layout:
+    This file does not reuse RESC. Its own bespoke layout, fully documented
+    at <code>notes/format_recipemsg_lzs.md</code>:
   </p>
   <ul>
-    <li>34 records of stride 56 bytes each (1,904 bytes total).</li>
-    <li>Each record points into a UTF-16-LE string blob that follows the table.</li>
-    <li>The blob holds <strong>87 unique cooking-procedure narration strings</strong> — the descriptive lines the engine speaks while a dish is being made ("you carefully stir in the egg…").</li>
-    <li>The record-to-string mapping is many-to-many: a single narration line can be referenced by multiple records.</li>
+    <li><strong>34 records of 56 bytes each</strong> (1,904 bytes total).</li>
+    <li>Each record carries 4 control words (16 bytes) plus <strong>10 pointer slots</strong> (40 bytes). Slots 0..1 are zero on normal records and carry raw u32 control words on the 13 spell-soup records; slots 2..9 are absolute file-offset pointers into the string blob.</li>
+    <li>The blob holds <strong>87 unique cooking-procedure narration strings</strong> — the descriptive lines the engine speaks while a dish is being made ("Mix it all together", "Bake it -- done!", "Mysterious Soup is done!", etc.).</li>
+    <li>The record-to-string mapping is <strong>many-to-many via pointer dedup</strong>: 34 records × 10 slots = 340 nominal references, but only 87 unique strings exist. A single fragment like <code>と</code> (offset 0x0774) is referenced by 19 different records.</li>
   </ul>
+  <p>
+    A naive "translate one fragment per slot" approach would corrupt every
+    record that shares a fragment. The pointer-deduplicated writer
+    (<code>src/translator/_recipemsg_lzs_writer.py</code>) builds a
+    <code>{`{source_offset: en_string}`}</code> map (one entry per unique JP
+    source), writes each unique EN string once into the new blob, then
+    rewrites all pointer-table entries to point at the new offsets. Records
+    that shared a fragment in JP keep sharing the translated fragment in EN.
+  </p>
+  <p>
+    The narration assembles at runtime by concatenating each non-null,
+    non-empty fragment in slot order, with engine-injected item names
+    spliced <em>between</em> the fragments. The fragments themselves do not
+    contain <code>[ITEM:N]</code> opcodes — the substitution happens in the
+    engine's narration loop, which reads the recipe's ingredient list from
+    <code>mgcinfo.lzs</code> and weaves them into the slot sequence.
+  </p>
+  <p>
+    The per-fragment cap is empirically untested; the v2.4 translation
+    targeted <strong>24 EN chars per fragment</strong> as a conservative
+    default. JP fragments range from 1 to 14 chars; EN equivalents at the
+    24-char cap leave room for engine-spliced ingredient names without
+    overflowing the popup textbox.
+  </p>
 
   <h2><code>mgcinfo.lzs</code> — binary <code>item_id</code> lookup</h2>
   <p>
@@ -120,18 +148,18 @@ const base = import.meta.env.BASE_URL;
     state to specific items. Nothing here needs translating.
   </p>
 
-  <h2>Re-emit constraints (status: deferred)</h2>
-  <div class="fg-note">
-    Recipe pipeline integration is <strong>deferred to a follow-up
-    release</strong>. We have the format spec but no end-to-end re-emit
-    tooling that round-trips all three files yet. The format is documented
-    here so the work can be picked up later without re-deriving everything.
-  </div>
+  <h2>What shipped where</h2>
   <ul>
-    <li>Preserve the 4-byte tag at SZL offset <code>+0x10</code> per file.</li>
-    <li><code>recipedata.lzs</code> entries must stay 48 bytes (RESC stride).</li>
-    <li><code>recipemsg.lzs</code> records must stay 56 bytes; the string blob can grow but every record's pointer needs to be recomputed.</li>
-    <li><code>mgcinfo.lzs</code> is read by offset, so its layout must not move.</li>
+    <li><strong>v2.4 (in prep)</strong>: <code>recipedata.lzs</code> recipe names translated (step-294); <code>recipemsg.lzs</code> cooking narration translated (step-297). Both writers shipped to <code>src/archive/</code> and <code>src/translator/</code> respectively; both round-trip-safe on no-op (verified). The にこみ ("simmer") sweep in step-296 touched message-system files, not these.</li>
+    <li><strong>v2.32 and earlier</strong>: recipe and recipemsg shipped in Japanese — the format was not yet writable by the toolchain.</li>
+  </ul>
+
+  <h2>Re-emit constraints (active)</h2>
+  <ul>
+    <li>Preserve the 4-byte SZL tag at <code>+0x10</code> per file.</li>
+    <li><code>recipedata.lzs</code> entries must stay 48 bytes (RESC v3.11 stride); entry-1 bytes must pass through unchanged; the entry-0 string-blob can grow as long as the file is repadded to 0x10 alignment.</li>
+    <li><code>recipemsg.lzs</code> records must stay 56 bytes; slots 0..1 on the 13 spell-soup records hold raw control words and must NOT be rewritten as pointers; pointer dedup must be preserved so shared fragments stay shared.</li>
+    <li><code>mgcinfo.lzs</code> is read by offset, so its layout must not move — copy bytes verbatim.</li>
   </ul>
 
   <h2>Related</h2>
@@ -139,5 +167,13 @@ const base = import.meta.env.BASE_URL;
     <li><a href={`${base}/field-guide/file-formats/resc/`}>RESC containers</a> — the inner format of <code>recipedata.lzs</code>.</li>
     <li><a href={`${base}/field-guide/file-formats/lz11/`}>LZ11 compression</a> — what sits under the SZL wrapper.</li>
     <li><a href={`${base}/field-guide/names-and-words/food-recipes/`}>UCC food recipe slots</a> — different file, but the player-facing feature overlaps.</li>
+  </ul>
+
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/format_resc_v311.md</code> — RESC v3.11 spec (step-294).</li>
+    <li><code>notes/format_recipemsg_lzs.md</code> — recipemsg layout + pointer-dedup writer notes (step-297).</li>
+    <li><code>src/archive/_resc_v311_writer.py</code> — recipedata writer.</li>
+    <li><code>src/translator/_recipemsg_lzs_writer.py</code> — recipemsg writer.</li>
   </ul>
 </FieldGuideLayout>

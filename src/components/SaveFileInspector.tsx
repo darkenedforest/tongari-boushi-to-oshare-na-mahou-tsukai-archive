@@ -11,7 +11,6 @@ import {
   CATALOG_TEXT_MAX_CHARS,
   MAIL_TEXT_MAX_CHARS,
   PLAYER_NAME_MAX_CHARS,
-  RESIDENT_NAME_MAX_CHARS,
   type PendingEdit,
 } from '../lib/savefile/editor';
 import {
@@ -22,6 +21,7 @@ import {
 } from '../lib/savefile/lookups';
 import type {
   Confidence,
+  Game1Decode,
   SaveParse,
   SlotLabel,
   SlotParse,
@@ -90,8 +90,6 @@ interface PendingEditMap {
   /** Keyed by entry's body offset within slot A. */
   catalog: Record<number, string>;
   mail: Record<number, string>;
-  /** Keyed by resident slot's body offset. */
-  residentName: Record<number, string>;
   /** Keyed by garden record's body offset. */
   gardenTile: Record<number, { plantId: number; growTime: number }>;
 }
@@ -100,7 +98,6 @@ function makeEmptyEdits(): PendingEditMap {
   return {
     catalog: {},
     mail: {},
-    residentName: {},
     gardenTile: {},
   };
 }
@@ -116,7 +113,6 @@ function pendingEditCount(edits: PendingEditMap): number {
   if (edits.playerName !== undefined) n++;
   n += Object.keys(edits.catalog).length;
   n += Object.keys(edits.mail).length;
-  n += Object.keys(edits.residentName).length;
   n += Object.keys(edits.gardenTile).length;
   return n;
 }
@@ -134,9 +130,6 @@ function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
   }
   for (const [k, v] of Object.entries(edits.mail)) {
     out.push({ kind: 'mail', entryOffset: Number(k), text: v });
-  }
-  for (const [k, v] of Object.entries(edits.residentName)) {
-    out.push({ kind: 'resident_name', recordOffset: Number(k), name: v });
   }
   for (const [k, v] of Object.entries(edits.gardenTile)) {
     out.push({
@@ -566,6 +559,270 @@ function HexPreview({ hex, max = 96 }: { hex: string; max?: number }) {
   return <code className="hex-preview">{groups.join(' ')}</code>;
 }
 
+// ---------------------------------------------------------------------------
+// Game 1 (Magician's Quest / Enchanted Folk) panel — DORMANT for Game 3
+// ---------------------------------------------------------------------------
+//
+// Rendered ONLY when parse.game1 is non-null, i.e. when the file magic
+// at 0x00 matches Game 1's documented value (0x0DCEAB8906593DA2). Every
+// offset shown here is sourced from LaytonLoztew's mqreader.js (see
+// translation repo notes/_external_mqreader.js). None of Tongari
+// Boushi's (Game 3) saves trigger this panel — it's structural
+// foundation for if a Magician's Quest cartridge ever shows up.
+
+interface Game1PanelProps {
+  decode: Game1Decode;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function Game1Panel({ decode, notes, setNotes, fileLabel, payloadSha }: Game1PanelProps) {
+  const labelArgs = { notes, setNotes, fileLabel, payloadSha };
+  const enrolledPlayers = decode.players.filter(p => p.enrolled);
+
+  return (
+    <div className="game1-panel">
+      <Section
+        regionId="game1-header"
+        title="Game 1 detected — Magician's Quest / Enchanted Folk"
+        range="file[0x00..0x80000], offsets from LaytonLoztew mqreader.js"
+        confidence="confirmed"
+        parsedSnapshot={`${enrolledPlayers.length} player(s) enrolled; school=${JSON.stringify(decode.schoolName)}`}
+        {...labelArgs}
+      >
+        <p className="note-text" style={{ marginTop: 0 }}>
+          The file magic at offset 0x00 matches Game 1
+          (<code>0x0DCEAB8906593DA2</code>). Every section below is a
+          direct port of <a href="https://laytonloztew.neocities.org/mqreader" target="_blank" rel="noreferrer">LaytonLoztew&apos;s
+          Magician&apos;s Quest Save File Reader</a> — offsets and
+          decoding tables came verbatim from the JavaScript source. The
+          Tongari Boushi (Game 3) inspector sections below this panel
+          will be empty because Game 1 and Game 3 use different slot
+          layouts.
+        </p>
+        <dl className="kv">
+          <dt>School</dt>
+          <dd>
+            <strong>{decode.schoolName || <span className="muted">(empty)</span>}</strong>
+            <span className="muted small">{' '}(file 0x8FBC, 10 bytes)</span>
+          </dd>
+          <dt>Enrolment bitmap (file 0x1C)</dt>
+          <dd>
+            <code>0x{decode.enrolmentByte.toString(16).padStart(2, '0')}</code>
+            <span className="muted small">{' '}— bit n set ⇒ player n enrolled</span>
+          </dd>
+          <dt>Game date/time</dt>
+          <dd>
+            20{decode.date.year.toString().padStart(2, '0')}-
+            {decode.date.month.toString().padStart(2, '0')}-
+            {decode.date.day.toString().padStart(2, '0')}{' '}
+            {decode.date.hour.toString().padStart(2, '0')}:
+            {decode.date.minute.toString().padStart(2, '0')}
+            <span className="muted small">{' '}(file 0x2E8..0x2ED)</span>
+          </dd>
+        </dl>
+      </Section>
+
+      <Section
+        regionId="game1-checksum"
+        title="Game 1 file-level checksum (Konami custom sum)"
+        range="file 0x20 (u16 BE), covers first 64 KiB"
+        confidence="confirmed"
+        parsedSnapshot={`stored=${decode.checksum.storedHex} computed=${decode.checksum.computedHex} → ${decode.checksum.ok ? 'PASS' : 'FAIL'}`}
+        {...labelArgs}
+      >
+        <div className={`csum-row ${decode.checksum.ok ? 'pass' : 'fail'}`}>
+          <span className="csum-status">{decode.checksum.ok ? 'PASS' : 'FAIL'}</span>
+          <div className="csum-detail">
+            <span>Stored: <code>{decode.checksum.storedHex}</code></span>
+            <span>Computed: <code>{decode.checksum.computedHex}</code></span>
+          </div>
+        </div>
+        <p className="note-text">
+          Algorithm (NOT RFC1071): seed = 6825 (0x1AA9); for i in
+          0..32768, add u16 BE at file[i*2], treat the word at i==16
+          (= file 0x20, the stored slot itself) as zero, accumulate
+          modulo 65535, return <code>65535 - sum</code>. Source:
+          mqreader.js <code>calcChecksum()</code>.
+        </p>
+      </Section>
+
+      <Section
+        regionId="game1-mysteries"
+        title="Game 1 mysteries solved"
+        range="file 0x8FA4..0x8FAA (52 bits)"
+        confidence="confirmed"
+        parsedSnapshot={`${decode.mysteries.filter(m => m.set).length} / ${decode.mysteries.length} solved`}
+        {...labelArgs}
+      >
+        {decode.mysteries.filter(m => m.set).length === 0 ? (
+          <p className="muted">No mysteries solved.</p>
+        ) : (
+          <ul className="game1-flag-list">
+            {decode.mysteries.filter(m => m.set).map(m => (
+              <li key={m.index}>{m.name}</li>
+            ))}
+          </ul>
+        )}
+      </Section>
+
+      <Section
+        regionId="game1-classmates"
+        title="Game 1 active classmate pool"
+        range="file 0x64D8, 11 slots × 164 bytes"
+        confidence="confirmed"
+        parsedSnapshot={`${decode.classmates.filter(c => c.classmateId > 0).length} / 11 slots occupied`}
+        {...labelArgs}
+      >
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Slot</th>
+              <th>Classmate ID</th>
+              <th>Name</th>
+              <th className="col-right">Friendship P1</th>
+              <th className="col-right">Friendship P2</th>
+            </tr>
+          </thead>
+          <tbody>
+            {decode.classmates.map(c => (
+              <tr key={c.slotIndex} className={c.classmateId === 0 ? 'resident-vacant' : ''}>
+                <td>{c.slotIndex + 1}</td>
+                <td>
+                  <code className="muted">
+                    {c.classmateId.toString().padStart(3, '0')}
+                  </code>
+                </td>
+                <td>
+                  {c.classmateId > 0
+                    ? <strong>{c.name}</strong>
+                    : <span className="muted">(empty)</span>}
+                </td>
+                <td className="col-right">{c.classmateId > 0 ? c.friendshipP1 : '—'}</td>
+                <td className="col-right">{c.classmateId > 0 ? c.friendshipP2 : '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
+
+      {decode.players.map(p => p.enrolled && (
+        <Game1PlayerSection key={p.playerIndex} player={p} {...labelArgs} />
+      ))}
+    </div>
+  );
+}
+
+interface Game1PlayerSectionProps {
+  player: import('../lib/savefile/types').Game1Player;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function Game1PlayerSection({ player, notes, setNotes, fileLabel, payloadSha }: Game1PlayerSectionProps) {
+  const labelArgs = { notes, setNotes, fileLabel, payloadSha };
+  const learnedSpells = player.magicSpells.filter(s => s.set);
+  const learnedIncants = player.incantations.filter(s => s.set);
+  const earnedTitles = player.titles.filter(t => t.set);
+
+  return (
+    <Section
+      regionId={`game1-player-${player.playerIndex}`}
+      title={`Game 1 Player ${player.playerIndex + 1}: ${player.name || '(unnamed)'} — ${player.wizardLevelName}`}
+      range={`file 0x${(0x9df8 + 0x17e4 * player.playerIndex).toString(16).toUpperCase()}+, stride 0x17E4`}
+      confidence="confirmed"
+      parsedSnapshot={`name=${JSON.stringify(player.name)} level=${player.wizardLevelName} stars=${player.stars} ritch=${player.ritch}`}
+      {...labelArgs}
+    >
+      <dl className="kv">
+        <dt>Player name <span className="muted small">(code+0x00, 20 bytes UTF-16 LE)</span></dt>
+        <dd><strong className="player-name">{player.name || <span className="muted">(empty)</span>}</strong></dd>
+        <dt>Magician Level <span className="muted small">(code+0x41, u8)</span></dt>
+        <dd>{player.wizardLevelName} <code className="muted">({player.wizardLevel})</code></dd>
+        <dt>Stars <span className="muted small">(code+0x40, u8)</span></dt>
+        <dd>{player.stars}</dd>
+        <dt>Gender <span className="muted small">(code+0x20D)</span></dt>
+        <dd>{player.gender === 0 ? 'Male' : player.gender === 1 ? 'Female' : `(${player.gender})`}</dd>
+        <dt>Birthday <span className="muted small">(code+0x20E day, +0x20F month)</span></dt>
+        <dd>{player.birthdayMonth}/{player.birthdayDay}</dd>
+        <dt>Ritch (carried) <span className="muted small">(code+0x208, u32 LE)</span></dt>
+        <dd><strong>{player.ritch.toLocaleString()}</strong> Ritch</dd>
+        <dt>Bank balance <span className="muted small">(code+0x1348, u32 LE)</span></dt>
+        <dd><strong>{player.bankBalance.toLocaleString()}</strong> Ritch</dd>
+      </dl>
+
+      <h5 className="subsection-head">Inventory (15 slots + equipment)</h5>
+      <p className="note-text" style={{ marginTop: 0 }}>
+        Each slot is a u16 LE item ID. Item names from mqreader.js&apos;s
+        embedded <code>items</code> dictionary aren&apos;t mirrored
+        here yet — raw IDs only.
+      </p>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Slot</th>
+            <th className="col-right">Item ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          {player.inventory.slots.map((id, i) => (
+            <tr key={i}>
+              <td>{i + 1}</td>
+              <td className="col-right">
+                {id === 0 ? <span className="muted">(empty)</span> :
+                  <code>0x{id.toString(16).padStart(4, '0')}</code>}
+              </td>
+            </tr>
+          ))}
+          {(['shirt', 'pants', 'shoes', 'headwear', 'eyewear', 'wizardHat'] as const).map(slot => {
+            const id = player.inventory.equipped[slot];
+            return (
+              <tr key={slot}>
+                <td>{slot}</td>
+                <td className="col-right">
+                  {id === 0 ? <span className="muted">(empty)</span> :
+                    <code>0x{id.toString(16).padStart(4, '0')}</code>}
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <h5 className="subsection-head">Magic learned ({learnedSpells.length} / {player.magicSpells.length})</h5>
+      {learnedSpells.length === 0 ? (
+        <p className="muted">No spells learned.</p>
+      ) : (
+        <ul className="game1-flag-list">
+          {learnedSpells.map(s => <li key={s.name}>{s.name}</li>)}
+        </ul>
+      )}
+
+      <h5 className="subsection-head">Incantations learned ({learnedIncants.length} / {player.incantations.length})</h5>
+      {learnedIncants.length === 0 ? (
+        <p className="muted">No incantations learned.</p>
+      ) : (
+        <ul className="game1-flag-list">
+          {learnedIncants.map(s => <li key={s.name}>{s.name}</li>)}
+        </ul>
+      )}
+
+      <h5 className="subsection-head">Titles earned ({earnedTitles.length} / {player.titles.length})</h5>
+      {earnedTitles.length === 0 ? (
+        <p className="muted">No titles earned.</p>
+      ) : (
+        <ul className="game1-flag-list">
+          {earnedTitles.map(t => <li key={t.name}>{t.name}</li>)}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
 interface SlotViewProps {
   slot: SlotParse;
   notes: NotesByRegion;
@@ -776,13 +1033,24 @@ function SlotView({
         {...labelArgs}
       >
         <dl className="kv">
-          <dt>Player name <span className="muted small">(body 0x1149C, UTF-16 LE × 11)</span></dt>
+          <dt>
+            Player name{' '}
+            <span className="muted small">
+              (body 0x1149C, UTF-16 LE — up to 10 chars per Game 1 docs;
+              capacity DISPUTED for Game 3)
+            </span>
+          </dt>
           <dd>
             <strong className="player-name">
               {slot.playerName || <span className="muted">(empty)</span>}
             </strong>
           </dd>
-          <dt>School name <span className="muted small">(body 0x482, UTF-16 LE × 6)</span></dt>
+          <dt>
+            School name{' '}
+            <span className="muted small">
+              (body 0x482, UTF-16 LE × 6 — DISPUTED, offset inside flag-array region)
+            </span>
+          </dt>
           <dd>
             <strong className="player-name">
               {slot.schoolName || <span className="muted">(empty)</span>}
@@ -791,16 +1059,39 @@ function SlotView({
         </dl>
         <p className="note-text" style={{ marginTop: 8 }}>
           <strong>step-250 reclassification:</strong> the field at body
-          0x47E that the inspector previously labeled "Player name" is
-          actually the <em>school name</em> the player chose during
-          character creation (verified against Tyler's save14 in
-          melonDS: in-game player "Lamb", school "Revere Magic
-          School"). The real player display name lives inside the
-          character record at body 0x1149C (intra offset +0x14 of the
-          0x11488 record). The inline "Edit player name" affordance
-          has been removed pending editor.ts updates that target the
-          correct offset.
+          0x47E that the inspector previously labeled &quot;Player
+          name&quot; is actually the <em>school name</em> the player
+          chose during character creation (verified against
+          Tyler&apos;s save14 in melonDS: in-game player
+          &quot;Lamb&quot;, school &quot;Revere Magic School&quot;). The
+          real player display name lives inside the character record at
+          body 0x1149C (intra offset +0x14 of the 0x11488 record). The
+          inline &quot;Edit player name&quot; affordance has been
+          removed pending editor.ts updates that target the correct
+          offset.
         </p>
+        <p className="note-text" style={{ marginTop: 8 }}>
+          <strong>step-262 LaytonLoztew port caveats:</strong>
+        </p>
+        <ul className="note-text" style={{ marginTop: 0 }}>
+          <li>
+            <strong>Player name capacity (DISPUTED).</strong> Game 1&apos;s
+            mqreader.js documents player names as 20 BYTES (up to 10
+            UTF-16 LE chars) at <code>code + 0x00</code>. Our Game 3
+            parser reserves 22 bytes (11 chars) which is close but not
+            identical. save14&apos;s &quot;Lamb&quot; is only 4 chars
+            so we have no positive evidence either way.
+          </li>
+          <li>
+            <strong>School name offset (DISPUTED).</strong> body 0x47E
+            sits inside the 0x18..0x460 event-flag region — a
+            structurally implausible location for a UTF-16 string per
+            Game 1 analogy (Game 1 stores school name at file 0x8FBC,
+            well outside any flag region). The bytes we read on save14
+            happen to spell &quot;Revere&quot; but the offset has no
+            ARM9-disassembly anchor and may be coincidental.
+          </li>
+        </ul>
       </Section>
 
       {/* Timestamps */}
@@ -899,89 +1190,15 @@ function SlotView({
         )}
       </Section>
 
-      {/* Inventory bitmap (step-237 — the REAL inventory).
-          173-bit packed bitmap at slot_rel 0x1CDF2 (file 0x1CEF2 slot A
-          / 0x5CDF2 slot B) covering clothing (item_ids 1000..1139) and
-          garden decorations (item_ids 2000..2032). Confirmed via ARM9
-          disassembly: setter at 0x0201B56C, primitives 0x02006E44/E5C,
-          bounds dispatcher 0x0201BCB0(svC+2, max=173). */}
-      <Section
-        regionId={`${slot.label}-inventoryBitmap`}
-        title={REGION_DESCRIPTORS.inventoryBitmap.title}
-        range={REGION_DESCRIPTORS.inventoryBitmap.range}
-        confidence={REGION_DESCRIPTORS.inventoryBitmap.confidence}
-        parsedSnapshot={`${slot.inventoryBitmap.ownedBitsSet} owned items (of 173 trackable; raw bits set: ${slot.inventoryBitmap.totalBitsSet})`}
-        {...labelArgs}
-      >
-        <p className="note-text" style={{ marginTop: 0 }}>
-          The game stores ownership of <strong>clothing</strong> (140
-          item_ids 1000..1139) and <strong>garden decorations</strong>
-          (33 item_ids 2000..2032) as a 173-bit packed bitmap inside the
-          FAMILY-C extra-record. Bit n is owned-flag for the n-th item
-          across both categories. Confirmed via ARM9 disassembly (see
-          translation repo at <code>notes/save_analysis/_inventory_found.md</code>).
-        </p>
-        <p className="muted small" style={{ marginTop: 4 }}>
-          Raw 22 bytes: <code>{slot.inventoryBitmap.rawHex || '(empty)'}</code>
-        </p>
-        {slot.inventoryBitmap.entries.length === 0 ? (
-          <p className="muted">No owned items decoded from the bitmap.</p>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th className="col-right">Bit</th>
-                <th>Item</th>
-                <th className="col-right">Item ID</th>
-                <th>Category</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slot.inventoryBitmap.entries.map(entry => {
-                const name = lookups
-                  ? lookups.items[String(entry.itemId)] ?? null
-                  : null;
-                const catLabel =
-                  entry.category === 0
-                    ? 'Clothing'
-                    : entry.category === 1
-                      ? 'Garden decoration'
-                      : `cat ${entry.category}`;
-                return (
-                  <tr key={entry.bitIndex}>
-                    <td className="col-right">
-                      <code className="muted">{entry.bitIndex}</code>
-                    </td>
-                    <td>
-                      {name ? (
-                        <strong>{name}</strong>
-                      ) : (
-                        <span className="muted">
-                          (item_id {entry.itemId} — name unavailable)
-                        </span>
-                      )}
-                    </td>
-                    <td className="col-right">
-                      <code className="muted">{entry.itemId}</code>
-                    </td>
-                    <td>
-                      <span className="muted small">
-                        {catLabel} (sub {entry.subIndex})
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-        <p className="note-text">
-          Cats 2 (fabrics, item_ids 3000..3012) and 3 (item_ids
-          4000..4065) are tracked in different save regions — they are
-          NOT part of this bitmap. Bits 173..175 in the last byte are
-          unused padding (the game's bounds-check trips at max=173).
-        </p>
-      </Section>
+      {/* step-262 (LaytonLoztew port) — REMOVED: "Inventory bitmap"
+          section that decoded 173 bits at slot_rel 0x1CDF2 into items
+          1000..1139 + 2000..2032. The bitmap section produced items
+          the player did NOT actually own (Tyler's empirical check on
+          save14). Without a second independent anchor we cannot trust
+          the ARM9 trace alone, so this is now treated as
+          pattern-matched noise. Game 1's mqreader.js documents no
+          analogous bitmap — inventory in Game 1 is 15 fixed u16 slots
+          per player. */}
 
       {/* Region at body 0x4300 — semantics unconfirmed.
           Previously mis-labelled "Active inventory". Step-232 rejected
@@ -1152,69 +1369,13 @@ function SlotView({
         )}
       </Section>
 
-      {/* NPC records */}
-      <Section
-        regionId={`${slot.label}-npcRecords`}
-        title={REGION_DESCRIPTORS.npcRecords.title}
-        range={REGION_DESCRIPTORS.npcRecords.range}
-        confidence={REGION_DESCRIPTORS.npcRecords.confidence}
-        parsedSnapshot={`${slot.npcRecords.filter(r => !r.uninit && !r.vacant).length} populated records (sampled)`}
-        {...labelArgs}
-      >
-        <p>
-          Sampled roster of records at the per-NPC-state offset. Per
-          step-249 investigation these records do <strong>NOT</strong>{' '}
-          store UTF-16 LE inline names — the bytes contain packed
-          NPC-ID + state fields whose layout hasn&apos;t been pinned yet.
-          The previous decoder produced single-character mojibake by
-          mis-reading state bytes as a UTF-16 codepoint; we now leave
-          the name column empty until the real ID-to-name lookup is
-          wired up.
-        </p>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>NPC name</th>
-              <th>State</th>
-            </tr>
-          </thead>
-          <tbody>
-            {slot.npcRecords.map((r, i) => (
-              <tr key={r.bodyOffset}>
-                <td>{i + 1}</td>
-                <td>
-                  {r.name
-                    ? <strong>{r.name}</strong>
-                    : <span className="muted">{r.uninit ? '(never met)' : r.vacant ? '(record cleared)' : '(empty)'}</span>}
-                </td>
-                <td>{r.uninit ? 'never met' : r.vacant ? 'cleared' : 'known'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {slot.npcRecords.some(r => !r.uninit && !r.vacant) && (
-          <details className="tile-details">
-            <summary>Show raw record-header bytes (debug)</summary>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>NPC name</th>
-                  <th>Next 32 bytes after name</th>
-                </tr>
-              </thead>
-              <tbody>
-                {slot.npcRecords.filter(r => !r.uninit && !r.vacant).map(r => (
-                  <tr key={r.bodyOffset}>
-                    <td>{r.name}</td>
-                    <td><HexPreview hex={r.previewHex} max={64} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </details>
-        )}
-      </Section>
+      {/* step-262 (LaytonLoztew port) — REMOVED: "Per-NPC relationship
+          records" section sampled at body[0x119C0+] stride 0x500. No
+          ARM9 evidence anchored this region; Game 1's mqreader.js
+          documents NO per-NPC dynamic blocks at all (Game 1 uses one
+          fixed 11-slot pool of 164 B records at file 0x64D8). The
+          0x119C0+ records were pattern-matched noise. Game 3's true
+          classmate-pool offset is uncertain. */}
 
       {/* Garden */}
       <Section
@@ -1494,82 +1655,15 @@ function SlotView({
         )}
       </Section>
 
-      {/* Residents */}
-      <Section
-        regionId={`${slot.label}-residents`}
-        title={REGION_DESCRIPTORS.residents.title}
-        range={REGION_DESCRIPTORS.residents.range}
-        confidence={REGION_DESCRIPTORS.residents.confidence}
-        parsedSnapshot={`${slot.residents.filter(r => r.state === 'active').length} active / ${slot.residents.length} slots`}
-        {...labelArgs}
-      >
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>House</th>
-              <th>Resident name</th>
-              <th>State</th>
-              {editable && <th>Edit name (beta)</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {slot.residents.map(r => {
-              const pending = editCtx.edits.residentName[r.bodyOffset];
-              const stateLabel =
-                r.state === 'active'
-                  ? 'occupied'
-                  : r.state === 'vacant'
-                    ? 'vacant'
-                    : 'never built';
-              return (
-                <tr key={r.bodyOffset} className={`resident-${r.state}`}>
-                  <td>{r.index + 1}</td>
-                  <td>
-                    {r.state === 'active' ? (
-                      <strong>{r.name}</strong>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                  <td>{stateLabel}</td>
-                  {editable && (
-                    <td>
-                      {r.state === 'active' ? (
-                        <InlineEdit
-                          label="resident name"
-                          beta
-                          pendingValue={pending ?? null}
-                          initialDraft={r.name}
-                          maxChars={RESIDENT_NAME_MAX_CHARS}
-                          onCommit={draft => {
-                            if (draft.length > RESIDENT_NAME_MAX_CHARS) {
-                              return `Max ${RESIDENT_NAME_MAX_CHARS} characters.`;
-                            }
-                            editCtx.setEdits(e => ({
-                              ...e,
-                              residentName: { ...e.residentName, [r.bodyOffset]: draft },
-                            }));
-                            return null;
-                          }}
-                          onClear={() =>
-                            editCtx.setEdits(e => {
-                              const next = { ...e.residentName };
-                              delete next[r.bodyOffset];
-                              return { ...e, residentName: next };
-                            })
-                          }
-                        />
-                      ) : (
-                        <span className="muted">—</span>
-                      )}
-                    </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </Section>
+      {/* step-262 (LaytonLoztew port) — REMOVED: "Town residents (max 8)"
+          section at body[0x1E0E0] stride 0x22F8. Game 1's mqreader.js
+          documents the real classmate-pool layout as 11 slots × 164 B
+          at file 0x64D8 — the stride-0x22F8 / max-8 hypothesis was
+          ~55× too large per slot and structurally wrong. The 8-byte
+          UTF-16 "resident names" the predecessor decoded out of this
+          region were therefore pattern-matched noise, not actual
+          resident names. Game 3's true classmate-pool offset is
+          uncertain and pending Discord outreach. */}
     </div>
   );
 }
@@ -1881,6 +1975,15 @@ export default function SaveFileInspector() {
                 </dl>
               </Section>
             )}
+
+            {/* Game 1 (Magician's Quest / Enchanted Folk) decoder panel —
+                DORMANT for every Tongari Boushi (Game 3) save in our
+                corpus. Renders only when the file magic at 0x00 matches
+                Game 1 (0x0DCEAB8906593DA2). Ported from LaytonLoztew's
+                mqreader.js (see translation repo
+                notes/_external_mqreader.js for the full source the
+                offsets were lifted from). step-262. */}
+            {parse.game1 && <Game1Panel decode={parse.game1} {...{ notes, setNotes, fileLabel, payloadSha }} />}
 
             <div className="slot-tabs" role="tablist" aria-label="Save slots">
               <button

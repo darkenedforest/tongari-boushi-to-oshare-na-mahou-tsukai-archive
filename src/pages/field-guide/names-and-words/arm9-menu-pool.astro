@@ -31,11 +31,59 @@ const ARM9: Row[] = [
   { off:'0xa6f68', slot:20, en:'Take off',src:'fresh',      co:false, jp:'ネックレスはずす (G1: Remove [N])' },
   { off:'0xa6f7c', slot:28, en:'100000 Ritch', src:'canon-G1', co:false, jp:'１０００００リッチ ✓' },
 ];
+
+type Ov96Row = { off:string; slot:number; en:string; src:string; jp:string };
+const OV96: Ov96Row[] = [
+  { off:'0x540', slot: 8, en:'<<<',         src:'canon-mine (CO)', jp:'もどる (G1: Back)' },
+  { off:'0x548', slot:12, en:'Picks',       src:'fresh',           jp:'オススメ' },
+  { off:'0x554', slot:12, en:'Any',         src:'fresh',           jp:'なんでも' },
+  { off:'0x560', slot:16, en:'Shops',       src:'fresh',           jp:'おみせのこと' },
+  { off:'0x570', slot:16, en:'Stories',     src:'fresh',           jp:'はなしをきく' },
+  { off:'0x580', slot:16, en:'Hangout',     src:'fresh',           jp:'なかよくする' },
+  { off:'0x590', slot:16, en:'Nothing',     src:'fresh',           jp:'なんでもない' },
+  { off:'0x5a0', slot:16, en:'Fashion',     src:'fresh',           jp:'おしゃれのこと' },
+  { off:'0x5b0', slot:16, en:'Fairs',       src:'fresh',           jp:'フェアについて' },
+  { off:'0x5c0', slot:16, en:'Go play',     src:'fresh',           jp:'あそびにいこう' },
+  { off:'0x5d0', slot:16, en:'Mystery',     src:'corpus',          jp:'ふしぎについて (G1: ふしぎ→mystery)' },
+  { off:'0x5e0', slot:16, en:'Rumors',      src:'corpus',          jp:'ウワサについて (G1: ウワサ→rumor)' },
+  { off:'0x5f0', slot:16, en:'Gift',        src:'fresh',           jp:'いいモノあげる' },
+  { off:'0x600', slot:20, en:"Berry's",     src:'canon',           jp:'ベリーズについて (shop name; possessive matches friend-chat dialog)' },
+  { off:'0x614', slot:20, en:'Errand?',     src:'fresh',           jp:'ようじはなぁに？' },
+  { off:'0x628', slot:20, en:'To school',   src:'fresh',           jp:'がっこうにいこう (G1: がっこう→school)' },
+  { off:'0x63c', slot:20, en:'Trends',      src:'fresh',           jp:'りゅうこうについて' },
+  { off:'0x650', slot:20, en:'Reviews',     src:'fresh',           jp:'ひょうばんについて' },
+  { off:'0x664', slot:24, en:'Go shopping', src:'fresh',           jp:'ショッピングにいこう' },
+  { off:'0x67c', slot:32, en:'Style check', src:'fresh',           jp:'ファッションチェック' },
+];
+
+type CoRow = { slot:string; current:string; fullCanon:string };
+const CO_LIST: CoRow[] = [
+  { slot:'arm9 0xa6e44', current:'Get',     fullCanon:'Hold' },
+  { slot:'arm9 0xa6e4c', current:'Put',     fullCanon:'Place' },
+  { slot:'arm9 0xa6e54', current:'Dig',     fullCanon:'Bury' },
+  { slot:'arm9 0xa6e5c', current:'Bin',     fullCanon:'Discard' },
+  { slot:'arm9 0xa6e64', current:'End',     fullCanon:'Exit' },
+  { slot:'arm9 0xa6e74', current:'Nxt',     fullCanon:'Next' },
+  { slot:'arm9 0xa6e7c', current:'<<<',     fullCanon:'Back' },
+  { slot:'arm9 0xa6e90', current:'1 R',     fullCanon:'1 Ritch' },
+  { slot:'arm9 0xa6e9c', current:'Call',    fullCanon:'Whistle' },
+  { slot:'arm9 0xa6ea8', current:'Free',    fullCanon:'Release insect' },
+  { slot:'arm9 0xa6ec0', current:'10 R',    fullCanon:'10 Ritch' },
+  { slot:'arm9 0xa6ecc', current:'Walls',   fullCanon:'Change wallpaper' },
+  { slot:'arm9 0xa6ed8', current:'Floor',   fullCanon:'Change flooring' },
+  { slot:'arm9 0xa6f04', current:'Release', fullCanon:'Release fish' },
+  { slot:'arm9 0xa6f14', current:'Hat off', fullCanon:'Remove hat' },
+  { slot:'arm9 0xa6f24', current:'No spex', fullCanon:'Remove glasses' },
+  { slot:'arm9 0xa6f34', current:'100 R',   fullCanon:'100 Ritch' },
+  { slot:'arm9 0xa6f44', current:'1000 R',  fullCanon:'1000 Ritch' },
+  { slot:'arm9 0xa6f54', current:'10000 R', fullCanon:'10000 Ritch' },
+  { slot:'ov96 0x540',   current:'<<<',     fullCanon:'Back' },
+];
 ---
 
 <FieldGuideLayout
   title="ARM9 menu string pool"
-  description="The 26 short action verbs / quantity labels embedded in the ARM9 binary's data section. Width-budgeted by fixed slot stride."
+  description="The 26 short action verbs / quantity labels embedded in the ARM9 binary's data section, plus the 20-string NPC interaction menu in ov096 and the equip/remake slots in ov170/171. All width-budgeted by fixed slot stride."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'Names & Words', href: `${base}/field-guide/names-and-words/` },
@@ -61,7 +109,9 @@ const ARM9: Row[] = [
     <code>StaticBSSStart = 0x020A87A0</code>) makes the boot ROM skip BLZ
     decompression entirely — the ARM9 is loaded as plaintext at boot.
     Decompressed size: 723,032 bytes (<code>0xB0858</code>). Validated in
-    <code>notes/arm9_passthrough_test_RESULTS.md</code>.
+    <code>notes/arm9_passthrough_test_RESULTS.md</code>. See
+    <a href={`${base}/field-guide/file-formats/blz-arm9/`}>BLZ &amp; the plaintext-ARM9 trick</a>
+    for the full format breakdown.
   </p>
 
   <h2>Slot widths</h2>
@@ -94,13 +144,60 @@ const ARM9: Row[] = [
     </tbody>
   </table>
 
-  <h2>Overlay single-string slots</h2>
+  <h2>Overlay single-string slots (ov047 / ov059 / ov065)</h2>
   <table>
     <thead><tr><th>Overlay</th><th>file off</th><th>slot</th><th>EN</th><th>source</th><th>JP / canon notes</th></tr></thead>
     <tbody>
       <tr><td>ov047</td><td><code>0x1c70</code></td><td>20</td><td>Show BGM</td><td>fresh</td><td>ショーのおんがく</td></tr>
       <tr><td>ov059</td><td><code>0x1b2c</code></td><td>12</td><td>Magic</td><td>fresh</td><td>とんがり (G1 dropped "Pointy")</td></tr>
       <tr><td>ov065</td><td><code>0x3378</code></td><td>40</td><td>Like this? (Y/N)</td><td>fresh</td><td>これでいいかい？ (confirm prompt)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Overlay 096 — NPC interaction menu (20 strings)</h2>
+  <p>
+    The friend-chat / NPC interaction menu. All fresh translations except
+    Mystery and Rumors which lean on Game 1 corpus parallels
+    (<code>ふしぎ → mystery</code>, <code>ウワサ → rumor</code>) and Berry's
+    which is the shop name carried verbatim from friend-chat dialog. The first
+    slot (<code>&lt;&lt;&lt;</code>) is canon-overflow for "Back".
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>file off</th><th>slot</th><th>EN</th><th>source</th><th>JP</th>
+      </tr>
+    </thead>
+    <tbody>
+      {OV96.map((r, i) => (
+        <tr>
+          <td>{i + 1}</td>
+          <td><code>{r.off}</code></td>
+          <td>{r.slot}</td>
+          <td><strong>{r.en}</strong></td>
+          <td>{r.src}</td>
+          <td><code>{r.jp}</code></td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Overlay 170 / 171 — equip + remake slots</h2>
+  <p>
+    Two late-game / extra-event overlays. The equip slots align with Game 1
+    canon (<code>みにつける → Equip</code>); the remake slots ship as a fresh
+    translation of <code>つくりなおす</code>, choosing "Remake" over the more
+    literal "Redo" to preserve the dress-up meaning.
+  </p>
+  <table>
+    <thead><tr><th>Overlay</th><th>file off</th><th>slot</th><th>EN</th><th>source</th></tr></thead>
+    <tbody>
+      <tr><td>ov170</td><td><code>0x1d50</code></td><td>16</td><td><strong>Equip</strong></td><td>canon-G1 ✓</td></tr>
+      <tr><td>ov171</td><td><code>0x740</code></td><td>12</td><td><strong>Equip</strong></td><td>canon-G1 ✓</td></tr>
+      <tr><td>ov171</td><td><code>0x74c</code></td><td>12</td><td><strong>Equip</strong></td><td>canon-G1 ✓</td></tr>
+      <tr><td>ov171</td><td><code>0x758</code></td><td>16</td><td><strong>Remake</strong></td><td>fresh</td></tr>
+      <tr><td>ov171</td><td><code>0x768</code></td><td>16</td><td><strong>Remake</strong></td><td>fresh</td></tr>
+      <tr><td>ov171</td><td><code>0x778</code></td><td>16</td><td><strong>Remake</strong></td><td>fresh</td></tr>
     </tbody>
   </table>
 
@@ -112,6 +209,44 @@ const ARM9: Row[] = [
     <code>1リッチ → 1 R</code>, <code>10リッチ → 10 R</code>, …,
     <code>100000リッチ → 100000 Ritch</code>.
   </p>
+
+  <h2>Canon-overflow (CO) backlog — future pool relocator</h2>
+  <p>
+    20 slots ship a shortened EN that loses canon information because the
+    fixed slot stride cannot fit the full Konami EN. When the pool relocator
+    workstream lands (rewrite the pointer table + grow the string pool to
+    relax the per-slot byte budget), these slots will be restored to their
+    full canon names. The currency tiers and "Change wallpaper / Change
+    flooring" are the highest-information-loss cases; <code>Hat off</code>,
+    <code>No spex</code>, and <code>Release</code> are close-enough-to-canon
+    semantically.
+  </p>
+  <table>
+    <thead><tr><th>Slot</th><th>Current (shipped)</th><th>Full Konami canon</th></tr></thead>
+    <tbody>
+      {CO_LIST.map((r) => (
+        <tr>
+          <td><code>{r.slot}</code></td>
+          <td><code>{r.current}</code></td>
+          <td><strong>{r.fullCanon}</strong></td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+
+  <h2>Slot accounting</h2>
+  <table>
+    <thead><tr><th>Source</th><th>Count</th></tr></thead>
+    <tbody>
+      <tr><td>canon-G1 (full canon, fits)</td><td>5 (Equip ×4, Unequip ×1, 100000 Ritch)</td></tr>
+      <tr><td>canon-mine (canon overflow, shortened)</td><td>20</td></tr>
+      <tr><td>canon (shop name, fits)</td><td>1 (Berry's at ov96 0x600)</td></tr>
+      <tr><td>corpus (G1 dialog inference)</td><td>3 (Save / Mystery / Rumors)</td></tr>
+      <tr><td>fresh</td><td>23</td></tr>
+      <tr><td><strong>Total slots filled</strong></td><td><strong>52</strong></td></tr>
+      <tr><td><strong>Total unique strings</strong></td><td><strong>49</strong> (Equip ×3 + Remake ×3 = 6 duplicate slots)</td></tr>
+    </tbody>
+  </table>
 
   <h2>Source</h2>
   <ul>

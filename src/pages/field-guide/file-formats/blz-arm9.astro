@@ -1,0 +1,134 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="BLZ &amp; the plaintext-ARM9 trick"
+  description="Backward-LZ compression Nintendo uses for executable ARM9 code, plus the CompressedStaticEnd patch that lets us load ARM9 as plaintext for in-place string editing."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'BLZ + plaintext-ARM9 trick' },
+  ]}
+>
+  <p>
+    Nintendo's DS firmware boots an ARM9 binary that's compressed with a
+    custom backward-LZ scheme commonly called <strong>BLZ</strong> ("Backwards
+    LZ"). Unlike the
+    <a href={`${base}/field-guide/file-formats/lz11/`}>LZ11</a> wrapper used
+    for asset containers, BLZ is designed for in-place decompression of
+    executable code: the compressed bytes occupy the high end of a buffer,
+    and the decompressor walks backward through them, writing literal bytes
+    and back-references into the same buffer toward lower addresses. The
+    decompressed code ends up at the buffer base, and the BLZ footer at the
+    high end is overwritten by the last few decompressed bytes.
+  </p>
+
+  <h2>Where BLZ is used in this ROM</h2>
+  <table>
+    <thead><tr><th>Surface</th><th>ROM offset</th><th>Compressed size</th><th>Decompressed size</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Main ARM9 binary</td>
+        <td><code>0x4000</code></td>
+        <td>564,488 bytes</td>
+        <td>723,032 bytes (<code>0xB0858</code>)</td>
+      </tr>
+      <tr>
+        <td>Overlay <code>overlay_NNNN.bin</code> (most)</td>
+        <td>per overlay table at <code>0x8DE00</code></td>
+        <td>varies (see overlay table)</td>
+        <td>varies; runtime decompressed by engine</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    Overlays use the same code-LZ variant but with a per-file
+    <code>is_compressed</code> flag in the overlay table. Flip that bit to
+    <code>0</code> and store the overlay body uncompressed and the engine
+    will load it as plaintext — that's the same idea as the ARM9
+    <code>CompressedStaticEnd</code> trick, applied per overlay.
+  </p>
+
+  <h2>BLZ footer</h2>
+  <p>
+    The last 8 bytes of a BLZ-compressed payload form the footer the
+    backward decompressor reads first:
+  </p>
+  <table>
+    <thead><tr><th>Offset (from end)</th><th>Size</th><th>Field</th></tr></thead>
+    <tbody>
+      <tr><td><code>-0x08</code></td><td>4</td><td><code>add_size</code> — bytes to grow the buffer past the compressed region (= decompressed length − compressed length).</td></tr>
+      <tr><td><code>-0x04</code></td><td>3</td><td><code>header_size</code> — bytes from the buffer end that are footer + literal-tail (decompressor stops after consuming these).</td></tr>
+      <tr><td><code>-0x01</code></td><td>1</td><td>Reserved / pad.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Decompressed-payload layout (the "module params" struct)</h2>
+  <p>
+    Once the BLZ payload is decompressed, the resulting ARM9 plaintext starts
+    with a small NitroSDK <strong>module params</strong> struct that the
+    secure-boot loader uses to set up <code>.bss</code> initialization and
+    decide whether to skip the compression step on subsequent loads. The
+    fields most relevant to patching are at the very start of the plaintext:
+  </p>
+  <table>
+    <thead><tr><th>Plaintext offset</th><th>Field</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x14</code></td><td><code>AutoLoadDoneCallback</code></td><td>Set after <code>.bss</code> init runs.</td></tr>
+      <tr><td><code>+0x1C</code></td><td><code>CompressedStaticEnd</code></td><td>Pointer to the end of the BLZ-compressed region in main RAM. <strong>If this equals <code>StaticBSSStart</code></strong>, the loader treats the binary as already-decompressed and skips BLZ entirely.</td></tr>
+      <tr><td><code>+0x20</code></td><td><code>StaticBSSStart</code></td><td>Pointer to the start of <code>.bss</code> (zero-initialized region).</td></tr>
+      <tr><td><code>+0x24</code></td><td><code>StaticBSSEnd</code></td><td>Pointer to the end of <code>.bss</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>The "plaintext ARM9" patcher trick</h2>
+  <p>
+    For string-pool edits like the 26-slot ARM9 menu pool (see
+    <a href={`${base}/field-guide/names-and-words/arm9-menu-pool/`}>ARM9 menu pool</a>),
+    re-running the BLZ encoder on every patch attempt is awkward — the
+    encoder is fiddly, the compressed-size footprint shifts as strings
+    change, and round-trip verification is slow. Easier: load the ARM9 as
+    plaintext and skip BLZ entirely.
+  </p>
+  <ol>
+    <li>Patch the module-params field <code>CompressedStaticEnd := StaticBSSStart</code> in the ARM9 plaintext (in this ROM, <code>StaticBSSStart = 0x020A87A0</code>).</li>
+    <li>Store the entire decompressed ARM9 (723,032 bytes) verbatim at ROM offset <code>0x4000</code> in place of the original 564,488-byte BLZ blob.</li>
+    <li>Update the NDS header's ARM9 size field to <code>0xB0858</code> (the decompressed length).</li>
+    <li>Boot. The loader sees <code>CompressedStaticEnd == StaticBSSStart</code>, decides "nothing to decompress," and copies the plaintext bytes verbatim to main RAM.</li>
+  </ol>
+  <p>
+    From that point on, editing the embedded string pool is just bytes-at-an-offset:
+    locate the slot, write the UTF-16-LE EN string with NUL pad, done. The
+    Nintendo SDK validation marker
+    <a href={`${base}/field-guide/how-the-game-works/overlay-knowledgebase/`}>NitroCodeBE</a>
+    isn't present in this ROM (Konami stripped it), so there's no extra
+    fix-up needed for that.
+  </p>
+
+  <h2>Re-compression research</h2>
+  <p>
+    The plaintext-ARM9 trick is the simple path. For overlays we keep an
+    alternative path open: re-LZ-compress the patched overlay binary using
+    <code>ndspy.codeCompression.compress()</code> and ship the re-compressed
+    blob with the original <code>is_compressed</code> bit still set. v2.32
+    ships overlay patches this way (re-compressed, matching the Konami
+    on-disk shape closer than plaintext-overlay would). The per-overlay
+    fit/no-fit analysis lives at
+    <code>notes/_lz_compression_research.py</code> in the translation repo —
+    it round-trips each of the six v2.x-patched overlays through
+    ndspy.codeCompression, simulates the worst-case (slot filled with
+    placeholder x's) and the real EN translation, and reports whether the
+    re-compressed size fits inside the original on-disk slot. All six
+    overlays fit comfortably under the EN translation.
+  </p>
+
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/arm9_passthrough_test_RESULTS.md</code> — validation of the plaintext-ARM9 trick.</li>
+    <li><code>notes/_lz_compression_research.py</code> — overlay BLZ re-compression feasibility report (ndspy.codeCompression).</li>
+    <li><code>src/translator/_patch_arm9_overlays.py</code> — the patcher that uses the trick.</li>
+    <li><code>arm9_full_plaintext.bin</code> — the decompressed binary the patcher edits.</li>
+  </ul>
+</FieldGuideLayout>

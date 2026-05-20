@@ -40,7 +40,9 @@ const base = import.meta.env.BASE_URL;
 
   <p>
     A <code>.ofs</code> file skips the LZS wrapper and the compression —
-    it's just a RESO container directly.
+    it's just a RESO container directly. A <code>.bin</code> file may be
+    raw binary (no wrapper), or BLZ-compressed code (the main ARM9
+    binary), or one of several smaller bespoke formats.
   </p>
 
   <div class="fg-cards">
@@ -52,6 +54,10 @@ const base = import.meta.env.BASE_URL;
       <h3>LZS / LZ11 compression</h3>
       <p>The compression wrapper Nintendo uses on most assets. About 70 percent of files in the game are LZ11-compressed.</p>
     </a>
+    <a href={`${base}/field-guide/file-formats/blz-arm9/`} class="fg-card">
+      <h3>BLZ &amp; the plaintext-ARM9 trick</h3>
+      <p>The backward-LZ compression Nintendo uses for executable ARM9 code, plus the CompressedStaticEnd patch that lets the toolchain edit ARM9 strings as plaintext.</p>
+    </a>
     <a href={`${base}/field-guide/file-formats/nitro-graphics/`} class="fg-card">
       <h3>Nintendo Nitro graphics formats</h3>
       <p>NCGR, NCLR, NCER, NSCR, NANR. The five Nintendo formats that hold all the actual image data. Standard across most DS games.</p>
@@ -61,12 +67,16 @@ const base = import.meta.env.BASE_URL;
       <p>Tags that aren't standard Nintendo. <code>tad</code> holds widget tables; <code>nib</code>, <code>rnan</code>, <code>sfo</code> wrap other kinds of binary data inside RESO containers.</p>
     </a>
     <a href={`${base}/field-guide/file-formats/resc/`} class="fg-card">
-      <h3>RESC containers</h3>
-      <p>A newer container with named entries. Used for the item-slot data files and a handful of other places.</p>
+      <h3>RESC v3.11 containers</h3>
+      <p>A newer container with named entries and a 48-byte TOC stride. Holds the cooking recipe database; round-trip-safe writer shipped in v2.4 prep.</p>
     </a>
     <a href={`${base}/field-guide/file-formats/recipe-files/`} class="fg-card">
       <h3>The <code>recipe/</code> folder</h3>
-      <p>Three files behind cooking: a RESC-based recipe database, a custom-stride narration table, and a binary <code>item_id</code> lookup — all wearing the same SZL + LZ11 outer envelope.</p>
+      <p>Three files behind cooking: a RESC v3.11 recipe database, a pointer-deduplicated narration table, and a binary <code>item_id</code> lookup — all wearing the same SZL + LZ11 outer envelope. All three writers ship in v2.4.</p>
+    </a>
+    <a href={`${base}/field-guide/file-formats/ui-containers-text-audit/`} class="fg-card">
+      <h3>UI containers (text audit)</h3>
+      <p>The 16 player-facing UI container files (bulletin board, mail, locker, music select, etc.) plus the <code>inputstr/</code> directory — confirmed to carry zero translatable text. They are TAD/RESC graphics archives; their text comes from <code>msg*.ofs</code> message files instead.</p>
     </a>
   </div>
 

@@ -4,11 +4,16 @@
 // game-safety is still BETA:
 //
 //   - Ritch (u32 LE at body 0x1CFD0) — confirmed safe
-//   - Player name (UTF-16 LE × 5 at body A 0x47E) — confirmed safe
+//   - Player name (UTF-16 LE at body 0x1149C) — beta, capacity DISPUTED
 //   - Catalog announcement body text (body 0x162B6, stride 0xA8) — beta
 //   - Per-NPC mail body text (body 0x17400+, stride 0xA8) — beta
-//   - Resident name (body 0x1E0E0+ stride 0x22F8, first 16 bytes) — beta
 //   - Garden plant tile (plant_id byte + grow_time byte) — beta
+//
+// step-262 (LaytonLoztew port) removed the `resident_name` edit kind —
+// the underlying "Town residents @ body 0x1E0E0 stride 0x22F8 max 8"
+// region was a fictional Game 3 hypothesis (Game 1's real classmate
+// pool is 11 × 164 B at file 0x64D8, structurally incompatible with
+// our removed claim). The UI no longer exposes this affordance.
 //
 // All edits write to BOTH slot A and slot B (mirror), then recompute the
 // THREE levels of checksum the game checks:
@@ -88,7 +93,6 @@ export type PendingEdit =
   | { kind: 'player_name'; value: string }
   | { kind: 'catalog'; entryOffset: number; text: string }
   | { kind: 'mail'; entryOffset: number; text: string }
-  | { kind: 'resident_name'; recordOffset: number; name: string }
   | { kind: 'garden_tile'; recordOffset: number; plantId: number; growTime: number };
 
 export interface ApplyResult {
@@ -249,10 +253,9 @@ export const CATALOG_TEXT_MAX_CHARS =
 export const MAIL_TEXT_MAX_CHARS =
   Math.floor((OFFSETS.mailStride - STRIDED_ENTRY_HEADER_LEN) / 2);
 
-/** Resident records: only the first 16 bytes (= 8 UTF-16 LE chars) hold
- *  the name. The rest of the 0x22F8 record is left untouched. */
-export const RESIDENT_NAME_MAX_CHARS = 8;
-export const RESIDENT_NAME_BYTE_WIDTH = 16;
+// step-262: RESIDENT_NAME_MAX_CHARS / RESIDENT_NAME_BYTE_WIDTH removed
+// — the 0x1E0E0 residents region was a fictional hypothesis and the UI
+// affordance was deleted alongside the parser.
 
 // ---------------------------------------------------------------------------
 // Apply edits
@@ -333,19 +336,6 @@ export function applyEdits(
             byteWidth,
             edit.text,
             MAIL_TEXT_MAX_CHARS,
-          );
-        }
-        break;
-      }
-      case 'resident_name': {
-        for (const slot of ['A', 'B'] as const) {
-          writeUtf16LeFixedWidth(
-            payload,
-            slot,
-            edit.recordOffset,
-            RESIDENT_NAME_BYTE_WIDTH,
-            edit.name,
-            RESIDENT_NAME_MAX_CHARS,
           );
         }
         break;

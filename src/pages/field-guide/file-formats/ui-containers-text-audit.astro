@@ -1,0 +1,137 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="UI container .lzs files — text audit"
+  description="Step-305 confirmed the 16 player-facing UI container files plus the inputstr/ directory carry zero translatable text. They are TAD/RESC graphics archives (sprites, palettes, cells) and internal kana-keyboard data. The text these UIs display comes from the message-system msg*.ofs files, not from the containers themselves."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'UI containers (text audit)' },
+  ]}
+>
+  <p>
+    Sixteen <code>.lzs</code> files under <code>data/</code> sit behind the
+    most text-heavy UI surfaces in the game: the bulletin board, mail editor,
+    item-name entry, locker, mail-order list, sale ranking, music-select
+    screen, shop info / profile / "make profile", default-costume picker,
+    catch-display, and the lower-screen letter and BBS chrome. The
+    <code>inputstr/</code> directory adds five more files behind the
+    on-screen Japanese kana keyboard. The step-305 audit (2026-05-20) put
+    every one of them through a strict UTF-16-LE kana-required scan to
+    settle whether any of them carry translatable text the toolchain had
+    missed.
+  </p>
+
+  <h2>Headline result</h2>
+  <p>
+    <strong>19 of the 21 audited files are pure binary game-data
+    containers</strong> (TAD/RESC graphics, palette, screen, and cell
+    archives) with zero player-visible Japanese text. The two text-bearing
+    files are inside <code>inputstr/</code> and are part of the on-screen
+    keyboard / profanity-filter machinery — translating them would break
+    Japanese name input, not enable English UI. <strong>No new translation
+    work is opened by this audit.</strong>
+  </p>
+
+  <h2>Per-file findings</h2>
+  <table>
+    <thead><tr><th>Path</th><th>Raw → decomp</th><th>Magic</th><th>Text?</th><th>Format</th></tr></thead>
+    <tbody>
+      <tr><td><code>data/inputbbs.lzs</code></td><td>2,048 → 4,688</td><td><code>RESO</code></td><td>—</td><td>TAD graphics (NCGR + NCLR + NCSR + NCER + palette)</td></tr>
+      <tr><td><code>data/inputmail.lzs</code></td><td>3,584 → 6,912</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/entryitmname.lzs</code></td><td>6,144 → 32,384</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/goodslist.lzs</code></td><td>7,168 → 31,376</td><td><code>RESC</code></td><td>—</td><td>RESC v3.11 graphics</td></tr>
+      <tr><td><code>data/locker.lzs</code></td><td>33,280 → 105,728</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/mailorder.lzs</code></td><td>16,384 → 68,400</td><td><code>RESC</code></td><td>—</td><td>RESC v3.11 graphics</td></tr>
+      <tr><td><code>data/saleranking.lzs</code></td><td>7,680 → 20,752</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/selectmusic.lzs</code></td><td>17,408 → 40,400</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/shopinfo.lzs</code></td><td>5,120 → 11,808</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/shopprofile.lzs</code></td><td>9,216 → 43,488</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/makeprofile.lzs</code></td><td>8,704 → 28,144</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/defcos.lzs</code></td><td>1,536 → 6,576</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/global.lzs</code></td><td>68,096 → 166,176</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/letter.lzs</code></td><td>3,584 → 7,936</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/catchdisp.lzs</code></td><td>4,096 → 20,208</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/bbs.lzs</code></td><td>9,728 → 34,832</td><td><code>RESO</code></td><td>—</td><td>TAD graphics</td></tr>
+      <tr><td><code>data/inputstr/inp_bg.lzs</code></td><td>1,024 → 4,336</td><td><code>RESO</code></td><td>—</td><td>TAD graphics (keyboard background)</td></tr>
+      <tr><td><code>data/inputstr/inp_objcell.lzs</code></td><td>2,048 → 5,904</td><td><code>RESO</code></td><td>—</td><td>TAD cell container (keyboard sprite cells)</td></tr>
+      <tr><td><code>data/inputstr/inp_objchara.lzs</code></td><td>9,216 → 35,696</td><td><code>RESO</code></td><td>—</td><td>TAD graphics (keyboard character sprites)</td></tr>
+      <tr><td><code>data/inputstr/strdata.lzs</code></td><td>1,536 → 1,616</td><td><code>RESO</code></td><td><strong>internal</strong></td><td>Kana keyboard button-glyph table</td></tr>
+      <tr><td><code>data/inputstr/taboo.bin</code></td><td>20,586 → n/a</td><td><code>B0D0…</code></td><td><strong>internal</strong></td><td>UTF-16-LE banned-word list (~486 entries)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What the RESO / RESC payloads actually contain</h2>
+  <p>
+    The <code>RESO</code> / <code>RESC</code> header is followed by an entry
+    table laid out at a 0x10-byte stride: a 4-character lowercase ASCII
+    fourCC tag (<code>rgcn</code>, <code>rlcn</code>, <code>rcsn</code>,
+    <code>recn</code>, <code>rcan</code>, etc.), a 4-byte size, and a
+    4-byte offset, with the trailing 4 bytes zeroed. Each entry points at
+    a standard Nitro graphics block — <code>RGCN</code>/<code>NCGR</code>
+    (character graphics), <code>RLCN</code>/<code>NCLR</code> (palette),
+    <code>RCSN</code>/<code>NCSR</code> (screen / tile map),
+    <code>RECN</code>/<code>NCER</code> (cell / OAM), and so on. None of
+    these blocks carry human-readable text; they encode tile pixels, 5-bit
+    color entries, tile indices, and OAM attribute words. The JP text
+    those screens display comes from the <code>entries</code> rows of the
+    relevant <code>msg*.ofs</code> files, not from the <code>.lzs</code>
+    containers themselves.
+  </p>
+
+  <h2>The two text-bearing files (do not translate)</h2>
+  <h3><code>inputstr/strdata.lzs</code> — kana keyboard glyph table</h3>
+  <p>
+    Decompressed payload is a 1,616-byte RESO container whose embedded data
+    block holds the kana characters that label the buttons of the on-screen
+    Japanese input keyboard. Examples: hiragana "a-column" labels
+    (<code>あかさたなはまやらわ</code>) at offset <code>0x82</code>, katakana
+    "a-column" (<code>アカサタナハマヤラワ</code>) at <code>0x2C2</code>, and so on.
+    These are the glyphs the player taps to enter Japanese names. They are
+    <strong>not translation targets</strong> — they are input alphabet data.
+    Romanizing or rewriting them would break the input UI for any player who
+    wants to enter a Japanese name. The English keyboard glyphs
+    (<code>A-Z</code>) are part of the same file and are already present
+    alongside the kana.
+  </p>
+
+  <h3><code>inputstr/taboo.bin</code> — banned-word filter</h3>
+  <p>
+    20,586-byte UTF-16-LE NUL-terminated string list. ~486 distinct
+    kana/kanji-only entries (slang, ethnic slurs, drug terms, adult terms,
+    yakuza idioms). This is the <strong>input-screen profanity filter</strong>:
+    the list is consulted when the player types a custom name; if a match is
+    found, the engine refuses the name. It is internal data,
+    <strong>never rendered on screen</strong>, and translating it would
+    weaken the filter (the JP entries catch JP slurs that an EN-only list
+    would not). Leave it alone. Note the file is not LZ-wrapped —
+    <code>.bin</code>, not <code>.lzs</code> — so it bypasses the
+    <code>lzs.py</code> decode path.
+  </p>
+
+  <h2>False positives the strict scan filtered out</h2>
+  <p>
+    A permissive first-pass scan reported thousands of "JP" hits across the
+    binary files. Every one investigated turned out to be a misread of
+    binary structure bytes as UTF-16-LE — repeating <code>爀捧の</code> runs
+    are the byte sequence <code>00 72 67 63 6E 30 ?? 00 00 ?? ?? 00 00</code>
+    (trailing NUL of a size field + ASCII fourCC <code>rgcn</code> + leading
+    byte of the next field) read as UTF-16-LE; <code>敃汬湁浩づ吀</code> is the
+    ASCII literal <code>CellAnime0\0TXEU…</code> read as UTF-16-LE; two
+    pure-CJK hits in <code>global.lzs</code> sit inside 4bpp NCGR pixel
+    blobs. The strict scan (require ≥1 kana per run, 5+ kana for
+    high-confidence) returns zero hits on the 19 binary files and only the
+    legitimate keyboard / banned-word data on the two
+    <code>inputstr/</code> files.
+  </p>
+
+  <h2>Source</h2>
+  <ul>
+    <li><code>notes/_step305_ui_container_text_audit.md</code> — full audit report (2026-05-20).</li>
+    <li><code>notes/_step305_audit_v2_raw.json</code> — strict-scan raw results.</li>
+    <li><code>src/translator/_step305_audit_v2.py</code> — strict scanner.</li>
+  </ul>
+</FieldGuideLayout>

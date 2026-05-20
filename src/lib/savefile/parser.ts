@@ -16,14 +16,17 @@ import type {
   CollectionStatRecord,
   DateTimeInfo,
   EventFlagSummary,
+  Game1Checksum,
+  Game1Classmate,
+  Game1Decode,
+  Game1MysteryFlag,
+  Game1Player,
+  Game1Spell,
+  Game1Title,
   GardenSummary,
-  InventoryBitmapEntry,
-  InventoryBitmapSummary,
   InventorySlot,
   MailEntry,
-  NpcRecord,
   PreambleInfo,
-  ResidentInfo,
   SaveParse,
   SlotLabel,
   SlotParse,
@@ -82,6 +85,15 @@ export const OFFSETS = {
   // here while the in-dialog player name is "Lamb"). The real player
   // display name lives inside the character record at body 0x11488 +
   // 0x14 = body 0x1149C, per phase-7's character-record decode.
+  //
+  // DISPUTED — Game 1 analogy via LaytonLoztew's mqreader.js shows
+  // school name lives at FILE 0x8FBC (not inside the 0x460..0x4B0
+  // flag-array region as our 0x47E hypothesis claims). The 0x47E offset
+  // is inside Game 3's flag-array region and is therefore implausible
+  // as a school-name location. We retain the existing offset only so
+  // the empirically-observed value from save14 ("Revere") keeps
+  // rendering — but the offset itself has no ARM9-disassembly anchor
+  // and may be coincidental. Game 3 offset is uncertain.
   schoolName: 0x47e,
   schoolNameLen: 12, // 6 UTF-16 LE chars (max)
   lastSaveTs: 0x494,
@@ -90,9 +102,15 @@ export const OFFSETS = {
   /** Body offset of the player's display name (inside the character
    *  record at body 0x11488, intra offset +0x14). Verified against
    *  save14: "Lamb" sits at body 0x1149C. Length 0x16 = 11 UTF-16
-   *  LE chars max per phase-7. */
+   *  LE chars max per phase-7.
+   *
+   *  DISPUTED capacity — Game 1's mqreader.js documents the player
+   *  name as 20 BYTES = up to 10 UTF-16 LE chars. Game 3's capacity is
+   *  uncertain; our 22-byte / 11-char field width is a phase-7 guess.
+   *  We do NOT shorten the field because save14's "Lamb" only takes 4
+   *  chars, leaving us no positive evidence for either bound. */
   playerName: 0x1149c,
-  playerNameLen: 22, // 11 UTF-16 LE chars (per phase-7 layout)
+  playerNameLen: 22, // up to 11 UTF-16 LE chars (DISPUTED — Game 1 documents 10)
 
   // Unconfirmed region — body[0x4300..0x4480], stride 8. Previously
   // (step-176/177) labelled "active inventory" with a (cat<<8)|sub
@@ -132,16 +150,6 @@ export const OFFSETS = {
   /** Offset within record[0] of the wizard-level candidate byte. */
   wizardLevelCandidateOffset: 0x5a,
 
-  // NPC relationship records
-  npcRecordsStart: 0x119c0,
-  // We bound the dump at the wardrobe-table boundary so we don't run
-  // off into garden territory.
-  npcRecordsEnd: 0x12400,
-  // The NPC records pack at variable strides; we sample at a generous
-  // 0x500 stride for the inspector's purposes (matches what the dump
-  // tool produces). This is preview-only — full semantics aren't pinned.
-  npcRecordStride: 0x500,
-
   // Garden tiles. Predecessor said 0x12414; step-223 _savefile_validate_all
   // proved that's INSIDE the 4×1080 char-record array (which occupies
   // 0x11488..0x1257C). The validator's plant-pattern score peaks at the
@@ -179,31 +187,21 @@ export const OFFSETS = {
   bankEnd: 0x1e0e0,
   bankRecordSize: 6,
 
-  // Town residents
-  residentsStart: 0x1e0e0,
-  residentsRecordSize: 0x22f8,
-  residentsMax: 8,
-
-  // Inventory bitmap (step-237). 173-bit packed bitmap inside the
-  // FAMILY-C extra-record [0] at save_buffer_C + 2. Bit 0..139 = clothing
-  // (item_ids 1000..1139), bit 140..172 = garden decorations (item_ids
-  // 2000..2032). Bits 173..175 are unused padding (always read by the
-  // game's bit-getter but ignored because max=173 bounds-check trips).
-  // ARM9 evidence: setter at 0x0201B56C calls 0x0201BCB0(base=svC+2,
-  // max=173) which calls 0x02006E44 (bit-set primitive).
-  inventoryBitmapStart: 0x1cdf2,
-  inventoryBitmapLen: 22,
-  inventoryBitmapBitCount: 173,
+  // REMOVED in step-262 (LaytonLoztew port):
+  //   - "Town residents @ body 0x1E0E0 stride 0x22F8 max 8" — Game 1
+  //     analogy via mqreader.js shows the real classmate-pool layout is
+  //     11 slots × 164 bytes at file 0x64D8. The stride-0x22F8 / max-8
+  //     hypothesis was 55× too large per slot and structurally wrong.
+  //     Game 3's true classmate-pool offset is unknown.
+  //   - "NPC relationship records @ body 0x119C0+ stride 0x500" — no
+  //     ARM9 evidence; Game 1 has no per-NPC dynamic blocks (one fixed
+  //     pool only). The 0x119C0+ records were pattern-matched noise.
+  //   - "173-bit inventory bitmap @ body 0x1CDF2" — appeared to decode
+  //     against a real ARM9 trace but produced items the player did NOT
+  //     own (Tyler's empirical check). Without a second independent
+  //     anchor we cannot trust the trace. The bytes are real but their
+  //     meaning is unknown; "inventory" was a leap.
 } as const;
-
-/** Per-category metadata for the inventory bitmap. Hard-coded to match
- *  the ARM9 tables at 0x020A1660 (per-cat item_id base) and 0x020A1670
- *  (per-cat count). The bitmap only covers cats 0 and 1; cats 2 and 3
- *  are stored in other save regions. */
-const INVENTORY_BITMAP_CATEGORIES = [
-  { id: 0, itemIdBase: 1000, count: 140, bitIndexBase: 0 },
-  { id: 1, itemIdBase: 2000, count: 33, bitIndexBase: 140 },
-] as const;
 
 /** Body-level RFC1071 checksum range length. Exported because the editor
  *  also needs it when recomputing after edits. */
@@ -474,64 +472,6 @@ function decodeDatetime(bytes: Uint8Array): DateTimeInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Inventory bitmap (step-237 — the REAL inventory)
-// ---------------------------------------------------------------------------
-
-/** Parse the 173-bit packed bitmap at slot_rel 0x1CDF2 (= save_buffer_C+2)
- *  into a list of owned (cat, sub_index, item_id) entries.
- *
- *  Bit-packing is standard LSB-first within each byte:
- *  `byte_offset = bit_index / 8`, `mask = 1 << (bit_index & 7)`.
- *  Bit indices 0..139 are cat 0 (clothing item_ids 1000..1139); 140..172
- *  are cat 1 (garden decoration item_ids 2000..2032); 173..175 are
- *  always read by the byte-level get/set primitive but the game's
- *  bounds-checked dispatcher (max=173) ignores them.
- *
- *  ARM9 evidence: setter at 0x0201B56C, primitives at 0x02006E44/E5C,
- *  bounds dispatcher at 0x0201BCB0. See translation repo at
- *  `notes/save_analysis/_inventory_found.md` for the full trace.
- */
-function parseInventoryBitmap(body: Uint8Array): InventoryBitmapSummary {
-  const start = OFFSETS.inventoryBitmapStart;
-  const len = OFFSETS.inventoryBitmapLen;
-  const region = body.subarray(start, start + len);
-  // Total bits set across all 22 bytes (including the 3 padding bits).
-  let totalBitsSet = 0;
-  for (let i = 0; i < region.length; i++) {
-    let x = region[i];
-    x = x - ((x >> 1) & 0x55);
-    x = (x & 0x33) + ((x >> 2) & 0x33);
-    x = (x + (x >> 4)) & 0x0f;
-    totalBitsSet += x;
-  }
-  // Walk the meaningful range and decode owned-item entries.
-  const entries: InventoryBitmapEntry[] = [];
-  let ownedBitsSet = 0;
-  for (const cat of INVENTORY_BITMAP_CATEGORIES) {
-    for (let sub = 0; sub < cat.count; sub++) {
-      const bitIndex = cat.bitIndexBase + sub;
-      const byte = region[bitIndex >> 3];
-      if (byte === undefined) continue;
-      const set = (byte >> (bitIndex & 7)) & 1;
-      if (!set) continue;
-      ownedBitsSet++;
-      entries.push({
-        bitIndex,
-        category: cat.id,
-        subIndex: sub,
-        itemId: cat.itemIdBase + sub,
-      });
-    }
-  }
-  return {
-    totalBitsSet,
-    ownedBitsSet,
-    entries,
-    rawHex: bytesToHex(region),
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Inventory (legacy body+0x4300 region — DISPUTED, see step-232/237)
 // ---------------------------------------------------------------------------
 
@@ -555,38 +495,6 @@ function parseActiveInventory(body: Uint8Array, view: DataView): InventorySlot[]
     });
   }
   return slots;
-}
-
-// ---------------------------------------------------------------------------
-// Residents
-// ---------------------------------------------------------------------------
-
-function parseResidents(body: Uint8Array): ResidentInfo[] {
-  const out: ResidentInfo[] = [];
-  for (let i = 0; i < OFFSETS.residentsMax; i++) {
-    const start = OFFSETS.residentsStart + i * OFFSETS.residentsRecordSize;
-    if (start + 0x20 > body.length) break;
-    const head = body.subarray(start, start + 16);
-    const previewSlice = body.subarray(start, start + 32);
-    let state: 'uninit' | 'vacant' | 'active';
-    let name = '';
-    if (allBytesEqual(head, 0xff)) {
-      state = 'uninit';
-    } else if (allBytesEqual(head, 0x00)) {
-      state = 'vacant';
-    } else {
-      state = 'active';
-      name = decodeUtf16Le(head, 8);
-    }
-    out.push({
-      index: i,
-      bodyOffset: start,
-      state,
-      name,
-      previewHex: bytesToHex(previewSlice),
-    });
-  }
-  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -706,48 +614,6 @@ function parseMail(body: Uint8Array): MailEntry[] {
     OFFSETS.mailStride,
     6,
   );
-}
-
-// ---------------------------------------------------------------------------
-// NPC records
-// ---------------------------------------------------------------------------
-
-function parseNpcRecords(body: Uint8Array): NpcRecord[] {
-  // step-249: these records do NOT store inline UTF-16 NPC names. Per-save
-  // dumps at body 0x119C0+0x500*N show packed ID/state bytes (e.g.
-  // `07 13 00 00 00 00 00 00 00 00 00 00 00 ff 00 00 44 61 ...`) — no
-  // UTF-16 LE name field exists at +0x00. The previous decoder produced
-  // single-character garbage like "ጇ" by reinterpreting two state bytes
-  // as a UTF-16 codepoint, so we now treat every populated record as
-  // name-less and surface only the raw bytes. A future revision can add
-  // an NPC-ID-to-name lookup once the record's ID-field offset is pinned.
-  const out: NpcRecord[] = [];
-  let idx = 0;
-  for (
-    let off = OFFSETS.npcRecordsStart;
-    off + 0x30 <= OFFSETS.npcRecordsEnd && off + 0x30 <= body.length;
-    off += OFFSETS.npcRecordStride
-  ) {
-    const head = body.subarray(off, off + 16);
-    const preview = body.subarray(off + 16, off + 48);
-    const uninit = allBytesEqual(head, 0xff);
-    const vacant = allBytesEqual(head, 0x00);
-    // step-249: intentionally NOT decoding `head` as UTF-16 — that
-    // produced mojibake on every save in our corpus. The first 16
-    // bytes are packed state bytes, not a UTF-16 name field. We leave
-    // `name` empty so the inspector renders "(empty)" honestly.
-    const name = '';
-    out.push({
-      index: idx,
-      bodyOffset: off,
-      name,
-      uninit,
-      vacant,
-      previewHex: bytesToHex(preview),
-    });
-    idx++;
-  }
-  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -945,8 +811,6 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       activeInventory: [],
       catalogEntries: [],
       mailEntries: [],
-      npcRecords: [],
-      residents: [],
       garden: { totalTiles: 0, populatedTiles: 0, tiles: [] },
       eventFlags: { totalBytes: 0, setBits: 0, previewHex: '' },
       activityLog: [],
@@ -957,12 +821,6 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
         rawByte: 0xff,
         plausible: false,
         note: 'Slot is uninitialised.',
-      },
-      inventoryBitmap: {
-        totalBitsSet: 0,
-        ownedBitsSet: 0,
-        entries: [],
-        rawHex: '',
       },
     };
   }
@@ -1007,17 +865,365 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     activeInventory: parseActiveInventory(body, view),
     catalogEntries: parseCatalog(body),
     mailEntries: parseMail(body),
-    npcRecords: parseNpcRecords(body),
-    residents: parseResidents(body),
     garden: parseGarden(body),
     eventFlags: parseEventFlags(body),
     activityLog: parseActivityLog(body, view),
     collectionStats: parseCollectionStats(body),
     bankLog: parseBankLog(body),
     wizardLevelCandidate: parseWizardLevelCandidate(body),
-    inventoryBitmap: parseInventoryBitmap(body),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Game 1 (Magician's Quest / Enchanted Folk) decoder
+// ---------------------------------------------------------------------------
+//
+// This entire section is a port of LaytonLoztew's mqreader.js
+// (`notes/_external_mqreader.js` in the translation repo, lines
+// 2780..3869). The author documented the FULL save layout for Game 1
+// only; Game 3 (Tongari Boushi to Oshare na Mahou Tsukai) was left as a
+// `printOshareSaveData()` stub. So this decoder runs ONLY when the file
+// magic at offset 0x00 matches Game 1.
+//
+// Detection: file[0x00..0x08] read as u64 big-endian == 0x0DCEAB8906593DA2.
+// (mqreader.js line 2877.)
+//
+// None of our corpus saves are Game 1 — every save we've collected is a
+// Tongari Boushi (Game 3) save with magic 0x683093304C308A30. This panel
+// is therefore DORMANT in production, but the structural foundation is
+// here for if a Magician's Quest / Enchanted Folk save ever shows up.
+
+const GAME1_MAGIC_HEX = '0dceab8906593da2';
+const GAME3_MAGIC_HEX = '683093304c308a30';
+
+/** Read a u16 BE at byte offset `at` from `data`. Out-of-range returns 0. */
+function u16be(data: Uint8Array, at: number): number {
+  if (at + 1 >= data.length) return 0;
+  return (data[at] << 8) | data[at + 1];
+}
+
+/** Read a u32 LE at byte offset `at` from `data`. */
+function u32leAt(data: Uint8Array, at: number): number {
+  if (at + 3 >= data.length) return 0;
+  return (
+    data[at] |
+    (data[at + 1] << 8) |
+    (data[at + 2] << 16) |
+    (data[at + 3] << 24)
+  ) >>> 0;
+}
+
+/** Read a u16 LE at byte offset `at` from `data`. */
+function u16leAt(data: Uint8Array, at: number): number {
+  if (at + 1 >= data.length) return 0;
+  return data[at] | (data[at + 1] << 8);
+}
+
+/** Compute the Game 1 file-level checksum. Per mqreader.js
+ *  calcChecksum() lines 2855..2873:
+ *      seed = 6825 (0x1AA9)
+ *      for i in 0..32768 (= 64 KiB worth of u16 words):
+ *          word = u16_BE(i * 2); if i == 16: word = 0
+ *          val += word; val %= 65535
+ *      return 65535 - val
+ *
+ *  The stored checksum is a u16 BE at file 0x20. Treating word index 16
+ *  (= byte offset 0x20) as zero excludes the stored checksum itself
+ *  from the sum so the file is self-verifying.
+ *
+ *  This is NOT RFC1071 — Konami's seed of 6825 and modulus of 65535
+ *  (not 65536) make it a custom one's-complement-style algorithm. */
+function computeGame1Checksum(file: Uint8Array): number {
+  let val = 6825;
+  for (let i = 0; i < 32768; i++) {
+    let word = u16be(file, i * 2);
+    if (i === 16) word = 0;
+    val += word;
+    val %= 65535;
+  }
+  return 65535 - val;
+}
+
+/** Detect whether `file` looks like a Game 1 save. We require the first
+ *  8 bytes to match the documented Game 1 magic exactly. */
+function isGame1File(file: Uint8Array): boolean {
+  if (file.length < 8) return false;
+  let hex = '';
+  for (let i = 0; i < 8; i++) hex += file[i].toString(16).padStart(2, '0');
+  return hex === GAME1_MAGIC_HEX;
+}
+
+/** Bit n (LSB-first) of byte `data[at]`. */
+function getBit(data: Uint8Array, at: number, bit: number): boolean {
+  if (at < 0 || at >= data.length) return false;
+  return ((data[at] >> bit) & 1) === 1;
+}
+
+// LaytonLoztew tables, copied verbatim from mqreader.js lines 4..212 +
+// 2786..2840. Kept inline so this decoder has zero external lookups —
+// it's a self-contained port of the public reader.
+
+const GAME1_PLAYER_CODES = [0x9df8, 0xb5dc, 0xcdc0, 0xe5a4] as const;
+
+const GAME1_WIZARD_LEVELS = [
+  'Apprentice Wizard',
+  '1-Star Wizard',
+  '2-Star Wizard',
+  '3-Star Wizard',
+  '4-Star Wizard',
+  'Magnus Wizard',
+];
+
+const GAME1_HAIRSTYLES = [
+  'Crew Cut', 'Center Part', 'Side Part', 'Pigtails', 'Ponytail', 'Bun',
+  'Loose Curls', 'Cool Cut', 'Bowl Cut', 'Mop Top', 'Bob Cut', 'Curled Ends',
+];
+
+const GAME1_HAIR_COLORS = [
+  'Flame', 'Blue', 'Purple', 'Yellow', 'Brown', 'White', 'Pink', 'Green',
+];
+
+const GAME1_TITLES = [
+  'Wise Wizard', 'Great Wizard', 'Corsair Wizard', 'Evil Wizard',
+  'Love Wizard', 'A La Mode Wizard', 'Flower Wizard', 'Stylish Wizard',
+  'Gallant Wizard', 'Skull Wizard', 'Insect Wizard', 'Fish Wizard',
+];
+
+const GAME1_MAGIC = [
+  'Flatulence', 'Metal Basin', 'Spiderweb', 'Sleep', 'Magnetic',
+  'Love Insight', 'Transformation', 'Party Popper', 'Cloud Hammock',
+  'Shooting Star', 'Treasure Hunt', 'Lightning',
+];
+
+const GAME1_INCANTATIONS = [
+  'Rainmaking', 'Rainbow', 'Flower rain', 'Star message', 'Friendship',
+  'Declare love', 'Sweet dreams', 'Make peace', 'Sit by me', 'Popularity',
+  'Honor Student', 'Invisibility', 'Mystery bloom', 'Mystery Gate',
+  'Secret saving', 'Sharp-eared', 'Treasure Hunt', 'Lucky', 'Mushroom',
+  'Connect doors', 'Phantasm', 'World Tree',
+];
+
+const GAME1_MYSTERIES = [
+  'Nessie', 'Mokele-mbembe', 'Candyman', 'Portrait', 'Spirit', 'Unicorn',
+  'Sphinx', 'Mimic', 'Dragon', 'Martian', 'Doppelganger', 'Werewolf',
+  'Death', 'Gargoyle', 'Krampus', 'Minotaur', 'Gremlin', 'Apparition',
+  'Ogre', 'Dryad', 'Jack Frost', 'Homunculus', 'Familiar', 'Mermaid',
+  'Siren', 'Yeti', 'Cerberus', 'Tom', 'Subterranean', 'Forbidden Tome',
+  "Jack-O'-Lantern", 'First Principal', 'Spirited Away', 'Nightmare',
+  'Tapir', 'Wild Hound', 'Ghost', 'Satyr', 'Fairy', 'Santa Claus', 'UFO',
+  'Wind Weasel', 'Mystery Circle', 'Dullahan', 'Manticore', 'Griffin',
+  'Harpy', 'Matchstick Girl', 'Kraken', 'Golem', 'Kappa', 'Leprechaun',
+];
+
+const GAME1_CLASSMATES = [
+  'Ben', 'Richard', 'Rudolph', 'Cocoa', 'Fifi', 'Zoe', 'Chloe', 'Silvia',
+  'Suzy', 'Anson', 'Wuss', 'Chester', 'Theo', 'Damian', 'Bernard', 'Ellis',
+  'Pamela', 'Naomi', 'Billy', 'Molly', 'Libby', 'Havana', 'Abasi', 'Ralph',
+  'Derrick', 'Whitney', 'Django', 'Stuart', 'Tina', 'Barkley', 'Shawn',
+  'Hannah', 'Felicia', 'Rodney', 'Neville', 'Sparkles', 'Napoleon', 'Sammy',
+  'Moony', 'Aurora', 'Humphrey', 'Thor', 'Starla', 'Wyatt', 'Troy', 'Holly',
+  'Geraldine', 'Sergey', 'Foggy', 'Lucille', 'Mikey', 'Becky', 'Madison',
+  'Johnson', 'Grimble', 'Olivia', 'Brett', 'Chelsea', 'Shelly', 'Tot',
+  'Frank', 'Sanderson', 'Freya', 'Nigel', 'Matthew', 'Jessica', 'Cherie',
+  'Tony', 'Janet', 'Meg', 'Alexander', 'Eric', 'Petra', 'Sonya', 'Laurel',
+  'Barbara', 'Petal', 'Victoria', 'Brandy', 'Marty', 'Marsha', 'Kelsey',
+  'Gary', 'Lydia', 'Grace', 'James', 'Delcy', 'Blossom', 'TV-20C', 'Sarge',
+  'Christine', 'Seth', 'Duke', 'Amber', 'Brownie', 'Patsy', 'Cherry',
+  'Kevin', 'Phoebe', 'Abigail',
+];
+
+function decodeGame1Player(file: Uint8Array, idx: number): Game1Player {
+  const code = GAME1_PLAYER_CODES[idx];
+  const enrolled = getBit(file, 0x1c, idx);
+  // Player name: 20 bytes (= 10 UTF-16 LE chars max) at code+0.
+  // mqreader.js getPlayerName() line 3784 returns "" if first byte is 0xff.
+  let name = '';
+  if (file[code] !== 0xff) {
+    name = decodeUtf16Le(file.subarray(code, code + 20), 10);
+  }
+  const stars = file[code + 0x40] ?? 0;
+  const wizardLevel = file[code + 0x41] ?? 0;
+  const wizardLevelName = GAME1_WIZARD_LEVELS[wizardLevel] ?? `(level ${wizardLevel})`;
+  const gender = file[code + 0x20d] ?? 0;
+  const birthdayDay = file[code + 0x20e] ?? 0;
+  const birthdayMonth = file[code + 0x20f] ?? 0;
+  const hairstyle = file[code + 0x211] ?? 0;
+  const hairColor = file[code + 0x213] ?? 0;
+  const ritch = u32leAt(file, code + 0x19e + 0x6a);
+  const bankBalance = u32leAt(file, code + 0x1348);
+
+  const slots: number[] = [];
+  for (let i = 0; i < 15; i++) {
+    slots.push(u16leAt(file, code + 0x19e + i * 2));
+  }
+  const equipped = {
+    shirt: u16leAt(file, code + 0x19e + 0x1e),
+    pants: u16leAt(file, code + 0x19e + 0x20),
+    shoes: u16leAt(file, code + 0x19e + 0x22),
+    headwear: u16leAt(file, code + 0x19e + 0x24),
+    eyewear: u16leAt(file, code + 0x19e + 0x26),
+    wizardHat: u16leAt(file, code + 0x19e + 0x2a),
+  };
+
+  // Titles. mqreader.js lines 3156-3170:
+  //   indices 0..4 = bits 3..7 of code+0x2F
+  //   indices 5..11 = bits 0..6 of code+0x30
+  const titles: Game1Title[] = [];
+  const titleBitPositions: Array<[number, number]> = [
+    [0x2f, 3], [0x2f, 4], [0x2f, 5], [0x2f, 6], [0x2f, 7],
+    [0x30, 0], [0x30, 1], [0x30, 2], [0x30, 3], [0x30, 4],
+    [0x30, 5], [0x30, 6],
+  ];
+  GAME1_TITLES.forEach((titleName, i) => {
+    const [off, bit] = titleBitPositions[i];
+    titles.push({
+      name: titleName,
+      bitOffset: code + off,
+      bitIndex: bit,
+      set: getBit(file, code + off, bit),
+    });
+  });
+
+  // Magic spells. mqreader.js lines 3172-3186:
+  //   indices 0..7 = bits 0..7 of code+0x183
+  //   indices 8..11 = bits 0..3 of code+0x184
+  const magicSpells: Game1Spell[] = [];
+  GAME1_MAGIC.forEach((spellName, i) => {
+    const off = i < 8 ? 0x183 : 0x184;
+    const bit = i < 8 ? i : i - 8;
+    magicSpells.push({
+      name: spellName,
+      bitOffset: code + off,
+      bitIndex: bit,
+      set: getBit(file, code + off, bit),
+    });
+  });
+
+  // Incantations. mqreader.js lines 3188-3212. Note the offset is
+  // somewhat unusual: index 0 maps to bit 4 of code+0x185.
+  const incantations: Game1Spell[] = [];
+  const incantBitPositions: Array<[number, number]> = [
+    [0x185, 4], [0x185, 5], [0x185, 6], [0x185, 7],
+    [0x186, 0], [0x186, 1], [0x186, 2], [0x186, 3],
+    [0x186, 4], [0x186, 5], [0x186, 6], [0x186, 7],
+    [0x187, 0], [0x187, 1], [0x187, 2], [0x187, 3],
+    [0x187, 4], [0x187, 5], [0x187, 6], [0x187, 7],
+    [0x188, 0], [0x188, 1],
+  ];
+  GAME1_INCANTATIONS.forEach((spellName, i) => {
+    const [off, bit] = incantBitPositions[i];
+    incantations.push({
+      name: spellName,
+      bitOffset: code + off,
+      bitIndex: bit,
+      set: getBit(file, code + off, bit),
+    });
+  });
+
+  return {
+    playerIndex: idx,
+    enrolled,
+    name,
+    wizardLevel,
+    wizardLevelName,
+    stars,
+    gender,
+    birthdayMonth,
+    birthdayDay,
+    hairstyle,
+    hairColor,
+    ritch,
+    bankBalance,
+    inventory: { slots, equipped },
+    titles,
+    magicSpells,
+    incantations,
+  };
+}
+
+function decodeGame1Classmates(file: Uint8Array): Game1Classmate[] {
+  // mqreader.js classmateCode = 0x64d8, stride 0xa4 (164B), 11 visible slots.
+  const out: Game1Classmate[] = [];
+  for (let i = 0; i < 11; i++) {
+    const code = 0x64d8 + i * 0xa4;
+    const classmateId = file[code + 0x46] ?? 0;
+    const friendshipP1 = file[code + 0x14] ?? 0;
+    const friendshipP2 = file[code + 0x18] ?? 0;
+    const name = classmateId > 0 && classmateId <= GAME1_CLASSMATES.length
+      ? GAME1_CLASSMATES[classmateId - 1]
+      : '(empty)';
+    out.push({
+      slotIndex: i,
+      classmateId,
+      name,
+      friendshipP1,
+      friendshipP2,
+    });
+  }
+  return out;
+}
+
+function decodeGame1Mysteries(file: Uint8Array): Game1MysteryFlag[] {
+  // 52 bits at file 0x8FA4..0x8FAA — one bit per mystery.
+  const out: Game1MysteryFlag[] = [];
+  GAME1_MYSTERIES.forEach((mname, i) => {
+    const byteOff = 0x8fa4 + (i >> 3);
+    const bit = i & 7;
+    out.push({
+      index: i,
+      name: mname,
+      set: getBit(file, byteOff, bit),
+    });
+  });
+  return out;
+}
+
+function decodeGame1(file: Uint8Array): Game1Decode | null {
+  if (!isGame1File(file)) return null;
+
+  const stored = u16be(file, 0x20);
+  const computed = computeGame1Checksum(file);
+  const checksum: Game1Checksum = {
+    storedHex: '0x' + stored.toString(16).padStart(4, '0'),
+    computedHex: '0x' + computed.toString(16).padStart(4, '0'),
+    ok: stored === computed,
+  };
+
+  const enrolmentByte = file[0x1c] ?? 0;
+  const schoolName = decodeUtf16Le(file.subarray(0x8fbc, 0x8fbc + 10), 5);
+  const date = {
+    year: file[0x2e8] ?? 0,
+    month: file[0x2e9] ?? 0,
+    day: file[0x2ea] ?? 0,
+    hour: file[0x2ec] ?? 0,
+    minute: file[0x2ed] ?? 0,
+  };
+
+  const players: Game1Player[] = [];
+  for (let p = 0; p < 4; p++) {
+    players.push(decodeGame1Player(file, p));
+  }
+  const classmates = decodeGame1Classmates(file);
+  const mysteries = decodeGame1Mysteries(file);
+
+  return {
+    detected: true,
+    checksum,
+    enrolmentByte,
+    schoolName,
+    date,
+    classmates,
+    mysteries,
+    players,
+  };
+}
+
+// Exported so the UI can format file-magic feedback without re-deriving
+// the constants.
+export const GAME_MAGIC_HEX = {
+  game1: GAME1_MAGIC_HEX,
+  game3: GAME3_MAGIC_HEX,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Top-level parse
@@ -1065,6 +1271,7 @@ export async function parseSaveFile(file: Uint8Array): Promise<SaveParse> {
       preamble: null,
       slotA: null,
       slotB: null,
+      game1: null,
       payloadSha256: '',
       fileSha256,
       activeSlot: null,
@@ -1075,6 +1282,11 @@ export async function parseSaveFile(file: Uint8Array): Promise<SaveParse> {
   const payload = wrapper.payload;
   const payloadSha256 = await sha256Hex(payload);
   const preamble = parsePreamble(payload);
+
+  // Game 1 (Magician's Quest / Enchanted Folk) decode — fires ONLY when
+  // the file magic at 0x00 matches Game 1. Returns null for every Tongari
+  // Boushi (Game 3) save in our corpus.
+  const game1 = decodeGame1(payload);
 
   // Slot A: body starts at file offset 0x100, ends at 0x40000.
   const slotABody = payload.subarray(SLOT_A_BASE, SLOT_A_BASE + SLOT_BODY_LEN);
@@ -1092,6 +1304,7 @@ export async function parseSaveFile(file: Uint8Array): Promise<SaveParse> {
     preamble,
     slotA,
     slotB,
+    game1,
     payloadSha256,
     fileSha256,
     activeSlot,
@@ -1112,19 +1325,17 @@ export const REGION_DESCRIPTORS = {
   versionMagic: { id: 'versionMagic', title: 'Format version magic + sub-code', range: 'body[0x02:0x04] + body[0x16:0x18]', confidence: 'confirmed' as const },
   wizardLevelCandidate: { id: 'wizardLevelCandidate', title: 'Wizard level candidate (read-only — please test)', range: 'body[0x11488 + 0x5a]', confidence: 'candidate' as const },
   eventFlags: { id: 'eventFlags', title: 'Event flag region', range: 'body[0x18:0x460], ~1 KiB bit-flags', confidence: 'candidate' as const },
-  profile: { id: 'profile', title: 'Player + school name', range: 'school body[0x47E:0x48A]; player body[0x1149C:0x114B2]', confidence: 'confirmed' as const },
-  inventoryBitmap: { id: 'inventoryBitmap', title: 'Inventory bitmap (clothing + garden decorations)', range: 'slot_rel 0x1CDF2 (file 0x1CEF2 / 0x5CDF2), 173-bit packed bitmap', confidence: 'confirmed' as const },
+  profile: { id: 'profile', title: 'Player + school name (player CONFIRMED, school DISPUTED)', range: 'school body[0x47E:0x48A] (DISPUTED); player body[0x1149C:0x114B2]', confidence: 'candidate' as const },
   inventory: { id: 'inventory', title: 'Region at body 0x4300 — semantics unconfirmed (previously labelled "active inventory")', range: 'body[0x4300:0x4480], 8-byte stride', confidence: 'disputed' as const },
   activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
   collectionStats: { id: 'collectionStats', title: 'Collection statistics', range: 'body[0x11550:0x115F4], 14-byte records', confidence: 'candidate' as const },
-  npcRecords: { id: 'npcRecords', title: 'Per-NPC relationship records', range: 'body[0x119C0+], variable stride (preview)', confidence: 'candidate' as const },
   garden: { id: 'garden', title: 'Garden plant tile state', range: 'body[0x12400:0x16000], 12-byte records', confidence: 'confirmed' as const },
   catalog: { id: 'catalog', title: 'Shop catalog announcement board', range: 'body[0x163F2+], 168-byte stride', confidence: 'confirmed' as const },
   mail: { id: 'mail', title: 'Per-NPC mail bodies', range: 'body[0x17400+], 168-byte stride', confidence: 'confirmed' as const },
   ritch: { id: 'ritch', title: 'Ritch (wallet)', range: 'body[0x1CFD0], u32 LE', confidence: 'confirmed' as const },
   bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },
   timestamps: { id: 'timestamps', title: 'Last-save + character-create timestamps', range: 'body[0x494] / body[0x4A4]', confidence: 'confirmed' as const },
-  residents: { id: 'residents', title: 'Town residents (max 8)', range: 'body[0x1E0E0], stride 0x22F8', confidence: 'confirmed' as const },
+  game1: { id: 'game1', title: "Game 1 (Magician's Quest / Enchanted Folk) decoder — dormant for Game 3", range: 'file[0x00..0x80000], LaytonLoztew-documented layout', confidence: 'confirmed' as const },
 };
 
 export const FORMAT_MAGIC_EXPECTED = FORMAT_MAGIC;

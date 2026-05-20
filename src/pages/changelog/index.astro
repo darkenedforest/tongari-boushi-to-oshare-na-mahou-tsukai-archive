@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import v232meta from '../../data/changelog_v2.32_meta.json';
 import v231 from '../../data/changelog_v2.31.json';
 import v23meta from '../../data/changelog_v2.3_meta.json';
 import v22meta from '../../data/changelog_v2.2_meta.json';
@@ -8,19 +9,29 @@ import v20meta from '../../data/changelog_v2.0_meta.json';
 
 const base = import.meta.env.BASE_URL;
 
-// Every release that has a detail page in this section.
-// v2.31 is inlined at build time (small JSON, ~45 rows). v2.0..v2.3
-// fetch their row data lazily on detail-page mount — the metadata
-// imported here is just version/date/headline.
 type ReleaseCard = {
   version: string;
   date: string;
   href: string;
   headline?: string;
   totalChanges?: number;
+  isLatest?: boolean;
 };
 
 const releases: ReleaseCard[] = [
+  {
+    version: v232meta.version,
+    date: v232meta.date,
+    href: `${base}/changelog/v2.32/`,
+    headline: v232meta.headline,
+    totalChanges:
+      v232meta.counts.msgEdits +
+      v232meta.counts.bulletinTitleEdits +
+      v232meta.counts.answerListOpcodeFix +
+      v232meta.counts.wizardRankCanonEdits +
+      v232meta.counts.npcTypographyEdits,
+    isLatest: true,
+  },
   {
     version: v231.version,
     date: v231.date,
@@ -107,6 +118,7 @@ function formatDate(iso: string): string {
           <a href={r.href} class="release-card">
             <div class="release-left">
               <span class="version-tag">v{r.version}</span>
+              {r.isLatest && <span class="latest-chip">Latest</span>}
               <time datetime={r.date}>{formatDate(r.date)}</time>
             </div>
             <div class="release-mid">
@@ -261,6 +273,19 @@ function formatDate(iso: string): string {
     font-size: 1rem;
     border-radius: var(--radius-pill);
     box-shadow: 0 4px 12px rgba(155, 123, 217, 0.25);
+  }
+
+  .latest-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    background: white;
+    color: var(--color-pink-600);
+    font-weight: 700;
+    font-size: 0.72rem;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-pink-200);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   time {

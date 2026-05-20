@@ -72,17 +72,6 @@ export interface InventorySlot {
   trailingHex: string;
 }
 
-export interface ResidentInfo {
-  index: number;
-  bodyOffset: number;
-  /** 'uninit' (all 0xFF — never inhabited), 'vacant' (all zero), or 'active'. */
-  state: 'uninit' | 'vacant' | 'active';
-  /** UTF-16 LE name when state === 'active'. */
-  name: string;
-  /** First 32 bytes of the record as hex (preview). */
-  previewHex: string;
-}
-
 export interface CatalogEntry {
   index: number;
   bodyOffset: number;
@@ -97,19 +86,6 @@ export interface MailEntry {
   bodyOffset: number;
   text: string;
   headerHex: string;
-}
-
-export interface NpcRecord {
-  index: number;
-  bodyOffset: number;
-  /** First 16 bytes decoded as UTF-16 LE — the NPC name. */
-  name: string;
-  /** Whether the first 16 bytes were all 0xFF (never met). */
-  uninit: boolean;
-  /** Whether the first 16 bytes were all zero (record cleared). */
-  vacant: boolean;
-  /** Hex preview of first 32 bytes after the name. */
-  previewHex: string;
 }
 
 export interface GardenTile {
@@ -152,30 +128,6 @@ export interface BankRecord {
   index: number;
   bodyOffset: number;
   /** 6 raw bytes as hex. */
-  rawHex: string;
-}
-
-/** One owned-item entry decoded from the inventory bitmap at slot_rel
- *  0x1CDF2 (file 0x1CEF2 slot A / 0x5CDF2 slot B). step-237. */
-export interface InventoryBitmapEntry {
-  /** Flat bit index 0..172. */
-  bitIndex: number;
-  /** Category id (0 = clothing, 1 = garden decoration). */
-  category: number;
-  /** Sub-index within category (0..139 for cat 0, 0..32 for cat 1). */
-  subIndex: number;
-  /** ROM item id (cat_base + sub_index). */
-  itemId: number;
-}
-
-export interface InventoryBitmapSummary {
-  /** Total bits set in the 22-byte bitmap (including bits 173..175 padding). */
-  totalBitsSet: number;
-  /** Bits set in the meaningful range 0..172. */
-  ownedBitsSet: number;
-  /** Decoded owned-item entries (cat 0 = clothing, cat 1 = garden). */
-  entries: InventoryBitmapEntry[];
-  /** Raw 22-byte bitmap as hex (for debugging). */
   rawHex: string;
 }
 
@@ -259,12 +211,6 @@ export interface SlotParse {
   // Per-NPC mail (0x17400+ stride 0xA8)
   mailEntries: MailEntry[];
 
-  // Per-NPC relationship records (0x119C0+ — list raw record names)
-  npcRecords: NpcRecord[];
-
-  // Town residents (0x1E0E0 stride 0x22F8, max 8)
-  residents: ResidentInfo[];
-
   // Garden plant tiles (0x12400..0x16000, 12-byte records)
   garden: GardenSummary;
 
@@ -282,11 +228,122 @@ export interface SlotParse {
 
   // Wizard-level candidate (body 0x11488 + 0x5a). Read-only.
   wizardLevelCandidate: WizardLevelCandidate;
+}
 
-  // Inventory bitmap (slot_rel 0x1CDF2 = save_buffer_C+2). step-237.
-  // 173-bit bitmap covering item_ids 1000..1139 (clothing) and 2000..2032
-  // (garden decorations). Confirmed via ARM9 disassembly trace.
-  inventoryBitmap: InventoryBitmapSummary;
+// ---------------------------------------------------------------------------
+// Game 1 (Magician's Quest / Enchanted Folk) decoder — DORMANT for Game 3
+// ---------------------------------------------------------------------------
+//
+// LaytonLoztew's mqreader.js (notes/_external_mqreader.js in the
+// translation repo) documents the full save layout for Game 1 ONLY. Our
+// corpus is entirely Game 3 saves, so this panel will be empty for every
+// known save in the wild today — but if a Game 1 (Magician's Quest /
+// Enchanted Folk) cartridge save ever shows up, this decoder will fire
+// and the inspector will render real, attributed data.
+//
+// Detection: file[0x00..0x08] as u64 big-endian == 0x0DCEAB8906593DA2.
+// Source: mqreader.js displayFile() switch at line 2875.
+
+export interface Game1Checksum {
+  /** Stored u16 BE at file 0x20. */
+  storedHex: string;
+  /** Computed via the Konami custom algorithm (NOT RFC1071):
+   *   seed = 6825; for i in 0..32768: add u16-BE at i*2, skip i==16,
+   *   sum %= 65535; return 65535 - sum. */
+  computedHex: string;
+  ok: boolean;
+}
+
+export interface Game1Title {
+  name: string;
+  bitOffset: number;
+  bitIndex: number;
+  set: boolean;
+}
+
+export interface Game1Spell {
+  name: string;
+  bitOffset: number;
+  bitIndex: number;
+  set: boolean;
+}
+
+export interface Game1Classmate {
+  /** Slot index 0..10 (11 in-town classmate slots). */
+  slotIndex: number;
+  /** u8 classmate ID at code+0x46. 0 = empty slot. */
+  classmateId: number;
+  /** Display name from the 100-entry classmates[] table in mqreader.js. */
+  name: string;
+  /** Friendship with player 1 (0..32). */
+  friendshipP1: number;
+  /** Friendship with player 2 (0..32). */
+  friendshipP2: number;
+}
+
+export interface Game1Inventory {
+  /** 15 u16 LE item IDs. 0x0000 means empty. */
+  slots: number[];
+  /** Equipped items in fixed slots — u16 LE item IDs. */
+  equipped: {
+    shirt: number;
+    pants: number;
+    shoes: number;
+    headwear: number;
+    eyewear: number;
+    wizardHat: number;
+  };
+}
+
+export interface Game1Player {
+  /** 0..3 — which player record (game supports 4). */
+  playerIndex: number;
+  /** True iff bit `playerIndex` of file[0x1C] is set. */
+  enrolled: boolean;
+  /** UTF-16 LE up to 10 chars. */
+  name: string;
+  /** Magician Level 0..5 (Apprentice → Magnus). */
+  wizardLevel: number;
+  wizardLevelName: string;
+  /** Stars sub-stat 0..4. */
+  stars: number;
+  /** u8 — 0=Male, 1=Female. */
+  gender: number;
+  birthdayMonth: number;
+  birthdayDay: number;
+  hairstyle: number;
+  hairColor: number;
+  ritch: number;
+  bankBalance: number;
+  inventory: Game1Inventory;
+  titles: Game1Title[];
+  magicSpells: Game1Spell[];
+  incantations: Game1Spell[];
+}
+
+export interface Game1MysteryFlag {
+  index: number;
+  name: string;
+  set: boolean;
+}
+
+export interface Game1Decode {
+  /** Always true when this object exists — file magic matched. */
+  detected: true;
+  /** File-level checksum (Konami sum, NOT RFC1071). */
+  checksum: Game1Checksum;
+  /** Enrolment bitmap at file 0x1C. */
+  enrolmentByte: number;
+  /** School name, 10 bytes at file 0x8FBC. */
+  schoolName: string;
+  /** Date/time read from file 0x2E8..0x2ED (5 u8 fields). */
+  date: { year: number; month: number; day: number; hour: number; minute: number };
+  /** Active classmate pool — 11 slots × 164 bytes at file 0x64D8. */
+  classmates: Game1Classmate[];
+  /** 52 mysteries (one bit each) at file 0x8FA4..0x8FAA. */
+  mysteries: Game1MysteryFlag[];
+  /** Per-player records. */
+  players: Game1Player[];
 }
 
 export interface SaveParse {
@@ -294,6 +351,9 @@ export interface SaveParse {
   preamble: PreambleInfo | null;
   slotA: SlotParse | null;
   slotB: SlotParse | null;
+  /** Game 1 decode IFF the file magic matches Game 1. Null for Game 3
+   *  saves (the whole inspector's normal case). */
+  game1: Game1Decode | null;
   /** SHA-256 hex of the wrapper-stripped raw EEPROM payload. */
   payloadSha256: string;
   /** SHA-256 hex of the original file bytes as supplied (including any wrapper). */

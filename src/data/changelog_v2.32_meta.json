@@ -1,0 +1,14 @@
+{
+  "version": "2.32",
+  "date": "2026-05-19",
+  "headline": "Bulletin & letter rework, song-list sync, opcode-order fix, NPC name typography",
+  "summary": "v2.32 is a content release. Every v2.31 fix continues to ship intact. On top of that baseline, v2.32 lands hundreds of new player-visible improvements concentrated on the bulletin board, letter mail, song lists, and several smaller translation-canon corrections.",
+  "previousVersionLabel": "v2.31",
+  "counts": {
+    "msgEdits": 648,
+    "bulletinTitleEdits": 233,
+    "answerListOpcodeFix": 11,
+    "wizardRankCanonEdits": 7,
+    "npcTypographyEdits": 5
+  }
+}

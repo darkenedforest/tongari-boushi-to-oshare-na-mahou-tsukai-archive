@@ -36,16 +36,20 @@ const detailHrefBase = `${baseNorm}/overlays/`;
         <span class="stat-lbl">overlays analyzed</span>
       </div>
       <div class="stat">
-        <span class="stat-num">73</span>
-        <span class="stat-lbl">reference text files still in Japanese</span>
+        <span class="stat-num">100</span>
+        <span class="stat-lbl">distinct unpatched reference files</span>
       </div>
       <div class="stat">
-        <span class="stat-num">12</span>
-        <span class="stat-lbl">carry Japanese text inside the overlay binary</span>
+        <span class="stat-num">79</span>
+        <span class="stat-lbl">overlays carry embedded JP text</span>
       </div>
       <div class="stat">
         <span class="stat-num">122</span>
-        <span class="stat-lbl">unpatched container references in total</span>
+        <span class="stat-lbl">total unpatched container references</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">6</span>
+        <span class="stat-lbl">overlays patched in v2.31/v2.32</span>
       </div>
     </div>
 
@@ -70,7 +74,7 @@ const detailHrefBase = `${baseNorm}/overlays/`;
         </li>
         <li>
           <strong>JP strings</strong> — UTF-16 LE strings baked into the overlay's
-          own binary. These are direct translation targets — they can't be
+          own binary. These are direct translation targets — they cannot be
           fixed by editing a container file, the overlay itself has to be
           patched.
         </li>
@@ -78,6 +82,14 @@ const detailHrefBase = `${baseNorm}/overlays/`;
           <strong>Unpatched</strong> — container files referenced by the
           overlay that are still the original Japanese in the latest patch.
           These are the next-up translation backlog.
+        </li>
+        <li>
+          <strong>NitroCodeBE markers</strong> — the NitroSDK code footer
+          (<code>0xDEC00621</code>) used to validate plaintext ARM9 modules
+          is <strong>not present</strong> in any of the 180 overlays. Konami
+          stripped or never emitted them; this is normal for retail DS
+          titles where overlays ship BLZ-compressed. The patcher does not
+          need to re-emit them.
         </li>
       </ul>
     </details>

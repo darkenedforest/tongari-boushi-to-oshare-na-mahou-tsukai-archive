@@ -5,7 +5,7 @@ const base = import.meta.env.BASE_URL;
 
 <FieldGuideLayout
   title="RESC container (version 3.11)"
-  description="Konami's named-entry archive. 48-byte TOC entries with two reversed-ASCII names. Used by item/itemslot.lzs and item/ItemEtc.lzs."
+  description="Konami's named-entry archive. 48-byte TOC entries with reversed-ASCII names. Used by data/recipe/recipedata.lzs (the cooking recipe database) and a handful of other named-entry containers."
   crumbs={[
     { label: 'Field Guide', href: `${base}/field-guide/` },
     { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
@@ -14,69 +14,138 @@ const base = import.meta.env.BASE_URL;
 >
   <p>
     Variant of <a href={`${base}/field-guide/file-formats/reso/`}>RESO</a> that
-    stores named TOC entries instead of type tags. Each entry is 48 bytes.
+    stores named TOC entries instead of type tags. Each entry is 48 bytes —
+    that's what distinguishes RESC v3.11 from RESO v1.21 (which uses 16-byte
+    entries for variant 0). The format is <strong>fully reverse-engineered
+    and round-trip verified</strong> as of step-294 (2026-05-20); the
+    canonical spec for the writer lives at
+    <code>notes/format_resc_v311.md</code> in the translation repo.
   </p>
 
-  <h2>Header (16 bytes)</h2>
+  <h2>Where RESC v3.11 appears</h2>
+  <ul>
+    <li><strong><code>data/recipe/recipedata.lzs</code></strong> — the cooking recipe database. 34 entries spanning 10 category labels, 11 recipe names, and 13 "Mysterious Soup" placeholder slots. This is the canonical RESC v3.11 surface and the one the v2.4 recipe-menu translation work targeted.</li>
+    <li><strong><code>data/mailorder.lzs</code></strong>, <strong><code>data/goodslist.lzs</code></strong> — RESC v3.11 graphics containers (per step-305 UI container audit). No translatable text; they hold tile / palette / cell data for the mail-order and goods-list UIs.</li>
+    <li>Other one-off RESC v3.11 containers may appear in the asset tree; the writer in <code>src/archive/_resc_v311_writer.py</code> handles them with the same round-trip-safe path used for <code>recipedata.lzs</code>.</li>
+  </ul>
+
+  <h2>Outer wrapper (recipedata.lzs only)</h2>
+  <p>
+    On disk, <code>recipedata.lzs</code> is the SZL outer wrapper
+    (<code>1.00</code> magic + 9 zero bytes) followed by a 4-byte file tag
+    and an LZ11 stream. The file tag at SZL <code>+0x0C..+0x10</code> is
+    <strong>file-specific</strong> for <code>recipedata.lzs</code>:
+    <code>b'\x00ser'</code> (NOT the default <code>b'sfo'</code> that
+    <code>lzs.compress()</code> emits). The writer preserves the original
+    4-byte wrapper word byte-for-byte. Other RESC v3.11 containers carry
+    their own file-specific tags.
+  </p>
+
+  <h2>RESC v3.11 header (16 bytes)</h2>
   <table>
     <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th><th>Value</th></tr></thead>
     <tbody>
       <tr><td><code>0x00</code></td><td>4</td><td><code>char[4]</code></td><td>magic</td><td><code>"RESC"</code></td></tr>
-      <tr><td><code>0x04</code></td><td>4</td><td><code>u32 LE</code></td><td>file_count</td><td>Number of TOC entries</td></tr>
-      <tr><td><code>0x08</code></td><td>4</td><td><code>char[4]</code></td><td>version</td><td>Typically <code>"3.11"</code></td></tr>
-      <tr><td><code>0x0C</code></td><td>4</td><td><code>u32 LE</code></td><td>variant / flags</td><td>(observed 0)</td></tr>
+      <tr><td><code>0x04</code></td><td>4</td><td><code>u32 LE</code></td><td>file_count</td><td>Number of TOC entries (recipedata = 2)</td></tr>
+      <tr><td><code>0x08</code></td><td>4</td><td><code>char[4]</code></td><td>version</td><td><code>"3.11"</code></td></tr>
+      <tr><td><code>0x0C</code></td><td>4</td><td><code>u32 LE</code></td><td>variant</td><td>recipedata = 0 ("type-tagged"). Variant 1 ("simple") is theoretically possible by analogy with RESO but not observed in this ROM.</td></tr>
     </tbody>
   </table>
 
-  <h2>TOC entry (48 bytes)</h2>
-  <table>
-    <thead><tr><th>Offset</th><th>Size</th><th>Type</th><th>Field</th><th>Notes</th></tr></thead>
-    <tbody>
-      <tr><td><code>+0x00</code></td><td>16</td><td><code>char[16]</code></td><td>name1</td><td>Reversed ASCII; e.g. <code>"u_gak_noci"</code> → <code>"icon_kag_u"</code></td></tr>
-      <tr><td><code>+0x10</code></td><td>16</td><td><code>char[16]</code></td><td>name2</td><td>Reversed ASCII; e.g. <code>"rgcn"</code> → <code>"ncgr"</code></td></tr>
-      <tr><td><code>+0x20</code></td><td>4</td><td><code>u32 LE</code></td><td>unk</td><td>Often 0</td></tr>
-      <tr><td><code>+0x24</code></td><td>4</td><td><code>char[4]</code></td><td>type_tag</td><td>Reversed ASCII (same encoding as RESO)</td></tr>
-      <tr><td><code>+0x28</code></td><td>4</td><td><code>u32 LE</code></td><td>length</td><td>Payload bytes</td></tr>
-      <tr><td><code>+0x2C</code></td><td>4</td><td><code>u32 LE</code></td><td>data_offset</td><td>Absolute offset within file</td></tr>
-    </tbody>
-  </table>
-
-  <h2>Where RESC appears</h2>
-  <ul>
-    <li><code>item/itemslot.lzs</code> — item-slot metadata.</li>
-    <li><code>item/ItemEtc.lzs</code> — additional item attributes.</li>
-    <li>About 70 compressed files, mostly under
-      <code>data/2d/solvedeventlist/</code>, plus a few other one-off
-      containers.</li>
-  </ul>
-
-  <h2>Decoder behavior</h2>
+  <h2>TOC entry (48 bytes, variant 0)</h2>
   <p>
-    The project's <code>_sprite_assoc.py</code> does not currently decode RESC
-    names; for the palette-association table RESC is treated as
-    RESO-equivalent (TOC entries indexed by position, payloads sliced by
-    <code>(length, data_offset)</code>). Names are useful for reading
-    intent — <code>"icon_kag_u"</code> identifies an item-icon group — but
-    are not required for asset extraction.
+    Stride is <strong>0x30 (48 bytes)</strong> — twice the entry size of
+    RESO variant 0. Begins at file offset <code>0x10</code>.
+  </p>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Field</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>16</td><td><code>type_name</code></td><td>UTF-8 name, byte-reversed within each 8-byte word. recipedata entry 0 = <code>"recipelist"</code>, entry 1 = <code>"recipepos"</code>.</td></tr>
+      <tr><td><code>+0x10</code></td><td>4</td><td><code>unk</code></td><td>Observed zero in all entries.</td></tr>
+      <tr><td><code>+0x14</code></td><td>4</td><td><code>subtype_tag</code></td><td>4-byte ASCII reversed (same encoding as RESO type_tag). Entry 0 stores <code>b"tlcr"</code> (reads as <code>"rclt"</code>); entry 1 stores <code>b"\x00tad"</code> (reads as <code>"dat\x00"</code>).</td></tr>
+      <tr><td><code>+0x18</code></td><td>4</td><td><code>length</code></td><td>Payload bytes.</td></tr>
+      <tr><td><code>+0x1C</code></td><td>4</td><td><code>data_offset</code></td><td>Absolute offset within the decompressed file.</td></tr>
+      <tr><td><code>+0x20</code></td><td>12</td><td>(padding)</td><td>Zero.</td></tr>
+      <tr><td><code>+0x2C</code></td><td>4</td><td><code>fingerprint</code></td><td><code>0x7C952298</code> in both recipedata entries — looks like a build-tool watermark, not load-bearing. The writer preserves it verbatim.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>type_name byte-reversal convention</h3>
+  <p>
+    The 16-byte <code>type_name</code> field stores the human-readable name
+    in 8-byte words, byte-reversed within each word. For "recipelist": word
+    0 holds <code>"recipeli"</code> stored as
+    <code>69 6c 65 70 69 63 65 72</code>; word 1 holds <code>"st"</code>
+    plus zero padding, stored as <code>00 00 00 00 00 00 74 73</code>.
+    Reverse each word and you get the human-readable name. The writer is
+    robust to this only at decode time — it doesn't need to write new
+    type_name values because they're per-entry-type and unchanged across
+    patches.
   </p>
 
-  <h2>Annotated hex dump (truncated)</h2>
-  <pre><code>{`offs  bytes                                              meaning
-----  -------------------------------------------------- --------------------------------
-0000  52 45 53 43                                        magic = "RESC"
-0004  XX 00 00 00                                        file_count
-0008  33 2E 31 31                                        version = "3.11"
-000C  00 00 00 00                                        variant = 0
+  <h2>recipedata.lzs payload layout</h2>
+  <p>
+    Two entries: <strong>entry 0 "recipelist"</strong> is the recipe-menu
+    UI strings (890 bytes), and <strong>entry 1 "recipepos"</strong> is
+    binary recipe metadata (1,260 bytes — item IDs, quantities, slot
+    positions; no translatable text).
+  </p>
 
-0010  ... 16 bytes name1 (reversed ASCII)
-0020  ... 16 bytes name2 (reversed ASCII)
-0030  00 00 00 00  rgcn                                  unk=0, type_tag = NCGR (reversed)
-0038  XX XX XX XX  XX XX XX XX                           length, data_offset
-... next 48-byte entry ...`}</code></pre>
+  <h3>Entry 0 "recipelist" — string table</h3>
+  <pre><code>{`+0x00  u32       record_count = 34
++0x04  N records of stride 12:
+         +0x00  u32   text_offset (relative to start of entry-0 payload)
+         +0x04  u8    recipe_id
+         +0x05  u8    sub_id
+         +0x06  u8    category_code
+         +0x07  u8    subtype_code
+         +0x08  u8    flag
+         +0x09  u8    unk (always 0xff)
+         +0x0a  u16   pad (always 0)
++0x04 + N*12  ... UTF-16-LE string blob, each string NUL-terminated`}</code></pre>
+  <p>
+    34 records. Strings are heavily <strong>deduplicated</strong>: records
+    21..33 (recipe_ids 0x64..0x70 — the 13 hidden Mysterious Soup
+    placeholder slots) all share one string offset at
+    <code>0x36a</code> = <code>"ふしぎなスープ"</code>. The writer preserves
+    deduplication: when two output strings are byte-identical, only one copy
+    is emitted in the blob and both records point at it.
+  </p>
+
+  <h3>Entry 1 "recipepos" — binary metadata</h3>
+  <p>
+    1,260 bytes of pure binary recipe metadata — item_id refs, quantities,
+    slot positions, ingredient combinations. <strong>No translatable
+    strings.</strong> The writer copies this entry's bytes verbatim.
+  </p>
+
+  <h2>Alignment / padding</h2>
+  <p>
+    Entry-0 payload ends at <code>entry0_off + entry0_len</code>. Entry-1
+    payload starts at the next 0x10-byte-aligned offset. After entry-1's
+    payload ends, the decompressed file is padded to the next 0x10-byte
+    boundary with zeros. For <code>recipedata.lzs</code>: entry-0 ends at
+    <code>0x3EA</code>, entry-1 starts at <code>0x3F0</code> (6 zero bytes
+    of pad); entry-1 ends at <code>0x8DC</code>, file ends at
+    <code>0x8E0</code> (4 bytes of trailing pad). Both alignments are
+    enforced by the writer.
+  </p>
+
+  <h2>Round-trip safety</h2>
+  <p>
+    Calling the writer with an empty substitution map produces a
+    decompressed output that is byte-identical to the input — verified in
+    the writer's self-test (step-294). When substitutions are made, the
+    string blob is rebuilt with deduplication preserved, each entry-0
+    record's <code>text_offset</code> is recomputed, entry-1's bytes pass
+    through unchanged, and the final file is re-padded to 0x10 alignment.
+  </p>
 
   <h2>Source</h2>
   <ul>
-    <li><code>notes/asset_extraction_methodology.md</code> — RESC vs RESO layouts</li>
-    <li><code>src/translator/_sprite_assoc.py</code> — scanner that treats RESC like RESO</li>
+    <li><code>notes/format_resc_v311.md</code> — canonical writer spec (step-294, 2026-05-20).</li>
+    <li><code>src/archive/_resc_v311_writer.py</code> — round-trip-safe writer.</li>
+    <li><code>notes/_recipes_format_notes.md</code> — earlier partial reverse-engineering notes (kept for historical context).</li>
+    <li><code>src/archive/lzs.py</code> — the SZL + LZ11 wrapper handler.</li>
   </ul>
 </FieldGuideLayout>
