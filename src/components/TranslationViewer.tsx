@@ -43,18 +43,12 @@ interface EnEntry {
 interface EnFile {
   file_path: string;
   label: string;
-  /** Category id (matches one of EnCategory.id). Older lookups built before
-   *  step-326 won't have this field; the viewer falls back to "other". */
+  /** Category id from the public lookup. Retained as a harmless data
+   *  field — the viewer no longer surfaces it. The file tree is a pure
+   *  directory tree of file paths now (step-328). */
   category?: string;
   max_entry_id: number;
   entries: Record<string, Record<string, EnEntry>>;
-}
-
-interface EnCategory {
-  id: string;
-  label: string;
-  file_count: number;
-  entry_count: number;
 }
 
 interface EnLookup {
@@ -62,9 +56,9 @@ interface EnLookup {
   source_db_mtime: string;
   scope: string;
   counts: { files: number; entries: number; categories?: number };
-  /** New in step-326. Older payloads don't have this — the viewer builds a
-   *  synthetic single "all" category in that case. */
-  categories?: EnCategory[];
+  /** Retained on the lookup payload but no longer consumed by the UI
+   *  (step-328 — Tyler asked for Dialog Paths only). */
+  categories?: unknown;
   files: EnFile[];
 }
 
@@ -467,34 +461,260 @@ function blockMatches(
   return false;
 }
 
-interface TreeGroup {
-  id: string;
-  label: string;
-  files: ViewerFile[];
+// Directory-tree node. Each node is either an internal directory (with
+// children keyed by path segment) or a leaf file. We build this from
+// the flat list of file paths so the tree mirrors the actual ROM layout
+// — no invented category labels. Sort order is lexical: directories
+// before files at the same level, both alphabetical.
+interface TreeDir {
+  kind: 'dir';
+  /** Single path segment, e.g. "message" or "msg21" or "00". */
+  name: string;
+  /** Full path from root to this dir, e.g. "message/msg21/00". Used as a
+   *  stable key for the expandedDirs Set. */
+  path: string;
+  children: TreeNode[];
+}
+interface TreeFile {
+  kind: 'file';
+  name: string;
+  file: ViewerFile;
+}
+type TreeNode = TreeDir | TreeFile;
+
+/** Build a directory tree from a flat list of ViewerFile records.
+ *  When `matcher` is non-null, only files with at least one matching
+ *  block are included (and their ancestor directories). */
+function buildDirTree(
+  files: ViewerFile[],
+  matcher: ((s: string) => boolean) | null,
+  fields: { en: boolean; jp: boolean },
+  opcodeMode: boolean,
+): TreeDir {
+  const root: TreeDir = { kind: 'dir', name: '', path: '', children: [] };
+  for (const f of files) {
+    if (matcher) {
+      const hit = f.blocks.some((b) => blockMatches(b, matcher, fields, opcodeMode));
+      if (!hit) continue;
+    }
+    const segs = f.file_path.split('/');
+    let cur = root;
+    for (let i = 0; i < segs.length - 1; i++) {
+      const seg = segs[i];
+      const childPath = segs.slice(0, i + 1).join('/');
+      let child = cur.children.find(
+        (n): n is TreeDir => n.kind === 'dir' && n.name === seg,
+      );
+      if (!child) {
+        child = { kind: 'dir', name: seg, path: childPath, children: [] };
+        cur.children.push(child);
+      }
+      cur = child;
+    }
+    cur.children.push({ kind: 'file', name: segs[segs.length - 1], file: f });
+  }
+  // Sort every dir's children: directories first, then files, both
+  // alphabetical by name.
+  const sortDir = (d: TreeDir) => {
+    d.children.sort((a, b) => {
+      if (a.kind !== b.kind) return a.kind === 'dir' ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+    for (const c of d.children) if (c.kind === 'dir') sortDir(c);
+  };
+  sortDir(root);
+  return root;
+}
+
+/** Count the leaf files under a directory subtree. */
+function countFiles(node: TreeNode): number {
+  if (node.kind === 'file') return 1;
+  let n = 0;
+  for (const c of node.children) n += countFiles(c);
+  return n;
+}
+
+function TreeFileRow({
+  file,
+  selected,
+  expanded,
+  setExpanded,
+  onSelectFile,
+  onSelectBlock,
+  isMatch,
+  filteringActive,
+}: {
+  file: ViewerFile;
+  selected: { file: string; blockId: string };
+  expanded: Set<string>;
+  setExpanded: (s: Set<string>) => void;
+  onSelectFile: (file: ViewerFile) => void;
+  onSelectBlock: (file: ViewerFile, b: ViewerBlock) => void;
+  isMatch: (b: ViewerBlock) => boolean;
+  filteringActive: boolean;
+}) {
+  const isOpen = expanded.has(file.file_path) || filteringActive;
+  const isSel = selected.file === file.file_path;
+  const fileMatches = filteringActive && file.blocks.some(isMatch);
+  return (
+    <li
+      className={`tree-file ${isSel ? 'is-selected' : ''} ${
+        fileMatches ? 'is-match' : ''
+      }`}
+    >
+      <button
+        className="tree-file-btn"
+        onClick={() => {
+          const next = new Set(expanded);
+          if (next.has(file.file_path)) next.delete(file.file_path);
+          else next.add(file.file_path);
+          setExpanded(next);
+          onSelectFile(file);
+        }}
+        aria-expanded={isOpen}
+      >
+        <span className="tree-disc" aria-hidden="true">
+          {isOpen ? '▾' : '▸'}
+        </span>
+        <span className="tree-file-name">{file.file_path.split('/').pop()}</span>
+        <span className="tree-file-label">{file.label}</span>
+      </button>
+      {isOpen && (
+        <ol className="tree-blocks">
+          {file.blocks.map((b) => {
+            if (filteringActive && !isMatch(b)) return null;
+            const empty = !b.en && !b.jp;
+            const match = isMatch(b);
+            const isCur = isSel && selected.blockId === b.id;
+            const preview = plainSearchable(b.en).slice(0, 28);
+            return (
+              <li key={b.id}>
+                <button
+                  className={`tree-block ${isCur ? 'is-current' : ''} ${
+                    empty ? 'is-empty' : ''
+                  } ${match ? 'is-match' : ''}`}
+                  onClick={() => onSelectBlock(file, b)}
+                >
+                  <span className="tree-block-id">
+                    {b.sub_entry_id > 0
+                      ? `${String(b.entry_id).padStart(2, '0')}.${b.sub_entry_id}`
+                      : String(b.entry_id).padStart(2, '0')}
+                  </span>
+                  {preview && (
+                    <span className="tree-block-preview">{preview}</span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </li>
+  );
+}
+
+function TreeDirRow({
+  dir,
+  depth,
+  selected,
+  expanded,
+  setExpanded,
+  expandedDirs,
+  setExpandedDirs,
+  onSelectFile,
+  onSelectBlock,
+  isMatch,
+  filteringActive,
+}: {
+  dir: TreeDir;
+  depth: number;
+  selected: { file: string; blockId: string };
+  expanded: Set<string>;
+  setExpanded: (s: Set<string>) => void;
+  expandedDirs: Set<string>;
+  setExpandedDirs: (s: Set<string>) => void;
+  onSelectFile: (file: ViewerFile) => void;
+  onSelectBlock: (file: ViewerFile, b: ViewerBlock) => void;
+  isMatch: (b: ViewerBlock) => boolean;
+  filteringActive: boolean;
+}) {
+  const open = expandedDirs.has(dir.path) || filteringActive;
+  return (
+    <details
+      className="tree-dir"
+      open={open}
+      onToggle={(e) => {
+        const target = e.currentTarget;
+        const next = new Set(expandedDirs);
+        if (target.open) next.add(dir.path);
+        else next.delete(dir.path);
+        setExpandedDirs(next);
+      }}
+    >
+      <summary className="tree-dir-summary" style={{ paddingLeft: `${10 + depth * 12}px` }}>
+        <span className="tree-dir-name">{dir.name}/</span>
+        <span className="tree-dir-count">{countFiles(dir)}</span>
+      </summary>
+      <ol className="tree-list">
+        {dir.children.map((child) =>
+          child.kind === 'dir' ? (
+            <TreeDirRow
+              key={child.path}
+              dir={child}
+              depth={depth + 1}
+              selected={selected}
+              expanded={expanded}
+              setExpanded={setExpanded}
+              expandedDirs={expandedDirs}
+              setExpandedDirs={setExpandedDirs}
+              onSelectFile={onSelectFile}
+              onSelectBlock={onSelectBlock}
+              isMatch={isMatch}
+              filteringActive={filteringActive}
+            />
+          ) : (
+            <TreeFileRow
+              key={child.file.file_path}
+              file={child.file}
+              selected={selected}
+              expanded={expanded}
+              setExpanded={setExpanded}
+              onSelectFile={onSelectFile}
+              onSelectBlock={onSelectBlock}
+              isMatch={isMatch}
+              filteringActive={filteringActive}
+            />
+          ),
+        )}
+      </ol>
+    </details>
+  );
 }
 
 function FileTree({
-  groups,
+  tree,
+  shownFileCount,
   totalFileCount,
   selected,
   onSelectFile,
   onSelectBlock,
   expanded,
   setExpanded,
-  expandedCategories,
-  setExpandedCategories,
+  expandedDirs,
+  setExpandedDirs,
   query,
   fields,
 }: {
-  groups: TreeGroup[];
+  tree: TreeDir;
+  shownFileCount: number;
   totalFileCount: number;
   selected: { file: string; blockId: string };
   onSelectFile: (file: ViewerFile) => void;
   onSelectBlock: (file: ViewerFile, b: ViewerBlock) => void;
   expanded: Set<string>;
   setExpanded: (s: Set<string>) => void;
-  expandedCategories: Set<string>;
-  setExpandedCategories: (s: Set<string>) => void;
+  expandedDirs: Set<string>;
+  setExpandedDirs: (s: Set<string>) => void;
   query: string;
   fields: { en: boolean; jp: boolean };
 }) {
@@ -502,15 +722,13 @@ function FileTree({
   const opcodeMode = queryIsOpcode(query);
   const isMatch = (b: ViewerBlock) =>
     matcher ? blockMatches(b, matcher, fields, opcodeMode) : false;
-
   const filteringActive = matcher !== null;
-  const shownFileCount = groups.reduce((n, g) => n + g.files.length, 0);
 
   return (
-    <nav className="tree" aria-label="Dialog files">
+    <nav className="tree" aria-label="Dialog Paths">
       <div className="tree-head">
         <span className="tree-head-files">
-          Dialog Files
+          Dialog Paths
           {filteringActive && (
             <span className="tree-head-filter">
               {' '}
@@ -518,103 +736,47 @@ function FileTree({
             </span>
           )}
         </span>
-        <span className="tree-head-blocks">Textblocks</span>
+        <span className="tree-head-blocks">Slots</span>
       </div>
-      {groups.length === 0 && (
+      {tree.children.length === 0 && (
         <div className="tree-empty">
           {filteringActive
             ? 'No files match this search.'
             : 'No files loaded yet — wait for the lookup to finish loading.'}
         </div>
       )}
-      {groups.map((group) => {
-        const catOpen = expandedCategories.has(group.id) || filteringActive;
-        return (
-          <details
-            key={group.id}
-            className="tree-category"
-            open={catOpen}
-            onToggle={(e) => {
-              const target = e.currentTarget;
-              const next = new Set(expandedCategories);
-              if (target.open) next.add(group.id);
-              else next.delete(group.id);
-              setExpandedCategories(next);
-            }}
-          >
-            <summary className="tree-category-summary">
-              <span className="tree-category-label">{group.label}</span>
-              <span className="tree-category-count">{group.files.length}</span>
-            </summary>
-            <ol className="tree-list">
-              {group.files.map((file) => {
-                const isOpen = expanded.has(file.file_path) || filteringActive;
-                const isSel = selected.file === file.file_path;
-                const fileMatches = filteringActive && file.blocks.some(isMatch);
-                return (
-                  <li
-                    key={file.file_path}
-                    className={`tree-file ${isSel ? 'is-selected' : ''} ${
-                      fileMatches ? 'is-match' : ''
-                    }`}
-                  >
-                    <button
-                      className="tree-file-btn"
-                      onClick={() => {
-                        const next = new Set(expanded);
-                        if (next.has(file.file_path)) next.delete(file.file_path);
-                        else next.add(file.file_path);
-                        setExpanded(next);
-                        onSelectFile(file);
-                      }}
-                      aria-expanded={isOpen}
-                    >
-                      <span className="tree-disc" aria-hidden="true">
-                        {isOpen ? '▾' : '▸'}
-                      </span>
-                      <span className="tree-file-name">
-                        {file.file_path.split('/').pop()}
-                      </span>
-                      <span className="tree-file-label">{file.label}</span>
-                    </button>
-                    {isOpen && (
-                      <ol className="tree-blocks">
-                        {file.blocks.map((b) => {
-                          // When filtering, hide blocks that don't match.
-                          if (filteringActive && !isMatch(b)) return null;
-                          const empty = !b.en && !b.jp;
-                          const match = isMatch(b);
-                          const isCur = isSel && selected.blockId === b.id;
-                          const preview = plainSearchable(b.en).slice(0, 28);
-                          return (
-                            <li key={b.id}>
-                              <button
-                                className={`tree-block ${isCur ? 'is-current' : ''} ${
-                                  empty ? 'is-empty' : ''
-                                } ${match ? 'is-match' : ''}`}
-                                onClick={() => onSelectBlock(file, b)}
-                              >
-                                <span className="tree-block-id">
-                                  {b.sub_entry_id > 0
-                                    ? `${String(b.entry_id).padStart(2, '0')}.${b.sub_entry_id}`
-                                    : String(b.entry_id).padStart(2, '0')}
-                                </span>
-                                {preview && (
-                                  <span className="tree-block-preview">{preview}</span>
-                                )}
-                              </button>
-                            </li>
-                          );
-                        })}
-                      </ol>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </details>
-        );
-      })}
+      <ol className="tree-list tree-list-root">
+        {tree.children.map((child) =>
+          child.kind === 'dir' ? (
+            <TreeDirRow
+              key={child.path}
+              dir={child}
+              depth={0}
+              selected={selected}
+              expanded={expanded}
+              setExpanded={setExpanded}
+              expandedDirs={expandedDirs}
+              setExpandedDirs={setExpandedDirs}
+              onSelectFile={onSelectFile}
+              onSelectBlock={onSelectBlock}
+              isMatch={isMatch}
+              filteringActive={filteringActive}
+            />
+          ) : (
+            <TreeFileRow
+              key={child.file.file_path}
+              file={child.file}
+              selected={selected}
+              expanded={expanded}
+              setExpanded={setExpanded}
+              onSelectFile={onSelectFile}
+              onSelectBlock={onSelectBlock}
+              isMatch={isMatch}
+              filteringActive={filteringActive}
+            />
+          ),
+        )}
+      </ol>
     </nav>
   );
 }
@@ -876,7 +1038,7 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
   const [query, setQuery] = useState('');
   const [fields, setFields] = useState({ en: true, jp: true });
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+  const [expandedDirs, setExpandedDirs] = useState<Set<string>>(
     () => new Set(),
   );
   const [selected, setSelected] = useState<{ file: string; blockId: string } | null>(null);
@@ -904,10 +1066,14 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
             const firstSub = Object.keys(first.entries[firstEntryId])[0];
             setSelected({ file: first.file_path, blockId: `${firstEntryId}.${firstSub}` });
             setExpanded(new Set([first.file_path]));
-            // Expand the first file's category by default so the user
-            // sees the same auto-selected file in the tree.
-            const cat = first.category ?? 'other';
-            setExpandedCategories(new Set([cat]));
+            // Expand every ancestor directory of the auto-selected file
+            // so it's visible in the tree without the user hunting for it.
+            const segs = first.file_path.split('/');
+            const ancestors: string[] = [];
+            for (let i = 0; i < segs.length - 1; i++) {
+              ancestors.push(segs.slice(0, i + 1).join('/'));
+            }
+            setExpandedDirs(new Set(ancestors));
           }
         }
       })
@@ -1037,52 +1203,14 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
     return n;
   }, [matcher, opcodeMode, viewerFiles, effectiveFields]);
 
-  // Build category groups. When a search query is active we FILTER (not
-  // just highlight) to files that contain at least one matching block.
-  const groups = useMemo<TreeGroup[]>(() => {
-    if (!lookup) return [];
-    // Category registry — order + label come from the lookup if present,
-    // otherwise fall back to a single "all" group.
-    const cats: { id: string; label: string }[] =
-      lookup.categories?.map((c) => ({ id: c.id, label: c.label })) ?? [
-        { id: 'all', label: 'All files' },
-      ];
-    const idLabel = new Map(cats.map((c) => [c.id, c.label]));
-    // Make sure "other" / unknown categories still surface
-    const buckets = new Map<string, ViewerFile[]>();
-    for (const c of cats) buckets.set(c.id, []);
-    for (const f of viewerFiles) {
-      // ViewerFile doesn't carry category — look it up from the lookup.
-      const enFile = lookup.files.find((x) => x.file_path === f.file_path);
-      const cid = enFile?.category ?? (lookup.categories ? 'other' : 'all');
-      if (!buckets.has(cid)) buckets.set(cid, []);
-      // Apply the search filter at the file level.
-      if (matcher) {
-        const hit = f.blocks.some((b) =>
-          blockMatches(b, matcher, effectiveFields, opcodeMode),
-        );
-        if (!hit) continue;
-      }
-      buckets.get(cid)!.push(f);
-    }
-    const out: TreeGroup[] = [];
-    for (const c of cats) {
-      const files = buckets.get(c.id) ?? [];
-      if (files.length === 0) continue;
-      out.push({
-        id: c.id,
-        label: idLabel.get(c.id) ?? c.id,
-        files,
-      });
-    }
-    // Any "other" bucket not in the cats list
-    for (const [cid, files] of buckets) {
-      if (idLabel.has(cid)) continue;
-      if (files.length === 0) continue;
-      out.push({ id: cid, label: cid, files });
-    }
-    return out;
-  }, [lookup, viewerFiles, matcher, effectiveFields, opcodeMode]);
+  // Build a directory tree from the file paths. When a search query is
+  // active we FILTER to files that contain at least one matching block —
+  // the rest of the tree (parent dirs) is rebuilt around just those.
+  const tree = useMemo(
+    () => buildDirTree(viewerFiles, matcher, effectiveFields, opcodeMode),
+    [viewerFiles, matcher, effectiveFields, opcodeMode],
+  );
+  const shownFileCount = useMemo(() => countFiles(tree), [tree]);
 
   const currentBlock = useMemo<ViewerBlock | null>(() => {
     if (!selected) return null;
@@ -1171,15 +1299,16 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
       <div className="layout">
         <div className={`tree-col ${mobileTreeOpen ? 'is-open' : ''}`}>
           <FileTree
-            groups={groups}
+            tree={tree}
+            shownFileCount={shownFileCount}
             totalFileCount={viewerFiles.length}
             selected={selected ?? { file: '', blockId: '' }}
             onSelectFile={onSelectFile}
             onSelectBlock={onSelectBlock}
             expanded={expanded}
             setExpanded={setExpanded}
-            expandedCategories={expandedCategories}
-            setExpandedCategories={setExpandedCategories}
+            expandedDirs={expandedDirs}
+            setExpandedDirs={setExpandedDirs}
             query={query}
             fields={fields}
           />
@@ -1584,28 +1713,24 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         color: var(--ink-mute);
         text-align: center;
       }
-      .viewer .tree-category {
+      .viewer .tree-dir {
         margin: 0;
-        border-bottom: 1px dotted var(--rule-soft);
       }
-      .viewer .tree-category:last-of-type { border-bottom: none; }
-      .viewer .tree-category-summary {
+      .viewer .tree-dir-summary {
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 8px;
-        padding: 10px 14px 8px;
+        padding: 6px 10px 6px 10px;
         cursor: pointer;
         list-style: none;
-        font-family: var(--serif-local);
-        font-style: italic;
-        font-size: 14px;
+        font-family: var(--mono-local);
+        font-size: 12.5px;
         color: var(--plum-deep);
-        background: linear-gradient(180deg, var(--card-deep), var(--card));
         user-select: none;
       }
-      .viewer .tree-category-summary::-webkit-details-marker { display: none; }
-      .viewer .tree-category-summary::before {
+      .viewer .tree-dir-summary::-webkit-details-marker { display: none; }
+      .viewer .tree-dir-summary::before {
         content: '▸';
         display: inline-block;
         margin-right: 6px;
@@ -1613,14 +1738,14 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         color: var(--ink-mute);
         transition: transform 0.12s;
       }
-      .viewer .tree-category[open] > .tree-category-summary::before {
+      .viewer .tree-dir[open] > .tree-dir-summary::before {
         transform: rotate(90deg);
       }
-      .viewer .tree-category-summary:hover {
+      .viewer .tree-dir-summary:hover {
         background: var(--plum-soft);
       }
-      .viewer .tree-category-label { flex: 1; }
-      .viewer .tree-category-count {
+      .viewer .tree-dir-name { flex: 1; font-weight: 600; }
+      .viewer .tree-dir-count {
         font-family: var(--mono-local);
         font-style: normal;
         font-size: 11px;
@@ -1631,7 +1756,8 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         padding: 1px 8px;
         border-radius: 999px;
       }
-      .viewer .tree-list { list-style: none; margin: 0; padding: 6px 6px 14px; }
+      .viewer .tree-list { list-style: none; margin: 0; padding: 0; }
+      .viewer .tree-list-root { padding: 6px 6px 14px; }
       .viewer .tree-file-btn {
         width: 100%;
         display: grid;
