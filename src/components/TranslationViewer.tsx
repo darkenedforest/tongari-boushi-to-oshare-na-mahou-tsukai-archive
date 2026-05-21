@@ -2479,7 +2479,7 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
       }
       .viewer .empty-state p { margin: 0; font-size: 15px; }
 
-      /* Right-column container (kept the legacy `.preview-col` class so
+      /* Right-column container (kept the legacy .preview-col class so
          the layout grid rules don't have to be rewritten — it now wraps
          the Proposed-changes panel instead of the old in-game preview). */
       .viewer .preview-col {
