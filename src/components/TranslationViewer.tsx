@@ -28,6 +28,7 @@ import type {
   Textblock,
   WorkerOutbound,
 } from '../lib/rom/types';
+import { supabase, supabaseConfigured } from '../lib/supabase';
 
 // ---------------------------------------------------------------------------
 // EN lookup types (shape mirrors _export_en_lookup_for_rom_viewer.py)
@@ -338,6 +339,44 @@ function fmtBytes(n: number | null | undefined): string {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
   if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
   return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+// ---------------------------------------------------------------------------
+// Suggest-edit submission (step-338).
+//
+// Hits the same Supabase `edit_suggestions` table that TranslationBrowser
+// writes to — same columns (kind, ref, original_en, proposed_en, reason,
+// submitter), so Tyler reviews everything from one moderation queue.
+//
+// One difference from TranslationBrowser: the viewer knows about Phrase
+// pages (split on §) and submits a suggestion scoped to a single phrase.
+// The `ref` field encodes the path-based locator the viewer has natively
+// (file_path, entry_id, sub_entry_id, phrase_index) under an
+// `entries_path:` prefix so the admin tooling can distinguish it from the
+// existing `entries:<file_id>:...` refs the Browser produces. Tyler can
+// resolve the path-based ref back to a DB row at review time.
+// ---------------------------------------------------------------------------
+
+// Round-trip helpers (copied from TranslationBrowser) so the textarea
+// presents real newlines / blank-line page breaks while the DB keeps the
+// in-game `▼` / `§` markers the rebuild pipeline needs.
+function wireToEdit(s: string): string {
+  return s.replace(/§/g, '\n\n').replace(/▼/g, '\n');
+}
+function editToWire(s: string): string {
+  return s.replace(/\r\n/g, '\n').replace(/\n\n/g, '§').replace(/\n/g, '▼');
+}
+
+const SUGGEST_MAX_REASON = 500;
+const SUGGEST_MAX_AUTHOR = 40;
+
+function buildPhraseRef(
+  file_path: string,
+  entry_id: number,
+  sub_entry_id: number,
+  phrase_index: number,
+): string {
+  return `entries_path:${file_path}:${entry_id}:${sub_entry_id}:${phrase_index}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -891,6 +930,216 @@ function DialogPanels({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Suggest-edit form (step-338) — per-phrase Supabase submission, modeled
+// directly on TranslationBrowser's EditForm. Same `edit_suggestions` table,
+// same column shape, so the moderation queue Tyler already uses picks up
+// viewer submissions alongside browser submissions.
+// ---------------------------------------------------------------------------
+
+function SuggestEditCard({
+  filePath,
+  block,
+  phraseIndex,
+  phraseCount,
+  jp,
+  currentEn,
+  maxChars,
+}: {
+  filePath: string;
+  block: ViewerBlock;
+  phraseIndex: number;
+  phraseCount: number;
+  jp: string;
+  currentEn: string;
+  maxChars: number | null;
+}) {
+  // Identity of the phrase the form is bound to. We RESET the form whenever
+  // the user navigates to a different phrase / file / textblock so the
+  // textarea always reflects the currently-selected target — anything else
+  // would invite Tyler to type a suggestion for phrase 2 and accidentally
+  // submit it against phrase 3 after navigating.
+  const identity = `${filePath}::${block.id}::${phraseIndex}`;
+  const [proposed, setProposed] = useState(() => wireToEdit(currentEn));
+  const [reason, setReason] = useState('');
+  const [submitter, setSubmitter] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [flash, setFlash] = useState(false);
+
+  // When the bound phrase changes, reset the form to that phrase's EN.
+  // We track the previous identity in a ref so we don't clobber the user's
+  // typing on the first render of a new phrase.
+  const lastIdentity = useRef(identity);
+  useEffect(() => {
+    if (lastIdentity.current !== identity) {
+      setProposed(wireToEdit(currentEn));
+      setReason('');
+      setSubmitter('');
+      setErr(null);
+      setFlash(false);
+      lastIdentity.current = identity;
+    }
+  }, [identity, currentEn]);
+
+  const proposedWire = editToWire(proposed);
+  const proposedLen = [...proposedWire].length;
+  const currentLen = [...currentEn].length;
+  const over = maxChars != null && proposedLen > maxChars;
+  const disabled = !supabaseConfigured;
+  const disabledReason = supabaseConfigured
+    ? ''
+    : "Suggestions are disabled — the site owner hasn't connected the submissions backend yet.";
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr(null);
+    if (!proposed.trim()) {
+      setErr('Suggestion is required.');
+      return;
+    }
+    if (proposedWire.trim() === currentEn.trim()) {
+      setErr('Suggestion is identical to the current text.');
+      return;
+    }
+    if (disabled || !supabaseConfigured || !supabase) {
+      setErr(disabledReason || "Backend isn't configured.");
+      return;
+    }
+    setBusy(true);
+    try {
+      const payload = {
+        kind: 'dialog',
+        ref: buildPhraseRef(filePath, block.entry_id, block.sub_entry_id, phraseIndex),
+        original_en: currentEn,
+        proposed_en: proposedWire,
+        reason: reason.trim() ? reason.trim().slice(0, SUGGEST_MAX_REASON) : null,
+        submitter: submitter.trim() ? submitter.trim().slice(0, SUGGEST_MAX_AUTHOR) : null,
+      };
+      const { error } = await supabase.from('edit_suggestions').insert(payload);
+      if (error) throw error;
+      // Reset editable fields but keep the form open so the user can
+      // refine and submit again — matches TranslationBrowser's UX.
+      setProposed(wireToEdit(currentEn));
+      setReason('');
+      setSubmitter('');
+      setFlash(true);
+      window.setTimeout(() => setFlash(false), 3000);
+    } catch (ex: any) {
+      setErr(ex?.message || String(ex));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="suggest">
+      <header className="suggest-head">
+        <span className="suggest-head-title">
+          Suggest an edit
+          <span className="suggest-head-scope">
+            · Page {phraseIndex + 1} of {phraseCount}
+          </span>
+        </span>
+        {maxChars != null && <span className="suggest-budget">Max {maxChars} chars</span>}
+      </header>
+      {!supabaseConfigured && (
+        <div className="suggest-banner">
+          <strong>Suggestions are disabled.</strong> The site owner hasn't
+          connected the submissions backend yet.
+        </div>
+      )}
+      <div className="suggest-context">
+        <div className="suggest-context-row">
+          <span className="suggest-label">JP</span>
+          <div className="suggest-context-text mono">
+            {jp ? <RenderedWire text={jp} /> : <em className="muted">— empty —</em>}
+          </div>
+        </div>
+        <div className="suggest-context-row">
+          <span className="suggest-label">Current EN</span>
+          <div className="suggest-context-text mono">
+            {currentEn ? (
+              <RenderedWire text={currentEn} />
+            ) : (
+              <em className="muted">— no current English —</em>
+            )}
+          </div>
+        </div>
+      </div>
+      <form className="suggest-form" onSubmit={submit}>
+        <label className="suggest-field">
+          <span className="suggest-field-label">
+            Suggested EN
+            <span className={`suggest-count ${over ? 'over' : ''}`}>
+              {proposedLen}
+              {maxChars != null && <> / {maxChars}</>} chars
+              {currentLen > 0 && (
+                <span className="suggest-count-hint"> (current: {currentLen})</span>
+              )}
+            </span>
+          </span>
+          <textarea
+            className="suggest-input mono"
+            value={proposed}
+            onChange={(e) => setProposed(e.target.value)}
+            rows={Math.min(8, Math.max(3, Math.ceil(proposed.length / 64)))}
+            maxLength={4000}
+            disabled={busy}
+            placeholder="Type a proposed English translation for this phrase…"
+          />
+          {over && maxChars != null && (
+            <span className="suggest-warn">
+              This exceeds the in-game budget of {maxChars} chars — it may not fit.
+            </span>
+          )}
+        </label>
+        <label className="suggest-field">
+          <span className="suggest-field-label">Why this change? (optional)</span>
+          <textarea
+            className="suggest-input"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            rows={2}
+            maxLength={SUGGEST_MAX_REASON}
+            placeholder="Typo, awkward phrasing, official localization, etc."
+            disabled={busy}
+          />
+        </label>
+        <label className="suggest-field">
+          <span className="suggest-field-label">Your name (optional)</span>
+          <input
+            type="text"
+            className="suggest-input"
+            value={submitter}
+            onChange={(e) => setSubmitter(e.target.value)}
+            maxLength={SUGGEST_MAX_AUTHOR}
+            placeholder="Anonymous"
+            disabled={busy}
+          />
+        </label>
+        {err && <div className="suggest-error">{err}</div>}
+        {flash && (
+          <div className="suggest-posted">
+            ✓ Submitted — thanks! You can refine the suggestion above and submit again, or
+            navigate to another phrase.
+          </div>
+        )}
+        <div className="suggest-actions">
+          <button
+            type="submit"
+            className="btn btn-primary suggest-submit"
+            disabled={busy || disabled}
+            title={disabled ? disabledReason : undefined}
+          >
+            {busy ? 'Submitting…' : 'Submit suggestion'}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
 function GamePreview({ block }: { block: ViewerBlock | null }) {
   const text = block
     ? plainSearchable(block.en)
@@ -1336,6 +1585,30 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
             selectedPhraseIndex={selectedPhraseIndex}
             onSelectPhrase={setSelectedPhraseIndex}
           />
+          {currentBlock && (currentBlock.en || currentBlock.jp) && (() => {
+            const phrases = splitPhrases(currentBlock.jp, currentBlock.en);
+            const hasPhrases = phrases.length > 0;
+            const safeIndex = hasPhrases
+              ? Math.min(Math.max(selectedPhraseIndex, 0), phrases.length - 1)
+              : 0;
+            const phraseJp = hasPhrases ? phrases[safeIndex].jp : currentBlock.jp;
+            const phraseEn = hasPhrases ? phrases[safeIndex].en : currentBlock.en;
+            // The lookup's `max_total_chars` is a per-Textblock cap (sum of
+            // all phrases), so we don't surface it per-phrase here — it
+            // would mislead the count. Per-phrase caps live in the future
+            // surface-specific lookup; null is the honest default.
+            return (
+              <SuggestEditCard
+                filePath={selected?.file ?? ''}
+                block={currentBlock}
+                phraseIndex={safeIndex}
+                phraseCount={Math.max(phrases.length, 1)}
+                jp={phraseJp}
+                currentEn={phraseEn}
+                maxChars={null}
+              />
+            );
+          })()}
         </main>
 
         <div className="preview-col">
@@ -2157,6 +2430,164 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         text-align: center;
       }
 
+      /* Suggest-edit card (step-338) — per-phrase submission to the
+         same edit_suggestions table that powers /translation/. Styled
+         to match the existing pair / parts / preview cards. */
+      .viewer .suggest {
+        background: var(--card);
+        border: 1px solid var(--rule);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-card-local);
+        overflow: hidden;
+      }
+      .viewer .suggest-head {
+        padding: 10px 16px;
+        font-family: var(--serif-local);
+        font-style: italic;
+        font-size: 16px;
+        color: var(--plum-deep);
+        background: linear-gradient(180deg, #fff6e4, #fffaef);
+        border-bottom: 1px dashed var(--rule);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .viewer .suggest-head-title { display: inline-flex; gap: 8px; align-items: baseline; }
+      .viewer .suggest-head-scope {
+        font-family: var(--sans-local);
+        font-style: normal;
+        font-size: 12px;
+        color: var(--ink-mute);
+      }
+      .viewer .suggest-budget {
+        font-family: var(--sans-local);
+        font-style: normal;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        color: oklch(0.42 0.10 165);
+        background: var(--mint-soft);
+        border: 1px solid var(--mint);
+      }
+      .viewer .suggest-banner {
+        margin: 12px 16px 0;
+        padding: 9px 12px;
+        background: oklch(0.96 0.05 78);
+        border: 1px solid oklch(0.78 0.13 78);
+        border-radius: var(--r-md);
+        color: oklch(0.42 0.10 78);
+        font-size: 13px;
+      }
+      .viewer .suggest-banner strong { color: oklch(0.40 0.13 78); }
+      .viewer .suggest-context {
+        padding: 12px 16px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .viewer .suggest-context-row {
+        display: grid;
+        grid-template-columns: 90px 1fr;
+        gap: 12px;
+        align-items: baseline;
+      }
+      .viewer .suggest-label {
+        font-family: var(--serif-local);
+        font-style: italic;
+        font-size: 13px;
+        color: var(--plum-deep);
+        text-align: right;
+        padding-top: 2px;
+      }
+      .viewer .suggest-context-text {
+        background: #fffdf7;
+        border: 1px solid var(--rule-soft);
+        border-radius: var(--r-sm);
+        padding: 8px 12px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        word-break: break-word;
+        min-height: 24px;
+      }
+      .viewer .suggest-form {
+        padding: 12px 16px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .viewer .suggest-field { display: flex; flex-direction: column; gap: 4px; }
+      .viewer .suggest-field-label {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px;
+        font-family: var(--sans-local);
+        font-weight: 600;
+        color: var(--plum-deep);
+        font-size: 13px;
+      }
+      .viewer .suggest-count {
+        font-family: var(--mono-local);
+        font-weight: 600;
+        color: var(--ink-mute);
+        font-size: 12px;
+      }
+      .viewer .suggest-count.over { color: var(--rose); }
+      .viewer .suggest-count-hint { color: var(--ink-mute); font-weight: 500; }
+      .viewer .suggest-input {
+        font-family: var(--sans-local);
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--ink);
+        background: #fffdf7;
+        border: 1px solid var(--rule);
+        border-radius: var(--r-md);
+        padding: 9px 12px;
+        outline: none;
+        resize: vertical;
+        transition: border-color 0.15s, box-shadow 0.15s;
+      }
+      .viewer .suggest-input.mono {
+        font-family: var(--mono-local);
+        font-size: 13.5px;
+      }
+      .viewer .suggest-input:focus {
+        border-color: var(--plum);
+        box-shadow: 0 0 0 3px oklch(0.92 0.04 305);
+      }
+      .viewer .suggest-input:disabled { opacity: 0.6; cursor: not-allowed; }
+      .viewer .suggest-warn {
+        color: oklch(0.50 0.13 35);
+        font-size: 12px;
+        font-style: italic;
+      }
+      .viewer .suggest-error {
+        color: var(--rose);
+        background: var(--rose-soft);
+        padding: 8px 12px;
+        border-radius: var(--r-md);
+        border: 1px solid oklch(0.78 0.13 10);
+        font-size: 13px;
+      }
+      .viewer .suggest-posted {
+        color: oklch(0.40 0.12 145);
+        background: oklch(0.94 0.06 145);
+        padding: 8px 12px;
+        border-radius: var(--r-md);
+        border: 1px solid oklch(0.74 0.10 145);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .viewer .suggest-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+      .viewer .suggest-submit { padding: 9px 18px; }
+
       /* Responsive */
       @media (max-width: 1180px) {
         .viewer .layout { grid-template-columns: 260px minmax(0, 1fr); }
@@ -2185,6 +2616,8 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         .viewer .pair-col { min-height: 160px; }
         .viewer .part-row { grid-template-columns: 36px 1fr; }
         .viewer .part-cell:last-child { grid-column: 2; border-top: 1px dashed var(--rule); }
+        .viewer .suggest-context-row { grid-template-columns: 1fr; gap: 4px; }
+        .viewer .suggest-label { text-align: left; }
       }
     `}</style>
   );
