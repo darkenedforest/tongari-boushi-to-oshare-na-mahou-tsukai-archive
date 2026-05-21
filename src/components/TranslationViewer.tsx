@@ -1140,41 +1140,213 @@ function SuggestEditCard({
   );
 }
 
-function GamePreview({ block }: { block: ViewerBlock | null }) {
-  const text = block
-    ? plainSearchable(block.en)
-        .split(/\s+/)
-        .filter(Boolean)
-        .join(' ')
-        .slice(0, 120)
+// ---------------------------------------------------------------------------
+// Proposed-changes panel (step-340) — lists every edit_suggestions row
+// submitted against the currently-selected entry so researchers can see
+// what other readers have proposed without flipping over to the admin
+// queue.
+//
+// Scope (first cut, per Tyler's brief): we fetch only `entries_path:` refs
+// matching this entry. Older submissions from /translation/ use the
+// `entries:<file_id>:...` form which the viewer can't resolve without a
+// path -> file_id map; that gap is acknowledged in a small footnote.
+// ---------------------------------------------------------------------------
+
+interface EditSuggestionRow {
+  id: number;
+  kind: string | null;
+  ref: string;
+  original_en: string | null;
+  proposed_en: string;
+  reason: string | null;
+  submitter: string | null;
+  status: string | null;
+  created_at: string;
+}
+
+function parsePhraseIndexFromRef(ref: string): number | null {
+  // Refs we care about are `entries_path:<file_path>:<entry_id>:<sub_entry_id>:<phrase_index>`.
+  // file_path may contain ':' on Windows-y inputs in theory, but the
+  // submitter writes the project's POSIX-style ROM paths which don't —
+  // so the phrase index is reliably the trailing segment after the last
+  // ':'. Defensive: return null when it doesn't parse as a number.
+  const tail = ref.split(':').pop();
+  if (!tail) return null;
+  const n = Number(tail);
+  return Number.isFinite(n) ? n : null;
+}
+
+function formatRelativeTime(iso: string): string {
+  const then = new Date(iso);
+  if (Number.isNaN(then.getTime())) return iso;
+  const now = Date.now();
+  const diffMs = now - then.getTime();
+  const sec = Math.round(diffMs / 1000);
+  if (sec < 45) return 'just now';
+  const min = Math.round(sec / 60);
+  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
+  const day = Math.round(hr / 24);
+  if (day === 1) return 'yesterday';
+  if (day < 7) return `${day} days ago`;
+  // Fall back to a short month-day stamp; include the year if it's not
+  // the current year so suggestions from 2024 don't read like "May 21".
+  const sameYear = then.getFullYear() === new Date().getFullYear();
+  return then.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: sameYear ? undefined : 'numeric',
+  });
+}
+
+function ProposedChangesPanel({
+  filePath,
+  block,
+}: {
+  filePath: string;
+  block: ViewerBlock | null;
+}) {
+  const [rows, setRows] = useState<EditSuggestionRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  // We fan-fetch by (file_path, entry_id, sub_entry_id) and ignore the
+  // trailing phrase index so all phrases of the current Textblock are
+  // grouped together. The DB stores the ref as a single string column,
+  // so we use a PostgREST `like` filter to match the prefix.
+  const refPrefix = block
+    ? `entries_path:${filePath}:${block.entry_id}:${block.sub_entry_id}:`
     : '';
+
+  useEffect(() => {
+    let aborted = false;
+    if (!block || !filePath) {
+      setRows([]);
+      setErr(null);
+      return;
+    }
+    if (!supabaseConfigured || !supabase) {
+      setRows([]);
+      setErr(null);
+      return;
+    }
+    setLoading(true);
+    setErr(null);
+    // `like` requires `*` as the wildcard in PostgREST (the supabase-js
+    // client passes the literal value through to the URL).
+    supabase
+      .from('edit_suggestions')
+      .select(
+        'id,kind,ref,original_en,proposed_en,reason,submitter,status,created_at',
+      )
+      .like('ref', `${refPrefix}*`)
+      .order('created_at', { ascending: false })
+      .limit(200)
+      .then(({ data, error }) => {
+        if (aborted) return;
+        if (error) {
+          setErr(error.message);
+          setRows([]);
+        } else {
+          setRows((data ?? []) as EditSuggestionRow[]);
+        }
+        setLoading(false);
+      });
+    return () => {
+      aborted = true;
+    };
+  }, [refPrefix, reloadToken]);
+
+  const hasBlock = !!block;
+  const disabledBackend = !supabaseConfigured;
+
   return (
-    <aside className="preview">
-      <header className="preview-head">In-Game Preview</header>
-      <div className="preview-screen" role="img" aria-label="DS screen preview">
-        <div className="preview-scene">
-          <div className="preview-horizon" />
-          <div className="preview-tree preview-tree-l" />
-          <div className="preview-tree preview-tree-r" />
-          <div className="preview-cloud preview-cloud-1" />
-          <div className="preview-cloud preview-cloud-2" />
-          <div className="preview-char">
-            <div className="preview-hat" />
-            <div className="preview-body" />
-          </div>
-          <div className="preview-stars">
-            <span>✦</span>
-            <span>✧</span>
-            <span>⋆</span>
-          </div>
-        </div>
-        <div className="preview-bubble">
-          <div className="preview-bubble-tail" />
-          <p>{text || <span className="preview-bubble-ph">[ English text appears here ]</span>}</p>
-        </div>
+    <aside className="proposed">
+      <header className="proposed-head">
+        <span className="proposed-head-title">Proposed changes</span>
+        <button
+          type="button"
+          className="proposed-refresh"
+          onClick={() => setReloadToken((t) => t + 1)}
+          disabled={!hasBlock || loading || disabledBackend}
+          title={
+            disabledBackend
+              ? "Suggestions backend isn't configured."
+              : 'Refresh the list'
+          }
+        >
+          {loading ? 'Refreshing…' : 'Refresh'}
+        </button>
+      </header>
+      <div className="proposed-body">
+        {!hasBlock && (
+          <p className="proposed-empty">Select an entry to see suggestions.</p>
+        )}
+        {hasBlock && disabledBackend && (
+          <p className="proposed-empty">
+            Suggestions are disabled — the site owner hasn't connected the
+            submissions backend yet.
+          </p>
+        )}
+        {hasBlock && !disabledBackend && err && (
+          <p className="proposed-error">Couldn't load suggestions: {err}</p>
+        )}
+        {hasBlock && !disabledBackend && !err && rows.length === 0 && !loading && (
+          <p className="proposed-empty">
+            No suggestions submitted for this entry yet.
+          </p>
+        )}
+        {hasBlock && !disabledBackend && rows.length > 0 && (
+          <ul className="proposed-list">
+            {rows.map((row) => {
+              const phraseIdx = parsePhraseIndexFromRef(row.ref);
+              const status = (row.status || 'pending').toLowerCase();
+              return (
+                <li key={row.id} className="proposed-item">
+                  <div className="proposed-item-head">
+                    <span className="proposed-phrase">
+                      {phraseIdx == null
+                        ? 'Phrase ?'
+                        : `Phrase ${phraseIdx + 1}`}
+                    </span>
+                    <span
+                      className={`proposed-status proposed-status-${status}`}
+                    >
+                      {status}
+                    </span>
+                  </div>
+                  <div className="proposed-text mono">{row.proposed_en}</div>
+                  {row.reason && (
+                    <div className="proposed-reason">
+                      <span className="proposed-reason-label">Reason:</span>{' '}
+                      {row.reason}
+                    </div>
+                  )}
+                  <div className="proposed-meta">
+                    <span className="proposed-submitter">
+                      {row.submitter && row.submitter.trim()
+                        ? row.submitter
+                        : '(anonymous)'}
+                    </span>
+                    <span className="proposed-sep">·</span>
+                    <span
+                      className="proposed-date"
+                      title={new Date(row.created_at).toLocaleString()}
+                    >
+                      {formatRelativeTime(row.created_at)}
+                    </span>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
-      <p className="preview-cap">
-        Placeholder DS screen — text reflects the selected Textblock's English line.
+      <p className="proposed-foot">
+        Older submissions from <code>/translation/</code> use a different
+        ref shape and aren't included here yet.
       </p>
     </aside>
   );
@@ -1612,7 +1784,10 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
         </main>
 
         <div className="preview-col">
-          <GamePreview block={currentBlock} />
+          <ProposedChangesPanel
+            filePath={selected?.file ?? ''}
+            block={currentBlock}
+          />
         </div>
       </div>
 
@@ -2304,7 +2479,9 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
       }
       .viewer .empty-state p { margin: 0; font-size: 15px; }
 
-      /* Game preview */
+      /* Right-column container (kept the legacy `.preview-col` class so
+         the layout grid rules don't have to be rewritten — it now wraps
+         the Proposed-changes panel instead of the old in-game preview). */
       .viewer .preview-col {
         display: flex;
         flex-direction: column;
@@ -2312,14 +2489,21 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         position: sticky;
         top: 12px;
       }
-      .viewer .preview {
+
+      /* Proposed-changes panel (step-340) — lists edit_suggestions for
+         the currently-selected entry. Styled to sit between the existing
+         pair card and suggest-edit form using the same paper/card tokens. */
+      .viewer .proposed {
         background: var(--card);
         border: 1px solid var(--rule);
         border-radius: var(--r-lg);
         overflow: hidden;
         box-shadow: var(--shadow-card-local);
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
       }
-      .viewer .preview-head {
+      .viewer .proposed-head {
         padding: 10px 16px;
         font-family: var(--serif-local);
         font-style: italic;
@@ -2327,107 +2511,163 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         color: var(--plum-deep);
         background: linear-gradient(180deg, #fff6e4, #fffaef);
         border-bottom: 1px dashed var(--rule);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
       }
-      .viewer .preview-screen {
-        aspect-ratio: 4 / 3;
-        position: relative;
-        background: linear-gradient(180deg, oklch(0.92 0.08 230), oklch(0.96 0.05 80) 70%);
-        overflow: hidden;
+      .viewer .proposed-head-title { font-style: italic; }
+      .viewer .proposed-refresh {
+        font-family: var(--sans-local);
+        font-style: normal;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--rule);
+        background: #fffaef;
+        color: var(--plum-deep);
+        cursor: pointer;
+        transition: background 0.15s ease, border-color 0.15s ease;
       }
-      .viewer .preview-scene { position: absolute; inset: 0; }
-      .viewer .preview-horizon {
-        position: absolute; left: 0; right: 0; bottom: 38%; height: 12%;
-        background: linear-gradient(180deg, oklch(0.85 0.10 145), oklch(0.78 0.12 145));
-        border-top-left-radius: 50% 30%;
-        border-top-right-radius: 50% 30%;
+      .viewer .proposed-refresh:hover:not(:disabled) {
+        background: var(--plum-soft);
+        border-color: var(--plum);
       }
-      .viewer .preview-tree {
-        position: absolute;
-        bottom: 38%;
-        width: 38px; height: 50px;
-        background: oklch(0.55 0.13 150);
-        border-radius: 50% 50% 30% 30% / 60% 60% 30% 30%;
+      .viewer .proposed-refresh:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
       }
-      .viewer .preview-tree::after {
-        content: ''; position: absolute;
-        bottom: -8px; left: 50%; transform: translateX(-50%);
-        width: 6px; height: 12px;
-        background: oklch(0.42 0.08 50);
+      .viewer .proposed-body {
+        padding: 12px 14px;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: min(70vh, 720px);
+        overflow-y: auto;
       }
-      .viewer .preview-tree-l { left: 14%; }
-      .viewer .preview-tree-r { right: 16%; width: 30px; height: 42px; }
-      .viewer .preview-cloud {
-        position: absolute;
-        background: rgba(255, 255, 255, 0.7);
-        border-radius: 100px;
-        height: 14px;
-        filter: blur(0.3px);
-      }
-      .viewer .preview-cloud-1 { top: 18%; left: 12%; width: 70px; }
-      .viewer .preview-cloud-2 { top: 28%; right: 14%; width: 50px; }
-      .viewer .preview-char {
-        position: absolute;
-        left: 50%; bottom: 36%;
-        transform: translateX(-50%);
-        width: 30px;
-      }
-      .viewer .preview-hat {
-        width: 0; height: 0;
-        margin: 0 auto;
-        border-left: 14px solid transparent;
-        border-right: 14px solid transparent;
-        border-bottom: 22px solid oklch(0.42 0.13 305);
-        filter: drop-shadow(0 2px 0 oklch(0.32 0.13 305));
-      }
-      .viewer .preview-body {
-        width: 24px; height: 26px;
-        margin: -3px auto 0;
-        background: oklch(0.80 0.10 30);
-        border-radius: 12px 12px 8px 8px;
-        box-shadow: inset 0 -4px 0 oklch(0.70 0.12 30);
-      }
-      .viewer .preview-stars {
-        position: absolute;
-        top: 8%; left: 0; right: 0;
-        display: flex; justify-content: space-around;
-        color: oklch(0.92 0.12 90);
-        font-size: 16px;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-      }
-      .viewer .preview-stars span:nth-child(2) { font-size: 12px; opacity: 0.8; }
-      .viewer .preview-stars span:nth-child(3) { font-size: 14px; opacity: 0.9; }
-      .viewer .preview-bubble {
-        position: absolute;
-        left: 8%; right: 8%; bottom: 6%;
-        background: rgba(255, 255, 255, 0.96);
-        border: 2px solid var(--plum-deep);
-        border-radius: 12px;
-        padding: 10px 14px;
-        min-height: 60px;
-        font-family: var(--mono-local);
+      .viewer .proposed-empty,
+      .viewer .proposed-error {
+        margin: 0;
+        padding: 12px 4px;
         font-size: 13px;
+        color: var(--ink-mute);
+        text-align: center;
+        font-style: italic;
+      }
+      .viewer .proposed-error { color: oklch(0.50 0.18 25); }
+      .viewer .proposed-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .viewer .proposed-item {
+        background: #fffdf7;
+        border: 1px solid var(--rule-soft);
+        border-radius: var(--r-md);
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .viewer .proposed-item-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .viewer .proposed-phrase {
+        font-family: var(--mono-local);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--plum-deep);
+      }
+      .viewer .proposed-status {
+        font-family: var(--sans-local);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        background: var(--card-deep);
+        color: var(--ink-soft);
+      }
+      .viewer .proposed-status-pending {
+        background: oklch(0.95 0.05 78);
+        border-color: oklch(0.82 0.12 78);
+        color: oklch(0.40 0.10 60);
+      }
+      .viewer .proposed-status-accepted {
+        background: var(--mint-soft);
+        border-color: var(--mint);
+        color: oklch(0.36 0.10 165);
+      }
+      .viewer .proposed-status-rejected {
+        background: oklch(0.96 0.05 25);
+        border-color: oklch(0.78 0.13 25);
+        color: oklch(0.40 0.15 25);
+      }
+      .viewer .proposed-status-duplicate {
+        background: oklch(0.94 0.04 260);
+        border-color: oklch(0.76 0.10 260);
+        color: oklch(0.36 0.10 260);
+      }
+      .viewer .proposed-status-needs_info {
+        background: var(--plum-soft);
+        border-color: var(--plum);
+        color: var(--plum-deep);
+      }
+      .viewer .proposed-text {
+        background: var(--paper);
+        border: 1px solid var(--rule-soft);
+        border-radius: var(--r-sm);
+        padding: 8px 10px;
+        font-size: 13px;
+        line-height: 1.45;
         color: var(--ink);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .viewer .proposed-reason {
+        font-size: 12px;
+        color: var(--ink-soft);
         line-height: 1.4;
       }
-      .viewer .preview-bubble p { margin: 0; }
-      .viewer .preview-bubble-tail {
-        position: absolute;
-        top: -10px; left: 22px;
-        width: 14px; height: 10px;
-        background: rgba(255, 255, 255, 0.96);
-        border-left: 2px solid var(--plum-deep);
-        border-top: 2px solid var(--plum-deep);
-        transform: skewX(-15deg);
-        border-top-left-radius: 4px;
+      .viewer .proposed-reason-label {
+        font-weight: 700;
+        color: var(--ink);
       }
-      .viewer .preview-bubble-ph { color: var(--ink-mute); font-style: italic; }
-      .viewer .preview-cap {
-        padding: 10px 16px 12px;
+      .viewer .proposed-meta {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        color: var(--ink-mute);
+      }
+      .viewer .proposed-submitter { font-weight: 600; }
+      .viewer .proposed-sep { opacity: 0.6; }
+      .viewer .proposed-foot {
         margin: 0;
-        font-size: 12px;
+        padding: 8px 14px 10px;
+        border-top: 1px dashed var(--rule);
+        font-size: 11px;
         color: var(--ink-mute);
         font-style: italic;
         text-align: center;
+      }
+      .viewer .proposed-foot code {
+        font-family: var(--mono-local);
+        font-size: 10.5px;
+        background: var(--paper-edge);
+        padding: 1px 5px;
+        border-radius: 4px;
+        color: var(--ink-soft);
       }
 
       /* Suggest-edit card (step-338) — per-phrase submission to the
@@ -2594,12 +2834,11 @@ function ViewerStyle({ decorationBase: _decorationBase }: { decorationBase: stri
         .viewer .preview-col {
           grid-column: 1 / -1;
           position: static;
-          max-width: 500px;
+          max-width: 720px;
           margin: 6px auto 0;
           width: 100%;
         }
-        .viewer .preview-screen { aspect-ratio: 16 / 7; }
-        .viewer .preview-bubble { bottom: 8%; }
+        .viewer .proposed-body { max-height: 480px; }
       }
       @media (max-width: 820px) {
         .viewer .searchbar { grid-template-columns: 1fr; }
