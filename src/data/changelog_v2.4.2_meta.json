@@ -1,0 +1,15 @@
+{
+  "version": "2.4.2",
+  "date": "2026-05-23",
+  "headline": "Classroom-lesson audit (936 entries), catalog rewrites (54 JP-faithful entries), UCC paperwork, Christine typo fix",
+  "summary": "Major translation work: a full classroom-lesson terminology audit across 38 msg52 files (936 of 1,020 lesson entries updated against Freedom and Game 1 canon), a catalog-descriptions pass that reformatted 237 bug-book and fish-book entries to the catalog's actual 2-line / cap=48 display layout and rewrote 54 against the Japanese source, plus a beta-tester edit-suggestions pass, UCC variant-name paperwork, and a Christine typo fix.",
+  "previousVersionLabel": "v2.4.1",
+  "counts": {
+    "classroomLessonAuditEntries": 936,
+    "catalogReformatEntries": 237,
+    "catalogJpFaithfulRewrites": 54,
+    "betaEditSuggestionRows": 19,
+    "uccFoodSubrecordPaperwork": 49,
+    "npcNameBinaryTypoFixes": 1
+  }
+}

@@ -297,7 +297,7 @@ function NewReportForm({
           type="text"
           value={patchVersion}
           onChange={e => setPatchVersion(e.target.value)}
-          placeholder="e.g. v2.4.1 — the version you were running when this happened"
+          placeholder="e.g. v2.4.2 — the version you were running when this happened"
           maxLength={40}
         />
       </label>
