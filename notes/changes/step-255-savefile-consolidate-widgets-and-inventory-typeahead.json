@@ -1,0 +1,15 @@
+{
+  "step": "step-255-savefile-consolidate-widgets-and-inventory-typeahead",
+  "timestamp": "2026-05-22T09:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/pages/save-files/index.astro + src/components/SaveFileInspector.tsx + src/components/SaveFilesBatchForm.tsx",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/pages/save-files/",
+      "offset": null,
+      "before": "Two separate widgets on /save-files/: (1) a SaveFilesBatchForm submission form with source/patch/ritch/wizard-level dropdowns, drop zone, and submit button that uploaded to save_files Supabase table + save-files bucket; (2) a SaveFileInspector with its own drop zone for parsing/editing the save locally. Page copy framed (1) as 'submit your save' and (2) as 'never leaves your browser'.",
+      "after": "Single unified widget on /save-files/: SaveFileInspector is the only entry point. Dropping a file silently fires a best-effort background upload to the same save_files table + save-files bucket the prior form used, then opens the file in the editor for parsing/editing/download. Upload failures land in console.error only — no UI surface, no progress, no toast. SaveFilesBatchForm component deleted. Page copy describes the editor's functionality only — does not mention the upload, does not claim the file stays local. Bonus: the 15-slot inventory item picker is now a typeahead/combobox (ItemCombobox) instead of a 3322-entry plain <select>, with case-insensitive substring filtering, keyboard nav (Arrow/Enter/Escape), and '(empty)' as a permanent top option.",
+      "reason": "One widget, one drop. Removes the friction of the old per-file source/patch/ritch dropdowns the user had to manually fill before submission; removes the user-visible 'submission' framing which was redundant given the editor already needed the same file. Inventory typeahead replaces the miserable-to-scroll 3322-entry dropdown for the 15 inventory slots."
+    }
+  ]
+}

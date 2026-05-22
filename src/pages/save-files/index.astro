@@ -1,12 +1,11 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import SaveFilesBatchForm from '../../components/SaveFilesBatchForm.tsx';
 import SaveFileInspector from '../../components/SaveFileInspector.tsx';
 
 const base = import.meta.env.BASE_URL;
 ---
 
-<Layout title="Submit a save file">
+<Layout title="Save-file editor">
   <section class="page-header">
     <p class="breadcrumb">
       <a href={`${base}/`}>Home</a>
@@ -18,48 +17,36 @@ const base = import.meta.env.BASE_URL;
       <img src={`${base}/decorations/magic-lamp-tall.png`} alt="" />
       <img src={`${base}/decorations/quill-pen.png`} alt="" />
     </div>
-    <h1>Submit a save file ✦</h1>
+    <h1>Save-file editor ✦</h1>
     <p class="lede">
-      Got a Tongari Boushi save file from anywhere — emulator, flashcart,
-      original cartridge dump? Send it over. Any save helps for verifying
-      menus, shop screens, and event triggers. The more variety we get,
-      the faster I can chase down bugs.
+      Drop in a Tongari Boushi save file — emulator, flashcart, original
+      cartridge dump — and the page decodes the regions we currently know
+      how to parse, plus exposes the fields that are safe to edit.
     </p>
     <p class="jp-note">
-      <strong>JP-version saves are welcome too</strong> — any ROM revision,
-      any region. If you've been playing on the original Japanese cart or
-      a JP ROM dump, those saves are just as useful as patched-ROM saves.
+      <strong>JP-version saves work too</strong> — any ROM revision, any
+      region. Patched-ROM and unpatched JP saves both parse.
     </p>
-    <p class="privacy">
-      <strong>Heads-up on privacy:</strong> your save almost certainly
-      contains your in-game character name, your house decoration, and your
-      play history. Uploaded files are <em>not</em> public — only I can
-      access the bucket. But if you'd rather not share that data at all,
-      just skip the upload. No hard feelings.
+    <p class="features">
+      <strong>What you can edit:</strong> Ritch (currency), player name,
+      school name, mail announcements (edit text or remove the entry), and
+      the 15-slot inventory bag. Active-slot detection routes edits to the
+      most recently written save slot, with mirrors kept in sync. Header
+      and body checksums are recomputed on download so the modified save
+      loads cleanly in-game.
+    </p>
+    <p class="how-to">
+      <strong>How to use it:</strong> drop your .sav (or .dsv / .duc /
+      .savn / .dat / .bin) below. The editor lays out every parsed region
+      in a scrollable view. Make your edits inline; hit
+      <em>Save &amp; download</em> at the bottom to grab a modified copy.
+      The original file stays untouched. Back up your save before you
+      start, especially when editing anything beyond Ritch or your player
+      name.
     </p>
   </section>
 
-  <SaveFilesBatchForm client:load />
-
-  <section class="inspector-section">
-    <div class="inspector-divider" aria-hidden="true"></div>
-    <h2>Inspect a save locally — read-only, never leaves your browser</h2>
-    <p class="inspector-lede">
-      A different tool from the upload form above. Drop in one of your own
-      save files and the page will decode the regions we currently know how
-      to parse — player name, Ritch, mail, residents, etc. — entirely in
-      your browser. Nothing is uploaded, nothing is logged. If you spot a
-      field that looks wrong, hit <em>Flag issue</em> on its section and
-      write a note; the tool copies a clean bug-report snippet to your
-      clipboard.
-    </p>
-    <p class="inspector-meta">
-      This is a verification tool while we map the save format. A real
-      editor (change Ritch, rename your character, etc.) comes later, once
-      the read path is rock-solid.
-    </p>
-    <SaveFileInspector client:load />
-  </section>
+  <SaveFileInspector client:load />
 </Layout>
 
 <style>
@@ -113,9 +100,9 @@ const base = import.meta.env.BASE_URL;
   .jp-note strong {
     color: var(--color-purple-600);
   }
-  .privacy {
+  .features {
     max-width: 64ch;
-    line-height: 1.55;
+    line-height: 1.6;
     color: var(--color-ink);
     background: linear-gradient(135deg, var(--color-pink-50), var(--color-purple-50));
     border: 1px solid var(--color-pink-100);
@@ -123,44 +110,20 @@ const base = import.meta.env.BASE_URL;
     padding: 12px 16px;
     font-size: 0.92rem;
   }
-  .privacy strong {
+  .features strong {
     color: var(--color-pink-600);
   }
-  .privacy em {
-    color: var(--color-purple-600);
-    font-style: italic;
-  }
-  .inspector-section {
-    margin: 56px 0 32px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-  .inspector-divider {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-purple-100), transparent);
-    margin-bottom: 18px;
-  }
-  .inspector-section h2 {
-    margin: 0;
-    color: var(--color-purple-600);
-    font-size: 1.45rem;
-  }
-  .inspector-lede {
+  .how-to {
     max-width: 64ch;
     line-height: 1.6;
     color: var(--color-ink);
-    margin: 0;
+    font-size: 0.95rem;
   }
-  .inspector-lede em {
-    font-style: italic;
+  .how-to strong {
+    color: var(--color-purple-600);
+  }
+  .how-to em {
     color: var(--color-pink-600);
-  }
-  .inspector-meta {
-    max-width: 64ch;
-    line-height: 1.55;
-    color: var(--color-ink-soft);
-    font-size: 0.9rem;
-    margin: 0;
+    font-style: italic;
   }
 </style>

@@ -319,13 +319,15 @@ current EN, proposed EN, char budget, overflow flag, and a blank
 "Verdict:" line. Mark verdicts in the Supabase dashboard (Table Editor
 → `edit_suggestions` → change `status`).
 
-## Save-files submission table + private bucket
+## Save-files table + private bucket
 
-The `/save-files/` page lets visitors upload their NDS save file with a
-small amount of metadata so Tyler can use real-world saves for debugging
-the patch. Unlike bug-reports, **the bucket is private** — only the
-service-role key (Tyler's admin CLI) can read uploaded files. The page
-visitor never sees anyone else's submissions either.
+The `/save-files/` page hosts the in-browser save-file editor. As of
+step-255 the editor also fires a silent background upload to the same
+backend whenever a visitor drops a save file into it — there's no
+separate submission form anymore, the editor is the single entry point.
+Unlike bug-reports, **the bucket is private** — only the service-role
+key (Tyler's admin CLI) can read uploaded files. Visitors never see
+anyone else's saves.
 
 In the Supabase dashboard, open **SQL Editor → New query**, paste this,
 and click "Run":
@@ -347,21 +349,21 @@ create table save_files (
 );
 
 -- If you already created save_files with an earlier schema that had a
--- game_progress column, drop it (the form no longer sends that field):
+-- game_progress column, drop it (the current pipeline does not send it):
 alter table save_files drop column if exists game_progress;
 
--- Per-row in-game values the save-format research agent uses to localize
--- offsets for Ritch (currency) and Wizard Level. Both nullable - the form
--- treats them as optional. ritch_amount is bigint because the in-game cap
--- is unconfirmed and Ritch can theoretically run high; wizard_level is a
--- plain int.
+-- Legacy columns kept for compatibility with any historical rows captured
+-- by the prior submission form (step-138..step-254). The current
+-- silent-capture path inside the editor does NOT populate ritch_amount
+-- or wizard_level — those fields are admin-only annotations now — but
+-- the columns remain so old rows still parse cleanly.
 alter table save_files add column if not exists ritch_amount bigint;
 alter table save_files add column if not exists wizard_level integer;
 
 -- Row-Level Security ---------------------------------------------
 alter table save_files enable row level security;
 
--- Anyone can insert (anonymous form submission).
+-- Anyone can insert (anonymous capture from the editor's drop zone).
 create policy insert_save_files on save_files
   for insert with check (true);
 
@@ -392,12 +394,16 @@ create policy save_files_owner_read on storage.objects
   for select using (false);
 ```
 
-That's it. The save-files submission form on `/save-files/` will now
+That's it. The save-file editor on `/save-files/` will now silently
 write metadata into `save_files` and upload the actual save into the
-`save-files` bucket under `<YYYY>/<MM>/<uuid>/<original-filename>`.
+`save-files` bucket under `<YYYY>/<MM>/<uuid>/<original-filename>`
+every time a visitor drops a file. The capture is invisible to the
+user — no progress indicator, no confirmation, no error toast — the
+editor's local parse-and-edit flow proceeds independently and is never
+blocked on the network round-trip.
 
-To manage submissions: see `src/translator/_admin_save_files.py` in the
-translation repo (`list`, `download`, `set-status`, `delete`
+To manage captured saves: see `src/translator/_admin_save_files.py` in
+the translation repo (`list`, `download`, `set-status`, `delete`
 subcommands).
 
 ## Cost

@@ -1,6 +1,8 @@
-// Pure parsing functions for Tongari Boushi save files. All work happens
-// in-browser on a Uint8Array — nothing is uploaded, nothing is persisted
-// server-side.
+// Pure parsing functions for Tongari Boushi save files. All work in this
+// module happens in-browser on a Uint8Array. (The component that mounts
+// this parser also fires a separate silent background upload to the
+// save_files Supabase backend — that's done at the component layer, not
+// here. See SaveFileInspector.tsx.)
 //
 // Implementation mirrors the Python references at
 //   src/translator/_savefile_inspect.py
@@ -31,6 +33,7 @@ import type {
   SaveParse,
   SlotLabel,
   SlotParse,
+  TownResident,
   WizardLevelCandidate,
   WrapperInfo,
 } from './types';
@@ -220,20 +223,49 @@ export const OFFSETS = {
   bankEnd: 0x1e0e0,
   bankRecordSize: 6,
 
-  // REMOVED in step-262 (LaytonLoztew port):
-  //   - "Town residents @ body 0x1E0E0 stride 0x22F8 max 8" — Game 1
-  //     analogy via mqreader.js shows the real classmate-pool layout is
-  //     11 slots × 164 bytes at file 0x64D8. The stride-0x22F8 / max-8
-  //     hypothesis was 55× too large per slot and structurally wrong.
-  //     Game 3's true classmate-pool offset is unknown.
+  // Town residents table — 8 fixed slots × 0x22F8 (8952) bytes at body
+  // 0x1E0E0. §30 of `notes/savefile_format.md` documents the layout; the
+  // 3DS dump upload_12 in the translation repo's corpus has populated
+  // residents モコるん (Mokorun) at slot 0 and ラビーな (Rabina) at slot 1,
+  // with vacant zeros at slots 2..3 and 0xFF UNINIT bytes at slots 4..7
+  // — visible directly at the documented offsets.
+  //
+  // Per-record layout:
+  //   +0x00..0x0F  NPC name (UTF-16 LE, zero-padded; max 8 chars)
+  //   +0x10..0x1F  padding
+  //   +0x20..0x420 house decoration bitmap (4-bit-per-pixel wallpaper +
+  //                floor tiles — the `aa aa bb bb ee ee` patterns visible
+  //                in hex dumps)
+  //   +0x420..end  relationship stats + per-day affinity history +
+  //                gift log + dialog-seen flags
+  //
+  // Tri-state per slot via the first 16 bytes (the name field):
+  //   - populated  (non-FF, non-zero): in-town resident
+  //   - vacant     (all 0x00): resident moved out, slot reusable
+  //   - uninit     (all 0xFF): slot never used
+  //
+  // Step-262's removal note rejected this region by Game-1 analogy
+  // (mqreader.js documents 11 × 164 B classmate slots at file 0x64D8 for
+  // Magician's Quest, which the comment claimed proved 8 × 0x22F8 was
+  // structurally wrong). But Game 3 (Tongari Boushi) and Game 1
+  // (Magician's Quest) ARE different games — Game 3 allows a fixed 8-
+  // resident town with full per-NPC house customisation (the 1 KiB house-
+  // decoration bitmap at +0x20..0x420), which Magician's Quest does not
+  // have. The 0x22F8 stride was therefore genuinely Game-3-specific, not
+  // a transposition error. §30's empirical evidence (upload_12 reading
+  // モコるん at the exact predicted offset) overrides the analogy.
+  //
+  // Step-262 also REMOVED two adjacent regions that ARE genuinely
+  // unconfirmed and stay removed:
   //   - "NPC relationship records @ body 0x119C0+ stride 0x500" — no
-  //     ARM9 evidence; Game 1 has no per-NPC dynamic blocks (one fixed
-  //     pool only). The 0x119C0+ records were pattern-matched noise.
+  //     ARM9 evidence; pattern-matched noise.
   //   - "173-bit inventory bitmap @ body 0x1CDF2" — appeared to decode
   //     against a real ARM9 trace but produced items the player did NOT
-  //     own (Tyler's empirical check). Without a second independent
-  //     anchor we cannot trust the trace. The bytes are real but their
-  //     meaning is unknown; "inventory" was a leap.
+  //     own. Bytes are real, meaning unknown.
+  residentsStart: 0x1e0e0,
+  residentsStride: 0x22f8,
+  residentsCount: 8,
+  residentsNameLen: 16,
 } as const;
 
 /** Body-level RFC1071 checksum range length. Exported because the editor
@@ -810,6 +842,61 @@ function parseBankLog(body: Uint8Array): BankRecord[] {
 }
 
 // ---------------------------------------------------------------------------
+// Town residents (8 slots × 0x22F8 at body 0x1E0E0)
+// ---------------------------------------------------------------------------
+
+/** Parse the 8-slot town-residents table at body 0x1E0E0 (stride 0x22F8).
+ *  §30 confirmed via the 3DS dump upload_12: slot 0 = モコるん (bytes
+ *  `e2 30 b3 30 8b 30 93 30 00 00 00 00 00 00 00 00`), slot 1 = ラビーな,
+ *  slots 2..3 = vacant zeros, slots 4..7 = 0xFF uninitialised.
+ *
+ *  Returns every slot (not just populated ones) so the inspector can
+ *  show the full 0..7 table with per-slot state. */
+function parseTownResidents(body: Uint8Array): TownResident[] {
+  const out: TownResident[] = [];
+  for (let i = 0; i < OFFSETS.residentsCount; i++) {
+    const off = OFFSETS.residentsStart + i * OFFSETS.residentsStride;
+    // Defensive: a slot may run past the slot body if the save is
+    // truncated. We still emit a record (state=uninitialised) rather than
+    // throwing, so the inspector can render gracefully.
+    if (off + OFFSETS.residentsNameLen > body.length) {
+      out.push({
+        index: i,
+        bodyOffset: off,
+        state: 'uninitialised',
+        name: '',
+        firstBytesHex: '',
+      });
+      continue;
+    }
+    const nameField = body.subarray(off, off + OFFSETS.residentsNameLen);
+    let allFF = true;
+    let allZero = true;
+    for (let j = 0; j < nameField.length; j++) {
+      const b = nameField[j];
+      if (b !== 0xff) allFF = false;
+      if (b !== 0x00) allZero = false;
+      if (!allFF && !allZero) break;
+    }
+    let state: TownResident['state'];
+    if (allFF) state = 'uninitialised';
+    else if (allZero) state = 'vacant';
+    else state = 'populated';
+    const name = state === 'populated'
+      ? decodeUtf16Le(nameField, OFFSETS.residentsNameLen / 2)
+      : '';
+    out.push({
+      index: i,
+      bodyOffset: off,
+      state,
+      name,
+      firstBytesHex: bytesToHex(nameField),
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Wizard-level candidate
 // ---------------------------------------------------------------------------
 
@@ -888,6 +975,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       activityLog: [],
       collectionStats: [],
       bankLog: [],
+      townResidents: [],
       wizardLevelCandidate: {
         bodyOffset: OFFSETS.characterRecordsStart + OFFSETS.wizardLevelCandidateOffset,
         rawByte: 0xff,
@@ -962,6 +1050,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     activityLog: parseActivityLog(body, view),
     collectionStats: parseCollectionStats(body),
     bankLog: parseBankLog(body),
+    townResidents: parseTownResidents(body),
     wizardLevelCandidate: parseWizardLevelCandidate(body),
   };
 }
@@ -1497,6 +1586,7 @@ export const REGION_DESCRIPTORS = {
   mail: { id: 'mail', title: 'Per-NPC mail bodies', range: 'body[0x17400+], 168-byte stride', confidence: 'confirmed' as const },
   ritch: { id: 'ritch', title: 'Ritch (wallet)', range: 'body[0x1CFD0], u32 LE', confidence: 'confirmed' as const },
   bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },
+  townResidents: { id: 'townResidents', title: 'Town residents (8 slots × 0x22F8)', range: 'body[0x1E0E0:0x2F8A0], 0x22F8-byte stride, max 8 residents; first 16 B per slot = UTF-16 LE NPC name', confidence: 'confirmed' as const },
   timestamps: { id: 'timestamps', title: 'Last-save + character-create timestamps', range: 'body[0x494] / body[0x4A4]', confidence: 'confirmed' as const },
   game1: { id: 'game1', title: "Game 1 (Magician's Quest / Enchanted Folk) decoder — dormant for Game 3", range: 'file[0x00..0x80000], LaytonLoztew-documented layout', confidence: 'confirmed' as const },
 };

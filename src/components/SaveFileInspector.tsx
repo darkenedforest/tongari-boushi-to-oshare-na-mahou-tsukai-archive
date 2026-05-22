@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { supabase, SAVE_FILES_BUCKET } from '../lib/supabase';
 import {
   FORMAT_MAGIC_EXPECTED,
   REGION_DESCRIPTORS,
@@ -36,9 +37,11 @@ import type {
   SlotParse,
 } from '../lib/savefile/types';
 
-// All parsing happens client-side. No bytes ever leave the browser.
-// Persisted notes live in localStorage keyed by the wrapper-stripped
-// payload SHA so flags carry across reloads.
+// Parsing and editing happen client-side; dropped files also fire a silent
+// background upload to the save_files Supabase backend (best-effort, errors
+// land in console.error only — the editor stays functional regardless of
+// upload outcome). Persisted notes live in localStorage keyed by the
+// wrapper-stripped payload SHA so flags carry across reloads.
 
 const ACCEPT_EXT =
   '.sav,.dsv,.duc,.savn,.dat,.bin,.SAV,.DSV,.DUC,.SAVN,.DAT,.BIN,application/octet-stream';
@@ -65,6 +68,86 @@ function bytesToHuman(n: number): string {
 
 function hex(n: number, width = 4): string {
   return '0x' + n.toString(16).padStart(width, '0');
+}
+
+// ---------------------------------------------------------------------------
+// Silent background upload to Supabase save_files
+// ---------------------------------------------------------------------------
+//
+// The save-file editor used to share its page with a separate "submit your
+// save" form that collected save uploads via the same Supabase backend the
+// admin tool (translator/_admin_save_files.py) reads from. As of step-255
+// the two widgets are consolidated: dropping a file into the editor also
+// fires a silent best-effort upload to the same backend. No UI surface, no
+// confirmation, no progress indicator — failures land in console.error
+// only, and the editor keeps working locally regardless of upload outcome.
+//
+// Bucket path matches the prior submission-form scheme so existing admin
+// tooling continues to work unchanged: <YYYY>/<MM>/<uuid>/<safe-filename>.
+//
+// The save_files DB row carries minimal metadata since the unified flow
+// asks the user for nothing. save_source is hardcoded to identify the
+// origin as the editor's silent capture path; patch_version stays null.
+
+function randomToken(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID();
+  }
+  return 'x' + Math.random().toString(16).slice(2) + Date.now().toString(16);
+}
+
+function safeFilename(name: string): string {
+  // Strip path separators, shell glob chars, quotes, whitespace; keep the
+  // extension intact. Mirrors the prior submission-form helper so bucket
+  // keys remain shaped the way _admin_save_files.py expects.
+  const cleaned = name.replace(/[^A-Za-z0-9._-]+/g, '_').trim();
+  return cleaned.slice(0, 120) || 'save.sav';
+}
+
+async function silentBackgroundUpload(file: File): Promise<void> {
+  // Fire-and-forget. Any failure is logged to console.error and swallowed —
+  // the user never sees an error toast or status indicator, the editor's
+  // local parse/edit/download flow is never interrupted.
+  if (!supabase) {
+    console.error('[savefile silent upload] Supabase client not configured; skipping background upload.');
+    return;
+  }
+  try {
+    const now = new Date();
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const cleaned = safeFilename(file.name);
+    const filePath = `${yyyy}/${mm}/${randomToken()}/${cleaned}`;
+
+    const { error: upErr } = await supabase.storage
+      .from(SAVE_FILES_BUCKET)
+      .upload(filePath, file, {
+        contentType: file.type || 'application/octet-stream',
+        cacheControl: '0',
+        upsert: false,
+      });
+    if (upErr) throw upErr;
+
+    const insertPayload = {
+      filename: cleaned,
+      file_path: filePath,
+      file_size_bytes: file.size,
+      // Tagged so admin triage can tell editor-captured saves apart from
+      // saves that came in via the old submission form (when historical
+      // rows are still relevant). The user supplied no source info, so we
+      // attribute the path itself.
+      save_source: 'save-file editor (silent capture)',
+      patch_version: null,
+      ritch_amount: null,
+      wizard_level: null,
+      debug_reason: null,
+      submitter: null,
+    };
+    const { error: insErr } = await supabase.from('save_files').insert(insertPayload);
+    if (insErr) throw insErr;
+  } catch (e: any) {
+    console.error('[savefile silent upload] failed:', e?.message || e);
+  }
 }
 
 function loadNotes(sha: string): NotesByRegion {
@@ -423,8 +506,244 @@ function GardenTileEditor({
 }
 
 // ---------------------------------------------------------------------------
-// Inventory bag — 15-slot dropdown + quantity editor
+// Inventory bag — 15-slot typeahead + quantity editor
 // ---------------------------------------------------------------------------
+
+interface ItemOption {
+  iid: number;
+  name: string;
+}
+
+interface ItemComboboxProps {
+  /** All selectable items (already sorted by name). Does NOT include the
+   *  "(empty)" sentinel — that is rendered separately as a permanent
+   *  top entry in the popover listbox. */
+  options: ItemOption[];
+  /** Currently selected iid, or null = "(empty)". */
+  value: number | null;
+  /** Display name for the currently-selected iid; used to populate the
+   *  input's value when the popover is closed. null when value=null. */
+  currentName: string | null;
+  onSelect: (iid: number | null) => void;
+  disabled?: boolean;
+}
+
+/**
+ * Inline typeahead/combobox for inventory item selection.
+ *
+ * Behavior:
+ *   - Closed state: input shows the current item's display name (or
+ *     "(empty)").
+ *   - Focus / click / type: opens a popover listbox below the input
+ *     filtered by a case-insensitive substring match against the option
+ *     list. "(empty)" is always the first row so the user can clear the
+ *     slot regardless of what they've typed.
+ *   - ArrowUp/Down moves the highlighted row, Enter selects it, Escape
+ *     closes the popover without committing.
+ *   - Clicking outside the component closes the popover and reverts the
+ *     input text to the current selection's name (no commit).
+ *
+ * Custom rather than pulling a library because the requirement is a
+ * ~40-line addition and we don't want to add downshift/headlessui just
+ * for one widget.
+ */
+function ItemCombobox({
+  options,
+  value,
+  currentName,
+  onSelect,
+  disabled,
+}: ItemComboboxProps) {
+  // The input field's draft. When closed: equals the display name of the
+  // current selection. When open: user-controlled filter string.
+  const [draft, setDraft] = useState<string>(currentName ?? '');
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const popoverRef = useRef<HTMLUListElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // Sync the draft back to the current item's name whenever the external
+  // selection changes (e.g. when the user discards pending edits) and the
+  // popover isn't open. We deliberately do NOT clobber the draft while
+  // the popover is open or the user would lose their in-flight filter
+  // text on every render.
+  useEffect(() => {
+    if (!open) {
+      setDraft(currentName ?? '');
+    }
+  }, [currentName, open]);
+
+  // Filter the options against the draft. When the popover is open with
+  // an empty draft, show the full list (capped) so the user gets a sense
+  // of the alphabetical neighborhood.
+  const filtered = useMemo(() => {
+    if (!open) return [] as ItemOption[];
+    const q = draft.trim().toLowerCase();
+    if (q === '') return options;
+    return options.filter(o => o.name.toLowerCase().includes(q));
+  }, [open, draft, options]);
+
+  // Reset the highlight whenever the filtered list shape changes.
+  useEffect(() => {
+    setHighlight(0);
+  }, [open, draft]);
+
+  // Close on outside click.
+  useEffect(() => {
+    if (!open) return;
+    function onDocMouseDown(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+        setDraft(currentName ?? '');
+      }
+    }
+    document.addEventListener('mousedown', onDocMouseDown);
+    return () => document.removeEventListener('mousedown', onDocMouseDown);
+  }, [open, currentName]);
+
+  // Keep the highlighted row scrolled into view as the user arrow-keys
+  // through the list.
+  useEffect(() => {
+    if (!open || !popoverRef.current) return;
+    // +1 to highlight index because index 0 is the "(empty)" row that
+    // sits above the filtered options block.
+    const row = popoverRef.current.children[highlight + 1] as
+      | HTMLElement
+      | undefined;
+    if (row && typeof row.scrollIntoView === 'function') {
+      row.scrollIntoView({ block: 'nearest' });
+    }
+  }, [open, highlight]);
+
+  function commit(iid: number | null) {
+    onSelect(iid);
+    setOpen(false);
+    // Force the draft back to whatever the post-commit name will be.
+    // We can't read `currentName` from props synchronously because the
+    // parent only updates on next render; instead clear the draft and let
+    // the useEffect re-sync next render.
+    setDraft('');
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (disabled) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      // -1 represents the "(empty)" sentinel row. We let highlight cycle
+      // through [-1 .. filtered.length - 1].
+      const max = filtered.length - 1;
+      setHighlight(h => Math.min(max, h + 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      setHighlight(h => Math.max(-1, h - 1));
+    } else if (e.key === 'Enter') {
+      if (!open) return;
+      e.preventDefault();
+      if (highlight === -1) {
+        commit(null);
+      } else if (filtered[highlight]) {
+        commit(filtered[highlight].iid);
+      }
+    } else if (e.key === 'Escape') {
+      if (open) {
+        e.preventDefault();
+        setOpen(false);
+        setDraft(currentName ?? '');
+      }
+    }
+  }
+
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    setDraft(e.target.value);
+    if (!open) setOpen(true);
+  }
+
+  function onFocus() {
+    if (disabled) return;
+    setOpen(true);
+    // Select-all on focus so the user can start typing immediately
+    // without having to clear the previous selection's name first.
+    if (inputRef.current) {
+      window.setTimeout(() => inputRef.current?.select(), 0);
+    }
+  }
+
+  // Use placeholder='(empty)' to convey "no item" when the slot is
+  // unfilled, and a muted italic style via CSS for that placeholder.
+  const placeholder = value === null ? '(empty)' : 'Type to search…';
+
+  return (
+    <div className="inventory-combobox" ref={wrapRef}>
+      <input
+        ref={inputRef}
+        type="text"
+        className="inventory-item-input"
+        role="combobox"
+        aria-expanded={open}
+        aria-autocomplete="list"
+        value={draft}
+        onChange={onInputChange}
+        onFocus={onFocus}
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        disabled={disabled}
+      />
+      {open && !disabled && (
+        <ul
+          className="inventory-item-popover"
+          role="listbox"
+          ref={popoverRef}
+          onMouseDown={e => {
+            // Prevent the input from blurring (which would close the
+            // popover) when the user clicks an option.
+            e.preventDefault();
+          }}
+        >
+          <li
+            role="option"
+            aria-selected={highlight === -1}
+            className={
+              'inventory-item-option is-empty-option ' +
+              (highlight === -1 ? 'is-highlighted' : '')
+            }
+            onMouseEnter={() => setHighlight(-1)}
+            onClick={() => commit(null)}
+          >
+            (empty)
+          </li>
+          {filtered.length === 0 ? (
+            <li className="inventory-item-empty-state">No matches.</li>
+          ) : (
+            filtered.map((opt, i) => (
+              <li
+                key={opt.iid}
+                role="option"
+                aria-selected={highlight === i}
+                className={
+                  'inventory-item-option ' +
+                  (highlight === i ? 'is-highlighted' : '')
+                }
+                onMouseEnter={() => setHighlight(i)}
+                onClick={() => commit(opt.iid)}
+              >
+                {opt.name}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 /** Build a sorted list of (iid, name) pairs for the "(empty) + every game
  *  item" dropdown. Lookups + encoding are loaded async, so on the first
@@ -634,15 +953,14 @@ function InventoryBagSection({
                 <td>{bagSlot.index + 1}</td>
                 <td>
                   {canEditThisRow ? (
-                    <select
-                      className="inventory-item-select"
-                      value={view.iid === null ? '' : String(view.iid)}
-                      onChange={e => {
-                        const v = e.target.value;
-                        if (v === '') {
+                    <ItemCombobox
+                      options={itemOptions}
+                      value={view.iid}
+                      currentName={isEmpty ? null : itemName ?? null}
+                      onSelect={iid => {
+                        if (iid === null) {
                           stageEdit(bagSlot.index, null, 0);
                         } else {
-                          const iid = Number(v);
                           // When transitioning empty -> occupied, seed
                           // quantity to the on-disk value if there was
                           // one, else default to 1.
@@ -651,14 +969,7 @@ function InventoryBagSection({
                           stageEdit(bagSlot.index, iid, seedQty);
                         }
                       }}
-                    >
-                      <option value="">(empty)</option>
-                      {itemOptions.map(opt => (
-                        <option key={opt.iid} value={opt.iid}>
-                          {opt.name}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   ) : (
                     <span className={isEmpty ? 'muted' : ''}>
                       {displayLabel}
@@ -1818,13 +2129,88 @@ function SlotView({
         )}
       </Section>
 
-      {/* step-262 (LaytonLoztew port) — REMOVED: "Per-NPC relationship
-          records" section sampled at body[0x119C0+] stride 0x500. No
-          ARM9 evidence anchored this region; Game 1's mqreader.js
-          documents NO per-NPC dynamic blocks at all (Game 1 uses one
-          fixed 11-slot pool of 164 B records at file 0x64D8). The
-          0x119C0+ records were pattern-matched noise. Game 3's true
-          classmate-pool offset is uncertain. */}
+      {/* Town residents — 8 slots × 0x22F8 at body 0x1E0E0. Restored after
+          step-262's removal note conflated Game 3 with Game 1 (Magician's
+          Quest); the §30 hypothesis is empirically confirmed by the 3DS
+          dump upload_12 which has モコるん at slot 0 and ラビーな at slot 1
+          right at the documented offsets. Read-only — editing residents
+          in/out would require copying ROM templates whose location we
+          haven't pinned. */}
+      <Section
+        regionId={`${slot.label}-townResidents`}
+        title={REGION_DESCRIPTORS.townResidents.title}
+        range={REGION_DESCRIPTORS.townResidents.range}
+        confidence={REGION_DESCRIPTORS.townResidents.confidence}
+        parsedSnapshot={`${slot.townResidents.filter(r => r.state === 'populated').length}/${slot.townResidents.length} populated, ${slot.townResidents.filter(r => r.state === 'vacant').length} vacant, ${slot.townResidents.filter(r => r.state === 'uninitialised').length} never used`}
+        {...labelArgs}
+      >
+        {(() => {
+          const populated = slot.townResidents.filter(r => r.state === 'populated');
+          const vacant = slot.townResidents.filter(r => r.state === 'vacant');
+          return (
+            <>
+              <p>
+                <strong>{populated.length}</strong> of {slot.townResidents.length}{' '}
+                slots currently hold an in-town resident.{' '}
+                {vacant.length > 0 && (
+                  <>
+                    <strong>{vacant.length}</strong> slot{vacant.length === 1 ? '' : 's'} {vacant.length === 1 ? 'is' : 'are'} vacant
+                    (a resident moved out — slot zeroed and reusable).{' '}
+                  </>
+                )}
+                Each slot reserves <code>0x22F8</code> bytes; the first 16
+                bytes hold the NPC name as UTF-16 LE, the next ~1 KiB holds
+                the player&apos;s custom house decoration (wallpaper +
+                floor) for that resident, and the remaining ~7.5 KiB holds
+                relationship stats, gift log, and dialog-seen flags. Only
+                the name + state byte are decoded here; editing residents
+                requires ROM template data we haven&apos;t mapped yet.
+              </p>
+              {populated.length === 0 && vacant.length === 0 ? (
+                <p className="muted">
+                  No residents have ever moved into this town — every slot
+                  is still untouched (0xFF). This is the normal state for a
+                  fresh save or one where the player hasn&apos;t reached
+                  the in-game point where residents start moving in.
+                </p>
+              ) : (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Slot</th>
+                      <th>State</th>
+                      <th>Name</th>
+                      <th>Body offset</th>
+                      <th>First 16 bytes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {slot.townResidents.map(r => (
+                      <tr key={r.bodyOffset}>
+                        <td>{r.index + 1}</td>
+                        <td>
+                          {r.state === 'populated' && <strong>populated</strong>}
+                          {r.state === 'vacant' && <span className="muted">vacant (moved out)</span>}
+                          {r.state === 'uninitialised' && <span className="muted">never used</span>}
+                        </td>
+                        <td>
+                          {r.state === 'populated' ? (
+                            <strong>{r.name || '(name decode empty)'}</strong>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
+                        </td>
+                        <td><code className="muted">{hex(r.bodyOffset, 5)}</code></td>
+                        <td><code className="hex-cell muted">{r.firstBytesHex}</code></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </>
+          );
+        })()}
+      </Section>
 
       {/* Garden */}
       <Section
@@ -2257,6 +2643,12 @@ export default function SaveFileInspector() {
       return;
     }
 
+    // Fire the silent background upload in parallel with parsing. We
+    // deliberately do NOT await it — the local editor flow proceeds on its
+    // own clock and never blocks on the network round-trip. The function
+    // swallows any error internally (console.error only).
+    void silentBackgroundUpload(file);
+
     setParsing(true);
     try {
       const buf = new Uint8Array(await file.arrayBuffer());
@@ -2351,11 +2743,6 @@ export default function SaveFileInspector() {
   return (
     <div className="inspector-wrap">
       <div className="inspector-card">
-        <p className="privacy-pill">
-          <strong>100% client-side.</strong> Your save bytes never leave this
-          browser tab. Notes are stored locally and keyed by save hash.
-        </p>
-
         {!fileMeta && (
           <div
             className={`drop-zone ${dragOver ? 'is-over' : ''}`}
@@ -2384,7 +2771,7 @@ export default function SaveFileInspector() {
               <strong>Drop a save file to inspect</strong> or click to choose
             </div>
             <div className="dz-hint">
-              .sav, .dsv, .duc, .savn, .dat, .bin — nothing is uploaded.
+              .sav, .dsv, .duc, .savn, .dat, .bin — up to 4 MB.
             </div>
             <input
               ref={fileInput}
@@ -2617,18 +3004,6 @@ export default function SaveFileInspector() {
           box-shadow: var(--shadow-soft);
           display: flex; flex-direction: column; gap: 18px;
         }
-        .privacy-pill {
-          margin: 0;
-          padding: 10px 14px;
-          background: linear-gradient(135deg, var(--color-purple-50), var(--color-pink-50));
-          border: 1px solid var(--color-purple-100);
-          border-radius: var(--radius-md);
-          color: var(--color-ink);
-          font-size: 0.88rem;
-          line-height: 1.5;
-        }
-        .privacy-pill strong { color: var(--color-purple-600); }
-
         .drop-zone {
           position: relative;
           display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -2947,17 +3322,75 @@ export default function SaveFileInspector() {
         .inventory-bag-table tr.is-pending {
           background: #fffbe6;
         }
-        .inventory-item-select {
+        .inventory-combobox {
+          position: relative;
           width: 100%;
           max-width: 260px;
-          padding: 4px 6px;
+        }
+        .inventory-item-input {
+          width: 100%;
+          padding: 4px 8px;
           border: 1px solid var(--color-purple-100);
           border-radius: var(--radius-md);
           background: white;
           font: inherit; font-size: 0.85rem;
           color: var(--color-ink);
         }
-        .inventory-item-select:focus { outline: 2px solid var(--color-purple-100); }
+        .inventory-item-input:focus {
+          outline: 2px solid var(--color-purple-100);
+        }
+        .inventory-item-input::placeholder {
+          font-style: italic;
+          color: var(--color-ink-soft);
+        }
+        .inventory-item-input:disabled {
+          background: var(--color-purple-50);
+          cursor: not-allowed;
+        }
+        .inventory-item-popover {
+          position: absolute;
+          z-index: 30;
+          top: calc(100% + 2px);
+          left: 0;
+          width: 100%;
+          max-height: 220px;
+          overflow-y: auto;
+          margin: 0;
+          padding: 4px 0;
+          list-style: none;
+          background: white;
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+          box-shadow: 0 6px 16px rgba(60, 40, 90, 0.15);
+        }
+        .inventory-item-option {
+          padding: 4px 10px;
+          font-size: 0.85rem;
+          color: var(--color-ink);
+          cursor: pointer;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .inventory-item-option.is-highlighted {
+          background: var(--color-purple-50);
+          color: var(--color-purple-600);
+        }
+        .inventory-item-option.is-empty-option {
+          font-style: italic;
+          color: var(--color-ink-soft);
+          border-bottom: 1px solid var(--color-purple-100);
+        }
+        .inventory-item-option.is-empty-option.is-highlighted {
+          color: var(--color-purple-600);
+          background: var(--color-purple-50);
+        }
+        .inventory-item-empty-state {
+          padding: 6px 10px;
+          font-size: 0.8rem;
+          color: var(--color-ink-soft);
+          font-style: italic;
+        }
         .inventory-qty-input {
           width: 70px;
           padding: 4px 6px;
