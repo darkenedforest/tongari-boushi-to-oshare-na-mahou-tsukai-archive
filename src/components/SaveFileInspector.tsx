@@ -2553,15 +2553,12 @@ function SlotView({
         )}
       </Section>
 
-      {/* step-262 (LaytonLoztew port) — REMOVED: "Town residents (max 8)"
-          section at body[0x1E0E0] stride 0x22F8. Game 1's mqreader.js
-          documents the real classmate-pool layout as 11 slots × 164 B
-          at file 0x64D8 — the stride-0x22F8 / max-8 hypothesis was
-          ~55× too large per slot and structurally wrong. The 8-byte
-          UTF-16 "resident names" the predecessor decoded out of this
-          region were therefore pattern-matched noise, not actual
-          resident names. Game 3's true classmate-pool offset is
-          uncertain and pending Discord outreach. */}
+      {/* Note: the "Town residents" section was previously placed here
+          (below the catalog section). It now lives above the Garden
+          section so the player-relevant data (player name, school, ritch,
+          inventory, residents, garden, catalog) cluster together near the
+          top of the editor, ahead of the lower-confidence diagnostic
+          regions. */}
     </div>
   );
 }

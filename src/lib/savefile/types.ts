@@ -160,6 +160,41 @@ export interface BankRecord {
   rawHex: string;
 }
 
+/** One slot of the 8-entry town residents table at body 0x1E0E0
+ *  (stride 0x22F8 bytes, max 8 residents). Confirmed via the
+ *  3DS dump upload_12 which has populated residents モコるん +
+ *  ラビーな at slots 0..1 and vacant zeros at slots 2..3.
+ *
+ *  Each slot can be in one of three states:
+ *    - 'populated'  — currently lives in the player's town; first 16
+ *                     bytes hold the UTF-16 LE NPC name.
+ *    - 'vacant'     — was once active but the resident moved out;
+ *                     bytes are zeroed (slot can be reused).
+ *    - 'uninitialised' — slot never used; bytes are 0xFF.
+ *
+ *  Field map per `notes/savefile_format.md` §30:
+ *    +0x00..0x0F  NPC name (UTF-16 LE, zero-padded; max 8 chars)
+ *    +0x10..0x1F  padding
+ *    +0x20..0x420 house decoration bitmap
+ *    +0x420..end  relationship stats / affinity history / gift log /
+ *                  dialog-seen flags
+ *  We parse only the name + state byte here; the inspector renders
+ *  the rest as read-only diagnostic bytes if needed. */
+export type TownResidentState = 'populated' | 'vacant' | 'uninitialised';
+
+export interface TownResident {
+  /** 0..7 — slot position within the 8-entry table. */
+  index: number;
+  /** Slot-A body offset of this record (= 0x1E0E0 + index*0x22F8). */
+  bodyOffset: number;
+  /** Tri-state per the first 16 bytes (the name field). */
+  state: TownResidentState;
+  /** Decoded UTF-16 LE NPC name for populated slots; '' otherwise. */
+  name: string;
+  /** First 16 bytes of the slot as hex, for raw diagnostics. */
+  firstBytesHex: string;
+}
+
 export interface EventFlagSummary {
   /** Total bytes in the region 0x18..0x460. */
   totalBytes: number;
@@ -282,6 +317,15 @@ export interface SlotParse {
 
   // Bank transaction log (0x1CFD4..0x1E0E0, 6-byte records)
   bankLog: BankRecord[];
+
+  // Town residents table — 8 fixed slots × 0x22F8 stride at body 0x1E0E0.
+  // §30 confirmed via the 3DS dump upload_12 (slots 0..1 populated with
+  // モコるん / ラビーな; slots 2..3 vacant zeros; slots 4..7 uninitialised
+  // 0xFF). Read-only in the inspector — editing residents in/out would
+  // require copying ROM templates whose location we haven't pinned, but
+  // surfacing the roster + per-slot state matches the rest of the editor's
+  // diagnostic depth.
+  townResidents: TownResident[];
 
   // Wizard-level candidate (body 0x11488 + 0x5a). Read-only.
   wizardLevelCandidate: WizardLevelCandidate;

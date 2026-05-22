@@ -36,11 +36,20 @@
 //      the exact byte pattern observed in fresh-save empty catalog
 //      slots (see entry 4..6 in tongari_en.dsv).
 //
-// step-262 (LaytonLoztew port) removed the `resident_name` edit kind —
-// the underlying "Town residents @ body 0x1E0E0 stride 0x22F8 max 8"
-// region was a fictional Game 3 hypothesis (Game 1's real classmate
-// pool is 11 × 164 B at file 0x64D8, structurally incompatible with
-// our removed claim). The UI no longer exposes this affordance.
+// step-262 (LaytonLoztew port) removed the `resident_name` edit kind. The
+// underlying "Town residents @ body 0x1E0E0 stride 0x22F8 max 8" region
+// was empirically restored as a READ-ONLY parse in step-255/256 (§30 was
+// confirmed by the 3DS dump upload_12 in the corpus — モコるん at slot 0,
+// ラビーな at slot 1). The Game 1 analogy step-262 cited applies to
+// Magician's Quest only; Game 3's 0x22F8 stride is a real game-specific
+// layout that accommodates the per-NPC house decoration bitmap Game 1
+// does not have. Read-only is the right level today because writing a
+// new resident in would require copying ROM template data whose location
+// we have not pinned; renaming an existing resident is doable but the
+// game looks up display names from the resident's npc_id at runtime in
+// some surfaces, so a raw-byte name edit would only stick on the surface
+// that reads from the save and would visually diverge from dialog. The
+// `resident_name` edit kind therefore stays removed.
 //
 // All edits write to BOTH slot A and slot B (mirror), then recompute the
 // THREE levels of checksum the game checks:
@@ -333,9 +342,14 @@ export const CATALOG_TEXT_MAX_CHARS =
 export const MAIL_TEXT_MAX_CHARS =
   Math.floor((OFFSETS.mailStride - STRIDED_ENTRY_HEADER_LEN) / 2);
 
-// step-262: RESIDENT_NAME_MAX_CHARS / RESIDENT_NAME_BYTE_WIDTH removed
-// — the 0x1E0E0 residents region was a fictional hypothesis and the UI
-// affordance was deleted alongside the parser.
+// RESIDENT_NAME_MAX_CHARS / RESIDENT_NAME_BYTE_WIDTH intentionally not
+// re-introduced. step-255/256 restored the residents region as a
+// READ-ONLY parse (the §30 layout is real, see parser.ts), but writing
+// to a resident's name byte field has no clear safe path — the in-game
+// dialog system looks up display names from the resident's npc_id at
+// some surfaces, so a save-byte rename would only stick on surfaces
+// that read raw bytes from the save. See editor.ts header comment for
+// the full reasoning.
 
 /** Inventory bag: 15 slots × 6-byte records at body 0x1D9B6.
  *

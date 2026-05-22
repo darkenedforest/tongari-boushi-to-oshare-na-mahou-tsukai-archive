@@ -1,0 +1,45 @@
+{
+  "step": "step-256-savefile-town-residents-types-and-tests",
+  "timestamp": "2026-05-22T09:10:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/lib/savefile/types.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/types.ts",
+      "offset": null,
+      "before": "types.ts did not export a TownResident interface nor declare a townResidents field on SlotParse. The matching step-255 commit wired up the savefile parser and SaveFileInspector to read and render an 8-slot town-residents table at body 0x1E0E0 (stride 0x22F8), but the type declarations that match those reads/renders were never added — leaving the committed repo in a state where tsc --noEmit reports `Module \"./types\" has no exported member 'TownResident'` and `'townResidents' does not exist in type 'SlotParse'`. The save-file editor UI therefore cannot render the residents panel (TypeScript compile fails before the React tree is ever built), and the player-facing symptom is: the town-residents section is missing from the inspector.",
+      "after": "Added the missing pieces of the type contract: a `TownResidentState` union (`'populated' | 'vacant' | 'uninitialised'`), a `TownResident` interface (`index`, `bodyOffset`, `state`, `name`, `firstBytesHex`), and a new `townResidents: TownResident[]` field on `SlotParse` with documentation matching savefile_format.md §30. With these types in place, parser.ts's `parseTownResidents` and SaveFileInspector.tsx's residents Section both compile, and the residents panel renders in the editor.",
+      "reason": "Step-255 was the consolidation + typeahead commit; it incidentally swept in residents-restoration code in parser.ts + SaveFileInspector.tsx but missed the matching types.ts additions. step-256 closes the gap so the build is green again and the residents panel reaches users. Without this fix the editor's TS compile fails and the residents section never renders — directly matching the bug Tyler reported (town residents missing from the editor)."
+    },
+    {
+      "ref": "scripts/test_savefile_roundtrip.mjs",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/scripts/test_savefile_roundtrip.mjs",
+      "offset": null,
+      "before": "Round-trip test harness had no assertions for the new town-residents parse path. step-255 added the residents parser without coverage.",
+      "after": "Two new assertion blocks. (1) tongari_en.dsv fixture: all 8 slots in both slot A and slot B parse as 'vacant' (slot 0, zero-filled) or 'uninitialised' (slots 1..7, 0xFF) — matching the raw bytes inspected in the test save; the body offsets for the 8 slots match §30's documented values exactly (0x1E0E0, 0x203D8, 0x226D0, 0x249C8, 0x26CC0, 0x28FB8, 0x2B2B0, 0x2D5A8). (2) upload_12.bin corpus save (from the translation repo's notes/save_analysis/raw/): slot 0 decodes as 'populated' with the UTF-16 LE NPC name モコるん (Mokorun), slot 1 as ラビーな (Rabina), slots 2..3 as 'vacant', slots 4..7 as 'uninitialised'; slot B mirrors slot A. The upload_12 block is gated on the translation repo being present alongside this archive repo and skips cleanly when it isn't, so CI in an isolated checkout still passes the in-repo fixture assertions.",
+      "reason": "Empirical anchor for the §30 layout. The fixture-only assertions prove the parser handles the 'no residents yet' case the player sees in a fresh save; the upload_12 assertions prove it handles a populated roster (the §30 evidence Tyler's diagnosis brief cites). Without this coverage future refactors could silently re-break residents parsing exactly the way step-262 did when it removed the entire region."
+    },
+    {
+      "ref": "notes/changes/step-256-savefile-town-residents-types-and-tests.json",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/notes/changes/step-256-savefile-town-residents-types-and-tests.json",
+      "offset": null,
+      "before": "(file did not exist)",
+      "after": "Change-tracking entry documenting the types.ts + test additions and the diagnosis of why step-255 left the editor broken for the residents panel.",
+      "reason": "Required per the project's change-tracking rule (CLAUDE.md §'Change tracking for the public changelog'): every commit must record before/after data so release-time rollup can produce per-version detail pages."
+    }
+  ],
+  "diagnosis_summary": {
+    "test_save": "C:/Users/Tyler/Desktop/Hack/DeSmuME-VS2019-x64-Release (1)/Battery/Saves for hacking/tongari_en.dsv",
+    "test_save_residents_state": "slot 0 = vacant (zeros), slots 1..7 = uninitialised (0xFF); both slot A and slot B mirror this state — Tyler's save has no in-town residents yet, which is the normal state pre-event.",
+    "populated_corpus_save": "C:/Users/Tyler/Documents/Repos/Tongari boushi translation app claude/notes/save_analysis/raw/upload_12.bin",
+    "populated_corpus_residents_state": "slot 0 = モコるん (e2 30 b3 30 8b 30 93 30), slot 1 = ラビーな (e9 30 d3 30 fc 30 6a 30), slots 2..3 = vacant zeros, slots 4..7 = uninitialised 0xFF; slot B mirrors slot A. Matches savefile_format.md §30 exactly.",
+    "candidate_causes_evaluated": {
+      "1_wrong_slot_read": "ruled out — the parser per step-254 already picks the active slot for downstream UI; residents read the same body the rest of the editor reads",
+      "2_wrong_offsets": "ruled out — §30 offsets read correctly on the 3DS dump (upload_12) and the DeSmuME-era save (tongari_en.dsv) without an extra format-version-specific table",
+      "3_utf16_decoding_bug": "ruled out — decodeUtf16Le() already handles the 16-byte name field correctly; モコるん round-trips cleanly",
+      "4_missing_lookup_table": "n/a — the residents-name display reads the name directly from the save's UTF-16 LE bytes; no ROM-side lookup is needed for the minimum-viable roster panel",
+      "5_empty_roster_in_test_save": "TRUE — Tyler's tongari_en.dsv test save has 0 populated residents (slot 0 is 'vacant', slots 1..7 are 'uninitialised'), so even with the residents parser wired up the UI rightly shows 'no residents have ever moved into this town'. End-to-end verification used upload_12.bin as a populated counterpart, which renders モコるん at slot 0 and ラビーな at slot 1",
+      "primary_root_cause": "step-255 committed the parser + UI changes but missed the types.ts additions, causing the TypeScript compile to fail and the residents Section to never render. Closing that gap is step-256."
+    }
+  }
+}

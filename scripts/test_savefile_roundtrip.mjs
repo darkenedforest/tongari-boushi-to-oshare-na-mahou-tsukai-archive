@@ -492,5 +492,97 @@ console.log('\n--- Active-slot fallback test (timestamps tied, A companion bumpe
   console.log(`  reason: ${swapped2Parse.activeSlotReason}`);
 }
 
+// ---------------------------------------------------------------------------
+// Town-residents parsing — step-NNN restoration of §30 (8 × 0x22F8 table at
+// body 0x1E0E0). Two-pronged test:
+//   1. tongari_en.dsv (the fixture): all slots are EMPTY (vacant zeros) or
+//      UNINIT (0xFF). Player hasn't reached the in-game point where any
+//      resident has moved in yet. Both slot A and slot B must report this
+//      same shape because the slots mirror each other.
+//   2. upload_12.bin from the translation repo's corpus: slot 0 = モコるん,
+//      slot 1 = ラビーな, slots 2..3 vacant, slots 4..7 uninit. This is the
+//      empirical anchor that the §30 layout is correct.
+//
+// upload_12 lives in the translation repo, which sits alongside this archive
+// repo on disk. We resolve it relative to this repo's parent. If the file
+// can't be located (e.g. running CI in an isolated checkout), the upload_12
+// assertions are skipped — the in-repo fixture assertions still run.
+// ---------------------------------------------------------------------------
+
+console.log('\n--- Town residents parsing — fixture (tongari_en.dsv) ---');
+{
+  const residentsA = slotABefore.townResidents;
+  const residentsB = slotBBefore.townResidents;
+  assertEq('slot A residents table length', residentsA.length, 8);
+  assertEq('slot B residents table length', residentsB.length, 8);
+  // Slot 0 in both A and B is the EMPTY-zeros sentinel; slots 1..7 are
+  // 0xFF UNINIT. This matches what the player sees in-game for a save
+  // before any resident has ever moved in.
+  assertEq('fixture slot A residents[0] state', residentsA[0].state, 'vacant');
+  assertEq('fixture slot B residents[0] state', residentsB[0].state, 'vacant');
+  for (const idx of [1, 2, 3, 4, 5, 6, 7]) {
+    assertEq(
+      `fixture slot A residents[${idx}] state`,
+      residentsA[idx].state,
+      'uninitialised',
+    );
+    assertEq(
+      `fixture slot B residents[${idx}] state`,
+      residentsB[idx].state,
+      'uninitialised',
+    );
+  }
+  // Body offsets must match the §30 documentation exactly.
+  const expectedOffsets = [0x1e0e0, 0x203d8, 0x226d0, 0x249c8, 0x26cc0, 0x28fb8, 0x2b2b0, 0x2d5a8];
+  expectedOffsets.forEach((off, i) => {
+    assertEq(`fixture slot A residents[${i}] bodyOffset`, residentsA[i].bodyOffset, off);
+  });
+}
+
+console.log('\n--- Town residents parsing — upload_12 corpus save (populated) ---');
+{
+  const UPLOAD12_PATH = path.resolve(
+    REPO_ROOT,
+    '..',
+    'Tongari boushi translation app claude',
+    'notes',
+    'save_analysis',
+    'raw',
+    'upload_12.bin',
+  );
+  if (!fs.existsSync(UPLOAD12_PATH)) {
+    console.log(`  SKIP — upload_12 not found at ${UPLOAD12_PATH}`);
+    console.log('  (test is gated on the translation repo being alongside this archive repo)');
+  } else {
+    const upload12 = new Uint8Array(fs.readFileSync(UPLOAD12_PATH));
+    const u12Parse = await parser.parseSaveFile(upload12);
+    const u12A = u12Parse.slotA;
+    const u12B = u12Parse.slotB;
+    assertTrue('upload_12 parsed slot A', u12A !== null);
+    assertTrue('upload_12 parsed slot B', u12B !== null);
+    // §30 documents this exact roster — Mokorun at slot 0, Rabina at
+    // slot 1. The decoded names match the UTF-16 LE codepoints
+    // U+30E2 U+30B3 U+308B U+3093 (モコるん) and
+    // U+30E9 U+30D3 U+30FC U+306A (ラビーな).
+    assertEq('upload_12 slot A residents[0] state', u12A.townResidents[0].state, 'populated');
+    assertEq('upload_12 slot A residents[0] name', u12A.townResidents[0].name, 'モコるん');
+    assertEq('upload_12 slot A residents[1] state', u12A.townResidents[1].state, 'populated');
+    assertEq('upload_12 slot A residents[1] name', u12A.townResidents[1].name, 'ラビーな');
+    assertEq('upload_12 slot A residents[2] state', u12A.townResidents[2].state, 'vacant');
+    assertEq('upload_12 slot A residents[3] state', u12A.townResidents[3].state, 'vacant');
+    for (const idx of [4, 5, 6, 7]) {
+      assertEq(
+        `upload_12 slot A residents[${idx}] state`,
+        u12A.townResidents[idx].state,
+        'uninitialised',
+      );
+    }
+    // Slot B mirrors slot A in upload_12 — the in-game save loop wrote
+    // both slots with the same roster.
+    assertEq('upload_12 slot B residents[0] name', u12B.townResidents[0].name, 'モコるん');
+    assertEq('upload_12 slot B residents[1] name', u12B.townResidents[1].name, 'ラビーな');
+  }
+}
+
 console.log(`\n${failures === 0 ? 'ALL TESTS PASSED' : `${failures} TEST(S) FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);
