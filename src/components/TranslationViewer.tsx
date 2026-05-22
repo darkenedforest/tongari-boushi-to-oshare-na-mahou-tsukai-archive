@@ -575,6 +575,7 @@ function countFiles(node: TreeNode): number {
 
 function TreeFileRow({
   file,
+  depth,
   selected,
   expanded,
   setExpanded,
@@ -584,6 +585,7 @@ function TreeFileRow({
   filteringActive,
 }: {
   file: ViewerFile;
+  depth: number;
   selected: { file: string; blockId: string };
   expanded: Set<string>;
   setExpanded: (s: Set<string>) => void;
@@ -603,6 +605,7 @@ function TreeFileRow({
     >
       <button
         className="tree-file-btn"
+        style={{ paddingLeft: `${10 + depth * 12}px` }}
         onClick={() => {
           const next = new Set(expanded);
           if (next.has(file.file_path)) next.delete(file.file_path);
@@ -715,6 +718,7 @@ function TreeDirRow({
             <TreeFileRow
               key={child.file.file_path}
               file={child.file}
+              depth={depth + 1}
               selected={selected}
               expanded={expanded}
               setExpanded={setExpanded}
@@ -805,6 +809,7 @@ function FileTree({
             <TreeFileRow
               key={child.file.file_path}
               file={child.file}
+              depth={0}
               selected={selected}
               expanded={expanded}
               setExpanded={setExpanded}
@@ -1479,24 +1484,7 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
       .then((data: EnLookup) => {
         if (aborted) return;
         setLookup(data);
-        // Pre-select the first file's first block so the page isn't empty.
-        const first = data.files[0];
-        if (first && first.entries) {
-          const firstEntryId = Object.keys(first.entries).sort((a, b) => Number(a) - Number(b))[0];
-          if (firstEntryId !== undefined) {
-            const firstSub = Object.keys(first.entries[firstEntryId])[0];
-            setSelected({ file: first.file_path, blockId: `${firstEntryId}.${firstSub}` });
-            setExpanded(new Set([first.file_path]));
-            // Expand every ancestor directory of the auto-selected file
-            // so it's visible in the tree without the user hunting for it.
-            const segs = first.file_path.split('/');
-            const ancestors: string[] = [];
-            for (let i = 0; i < segs.length - 1; i++) {
-              ancestors.push(segs.slice(0, i + 1).join('/'));
-            }
-            setExpandedDirs(new Set(ancestors));
-          }
-        }
+        // Nothing is pre-selected. The user picks what they want to view.
       })
       .catch((err) => {
         if (aborted) return;
@@ -1648,10 +1636,11 @@ export default function TranslationViewer({ lookupUrl, decorationBase }: Props) 
   }, [selected?.file, selected?.blockId]);
 
   function onSelectFile(file: ViewerFile) {
+    // Always update the selection even when the file has no blocks — that
+    // way clicking an empty file deselects whatever else was highlighted,
+    // instead of silently leaving the previous file purple.
     const firstBlock = file.blocks.find((b) => b.en || b.jp) ?? file.blocks[0];
-    if (firstBlock) {
-      setSelected({ file: file.file_path, blockId: firstBlock.id });
-    }
+    setSelected({ file: file.file_path, blockId: firstBlock?.id ?? '' });
   }
   function onSelectBlock(file: ViewerFile, b: ViewerBlock) {
     setSelected({ file: file.file_path, blockId: b.id });

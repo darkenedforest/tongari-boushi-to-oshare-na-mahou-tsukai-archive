@@ -1,0 +1,28 @@
+{
+  "step": "step-260-translation-viewer-fixes",
+  "timestamp": "2026-05-23T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/components/TranslationViewer.tsx:onSelectFile",
+      "file_path": "src/components/TranslationViewer.tsx",
+      "before": "guarded by `if (firstBlock)` — selection silently stayed on previous file when user clicked an empty file",
+      "after": "always calls setSelected; uses firstBlock?.id ?? '' so clicking an empty file deselects whatever was purple before",
+      "reason": "Tyler observed `msg.ofs` stayed selected in purple even after clicking elsewhere in the tree. Root cause: the firstBlock guard skipped selection updates for empty/no-block files."
+    },
+    {
+      "ref": "src/components/TranslationViewer.tsx:lookup-load-effect",
+      "file_path": "src/components/TranslationViewer.tsx",
+      "before": "On mount, pre-selected files[0] (= 2d/inputmagic/msg.ofs), forced it expanded, expanded every ancestor directory",
+      "after": "No pre-selection on mount; user picks what they want to view",
+      "reason": "Tyler observed `msg.ofs` expanded by default and `2d/inputmagic/` auto-expanded. Root cause: the lookup-load handler auto-selected files[0] which is the very first file in the lookup."
+    },
+    {
+      "ref": "src/components/TranslationViewer.tsx:TreeFileRow",
+      "file_path": "src/components/TranslationViewer.tsx",
+      "before": "tree-file-btn rendered with no depth-aware padding; nested files visually appeared at root indent regardless of parent dir depth",
+      "after": "Threaded `depth` prop through TreeDirRow → TreeFileRow → tree-file-btn paddingLeft = 10 + depth*12 (matches dir indentation)",
+      "reason": "Tyler observed `inputmagic/` appeared empty because the file inside it (msg.ofs) was rendering at root indent, making the dir look like an empty leaf."
+    }
+  ]
+}
