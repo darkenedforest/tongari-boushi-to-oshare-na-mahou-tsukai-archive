@@ -215,3 +215,95 @@ export function resolveInventoryItem(
   }
   return { itemId, name: lookupItemName(lookups, itemId), seenInSaves };
 }
+
+// ---------------------------------------------------------------------------
+// Inventory-bag encoding: iid ↔ stored_value bijection (translation-repo
+// step-260). The on-disk 6-byte inventory records at body 0x1D9B6 store a
+// u16 LE `stored_value` which is the game's internal item-ID, NOT the
+// itemname.ofs positional iid. The mapping is loaded once from
+// /data/inventory_encoding.json and cached. All 3346 items map both ways.
+// ---------------------------------------------------------------------------
+
+export interface InventoryEncoding {
+  /** iid (0..3345) → stored_value (u16). Always 3346 entries when ok=true. */
+  iidToStored: Record<number, number>;
+  /** stored_value (u16) → iid (0..3345). Reverse of iidToStored. */
+  storedToIid: Record<number, number>;
+  /** True if the JSON loaded and parsed; false on fetch/parse error. */
+  ok: boolean;
+}
+
+const EMPTY_ENCODING: InventoryEncoding = {
+  iidToStored: {},
+  storedToIid: {},
+  ok: false,
+};
+
+let encodingCached: InventoryEncoding | null = null;
+let encodingInflight: Promise<InventoryEncoding> | null = null;
+
+function defaultInventoryEncodingUrl(): string {
+  let base = (import.meta.env.BASE_URL ?? '/').toString();
+  if (!base.endsWith('/')) base += '/';
+  return `${base}data/inventory_encoding.json`;
+}
+
+export async function loadInventoryEncoding(
+  url?: string,
+): Promise<InventoryEncoding> {
+  if (encodingCached) return encodingCached;
+  if (encodingInflight) return encodingInflight;
+  const resolvedUrl = url ?? defaultInventoryEncodingUrl();
+  encodingInflight = (async () => {
+    try {
+      const res = await fetch(resolvedUrl, { cache: 'force-cache' });
+      if (!res.ok) {
+        encodingCached = EMPTY_ENCODING;
+        return encodingCached;
+      }
+      const data = await res.json();
+      const raw = data?.mapping_iid_to_stored ?? {};
+      const iidToStored: Record<number, number> = {};
+      const storedToIid: Record<number, number> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        const iid = Number(k);
+        const stored = Number(v);
+        if (!Number.isFinite(iid) || !Number.isFinite(stored)) continue;
+        iidToStored[iid] = stored;
+        storedToIid[stored] = iid;
+      }
+      encodingCached = {
+        iidToStored,
+        storedToIid,
+        ok: Object.keys(iidToStored).length > 0,
+      };
+      return encodingCached;
+    } catch {
+      encodingCached = EMPTY_ENCODING;
+      return encodingCached;
+    } finally {
+      encodingInflight = null;
+    }
+  })();
+  return encodingInflight;
+}
+
+/** Reverse-lookup: 6-byte record's stored_value → iid (positional itemname.ofs
+ *  index). Returns null when the encoding hasn't loaded or the value isn't in
+ *  the bijection (would indicate a corrupt save). */
+export function lookupIidFromStored(
+  encoding: InventoryEncoding,
+  storedValue: number,
+): number | null {
+  const iid = encoding.storedToIid[storedValue];
+  return iid === undefined ? null : iid;
+}
+
+/** Forward-lookup: iid → stored_value to write back into the 6-byte record. */
+export function lookupStoredFromIid(
+  encoding: InventoryEncoding,
+  iid: number,
+): number | null {
+  const stored = encoding.iidToStored[iid];
+  return stored === undefined ? null : stored;
+}

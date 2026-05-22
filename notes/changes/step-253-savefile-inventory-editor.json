@@ -1,0 +1,76 @@
+{
+  "step": "step-253-savefile-inventory-editor",
+  "timestamp": "2026-05-22T07:02:56Z",
+  "kind": "other",
+  "summary": "Add 15-slot inventory bag editor to the archive site's save-file editor. Each slot exposes a dropdown of every game item (EN name) plus a quantity input (1..255); selecting (empty) clears the slot to the sentinel ff ff ff ff ff 00. Reads the 6-byte records at body 0x1D9B6 stride 6 and mirrors writes to both slot A and slot B following the existing write-both pattern. The iid<->stored_value bijection (3346 items) was cracked in the translation repo via ARM9 lookup function 0x0200BB2C and per-category base/count tables, and is shipped to the browser as public/data/inventory_encoding.json.",
+  "rows": [
+    {
+      "ref": "archive-repo:public/data/inventory_encoding.json",
+      "file_path": "public/data/inventory_encoding.json",
+      "before": "(missing — translation-repo notes/inventory_encoding.json had not been mirrored)",
+      "after": "copied verbatim from translation-repo notes/inventory_encoding.json — 3346 mapping_iid_to_stored entries + 39 category descriptors + ARM9 trace metadata",
+      "reason": "browser-loadable iid<->stored_value bijection feeding the inventory dropdown reverse-lookup"
+    },
+    {
+      "ref": "archive-repo:src/lib/savefile/types.ts",
+      "file_path": "src/lib/savefile/types.ts",
+      "before": "no InventoryBagSlot interface; SlotParse had no inventoryBag field",
+      "after": "added InventoryBagSlot interface (index, bodyOffset, empty, storedValue, iid, quantity, rawHex) + inventoryBag: InventoryBagSlot[] field on SlotParse",
+      "reason": "parser needs a typed return shape for the 15-slot bag data"
+    },
+    {
+      "ref": "archive-repo:src/lib/savefile/parser.ts",
+      "file_path": "src/lib/savefile/parser.ts",
+      "before": "no inventory-bag parsing; OFFSETS lacked inventoryBagStart/Count/Stride; REGION_DESCRIPTORS lacked inventoryBag",
+      "after": "added OFFSETS.inventoryBagStart=0x1D9B6, inventoryBagCount=15, inventoryBagStride=6; new parseInventoryBag(body) function (returns 15 InventoryBagSlot records); wired into parseSlot() initialised + uninitialised branches; REGION_DESCRIPTORS.inventoryBag descriptor at confidence='confirmed'",
+      "reason": "decode the 15 fixed slots at body 0x1D9B6 so the UI can display them"
+    },
+    {
+      "ref": "archive-repo:src/lib/savefile/editor.ts",
+      "file_path": "src/lib/savefile/editor.ts",
+      "before": "PendingEdit union lacked inventory_slot; no inventory writer; no INVENTORY_BAG_BASE/COUNT/STRIDE/QUANTITY_MIN/QUANTITY_MAX exports",
+      "after": "added PendingEdit kind 'inventory_slot' (slotIndex 0..14, storedValue: number|null, quantity 1..255); new writeInventorySlot() writes the 6-byte record (or empty sentinel ff ff ff ff ff 00) at INVENTORY_BAG_BASE + slotIndex*INVENTORY_BAG_STRIDE; applyEdits() inventory_slot case mirrors writes to BOTH slot A and slot B following the same pattern player_name / ritch / catalog / mail / garden already use",
+      "reason": "stage and apply inventory edits while preserving the three checksum levels"
+    },
+    {
+      "ref": "archive-repo:src/lib/savefile/lookups.ts",
+      "file_path": "src/lib/savefile/lookups.ts",
+      "before": "no inventory_encoding loader; no iid<->stored_value helpers",
+      "after": "added InventoryEncoding interface, loadInventoryEncoding() lazy fetcher (cached, falls back to empty maps on error), lookupIidFromStored(), lookupStoredFromIid()",
+      "reason": "browser-side iid<->stored bridge feeding both the dropdown's name resolution (stored on disk -> iid -> EN name) and the save path (iid picked in UI -> stored to write)"
+    },
+    {
+      "ref": "archive-repo:src/components/SaveFileInspector.tsx",
+      "file_path": "src/components/SaveFileInspector.tsx",
+      "before": "no inventory bag section; PendingEditMap had no inventorySlot key; SlotView did not receive inventoryEncoding",
+      "after": "PendingEditMap gained `inventorySlot: Record<number, { storedValue: number|null; quantity: number }>`; helpers (makeEmptyEdits, pendingEditCount, editsToPendingList) extended for the new key; loadInventoryEncoding called on mount and passed through SlotView; new InventoryBagSection component renders a 15-row table with a per-slot <select> of every game item (alphabetical) plus a quantity <input>; staging an edit transitions the row's class to is-pending; Drop-all-pending button + descriptive caption + load-state placeholder; CSS for inventory-item-select / inventory-qty-input / .inventory-bag-table tr.is-pending",
+      "reason": "actual editable UI surface for the 15-slot inventory bag (the user-visible deliverable)"
+    },
+    {
+      "ref": "archive-repo:scripts/test_savefile_roundtrip.mjs",
+      "file_path": "scripts/test_savefile_roundtrip.mjs",
+      "before": "round-trip test covered school_name / player_name / ritch / catalog / catalog_clear only; comment claimed Node --experimental-strip-types resolves ./parser to ./parser.ts (does not, on Node 22)",
+      "after": "added parse-time assertions for slot B's 8 known occupied inventory slots (slots 1-7 + 15) by name and quantity, plus empty-sentinel assertions for slots 8-14; added edit-and-round-trip assertions for slot 1 (Yellow May Lily -> White May Lily x3), slot 2 (Cranberry -> empty), slot 8 (empty -> Cranberry x5); added untouched-slot byte-identity assertions and a slot-A mirror check; corrected the run-command comment to use esbuild bundling",
+      "reason": "verify the inventory editor round-trips bytes cleanly and preserves untouched data"
+    },
+    {
+      "ref": "archive-repo:.gitignore",
+      "file_path": ".gitignore",
+      "before": "no entry for tmp/",
+      "after": "added tmp/ (build artifacts from the test-harness esbuild bundle)",
+      "reason": "keep esbuild's bundle output (tmp/savefile-bundle.mjs) out of git"
+    }
+  ],
+  "test_results": {
+    "harness": "scripts/test_savefile_roundtrip.mjs (esbuild bundle + node)",
+    "summary": "ALL TESTS PASSED — 8 parse-time inventory assertions + 3 edit round-trip assertions + 13 untouched-slot byte-identity assertions + 5 slot-A mirror assertions + all pre-existing player_name / school_name / ritch / catalog / checksum assertions",
+    "checksums_after_edits": {
+      "header": { "A": "0xfd9d", "B": "0xfe9d" },
+      "body": { "A": "0x05ee", "B": "0xb04e" },
+      "extra0": { "A": "0x4362", "B": "0x1ac5" }
+    }
+  },
+  "sibling_table_observations_flagged_for_future": [
+    "The research agent that cracked the inventory encoding noted 5 sibling tables (per inventory_encoding.json's tables{} metadata: storage scratch at save_buffer C +0xBC6, an in-memory mirror in addition to slots A+B, etc.). Per the dispatch brief these were intentionally left untouched in this step; they remain candidate work for a follow-up if Tyler wants to expose them. Not yet surfaced in the inspector UI."
+  ]
+}

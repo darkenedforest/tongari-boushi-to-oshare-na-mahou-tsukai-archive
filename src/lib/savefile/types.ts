@@ -72,6 +72,35 @@ export interface InventorySlot {
   trailingHex: string;
 }
 
+/** One of the 15 player-inventory bag slots starting at body 0x1D9B6, stride
+ *  6 bytes. The on-disk record layout is:
+ *    +0..1  u16 LE stored_value (game's internal item-ID — distinct from the
+ *           itemname.ofs positional iid; see public/data/inventory_encoding.json
+ *           for the iid↔stored mapping).
+ *    +2..4  three padding bytes (always 0x00 0x00 0x00 in known saves).
+ *    +5     u8  quantity (1..255 when occupied).
+ *    empty: ff ff ff ff ff 00 (sentinel — slot is unused).
+ *  Encoding cracked in the translation repo's step-260 research (ARM9 lookup
+ *  function 0x0200BB2C + per-category base/count tables). */
+export interface InventoryBagSlot {
+  /** 0..14 — slot position within the 15-entry bag. */
+  index: number;
+  /** Slot-A body offset of this record (= 0x1D9B6 + index*6). */
+  bodyOffset: number;
+  /** True if this slot is the empty sentinel `ff ff ff ff ff 00`. */
+  empty: boolean;
+  /** u16 LE at +0..2 (the stored_value). 0xFFFF for empty slots. */
+  storedValue: number;
+  /** Decoded iid (positional index into itemname.ofs / item-names lookup), or
+   *  null if the stored_value doesn't map to a known item or the slot is
+   *  empty. */
+  iid: number | null;
+  /** Quantity byte at +5. 0 for empty slots. */
+  quantity: number;
+  /** Hex of the full 6-byte record for debugging. */
+  rawHex: string;
+}
+
 export interface CatalogEntry {
   index: number;
   bodyOffset: number;
@@ -215,6 +244,12 @@ export interface SlotParse {
   // "active inventory"; step-232 rejected that framework. Surfaced read-
   // only as a research region (see InventorySlot doc above).
   activeInventory: InventorySlot[];
+
+  /** Player inventory bag — 15 fixed slots at body 0x1D9B6, stride 6 bytes.
+   *  Each slot is either the empty sentinel `ff ff ff ff ff 00` or a
+   *  populated record with u16 LE stored_value + 3 padding bytes + u8
+   *  quantity. Encoding cracked in translation-repo step-260. */
+  inventoryBag: InventoryBagSlot[];
 
   // Catalog announcements (0x163F2 stride 0xA8)
   catalogEntries: CatalogEntry[];

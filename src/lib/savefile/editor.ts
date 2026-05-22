@@ -122,7 +122,16 @@ export type PendingEdit =
   | { kind: 'catalog'; entryOffset: number; text: string }
   | { kind: 'catalog_clear'; entryOffset: number }
   | { kind: 'mail'; entryOffset: number; text: string }
-  | { kind: 'garden_tile'; recordOffset: number; plantId: number; growTime: number };
+  | { kind: 'garden_tile'; recordOffset: number; plantId: number; growTime: number }
+  /** Player inventory bag slot (one of the 15 records at body 0x1D9B6,
+   *  stride 6). slotIndex 0..14. `storedValue=null + quantity=0` writes
+   *  the empty sentinel (ff ff ff ff ff 00). */
+  | {
+      kind: 'inventory_slot';
+      slotIndex: number;
+      storedValue: number | null;
+      quantity: number;
+    };
 
 export interface ApplyResult {
   /** New 524288-byte raw payload with all edits applied + checksums fixed. */
@@ -328,6 +337,71 @@ export const MAIL_TEXT_MAX_CHARS =
 // — the 0x1E0E0 residents region was a fictional hypothesis and the UI
 // affordance was deleted alongside the parser.
 
+/** Inventory bag: 15 slots × 6-byte records at body 0x1D9B6.
+ *
+ *  Per-record layout (when occupied):
+ *    +0..1  u16 LE stored_value (NOT itemname.ofs iid — see
+ *           public/data/inventory_encoding.json for the iid↔stored map)
+ *    +2..4  three 0x00 padding bytes (always)
+ *    +5     u8  quantity (1..255)
+ *  Empty slot sentinel: `ff ff ff ff ff 00`.
+ *
+ *  Cracked in translation-repo step-260 via ARM9 lookup function
+ *  0x0200BB2C + per-category base/count tables. Verified against
+ *  tongari_en.dsv's slot-B inventory (7 occupied slots + slot 15
+ *  King Oyster Mushroom). */
+export const INVENTORY_BAG_BASE = 0x1d9b6;
+export const INVENTORY_BAG_COUNT = 15;
+export const INVENTORY_BAG_STRIDE = 6;
+export const INVENTORY_QUANTITY_MIN = 1;
+export const INVENTORY_QUANTITY_MAX = 255;
+
+function writeInventorySlot(
+  payload: Uint8Array,
+  slot: 'A' | 'B',
+  slotIndex: number,
+  storedValue: number | null,
+  quantity: number,
+): void {
+  if (slotIndex < 0 || slotIndex >= INVENTORY_BAG_COUNT) {
+    throw new Error(`Inventory slotIndex out of range: ${slotIndex}`);
+  }
+  const bodyOffset = INVENTORY_BAG_BASE + slotIndex * INVENTORY_BAG_STRIDE;
+  const fileOffset = bodyOffsetToFile(slot, bodyOffset);
+  if (storedValue === null) {
+    // Empty sentinel: ff ff ff ff ff 00. Matches the byte pattern of
+    // every unused slot in the corpus (e.g. tongari_en.dsv slots 8..14).
+    payload[fileOffset + 0] = 0xff;
+    payload[fileOffset + 1] = 0xff;
+    payload[fileOffset + 2] = 0xff;
+    payload[fileOffset + 3] = 0xff;
+    payload[fileOffset + 4] = 0xff;
+    payload[fileOffset + 5] = 0x00;
+    return;
+  }
+  if (storedValue < 0 || storedValue > 0xffff) {
+    throw new Error(`Inventory storedValue out of u16 range: ${storedValue}`);
+  }
+  if (
+    !Number.isFinite(quantity) ||
+    quantity < INVENTORY_QUANTITY_MIN ||
+    quantity > INVENTORY_QUANTITY_MAX
+  ) {
+    throw new Error(
+      `Inventory quantity must be ${INVENTORY_QUANTITY_MIN}..${INVENTORY_QUANTITY_MAX}, got ${quantity}.`,
+    );
+  }
+  payload[fileOffset + 0] = storedValue & 0xff;
+  payload[fileOffset + 1] = (storedValue >>> 8) & 0xff;
+  // Three 0x00 padding bytes. Every observed populated slot in the
+  // corpus has these three bytes zero — they're a structural part of
+  // the 6-byte record, not stale data.
+  payload[fileOffset + 2] = 0x00;
+  payload[fileOffset + 3] = 0x00;
+  payload[fileOffset + 4] = 0x00;
+  payload[fileOffset + 5] = quantity & 0xff;
+}
+
 // ---------------------------------------------------------------------------
 // Apply edits
 // ---------------------------------------------------------------------------
@@ -455,6 +529,22 @@ export function applyEdits(
         for (const slot of ['A', 'B'] as const) {
           writeByte(payload, slot, edit.recordOffset + 0, edit.plantId & 0xff);
           writeByte(payload, slot, edit.recordOffset + 4, edit.growTime & 0xff);
+        }
+        break;
+      }
+      case 'inventory_slot': {
+        // Mirror the write to both slots so the edit survives the next
+        // ping-pong save regardless of which slot the game considers
+        // active at load time. This mirrors what every other write kind
+        // does (player_name, school_name, ritch, catalog, mail, garden).
+        for (const slot of ['A', 'B'] as const) {
+          writeInventorySlot(
+            payload,
+            slot,
+            edit.slotIndex,
+            edit.storedValue,
+            edit.quantity,
+          );
         }
         break;
       }

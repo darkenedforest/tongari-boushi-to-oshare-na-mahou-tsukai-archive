@@ -24,6 +24,7 @@ import type {
   Game1Spell,
   Game1Title,
   GardenSummary,
+  InventoryBagSlot,
   InventorySlot,
   MailEntry,
   PreambleInfo,
@@ -192,6 +193,24 @@ export const OFFSETS = {
   mailStart: 0x17400,
   mailEnd: 0x1cfd0,
   mailStride: 0xa8,
+
+  // Player inventory bag — 15 slots × 6-byte records at body 0x1D9B6.
+  // Encoding cracked in translation-repo step-260: ARM9 lookup function
+  // 0x0200BB2C plus per-category internal-ID base/count tables at
+  // RAM 0x0209CCC4 / 0x0209CD14 / 0x0209CC9C define 39 categories with
+  // disjoint internal-ID ranges. The stored u16 LE at +0 is the game's
+  // internal item-ID (NOT the itemname.ofs positional iid); the iid↔
+  // stored_value bridge lives in public/data/inventory_encoding.json
+  // (3346 entries, full bijection). Per-record layout:
+  //   +0..1  u16 LE stored_value
+  //   +2..4  three 0x00 padding bytes
+  //   +5     u8  quantity (1..255 when occupied)
+  // Empty sentinel: ff ff ff ff ff 00. Verified against tongari_en.dsv
+  // slot-B inventory (7 occupied slots 1..7 + slot 15 King Oyster
+  // Mushroom; slots 8..14 sentinel).
+  inventoryBagStart: 0x1d9b6,
+  inventoryBagCount: 15,
+  inventoryBagStride: 6,
 
   // Wallet
   ritch: 0x1cfd0,
@@ -512,6 +531,41 @@ function parseActiveInventory(body: Uint8Array, view: DataView): InventorySlot[]
 }
 
 // ---------------------------------------------------------------------------
+// Inventory bag (15-slot player inventory at body 0x1D9B6)
+// ---------------------------------------------------------------------------
+
+/** Parse the 15-slot inventory bag. The iid decode itself is left as null
+ *  here — the parser doesn't ship the stored↔iid mapping (lives in the
+ *  fetched public/data/inventory_encoding.json so the bundle stays small).
+ *  The component layer in SaveFileInspector.tsx fills in the iid once the
+ *  lookups payload has loaded. */
+function parseInventoryBag(body: Uint8Array): InventoryBagSlot[] {
+  const out: InventoryBagSlot[] = [];
+  for (let i = 0; i < OFFSETS.inventoryBagCount; i++) {
+    const off = OFFSETS.inventoryBagStart + i * OFFSETS.inventoryBagStride;
+    const rec = body.subarray(off, off + OFFSETS.inventoryBagStride);
+    // Empty sentinel: ff ff ff ff ff 00.
+    const isEmpty =
+      rec[0] === 0xff && rec[1] === 0xff && rec[2] === 0xff &&
+      rec[3] === 0xff && rec[4] === 0xff && rec[5] === 0x00;
+    const storedValue = rec[0] | (rec[1] << 8);
+    const quantity = rec[5];
+    out.push({
+      index: i,
+      bodyOffset: off,
+      empty: isEmpty,
+      storedValue,
+      // iid is resolved at render time once the inventory_encoding lookup
+      // has loaded. Parser stays decode-only on the bytes themselves.
+      iid: null,
+      quantity,
+      rawHex: bytesToHex(rec),
+    });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Catalog announcements
 // ---------------------------------------------------------------------------
 
@@ -824,6 +878,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       characterCreateTimestamp: { rawHex: '', decoded: '(uninit)' },
       ritch: null,
       activeInventory: [],
+      inventoryBag: [],
       catalogEntries: [],
       mailEntries: [],
       garden: { totalTiles: 0, populatedTiles: 0, tiles: [] },
@@ -893,6 +948,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     characterCreateTimestamp,
     ritch,
     activeInventory: parseActiveInventory(body, view),
+    inventoryBag: parseInventoryBag(body),
     catalogEntries: parseCatalog(body),
     mailEntries: parseMail(body),
     garden: parseGarden(body),
@@ -1357,6 +1413,7 @@ export const REGION_DESCRIPTORS = {
   eventFlags: { id: 'eventFlags', title: 'Event flag region', range: 'body[0x18:0x460], ~1 KiB bit-flags', confidence: 'candidate' as const },
   profile: { id: 'profile', title: 'Player name + school/shop name (editable)', range: 'player body[0x47E] + body[0x1149C] + body[0x114BA]; school body[0x114B2] (+ §5 mirror body[0x115B2])', confidence: 'candidate' as const },
   inventory: { id: 'inventory', title: 'Region at body 0x4300 — semantics unconfirmed (previously labelled "active inventory")', range: 'body[0x4300:0x4480], 8-byte stride', confidence: 'disputed' as const },
+  inventoryBag: { id: 'inventoryBag', title: 'Inventory bag — 15 slots (editable)', range: 'body[0x1D9B6:0x1DA14], 6-byte stride; per-slot u16 LE stored_value + 3B pad + u8 quantity', confidence: 'confirmed' as const },
   activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
   collectionStats: { id: 'collectionStats', title: 'Collection statistics', range: 'body[0x11550:0x115F4], 14-byte records', confidence: 'candidate' as const },
   garden: { id: 'garden', title: 'Garden plant tile state', range: 'body[0x12400:0x16000], 12-byte records', confidence: 'confirmed' as const },

@@ -27,3 +27,6 @@ Thumbs.db
 
 # local Wordpress scrape cache (used to migrate old patch history)
 .wp_scrape/
+
+# build artifacts from test-harness esbuild bundle (scripts/test_savefile_roundtrip.mjs)
+tmp/

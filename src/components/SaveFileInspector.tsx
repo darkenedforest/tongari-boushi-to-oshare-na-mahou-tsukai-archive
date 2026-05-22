@@ -12,12 +12,20 @@ import {
   MAIL_TEXT_MAX_CHARS,
   PLAYER_NAME_MAX_CHARS,
   SCHOOL_NAME_MAX_CHARS,
+  INVENTORY_BAG_COUNT,
+  INVENTORY_QUANTITY_MIN,
+  INVENTORY_QUANTITY_MAX,
   type PendingEdit,
 } from '../lib/savefile/editor';
 import {
+  loadInventoryEncoding,
   loadSavefileLookups,
+  lookupIidFromStored,
+  lookupItemName,
   lookupPlantName,
+  lookupStoredFromIid,
   resolveInventoryItem,
+  type InventoryEncoding,
   type SavefileLookups,
 } from '../lib/savefile/lookups';
 import type {
@@ -100,6 +108,11 @@ interface PendingEditMap {
   mail: Record<number, string>;
   /** Keyed by garden record's body offset. */
   gardenTile: Record<number, { plantId: number; growTime: number }>;
+  /** Keyed by inventory slot index (0..14). `storedValue===null` stages
+   *  the empty sentinel; a number stages an occupied record at that
+   *  stored_value (the u16 game-internal item-ID written to +0..2) with
+   *  the given quantity (written to +5). */
+  inventorySlot: Record<number, { storedValue: number | null; quantity: number }>;
 }
 
 function makeEmptyEdits(): PendingEditMap {
@@ -108,6 +121,7 @@ function makeEmptyEdits(): PendingEditMap {
     catalogClear: {},
     mail: {},
     gardenTile: {},
+    inventorySlot: {},
   };
 }
 
@@ -125,6 +139,7 @@ function pendingEditCount(edits: PendingEditMap): number {
   n += Object.keys(edits.catalogClear).length;
   n += Object.keys(edits.mail).length;
   n += Object.keys(edits.gardenTile).length;
+  n += Object.keys(edits.inventorySlot).length;
   return n;
 }
 
@@ -154,6 +169,14 @@ function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
       recordOffset: Number(k),
       plantId: v.plantId,
       growTime: v.growTime,
+    });
+  }
+  for (const [k, v] of Object.entries(edits.inventorySlot)) {
+    out.push({
+      kind: 'inventory_slot',
+      slotIndex: Number(k),
+      storedValue: v.storedValue,
+      quantity: v.quantity,
     });
   }
   return out;
@@ -396,6 +419,333 @@ function GardenTileEditor({
         )}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Inventory bag — 15-slot dropdown + quantity editor
+// ---------------------------------------------------------------------------
+
+/** Build a sorted list of (iid, name) pairs for the "(empty) + every game
+ *  item" dropdown. Lookups + encoding are loaded async, so on the first
+ *  render the array is empty and the dropdown shows only "(empty)" — the
+ *  effective inventory_encoding.json fetch is fast (~70KB) so this is a
+ *  brief transitional state. */
+function buildItemOptions(
+  lookups: SavefileLookups | null,
+  inventoryEncoding: InventoryEncoding | null,
+): { iid: number; name: string }[] {
+  if (!lookups || !inventoryEncoding) return [];
+  // Only include iids that are BOTH in the items table (have an EN name)
+  // AND in the inventory_encoding bijection (have a stored_value the
+  // game knows about). The intersection is ~3322 entries.
+  const out: { iid: number; name: string }[] = [];
+  for (const iidStr of Object.keys(inventoryEncoding.iidToStored)) {
+    const iid = Number(iidStr);
+    const name = lookupItemName(lookups, iid);
+    if (name === null) continue;
+    out.push({ iid, name });
+  }
+  // Sort alphabetically by EN name for usability — the iid order would
+  // be a random-looking jumble (it's sorted by internal-ID, not by
+  // name).
+  out.sort((a, b) => a.name.localeCompare(b.name));
+  return out;
+}
+
+interface InventoryBagSectionProps {
+  slot: SlotParse;
+  editable: boolean;
+  editCtx: EditCtx;
+  lookups: SavefileLookups | null;
+  inventoryEncoding: InventoryEncoding | null;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function InventoryBagSection({
+  slot,
+  editable,
+  editCtx,
+  lookups,
+  inventoryEncoding,
+  notes,
+  setNotes,
+  fileLabel,
+  payloadSha,
+}: InventoryBagSectionProps) {
+  // Build the dropdown's item options once per (lookups, encoding) pair.
+  const itemOptions = useMemo(
+    () => buildItemOptions(lookups, inventoryEncoding),
+    [lookups, inventoryEncoding],
+  );
+
+  // Compute the per-slot "current view" — pending edit if staged, else
+  // the parsed on-disk value. The "(empty)" sentinel is represented by
+  // iid=null + quantity=0; an occupied slot has a real iid + quantity.
+  function getSlotView(slotIndex: number): {
+    iid: number | null;
+    quantity: number;
+    isPending: boolean;
+    originalIid: number | null;
+    originalQuantity: number;
+  } {
+    const onDisk = slot.inventoryBag[slotIndex];
+    const onDiskEmpty = !onDisk || onDisk.empty;
+    const originalIid =
+      onDiskEmpty || !inventoryEncoding
+        ? null
+        : lookupIidFromStored(inventoryEncoding, onDisk.storedValue);
+    const originalQuantity = onDiskEmpty ? 0 : onDisk.quantity;
+
+    const pending = editCtx.edits.inventorySlot[slotIndex];
+    if (pending !== undefined) {
+      // Pending: storedValue=null means "stage empty". Otherwise we need
+      // to convert stored→iid for display.
+      const pendingIid =
+        pending.storedValue === null || !inventoryEncoding
+          ? null
+          : lookupIidFromStored(inventoryEncoding, pending.storedValue);
+      return {
+        iid: pendingIid,
+        quantity: pending.quantity,
+        isPending: true,
+        originalIid,
+        originalQuantity,
+      };
+    }
+    return {
+      iid: originalIid,
+      quantity: originalQuantity,
+      isPending: false,
+      originalIid,
+      originalQuantity,
+    };
+  }
+
+  function stageEdit(
+    slotIndex: number,
+    iid: number | null,
+    quantity: number,
+  ) {
+    if (!inventoryEncoding) return;
+    if (iid === null) {
+      // Stage empty sentinel.
+      editCtx.setEdits(prev => ({
+        ...prev,
+        inventorySlot: {
+          ...prev.inventorySlot,
+          [slotIndex]: { storedValue: null, quantity: 0 },
+        },
+      }));
+      return;
+    }
+    const stored = lookupStoredFromIid(inventoryEncoding, iid);
+    if (stored === null) return;
+    editCtx.setEdits(prev => ({
+      ...prev,
+      inventorySlot: {
+        ...prev.inventorySlot,
+        [slotIndex]: { storedValue: stored, quantity },
+      },
+    }));
+  }
+
+  function clearEdit(slotIndex: number) {
+    editCtx.setEdits(prev => {
+      const next = { ...prev.inventorySlot };
+      delete next[slotIndex];
+      return { ...prev, inventorySlot: next };
+    });
+  }
+
+  // Snapshot for the Section's collapsible "what is parsed here" panel.
+  const populatedCount = slot.inventoryBag.filter(s => !s.empty).length;
+  const parsedSnapshot = `${populatedCount}/${INVENTORY_BAG_COUNT} populated slots`;
+
+  const encodingReady =
+    inventoryEncoding !== null &&
+    inventoryEncoding.ok &&
+    lookups !== null &&
+    lookups.ok;
+
+  return (
+    <Section
+      regionId={`${slot.label}-inventoryBag`}
+      title={REGION_DESCRIPTORS.inventoryBag.title}
+      range={REGION_DESCRIPTORS.inventoryBag.range}
+      confidence={REGION_DESCRIPTORS.inventoryBag.confidence}
+      parsedSnapshot={parsedSnapshot}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p className="note-text" style={{ marginTop: 0 }}>
+        Player inventory bag — 15 fixed slots at body 0x1D9B6 (stride 6
+        bytes). Each occupied record stores a u16 LE{' '}
+        <code>stored_value</code> (the game&apos;s internal item-ID),
+        three 0x00 padding bytes, and a u8 quantity. Empty slots use the
+        sentinel <code>ff ff ff ff ff 00</code>. The iid↔stored_value
+        bijection was cracked in translation-repo step-260 via ARM9
+        lookup function 0x0200BB2C plus the per-category base/count
+        tables at RAM 0x0209CCC4 / 0x0209CD14 / 0x0209CC9C (3346
+        items across 39 disjoint internal-ID ranges).
+      </p>
+      {!encodingReady && (
+        <p className="muted small">
+          Loading item-name and stored-value tables…
+        </p>
+      )}
+      <table className="data-table inventory-bag-table">
+        <thead>
+          <tr>
+            <th>Slot</th>
+            <th>Item</th>
+            <th className="col-right">Qty</th>
+            <th>
+              <code className="muted small">body offset</code>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {slot.inventoryBag.map(bagSlot => {
+            const view = getSlotView(bagSlot.index);
+            const isEmpty = view.iid === null;
+            const itemName =
+              view.iid !== null && lookups
+                ? lookupItemName(lookups, view.iid)
+                : null;
+            const displayLabel = isEmpty
+              ? '(empty)'
+              : itemName ??
+                `iid ${view.iid} (name unavailable)`;
+            const offsetHex = '0x' + bagSlot.bodyOffset.toString(16).toUpperCase();
+            // Don't allow editing until the encoding has loaded — the
+            // dropdown would only show "(empty)" otherwise.
+            const canEditThisRow = editable && encodingReady;
+            return (
+              <tr
+                key={bagSlot.index}
+                className={view.isPending ? 'is-pending' : ''}
+              >
+                <td>{bagSlot.index + 1}</td>
+                <td>
+                  {canEditThisRow ? (
+                    <select
+                      className="inventory-item-select"
+                      value={view.iid === null ? '' : String(view.iid)}
+                      onChange={e => {
+                        const v = e.target.value;
+                        if (v === '') {
+                          stageEdit(bagSlot.index, null, 0);
+                        } else {
+                          const iid = Number(v);
+                          // When transitioning empty -> occupied, seed
+                          // quantity to the on-disk value if there was
+                          // one, else default to 1.
+                          const seedQty =
+                            view.quantity > 0 ? view.quantity : 1;
+                          stageEdit(bagSlot.index, iid, seedQty);
+                        }
+                      }}
+                    >
+                      <option value="">(empty)</option>
+                      {itemOptions.map(opt => (
+                        <option key={opt.iid} value={opt.iid}>
+                          {opt.name}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className={isEmpty ? 'muted' : ''}>
+                      {displayLabel}
+                    </span>
+                  )}
+                  {view.isPending && view.originalIid !== view.iid && (
+                    <div className="muted small">
+                      {view.originalIid === null
+                        ? '(was empty)'
+                        : `was ${lookups ? lookupItemName(lookups, view.originalIid) ?? `iid ${view.originalIid}` : `iid ${view.originalIid}`}`}
+                    </div>
+                  )}
+                </td>
+                <td className="col-right">
+                  {canEditThisRow && !isEmpty ? (
+                    <input
+                      type="number"
+                      className="inventory-qty-input"
+                      min={INVENTORY_QUANTITY_MIN}
+                      max={INVENTORY_QUANTITY_MAX}
+                      step={1}
+                      value={view.quantity}
+                      onChange={e => {
+                        const v = Number.parseInt(e.target.value, 10);
+                        if (!Number.isFinite(v)) return;
+                        const clamped = Math.max(
+                          INVENTORY_QUANTITY_MIN,
+                          Math.min(INVENTORY_QUANTITY_MAX, v),
+                        );
+                        // iid won't be null here because the input only
+                        // renders when isEmpty is false.
+                        stageEdit(bagSlot.index, view.iid, clamped);
+                      }}
+                    />
+                  ) : (
+                    <span className={isEmpty ? 'muted' : ''}>
+                      {isEmpty ? '—' : view.quantity}
+                    </span>
+                  )}
+                  {view.isPending &&
+                    !isEmpty &&
+                    view.originalQuantity !== view.quantity && (
+                      <div className="muted small">
+                        was {view.originalQuantity === 0 ? '—' : view.originalQuantity}
+                      </div>
+                    )}
+                </td>
+                <td>
+                  <code className="muted small">{offsetHex}</code>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {editable && (
+        <div className="inventory-bag-actions">
+          {Object.keys(editCtx.edits.inventorySlot).length > 0 && (
+            <button
+              type="button"
+              className="inline-edit-clear"
+              onClick={() => {
+                editCtx.setEdits(prev => ({
+                  ...prev,
+                  inventorySlot: {},
+                }));
+              }}
+            >
+              Drop all pending inventory edits
+            </button>
+          )}
+        </div>
+      )}
+      {!editable && (
+        <p className="muted small">
+          Edit affordance is exposed on the slot A tab. Edits mirror to
+          both slot A and slot B automatically when applied.
+        </p>
+      )}
+      <p className="note-text">
+        Edits are mirrored to both slot A (body 0x1D9B6) and slot B
+        (body 0x1D9B6 in slot B&apos;s body) so the next ping-pong save
+        write picks up the change regardless of which slot the game
+        considers current. All three checksum levels (header, body,
+        extra[0]) are recomputed automatically.
+      </p>
+    </Section>
   );
 }
 
@@ -854,6 +1204,10 @@ interface SlotViewProps {
   /** Lookup tables for ID -> EN-name cross-referencing. `null` until the
    *  fetch finishes; sections that need names should fall back gracefully. */
   lookups: SavefileLookups | null;
+  /** Inventory iid↔stored_value bijection. `null` until the fetch
+   *  finishes; the inventory bag section falls back to raw stored_value
+   *  hex when this isn't yet loaded. */
+  inventoryEncoding: InventoryEncoding | null;
 }
 
 function SlotView({
@@ -865,6 +1219,7 @@ function SlotView({
   editCtx,
   editable,
   lookups,
+  inventoryEncoding,
 }: SlotViewProps) {
   if (slot.uninitialised) {
     return (
@@ -1350,6 +1705,25 @@ function SlotView({
         )}
       </Section>
 
+      {/* Inventory bag — 15-slot player inventory @ body 0x1D9B6 (step-260
+          cracked the iid↔stored bijection via ARM9 lookup function
+          0x0200BB2C). Each 6-byte record stores `u16 LE stored_value | 3B
+          pad | u8 quantity` for occupied slots, or the sentinel
+          `ff ff ff ff ff 00` for empty slots. Edits mirror to both slot A
+          and slot B following the same write-both pattern every other
+          edit kind uses. */}
+      <InventoryBagSection
+        slot={slot}
+        editable={editable}
+        editCtx={editCtx}
+        lookups={lookups}
+        inventoryEncoding={inventoryEncoding}
+        notes={notes}
+        setNotes={setNotes}
+        fileLabel={fileLabel}
+        payloadSha={payloadSha}
+      />
+
       {/* Activity log */}
       <Section
         regionId={`${slot.label}-activityLog`}
@@ -1825,11 +2199,16 @@ export default function SaveFileInspector() {
   // /data/savefile_lookups.json. While unloaded, the inspector renders
   // raw IDs with an honest "(loading names…)" caveat instead of fake names.
   const [lookups, setLookups] = useState<SavefileLookups | null>(null);
+  const [inventoryEncoding, setInventoryEncoding] =
+    useState<InventoryEncoding | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     loadSavefileLookups().then(result => {
       if (!cancelled) setLookups(result);
+    });
+    loadInventoryEncoding().then(result => {
+      if (!cancelled) setInventoryEncoding(result);
     });
     return () => {
       cancelled = true;
@@ -2149,6 +2528,7 @@ export default function SaveFileInspector() {
                 editCtx={editCtx}
                 editable={activeSlotTab === 'A' && !slotForTab.uninitialised}
                 lookups={lookups}
+                inventoryEncoding={inventoryEncoding}
               />
             )}
 
@@ -2544,6 +2924,37 @@ export default function SaveFileInspector() {
         .entry-remove-btn.entry-remove-undo {
           background: #fef3f3;
           color: #6e1a14;
+        }
+
+        /* Inventory bag editor */
+        .inventory-bag-table tr.is-pending {
+          background: #fffbe6;
+        }
+        .inventory-item-select {
+          width: 100%;
+          max-width: 260px;
+          padding: 4px 6px;
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+          background: white;
+          font: inherit; font-size: 0.85rem;
+          color: var(--color-ink);
+        }
+        .inventory-item-select:focus { outline: 2px solid var(--color-purple-100); }
+        .inventory-qty-input {
+          width: 70px;
+          padding: 4px 6px;
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+          background: white;
+          font: inherit; font-size: 0.85rem;
+          color: var(--color-ink);
+          text-align: right;
+        }
+        .inventory-qty-input:focus { outline: 2px solid var(--color-purple-100); }
+        .inventory-bag-actions {
+          margin-top: 8px;
+          display: flex; gap: 8px; flex-wrap: wrap;
         }
 
         .note-text {
