@@ -211,6 +211,17 @@ export interface SlotParse {
   otherSlotByte: number;
   /** body[0x00] — per-slot save-write counter. */
   saveCounter: number;
+  /** body[0x01] — counter companion (body[0x00] + per-cartridge salt per
+   *  §20). Differs between slots by ±1 when the slots have written at
+   *  different cadences, even when body[0x00] is identical, so it's a
+   *  reliable secondary signal for active-slot detection. */
+  saveCounterCompanion: number;
+  /** Raw 6-byte last-save timestamp at body[0x494..0x49A] (YY MM DD HH MM
+   *  SS encoding per §22). Byte-wise lexical comparison orders the slots
+   *  chronologically — used by chooseActiveSlot to pick the
+   *  most-recently-written slot. Empty string if the slot is
+   *  uninitialised. */
+  lastSaveTimestampRawHex: string;
   /** body[0x14:0x16] LE — per-save fingerprint random. */
   perSaveFingerprint: number;
   /** body[0x16:0x18] LE — format version sub-code (0x0900=v2.31, 0x102C=3DS). */

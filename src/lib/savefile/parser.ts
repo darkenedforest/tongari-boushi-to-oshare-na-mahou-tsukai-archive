@@ -869,6 +869,8 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       activeFlag: 0xff,
       otherSlotByte: 0xff,
       saveCounter: 0xff,
+      saveCounterCompanion: 0xff,
+      lastSaveTimestampRawHex: '',
       perSaveFingerprint: 0xffff,
       formatVersionSubcode: 0xffff,
       playerName: '',
@@ -939,6 +941,10 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     activeFlag: body[OFFSETS.activeFlag],
     otherSlotByte: body[OFFSETS.otherSlotByte],
     saveCounter: body[OFFSETS.checksum], // body[0] = per-slot save counter low byte
+    saveCounterCompanion: body[OFFSETS.checksum + 1], // body[1] = body[0] + cartridge salt
+    lastSaveTimestampRawHex: bytesToHex(
+      body.subarray(OFFSETS.lastSaveTs, OFFSETS.lastSaveTs + 6),
+    ),
     perSaveFingerprint: u16le(view, OFFSETS.perSaveFingerprint),
     formatVersionSubcode: u16le(view, OFFSETS.formatSubcode),
     playerName,
@@ -1315,6 +1321,43 @@ export const GAME_MAGIC_HEX = {
 // Top-level parse
 // ---------------------------------------------------------------------------
 
+/** Lexical comparison of two 6-byte timestamp hex strings (YY MM DD HH MM
+ *  SS, each field encoded as 2 hex chars). Returns -1 / 0 / +1. Treats
+ *  the empty string and an all-zero timestamp as "unset" — returns 0 so
+ *  the caller falls back to the next signal. */
+function compareLastSaveTimestampHex(aHex: string, bHex: string): number {
+  // Unset checks per decodeDatetime(): all-FF or first byte == 0 (with
+  // the rest of YY/MM/DD also 0) means the timestamp was never written.
+  const aUnset = !aHex || aHex === 'ffffffffffff' || aHex.startsWith('000000');
+  const bUnset = !bHex || bHex === 'ffffffffffff' || bHex.startsWith('000000');
+  if (aUnset && bUnset) return 0;
+  if (aUnset) return -1; // B has a timestamp, A doesn't → B is newer
+  if (bUnset) return 1;
+  if (aHex < bHex) return -1;
+  if (aHex > bHex) return 1;
+  return 0;
+}
+
+/** Pick the active slot (= the most-recently-written valid slot). The
+ *  NDS ping-pong save scheme keeps both slot A and slot B independently
+ *  valid; either may be the "current" one depending on which the last
+ *  in-game save landed in. Discovered in step-254 after the inventory
+ *  editor (step-253) hardcoded reads from slot A and showed the wrong
+ *  contents whenever the most recent save was in slot B.
+ *
+ *  Discriminators, in priority order:
+ *    1. Last-save timestamp at body[0x494..0x49A] (YY MM DD HH MM SS) —
+ *       the most semantically meaningful "which slot was written last"
+ *       signal. Compared lexicographically since the field encoding is
+ *       already big-endian-ordered for chronological comparison.
+ *    2. Counter companion at body[0x01] (per-slot counter+salt). Differs
+ *       even when body[0x00] is identical, as in Tyler's tongari_en.dsv
+ *       where both slots store 0x9D at body[0x00] but slot A stores
+ *       0xFD vs slot B 0xFE at body[0x01].
+ *    3. The per-slot save counter at body[0x00] — kept as a tertiary
+ *       fallback for legacy callers.
+ *    4. If every numerical signal ties, default to slot A (documented
+ *       primary per §13). */
 function chooseActiveSlot(
   a: SlotParse | null,
   b: SlotParse | null,
@@ -1326,22 +1369,55 @@ function chooseActiveSlot(
     return { label: 'B', reason: 'Slot A is uninitialised — B is the only valid save.' };
   }
   if (a && b && !a.uninitialised && !b.uninitialised) {
-    // Higher save counter wins; on tie, slot A wins as the documented primary.
-    if (a.saveCounter !== b.saveCounter) {
-      if (a.saveCounter > b.saveCounter) {
+    // 1. Last-save timestamp comparison (preferred — semantically clear).
+    const tsCmp = compareLastSaveTimestampHex(
+      a.lastSaveTimestampRawHex,
+      b.lastSaveTimestampRawHex,
+    );
+    if (tsCmp !== 0) {
+      const label: SlotLabel = tsCmp > 0 ? 'A' : 'B';
+      const other: SlotLabel = label === 'A' ? 'B' : 'A';
+      return {
+        label,
+        reason:
+          `Slot ${label} last-save timestamp (body[0x494]=${label === 'A' ? a.lastSaveTimestampRawHex : b.lastSaveTimestampRawHex}) ` +
+          `> ${other} (${other === 'A' ? a.lastSaveTimestampRawHex : b.lastSaveTimestampRawHex}).`,
+      };
+    }
+    // 2. Counter-companion at body[0x01] — survives the body[0x00]-tie
+    //    case present in some saves.
+    if (a.saveCounterCompanion !== b.saveCounterCompanion) {
+      if (a.saveCounterCompanion > b.saveCounterCompanion) {
         return {
           label: 'A',
-          reason: `Slot A counter (0x${a.saveCounter.toString(16)}) > B (0x${b.saveCounter.toString(16)}).`,
+          reason:
+            `Slot A counter-companion (body[0x01]=0x${a.saveCounterCompanion.toString(16)}) ` +
+            `> B (0x${b.saveCounterCompanion.toString(16)}); timestamps tied.`,
         };
       }
       return {
         label: 'B',
-        reason: `Slot B counter (0x${b.saveCounter.toString(16)}) > A (0x${a.saveCounter.toString(16)}).`,
+        reason:
+          `Slot B counter-companion (body[0x01]=0x${b.saveCounterCompanion.toString(16)}) ` +
+          `> A (0x${a.saveCounterCompanion.toString(16)}); timestamps tied.`,
+      };
+    }
+    // 3. body[0x00] counter — final tie-breaker before defaulting.
+    if (a.saveCounter !== b.saveCounter) {
+      if (a.saveCounter > b.saveCounter) {
+        return {
+          label: 'A',
+          reason: `Slot A counter (body[0x00]=0x${a.saveCounter.toString(16)}) > B (0x${b.saveCounter.toString(16)}); timestamps + companion tied.`,
+        };
+      }
+      return {
+        label: 'B',
+        reason: `Slot B counter (body[0x00]=0x${b.saveCounter.toString(16)}) > A (0x${a.saveCounter.toString(16)}); timestamps + companion tied.`,
       };
     }
     return {
       label: 'A',
-      reason: 'Counters match; defaulting to A (documented primary).',
+      reason: 'Every active-slot signal tied; defaulting to A (documented primary).',
     };
   }
   return { label: null, reason: 'Neither slot looks initialised.' };

@@ -734,8 +734,10 @@ function InventoryBagSection({
       )}
       {!editable && (
         <p className="muted small">
-          Edit affordance is exposed on the slot A tab. Edits mirror to
-          both slot A and slot B automatically when applied.
+          Edit affordance is exposed on the active-slot tab (the
+          most-recently-written slot, marked &quot;active&quot; in the
+          tab strip). Edits mirror to both slot A and slot B
+          automatically when applied.
         </p>
       )}
       <p className="note-text">
@@ -1198,8 +1200,11 @@ interface SlotViewProps {
   payloadSha: string;
   editCtx: EditCtx;
   /** True iff this is the slot the user is currently inspecting AND the
-   *  one we expose edit controls on. We only allow editing on slot A;
-   *  every edit mirrors to both slots automatically. */
+   *  one we expose edit controls on. The active-slot tab (the
+   *  most-recently-written valid slot per chooseActiveSlot) is the only
+   *  one with edit affordances exposed — pre-step-254 this was hardcoded
+   *  to slot A and produced the wrong UI for saves whose last write
+   *  landed in slot B. Every edit mirrors to both slots automatically. */
   editable: boolean;
   /** Lookup tables for ID -> EN-name cross-referencing. `null` until the
    *  fetch finishes; sections that need names should fall back gracefully. */
@@ -2526,7 +2531,19 @@ export default function SaveFileInspector() {
                 fileLabel={fileLabel}
                 payloadSha={payloadSha}
                 editCtx={editCtx}
-                editable={activeSlotTab === 'A' && !slotForTab.uninitialised}
+                // Expose edits on the active (most-recently-written) slot
+                // rather than hardcoding slot A. Edits still mirror to
+                // both slots automatically; this just changes which tab
+                // surfaces the affordance so the inputs the user sees
+                // reflect the bytes they're actually editing. Pre-step-254
+                // this was hardcoded `activeSlotTab === 'A'`, which
+                // exposed edits on stale slot-A data for any save whose
+                // last write landed in slot B.
+                editable={
+                  parse.activeSlot !== null &&
+                  activeSlotTab === parse.activeSlot &&
+                  !slotForTab.uninitialised
+                }
                 lookups={lookups}
                 inventoryEncoding={inventoryEncoding}
               />

@@ -83,9 +83,23 @@ console.log(`Loaded fixture: ${FIXTURE} (${file.length} bytes)`);
 const parseBefore = await parser.parseSaveFile(file);
 console.log('\n--- Before edits ---');
 console.log(`active slot: ${parseBefore.activeSlot}`);
+console.log(`active-slot reason: ${parseBefore.activeSlotReason}`);
 console.log(`wrapper kind: ${parseBefore.wrapper.kind}`);
 const slotABefore = parseBefore.slotA;
 const slotBBefore = parseBefore.slotB;
+
+// step-254 active-slot identification: the previous editor (step-253)
+// hardcoded reads from slot A and silently showed the WRONG inventory
+// for any save whose last in-game write landed in slot B. With this
+// fixture, the last save did land in slot B (slot A is leftover stale
+// data from a much earlier walkthrough), so the active-slot picker
+// MUST return 'B'. If this assertion fails the inventory editor will
+// regress to the step-253 bug — slots 1-14 will look blank to the user
+// because slot A's bag was emptied out.
+console.log('\n--- Active-slot detection (step-254) ---');
+console.log(`slot A body[0x00]=${slotABefore.saveCounter.toString(16)} body[0x01]=${slotABefore.saveCounterCompanion.toString(16)} ts=${slotABefore.lastSaveTimestampRawHex}`);
+console.log(`slot B body[0x00]=${slotBBefore.saveCounter.toString(16)} body[0x01]=${slotBBefore.saveCounterCompanion.toString(16)} ts=${slotBBefore.lastSaveTimestampRawHex}`);
+
 console.log(`slot A:`);
 console.log(`  player name: ${JSON.stringify(slotABefore.playerName)}`);
 console.log(`  player name canonical (§22 copy): ${JSON.stringify(slotABefore.playerNameCanonical)}`);
@@ -136,7 +150,29 @@ function assertTrue(label, got) {
   }
 }
 
-console.log('\n--- Parse assertions (slot B inventory bag) ---');
+console.log('\n--- Parse assertions (active slot detection — step-254) ---');
+// The fixture's most-recent in-game save landed in slot B (slot A has
+// the stale single-mushroom inventory from an earlier walkthrough). If
+// chooseActiveSlot ever returns 'A' for this fixture, the inventory
+// editor regresses to its step-253 bug.
+assertEq('parse.activeSlot for tongari_en.dsv', parseBefore.activeSlot, 'B');
+
+// Drive the assertions through the same code path the React UI uses:
+// pick slotForTab via parse.activeSlot just like
+// SaveFileInspector.tsx's `slotForTab = activeSlotTab === 'A' ? ...`
+// does, where activeSlotTab is initialized from parse.activeSlot at
+// line 2225. Going through the active-slot indirection rather than
+// asserting against slotBBefore directly catches future regressions
+// where the picker output and the UI's tab-switch logic drift apart.
+const activeSlotBefore =
+  parseBefore.activeSlot === 'A' ? slotABefore : slotBBefore;
+assertEq(
+  `active slot label round-trips back through SlotParse`,
+  activeSlotBefore.label,
+  parseBefore.activeSlot,
+);
+
+console.log('\n--- Parse assertions (active slot inventory bag = slot B for fixture) ---');
 const expectedSlotB = [
   { slot: 1,  storedValue: 0x019E, expectedName: 'Yellow May Lily',       quantity: 1 },
   { slot: 2,  storedValue: 0x025A, expectedName: 'Cranberry',             quantity: 1 },
@@ -148,35 +184,39 @@ const expectedSlotB = [
   { slot: 15, storedValue: 0x0203, expectedName: 'King Oyster Mushroom',  quantity: 1 },
 ];
 for (const exp of expectedSlotB) {
-  const bagSlot = slotBBefore.inventoryBag[exp.slot - 1];
+  // Read through activeSlotBefore (which is slotBBefore for this fixture
+  // post-step-254). Asserting via activeSlotBefore catches the bug where
+  // the picker returns the wrong label but the underlying SlotParse for
+  // the chosen label is still correct.
+  const bagSlot = activeSlotBefore.inventoryBag[exp.slot - 1];
   assertEq(
-    `slot B inv slot ${exp.slot}: storedValue`,
+    `active-slot inv slot ${exp.slot}: storedValue`,
     bagSlot.storedValue,
     exp.storedValue,
   );
   assertEq(
-    `slot B inv slot ${exp.slot}: empty=false`,
+    `active-slot inv slot ${exp.slot}: empty=false`,
     bagSlot.empty,
     false,
   );
   assertEq(
-    `slot B inv slot ${exp.slot}: quantity`,
+    `active-slot inv slot ${exp.slot}: quantity`,
     bagSlot.quantity,
     exp.quantity,
   );
   const iid = iidByStored(bagSlot.storedValue);
   const name = iid !== null ? nameByIid(iid) : null;
   assertEq(
-    `slot B inv slot ${exp.slot}: iid→name`,
+    `active-slot inv slot ${exp.slot}: iid→name`,
     name,
     exp.expectedName,
   );
 }
-// Slots 8..14 should be the empty sentinel.
+// Slots 8..14 should be the empty sentinel (across the active slot).
 for (const idx of [8, 9, 10, 11, 12, 13, 14]) {
-  const bagSlot = slotBBefore.inventoryBag[idx - 1];
+  const bagSlot = activeSlotBefore.inventoryBag[idx - 1];
   assertEq(
-    `slot B inv slot ${idx}: empty=true`,
+    `active-slot inv slot ${idx}: empty=true`,
     bagSlot.empty,
     true,
   );
@@ -383,6 +423,73 @@ console.log('\n--- Mirror check: slot A inventory bag also got the edits ---');
   const sA8 = slotAAfter.inventoryBag[7];
   assertEq('slot A inv slot 8 after: storedValue = 0x025A', sA8.storedValue, 0x025A);
   assertEq('slot A inv slot 8 after: quantity = 5', sA8.quantity, 5);
+}
+
+// ---------------------------------------------------------------------------
+// step-254 active-slot direction-swap test: synthesize a copy of the
+// fixture where slot A's last-save timestamp is BUMPED past slot B's, so
+// the active-slot picker must now pick A. This catches the bug where the
+// picker was hardcoded to a single direction (always-A or always-B).
+//
+// We use the original `file` bytes (still the unmodified .dsv) — the
+// edited `wrapped` bytes have already been verified above so they're
+// independent of this test.
+// ---------------------------------------------------------------------------
+
+console.log('\n--- Active-slot direction-swap test (slot A bumped newer) ---');
+{
+  const swapped = new Uint8Array(file);
+  // The 122-byte .dsv footer is preserved at the end; the slot bodies
+  // live inside the first 524288 bytes regardless.
+  const SLOT_A_BODY_FILE_OFFSET = 0x100;
+  const LAST_SAVE_TS_OFFSET = 0x494;
+  const tsAddr = SLOT_A_BODY_FILE_OFFSET + LAST_SAVE_TS_OFFSET;
+  // Original timestamps from the parsed save:
+  //   slot A body[0x494] = 1a 04 15 05 0e 04 (2026-04-21 05:14:04)
+  //   slot B body[0x494] = 1a 04 15 05 0e 15 (2026-04-21 05:14:21)
+  // Bump slot A's seconds field (the 6th byte) by 0x20 so slot A is
+  // chronologically AFTER slot B. We don't touch any checksums because
+  // the active-slot picker runs BEFORE csum verification; we just need
+  // the picker to flip its answer. (The downstream csum-OK reads would
+  // see "FAIL" on the swapped save, but that's expected and orthogonal
+  // to the picker logic this test exercises.)
+  swapped[tsAddr + 5] = swapped[tsAddr + 5] + 0x20;
+
+  const swappedParse = await parser.parseSaveFile(swapped);
+  assertEq(
+    'synthesized save with slot A timestamp > slot B timestamp picks A',
+    swappedParse.activeSlot,
+    'A',
+  );
+  console.log(`  reason: ${swappedParse.activeSlotReason}`);
+}
+
+// And a second direction-swap test: tie the timestamps but bump slot A's
+// counter-companion (body[0x01]) past slot B's, exercising the
+// timestamp-tied -> counter-companion fallback.
+console.log('\n--- Active-slot fallback test (timestamps tied, A companion bumped) ---');
+{
+  const swapped2 = new Uint8Array(file);
+  const SLOT_A_BODY_FILE_OFFSET = 0x100;
+  const SLOT_B_BODY_FILE_OFFSET = 0x40000;
+  const LAST_SAVE_TS_OFFSET = 0x494;
+  // Force-tie the timestamps by copying B's into A.
+  for (let i = 0; i < 6; i++) {
+    swapped2[SLOT_A_BODY_FILE_OFFSET + LAST_SAVE_TS_OFFSET + i] =
+      swapped2[SLOT_B_BODY_FILE_OFFSET + LAST_SAVE_TS_OFFSET + i];
+  }
+  // Bump slot A's counter-companion past slot B's. Original values:
+  //   slot A body[0x01] = 0xFD, slot B body[0x01] = 0xFE.
+  // Setting A's companion to 0xFF makes it strictly greater than B's.
+  swapped2[SLOT_A_BODY_FILE_OFFSET + 0x01] = 0xff;
+
+  const swapped2Parse = await parser.parseSaveFile(swapped2);
+  assertEq(
+    'timestamps tied + slot A companion (body[0x01]) > slot B companion picks A',
+    swapped2Parse.activeSlot,
+    'A',
+  );
+  console.log(`  reason: ${swapped2Parse.activeSlotReason}`);
 }
 
 console.log(`\n${failures === 0 ? 'ALL TESTS PASSED' : `${failures} TEST(S) FAILED`}`);

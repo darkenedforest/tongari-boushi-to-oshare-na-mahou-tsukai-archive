@@ -1,0 +1,50 @@
+{
+  "step": "step-254-savefile-active-slot-detection",
+  "timestamp": "2026-05-22T00:00:00Z",
+  "kind": "other",
+  "summary": "Fix the in-browser save-file inspector / editor to pick the most-recently-written valid slot (active slot) when reading and exposing edit affordances. Pre-step-254, chooseActiveSlot compared only body[0x00] (the per-slot save counter low byte) and defaulted to slot A on tie, which silently surfaced the wrong slot for any NDS ping-pong save whose last write landed in slot B with a body[0x00]-tie. Tyler's tongari_en.dsv fixture exposed the bug: both slots store body[0x00]=0x9D but slot B is genuinely the most-recently-written one, with slot A holding stale leftover inventory (only slot 15's King Oyster Mushroom from an earlier walkthrough). The bug was systemic — ritch, inventory bag, and any other field that differs between the slots all read from the wrong slot. The editable affordance was additionally hardcoded to `activeSlotTab === 'A'` so users could not edit valid slot-B saves at all.",
+  "rows": [
+    {
+      "ref": "src/lib/savefile/parser.ts:chooseActiveSlot",
+      "file_path": "src/lib/savefile/parser.ts",
+      "before": "Compared only body[0x00] save counter; defaulted to slot A on tie.",
+      "after": "Layered comparison: (1) lastSaveTimestampRawHex at body[0x494..0x49A] (YY MM DD HH MM SS, lex-comparable for chronological ordering); (2) saveCounterCompanion at body[0x01] (per-slot counter+salt that differs even when body[0x00] ties); (3) saveCounter at body[0x00]; (4) default to slot A only when every numerical signal ties.",
+      "reason": "The pre-step-254 single-byte body[0x00] comparison silently misidentified the active slot whenever both slots' write counters tied — common across the fixture set since body[0x00] is a globally-incrementing counter, not a per-slot one. The new layered comparison uses the in-game last-save timestamp as the primary signal, which is the most semantically meaningful 'which slot was written last' indicator."
+    },
+    {
+      "ref": "src/lib/savefile/parser.ts:parseSlot",
+      "file_path": "src/lib/savefile/parser.ts",
+      "before": "SlotParse exposed only saveCounter (body[0x00]).",
+      "after": "SlotParse additionally exposes saveCounterCompanion (body[0x01]) and lastSaveTimestampRawHex (body[0x494..0x49A] as hex).",
+      "reason": "Needed to support the layered active-slot picker without re-reading the raw payload in chooseActiveSlot."
+    },
+    {
+      "ref": "src/lib/savefile/types.ts:SlotParse",
+      "file_path": "src/lib/savefile/types.ts",
+      "before": "SlotParse had saveCounter only.",
+      "after": "SlotParse adds saveCounterCompanion: number and lastSaveTimestampRawHex: string, both documented in JSDoc with the §13 / §20 / §22 spec references they correspond to.",
+      "reason": "Type-safe surface for the new active-slot signals."
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx:SlotView.editable",
+      "file_path": "src/components/SaveFileInspector.tsx",
+      "before": "editable={activeSlotTab === 'A' && !slotForTab.uninitialised}",
+      "after": "editable={parse.activeSlot !== null && activeSlotTab === parse.activeSlot && !slotForTab.uninitialised}",
+      "reason": "Edits should be exposed on the active slot the user is actually viewing, not hardcoded to slot A. Pre-step-254 this meant users could not edit any save whose last write landed in slot B because the slot-tab auto-switched to B (via the existing useEffect at line 2225) but the editable flag remained false."
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx:InventoryBagSection prose",
+      "file_path": "src/components/SaveFileInspector.tsx",
+      "before": "'Edit affordance is exposed on the slot A tab. Edits mirror to both slot A and slot B automatically when applied.'",
+      "after": "'Edit affordance is exposed on the active-slot tab (the most-recently-written slot, marked \"active\" in the tab strip). Edits mirror to both slot A and slot B automatically when applied.'",
+      "reason": "Inline documentation stayed accurate with the new editable behavior."
+    },
+    {
+      "ref": "scripts/test_savefile_roundtrip.mjs",
+      "file_path": "scripts/test_savefile_roundtrip.mjs",
+      "before": "Asserted against slotBBefore directly; no active-slot-detection assertions; no direction-swap test.",
+      "after": "Adds (1) assertEq(parseBefore.activeSlot, 'B') for the fixture; (2) drives the inventory-bag assertions through activeSlotBefore (the same SlotParse the React UI picks via parse.activeSlot); (3) a synthesized 'slot A bumped newer' test that copies the fixture and increments slot A's timestamp past slot B's, expecting parse.activeSlot to flip to 'A'; (4) a synthesized 'timestamps tied, counter-companion bumped' test that exercises the body[0x01] fallback path.",
+      "reason": "Prevents regression to either side of the picker — the old bug (always-A) AND the symmetric inverted bug (always-B) would both fail the direction-swap tests."
+    }
+  ]
+}
