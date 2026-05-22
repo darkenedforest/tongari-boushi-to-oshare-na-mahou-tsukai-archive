@@ -78,24 +78,38 @@ export const OFFSETS = {
   eventFlagsStart: 0x18,
   eventFlagsEnd: 0x460,
 
-  // Player + school name (body 0x460..0x4B0). step-250 reclassification:
-  // body 0x47E was previously labelled "player name", but Tyler's
-  // melonDS-confirmed save14 reveals it's actually the SCHOOL name
-  // (the title shown on the save-load screen — save14 shows "Revere"
-  // here while the in-dialog player name is "Lamb"). The real player
-  // display name lives inside the character record at body 0x11488 +
-  // 0x14 = body 0x1149C, per phase-7's character-record decode.
+  // Player + school name (body 0x460..0x4B0). step-252 re-resolution:
   //
-  // DISPUTED — Game 1 analogy via LaytonLoztew's mqreader.js shows
-  // school name lives at FILE 0x8FBC (not inside the 0x460..0x4B0
-  // flag-array region as our 0x47E hypothesis claims). The 0x47E offset
-  // is inside Game 3's flag-array region and is therefore implausible
-  // as a school-name location. We retain the existing offset only so
-  // the empirically-observed value from save14 ("Revere") keeps
-  // rendering — but the offset itself has no ARM9-disassembly anchor
-  // and may be coincidental. Game 3 offset is uncertain.
-  schoolName: 0x47e,
+  //  - body 0x47E holds the §22 "canonical authoritative" player name
+  //    (10 bytes UTF-16 LE; example "FUNNY" in tongari_en.dsv). In
+  //    earlier corpus saves Tyler's melonDS check on save14 saw
+  //    "Revere" here, and step-250 inferred that meant 0x47E was the
+  //    SCHOOL name — but a wider sweep of v2.31 EN saves (v2.31
+  //    tongari_en.dsv + 7 slot-snapshots) shows 0x47E consistently
+  //    holds the player's display name, while the school/shop name
+  //    actually lives at body 0x114B2 (the bytes `53 00 68 00 6F 00
+  //    70 00` spell "Shop" there). step-250's reclassification was
+  //    correct that 0x47E is NOT the only player-name copy, but
+  //    incorrect that it became the school slot — the school name
+  //    lives elsewhere.
+  //
+  //  - body 0x114B2 is the empirically-observed school/shop/town
+  //    name location (12 bytes UTF-16 LE). Format notes §5 documents
+  //    this field at body 0x115B2, but the documented offset is
+  //    consistently 0x100 high relative to the actual location in
+  //    v2.31 EN saves. We read from 0x114B2 (matches the data) and
+  //    the editor writes to BOTH 0x114B2 and 0x115B2 so saves whose
+  //    build / region happens to use the higher offset also get the
+  //    edit applied.
+  schoolName: 0x114b2,
   schoolNameLen: 12, // 6 UTF-16 LE chars (max)
+  /** §22 canonical authoritative player-name copy (10 bytes UTF-16
+   *  LE). Surfaced in the inspector as the player-name "second copy"
+   *  read-back; the editor mirrors writes here so the save-load
+   *  screen title (which reads from this offset in some builds)
+   *  matches the in-dialog name. */
+  playerNameCanonical: 0x47e,
+  playerNameCanonicalLen: 10,
   lastSaveTs: 0x494,
   charCreateTs: 0x4a4,
 
@@ -804,6 +818,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       perSaveFingerprint: 0xffff,
       formatVersionSubcode: 0xffff,
       playerName: '',
+      playerNameCanonical: '',
       schoolName: '',
       lastSaveTimestamp: { rawHex: '', decoded: '(uninit)' },
       characterCreateTimestamp: { rawHex: '', decoded: '(uninit)' },
@@ -828,6 +843,20 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
   const playerName = decodeUtf16Le(
     body.subarray(OFFSETS.playerName, OFFSETS.playerName + OFFSETS.playerNameLen),
     11,
+  );
+
+  // §22 canonical player-name copy (body 0x47E, 10 bytes / 5 chars).
+  // Surfaced so the inspector can show "name visible on save-load
+  // screen" alongside the character-record copy at 0x1149C. In well-
+  // synced saves these match; if they diverge it's usually because the
+  // game updated 0x1149C on a name change but the cached 0x47E copy is
+  // stale.
+  const playerNameCanonical = decodeUtf16Le(
+    body.subarray(
+      OFFSETS.playerNameCanonical,
+      OFFSETS.playerNameCanonical + OFFSETS.playerNameCanonicalLen,
+    ),
+    5,
   );
 
   const schoolName = decodeUtf16Le(
@@ -858,6 +887,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     perSaveFingerprint: u16le(view, OFFSETS.perSaveFingerprint),
     formatVersionSubcode: u16le(view, OFFSETS.formatSubcode),
     playerName,
+    playerNameCanonical,
     schoolName,
     lastSaveTimestamp,
     characterCreateTimestamp,
@@ -1325,12 +1355,12 @@ export const REGION_DESCRIPTORS = {
   versionMagic: { id: 'versionMagic', title: 'Format version magic + sub-code', range: 'body[0x02:0x04] + body[0x16:0x18]', confidence: 'confirmed' as const },
   wizardLevelCandidate: { id: 'wizardLevelCandidate', title: 'Wizard level candidate (read-only — please test)', range: 'body[0x11488 + 0x5a]', confidence: 'candidate' as const },
   eventFlags: { id: 'eventFlags', title: 'Event flag region', range: 'body[0x18:0x460], ~1 KiB bit-flags', confidence: 'candidate' as const },
-  profile: { id: 'profile', title: 'Player + school name (player CONFIRMED, school DISPUTED)', range: 'school body[0x47E:0x48A] (DISPUTED); player body[0x1149C:0x114B2]', confidence: 'candidate' as const },
+  profile: { id: 'profile', title: 'Player name + school/shop name (editable)', range: 'player body[0x47E] + body[0x1149C] + body[0x114BA]; school body[0x114B2] (+ §5 mirror body[0x115B2])', confidence: 'candidate' as const },
   inventory: { id: 'inventory', title: 'Region at body 0x4300 — semantics unconfirmed (previously labelled "active inventory")', range: 'body[0x4300:0x4480], 8-byte stride', confidence: 'disputed' as const },
   activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
   collectionStats: { id: 'collectionStats', title: 'Collection statistics', range: 'body[0x11550:0x115F4], 14-byte records', confidence: 'candidate' as const },
   garden: { id: 'garden', title: 'Garden plant tile state', range: 'body[0x12400:0x16000], 12-byte records', confidence: 'confirmed' as const },
-  catalog: { id: 'catalog', title: 'Shop catalog announcement board', range: 'body[0x163F2+], 168-byte stride', confidence: 'confirmed' as const },
+  catalog: { id: 'catalog', title: 'Shop catalog announcement board (editable + removable)', range: 'body[0x162B6+], 168-byte stride (6-byte header + 162-byte UTF-16 text body)', confidence: 'confirmed' as const },
   mail: { id: 'mail', title: 'Per-NPC mail bodies', range: 'body[0x17400+], 168-byte stride', confidence: 'confirmed' as const },
   ritch: { id: 'ritch', title: 'Ritch (wallet)', range: 'body[0x1CFD0], u32 LE', confidence: 'confirmed' as const },
   bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },

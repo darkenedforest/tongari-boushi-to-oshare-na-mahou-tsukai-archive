@@ -187,12 +187,23 @@ export interface SlotParse {
   /** body[0x16:0x18] LE — format version sub-code (0x0900=v2.31, 0x102C=3DS). */
   formatVersionSubcode: number;
 
-  // Profile region (body 0x460..0x4B0). step-250: this slot stores the
-  // SCHOOL name, not the player's display name. The actual player name
-  // lives inside the character record at body 0x1149C.
+  // Profile region (step-252 re-resolution):
+  //   - body 0x1149C : player display name (character record, primary)
+  //   - body 0x47E   : §22 canonical player-name copy (save-load
+  //                    screen title in some builds; surfaced as
+  //                    `playerNameCanonical`)
+  //   - body 0x114B2 : school / shop / town name (empirically observed
+  //                    in v2.31 EN saves — format notes §5 documents
+  //                    this offset as 0x115B2 but real data lives 0x100
+  //                    earlier).
   /** Player display name from the character record at body 0x1149C. */
   playerName: string;
-  /** School name from body 0x482 (UTF-16 LE, up to 6 chars). */
+  /** §22 canonical player-name copy from body 0x47E (10 bytes UTF-16
+   *  LE / 5 chars). Distinct from `playerName` in saves where the
+   *  copies have drifted (e.g. legacy saves carried forward through a
+   *  name change). */
+  playerNameCanonical: string;
+  /** School / shop / town name from body 0x114B2 (UTF-16 LE, up to 6 chars). */
   schoolName: string;
   lastSaveTimestamp: DateTimeInfo;
   characterCreateTimestamp: DateTimeInfo;

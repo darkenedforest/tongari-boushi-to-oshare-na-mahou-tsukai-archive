@@ -11,6 +11,7 @@ import {
   CATALOG_TEXT_MAX_CHARS,
   MAIL_TEXT_MAX_CHARS,
   PLAYER_NAME_MAX_CHARS,
+  SCHOOL_NAME_MAX_CHARS,
   type PendingEdit,
 } from '../lib/savefile/editor';
 import {
@@ -87,8 +88,15 @@ function saveNotes(sha: string, notes: NotesByRegion) {
 interface PendingEditMap {
   ritch?: { value: number };
   playerName?: { value: string };
-  /** Keyed by entry's body offset within slot A. */
+  schoolName?: { value: string };
+  /** Keyed by entry's body offset within slot A. Holds the proposed new
+   *  text for the catalog announcement at that offset. */
   catalog: Record<number, string>;
+  /** Keyed by entry's body offset within slot A. Present iff the entry
+   *  is staged for REMOVAL (zero-fill + sentinel). Mutually exclusive
+   *  with `catalog[offset]`: staging a remove drops any pending edit,
+   *  and staging an edit drops any pending remove. */
+  catalogClear: Record<number, true>;
   mail: Record<number, string>;
   /** Keyed by garden record's body offset. */
   gardenTile: Record<number, { plantId: number; growTime: number }>;
@@ -97,6 +105,7 @@ interface PendingEditMap {
 function makeEmptyEdits(): PendingEditMap {
   return {
     catalog: {},
+    catalogClear: {},
     mail: {},
     gardenTile: {},
   };
@@ -111,7 +120,9 @@ function pendingEditCount(edits: PendingEditMap): number {
   let n = 0;
   if (edits.ritch !== undefined) n++;
   if (edits.playerName !== undefined) n++;
+  if (edits.schoolName !== undefined) n++;
   n += Object.keys(edits.catalog).length;
+  n += Object.keys(edits.catalogClear).length;
   n += Object.keys(edits.mail).length;
   n += Object.keys(edits.gardenTile).length;
   return n;
@@ -125,8 +136,14 @@ function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
   if (edits.playerName !== undefined) {
     out.push({ kind: 'player_name', value: edits.playerName.value });
   }
+  if (edits.schoolName !== undefined) {
+    out.push({ kind: 'school_name', value: edits.schoolName.value });
+  }
   for (const [k, v] of Object.entries(edits.catalog)) {
     out.push({ kind: 'catalog', entryOffset: Number(k), text: v });
+  }
+  for (const k of Object.keys(edits.catalogClear)) {
+    out.push({ kind: 'catalog_clear', entryOffset: Number(k) });
   }
   for (const [k, v] of Object.entries(edits.mail)) {
     out.push({ kind: 'mail', entryOffset: Number(k), text: v });
@@ -1019,79 +1036,132 @@ function SlotView({
         </details>
       </Section>
 
-      {/* Profile — step-250: player name is at body 0x1149C (inside the
-          character record), NOT at body 0x47E. The body 0x47E slot
-          holds the SCHOOL name. Tyler's melonDS-confirmed save14
-          showed Player="Lamb" (body 0x1149C) + School="Revere"
-          (body 0x482). */}
+      {/* Profile — step-252 re-resolution:
+            * Player name lives at body 0x1149C (primary character-record
+              copy), with §22-canonical mirror at body 0x47E and §12.1
+              secondary copy at body 0x114BA. The save-load-screen title
+              reads from the §22 location.
+            * School / shop / town name lives at body 0x114B2 (12 bytes
+              UTF-16 LE). Format-notes §5 docs the offset as 0x115B2 but
+              v2.31 EN saves consistently store it 0x100 lower; the
+              editor writes to BOTH locations to cover any build that
+              reads from the higher offset. */}
       <Section
         regionId={`${slot.label}-profile`}
         title={REGION_DESCRIPTORS.profile.title}
         range={REGION_DESCRIPTORS.profile.range}
         confidence={REGION_DESCRIPTORS.profile.confidence}
-        parsedSnapshot={`player=${JSON.stringify(slot.playerName)} school=${JSON.stringify(slot.schoolName)}`}
+        parsedSnapshot={`player=${JSON.stringify(slot.playerName)} schoolName=${JSON.stringify(slot.schoolName)} playerNameCanonical=${JSON.stringify(slot.playerNameCanonical)}`}
         {...labelArgs}
       >
         <dl className="kv">
           <dt>
             Player name{' '}
             <span className="muted small">
-              (body 0x1149C, UTF-16 LE — up to 10 chars per Game 1 docs;
-              capacity DISPUTED for Game 3)
+              (body 0x1149C primary; mirrored to body 0x47E + 0x114BA;
+              UTF-16 LE × 5 chars max per §22)
             </span>
           </dt>
           <dd>
             <strong className="player-name">
               {slot.playerName || <span className="muted">(empty)</span>}
             </strong>
+            {slot.playerNameCanonical &&
+              slot.playerNameCanonical !== slot.playerName && (
+                <span className="muted small">
+                  {' '}— §22 canonical copy at body 0x47E reads{' '}
+                  <strong>{slot.playerNameCanonical}</strong> (stale; will
+                  be overwritten on next edit)
+                </span>
+              )}
+            {editable && (
+              <InlineEdit
+                label="player name"
+                beta
+                pendingValue={
+                  editCtx.edits.playerName !== undefined
+                    ? editCtx.edits.playerName.value
+                    : null
+                }
+                initialDraft={slot.playerName}
+                maxChars={PLAYER_NAME_MAX_CHARS}
+                onCommit={draft => {
+                  if (draft.length === 0) {
+                    return 'Player name cannot be empty.';
+                  }
+                  if (draft.length > PLAYER_NAME_MAX_CHARS) {
+                    return `Max ${PLAYER_NAME_MAX_CHARS} characters.`;
+                  }
+                  editCtx.setEdits(e => ({
+                    ...e,
+                    playerName: { value: draft },
+                  }));
+                  return null;
+                }}
+                onClear={() =>
+                  editCtx.setEdits(e => {
+                    const next = { ...e };
+                    delete next.playerName;
+                    return next;
+                  })
+                }
+              />
+            )}
           </dd>
           <dt>
-            School name{' '}
+            School / shop name{' '}
             <span className="muted small">
-              (body 0x482, UTF-16 LE × 6 — DISPUTED, offset inside flag-array region)
+              (body 0x114B2 + 0x115B2 mirror, UTF-16 LE × 6 chars max per §5)
             </span>
           </dt>
           <dd>
             <strong className="player-name">
               {slot.schoolName || <span className="muted">(empty)</span>}
             </strong>
+            {editable && (
+              <InlineEdit
+                label="school name"
+                beta
+                pendingValue={
+                  editCtx.edits.schoolName !== undefined
+                    ? editCtx.edits.schoolName.value
+                    : null
+                }
+                initialDraft={slot.schoolName}
+                maxChars={SCHOOL_NAME_MAX_CHARS}
+                onCommit={draft => {
+                  if (draft.length > SCHOOL_NAME_MAX_CHARS) {
+                    return `Max ${SCHOOL_NAME_MAX_CHARS} characters.`;
+                  }
+                  editCtx.setEdits(e => ({
+                    ...e,
+                    schoolName: { value: draft },
+                  }));
+                  return null;
+                }}
+                onClear={() =>
+                  editCtx.setEdits(e => {
+                    const next = { ...e };
+                    delete next.schoolName;
+                    return next;
+                  })
+                }
+              />
+            )}
           </dd>
         </dl>
         <p className="note-text" style={{ marginTop: 8 }}>
-          <strong>step-250 reclassification:</strong> the field at body
-          0x47E that the inspector previously labeled &quot;Player
-          name&quot; is actually the <em>school name</em> the player
-          chose during character creation (verified against
-          Tyler&apos;s save14 in melonDS: in-game player
-          &quot;Lamb&quot;, school &quot;Revere Magic School&quot;). The
-          real player display name lives inside the character record at
-          body 0x1149C (intra offset +0x14 of the 0x11488 record). The
-          inline &quot;Edit player name&quot; affordance has been
-          removed pending editor.ts updates that target the correct
-          offset.
+          <strong>step-252 re-resolution.</strong> The earlier
+          step-250 swap (labeling body 0x47E as "school name" based on
+          save14&apos;s "Revere" reading) was overturned by a wider
+          sweep of v2.31 EN saves — body 0x47E consistently holds the
+          §22-canonical player name (e.g.{' '}
+          <code>tongari_en.dsv</code> shows "FUNNY" at 0x47E and "Shop"
+          at 0x114B2, where 0x114B2 is the actual school/shop name
+          slot). Edits to either field write to multiple mirror copies
+          so the change is picked up regardless of which copy the
+          in-game render reads.
         </p>
-        <p className="note-text" style={{ marginTop: 8 }}>
-          <strong>step-262 LaytonLoztew port caveats:</strong>
-        </p>
-        <ul className="note-text" style={{ marginTop: 0 }}>
-          <li>
-            <strong>Player name capacity (DISPUTED).</strong> Game 1&apos;s
-            mqreader.js documents player names as 20 BYTES (up to 10
-            UTF-16 LE chars) at <code>code + 0x00</code>. Our Game 3
-            parser reserves 22 bytes (11 chars) which is close but not
-            identical. save14&apos;s &quot;Lamb&quot; is only 4 chars
-            so we have no positive evidence either way.
-          </li>
-          <li>
-            <strong>School name offset (DISPUTED).</strong> body 0x47E
-            sits inside the 0x18..0x460 event-flag region — a
-            structurally implausible location for a UTF-16 string per
-            Game 1 analogy (Game 1 stores school name at file 0x8FBC,
-            well outside any flag region). The bytes we read on save14
-            happen to spell &quot;Revere&quot; but the offset has no
-            ARM9-disassembly anchor and may be coincidental.
-          </li>
-        </ul>
       </Section>
 
       {/* Timestamps */}
@@ -1507,38 +1577,101 @@ function SlotView({
           <ol className="entries-list">
             {slot.catalogEntries.map((e, i) => {
               const pending = editCtx.edits.catalog[e.bodyOffset];
+              const pendingRemove = editCtx.edits.catalogClear[e.bodyOffset];
               return (
-                <li key={e.bodyOffset}>
+                <li
+                  key={e.bodyOffset}
+                  className={pendingRemove ? 'is-pending-remove' : ''}
+                >
                   <div className="entry-meta">
                     <span>Announcement #{i + 1}</span>
+                    {pendingRemove && (
+                      <span className="entry-remove-tag">staged for removal</span>
+                    )}
                   </div>
-                  <div className="entry-text">{e.text}</div>
+                  <div
+                    className={`entry-text ${pendingRemove ? 'entry-text-removed' : ''}`}
+                  >
+                    {e.text}
+                  </div>
                   {editable && (
-                    <InlineEdit
-                      label="catalog text"
-                      beta
-                      multiline
-                      pendingValue={pending ?? null}
-                      initialDraft={e.text}
-                      maxChars={CATALOG_TEXT_MAX_CHARS}
-                      onCommit={draft => {
-                        if (draft.length > CATALOG_TEXT_MAX_CHARS) {
-                          return `Max ${CATALOG_TEXT_MAX_CHARS} characters.`;
+                    <div className="entry-edit-row">
+                      <InlineEdit
+                        label="catalog text"
+                        beta
+                        multiline
+                        pendingValue={pending ?? null}
+                        initialDraft={e.text}
+                        maxChars={CATALOG_TEXT_MAX_CHARS}
+                        onCommit={draft => {
+                          if (draft.length > CATALOG_TEXT_MAX_CHARS) {
+                            return `Max ${CATALOG_TEXT_MAX_CHARS} characters.`;
+                          }
+                          editCtx.setEdits(prev => {
+                            // Editing implicitly cancels a pending
+                            // remove on the same slot — the user has
+                            // changed their mind from "delete" to
+                            // "rewrite".
+                            const nextClear = { ...prev.catalogClear };
+                            delete nextClear[e.bodyOffset];
+                            return {
+                              ...prev,
+                              catalog: { ...prev.catalog, [e.bodyOffset]: draft },
+                              catalogClear: nextClear,
+                            };
+                          });
+                          return null;
+                        }}
+                        onClear={() =>
+                          editCtx.setEdits(prev => {
+                            const next = { ...prev.catalog };
+                            delete next[e.bodyOffset];
+                            return { ...prev, catalog: next };
+                          })
                         }
-                        editCtx.setEdits(prev => ({
-                          ...prev,
-                          catalog: { ...prev.catalog, [e.bodyOffset]: draft },
-                        }));
-                        return null;
-                      }}
-                      onClear={() =>
-                        editCtx.setEdits(prev => {
-                          const next = { ...prev.catalog };
-                          delete next[e.bodyOffset];
-                          return { ...prev, catalog: next };
-                        })
-                      }
-                    />
+                      />
+                      {pendingRemove ? (
+                        <button
+                          type="button"
+                          className="entry-remove-btn entry-remove-undo"
+                          onClick={() =>
+                            editCtx.setEdits(prev => {
+                              const next = { ...prev.catalogClear };
+                              delete next[e.bodyOffset];
+                              return { ...prev, catalogClear: next };
+                            })
+                          }
+                        >
+                          Undo remove
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="entry-remove-btn"
+                          onClick={() =>
+                            editCtx.setEdits(prev => {
+                              // Removing implicitly drops any pending
+                              // text edit for the same slot — the slot
+                              // is being wiped, so the new text would
+                              // be discarded anyway.
+                              const nextCatalog = { ...prev.catalog };
+                              delete nextCatalog[e.bodyOffset];
+                              return {
+                                ...prev,
+                                catalog: nextCatalog,
+                                catalogClear: {
+                                  ...prev.catalogClear,
+                                  [e.bodyOffset]: true,
+                                },
+                              };
+                            })
+                          }
+                          title="Zero-fill this announcement slot so the catalog screen treats it as empty."
+                        >
+                          Remove announcement
+                        </button>
+                      )}
+                    </div>
                   )}
                 </li>
               );
@@ -2375,12 +2508,43 @@ export default function SaveFileInspector() {
           border-radius: var(--radius-md);
           padding: 8px 10px;
         }
+        .entries-list li.is-pending-remove {
+          background: #fef3f3;
+          border-color: #f5c2c0;
+        }
         .entry-meta {
-          display: flex; gap: 12px; flex-wrap: wrap;
+          display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
           color: var(--color-ink-soft); font-size: 0.74rem;
           margin-bottom: 4px;
         }
+        .entry-remove-tag {
+          padding: 1px 8px; border-radius: var(--radius-pill);
+          background: #fde2e0; color: #a3261e;
+          border: 1px solid #f3b9b6;
+          font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+          font-weight: 700;
+        }
         .entry-text { font-size: 0.9rem; color: var(--color-ink); white-space: pre-wrap; }
+        .entry-text-removed {
+          text-decoration: line-through;
+          color: var(--color-ink-soft);
+        }
+        .entry-edit-row {
+          display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start;
+          margin-top: 4px;
+        }
+        .entry-remove-btn {
+          padding: 3px 10px; border-radius: var(--radius-pill);
+          background: white; border: 1px solid #f3b9b6;
+          color: #a3261e;
+          font: inherit; font-size: 0.78rem; font-weight: 600;
+          cursor: pointer;
+        }
+        .entry-remove-btn:hover { background: #fef3f3; }
+        .entry-remove-btn.entry-remove-undo {
+          background: #fef3f3;
+          color: #6e1a14;
+        }
 
         .note-text {
           font-size: 0.8rem; color: var(--color-ink-soft); font-style: italic;

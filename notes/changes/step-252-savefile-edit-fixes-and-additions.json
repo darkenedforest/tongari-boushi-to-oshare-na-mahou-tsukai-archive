@@ -1,0 +1,95 @@
+{
+  "step": "step-252-savefile-edit-fixes-and-additions",
+  "timestamp": "2026-05-22T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/lib/savefile/editor.ts:STRIDED_ENTRY_HEADER_LEN",
+      "file_path": "src/lib/savefile/editor.ts",
+      "offset": null,
+      "before": "STRIDED_ENTRY_HEADER_LEN = 8 (mismatched the parser's headerLen=6, causing catalog and mail text writes to start 2 bytes too far into each 168-byte entry; the writer left 2 stale header bytes at +6..+7 and overshot the trailing 2 bytes of the 168-byte slot, so on reload the parser decoded the stale bytes as the leading UTF-16 codepoint of the entry — visually 'the edit didn't take')",
+      "after": "STRIDED_ENTRY_HEADER_LEN = 6 (matches the parser's header length; empirically the catalog entry at body 0x162B6 begins its UTF-16 text at +6 with the bytes 57 00 45 00 45 00 4B 00 4C 00 59 00 = 'WEEKLY' in tongari_en.dsv)",
+      "reason": "root cause of the announcement edit-save bug — writer offset was off by 2 bytes; catalog and mail edits now round-trip cleanly"
+    },
+    {
+      "ref": "src/lib/savefile/editor.ts:PendingEdit",
+      "file_path": "src/lib/savefile/editor.ts",
+      "offset": null,
+      "before": "PendingEdit union had: ritch | player_name | catalog | mail | garden_tile",
+      "after": "PendingEdit union now includes: ritch | player_name | school_name (NEW) | catalog | catalog_clear (NEW) | mail | garden_tile",
+      "reason": "supports school-name editing and per-entry catalog removal"
+    },
+    {
+      "ref": "src/lib/savefile/editor.ts:player_name handler",
+      "file_path": "src/lib/savefile/editor.ts",
+      "offset": null,
+      "before": "Wrote player name to one location only (body 0x1149C, 22-byte field) on both slot A and slot B",
+      "after": "Writes player name to THREE mirror copies on both slot A and slot B: (1) body 0x47E width 10 bytes (§22 canonical authoritative copy), (2) body 0x1149C width 22 bytes (character-record per-display copy, archive's existing parsed location), (3) body 0x114BA width 10 bytes (§12.1 secondary cached copy). Tightest mirror is 10 bytes — payload cap stays at 5 chars per §22.",
+      "reason": "save-load-screen title reads from the §22 location in some builds; mirroring ensures the edited name shows wherever the game reads from"
+    },
+    {
+      "ref": "src/lib/savefile/editor.ts:school_name handler",
+      "file_path": "src/lib/savefile/editor.ts",
+      "offset": null,
+      "before": "(absent)",
+      "after": "New 'school_name' edit kind. Writes school/town name to TWO mirror copies on both slot A and slot B: (1) body 0x114B2 width 12 bytes (empirically observed in v2.31 EN saves — 'Shop' lives here in tongari_en.dsv), (2) body 0x115B2 width 12 bytes (§5 documented offset; empty in v2.31 corpus but present-in-case-some-build-reads-from-it). Cap 6 chars / 12 bytes UTF-16 LE.",
+      "reason": "feature 2 of the brief — school name now editable"
+    },
+    {
+      "ref": "src/lib/savefile/editor.ts:catalog_clear handler",
+      "file_path": "src/lib/savefile/editor.ts",
+      "offset": null,
+      "before": "(absent)",
+      "after": "New 'catalog_clear' edit kind. Zero-fills the entire 168-byte entry on both slots, then writes the empty-slot sentinel 0xFF 0xFF at +0xA6..+0xA7 to mimic the fresh-save empty-slot byte pattern (verified against entries 4..6 of tongari_en.dsv). Parser's plausible-text heuristic then skips the cleared slot so it disappears from the inspector list and the in-game catalog screen.",
+      "reason": "additional requirement — players can remove unwanted announcements, not just edit them"
+    },
+    {
+      "ref": "src/lib/savefile/parser.ts:OFFSETS.schoolName",
+      "file_path": "src/lib/savefile/parser.ts",
+      "offset": null,
+      "before": "schoolName: 0x47e, schoolNameLen: 12 (step-250 reclassification labeling body 0x47E as 'school name' based on save14's 'Revere' reading — a one-save inference that did not hold under wider testing)",
+      "after": "schoolName: 0x114b2, schoolNameLen: 12 (v2.31 EN saves consistently store the shop/school name at body 0x114B2; tongari_en.dsv has 'Shop' there). Also added playerNameCanonical: 0x47e, playerNameCanonicalLen: 10 — surfaced as a parallel read so users can see if their §22 copy has drifted from the character-record copy.",
+      "reason": "step-250 inferred school name was at 0x47E from a single save; the wider corpus shows 0x47E is the §22 player-name copy and the school name lives at 0x114B2. Inspector now reads the right slot."
+    },
+    {
+      "ref": "src/lib/savefile/parser.ts:REGION_DESCRIPTORS.profile + catalog",
+      "file_path": "src/lib/savefile/parser.ts",
+      "offset": null,
+      "before": "profile range: 'school body[0x47E:0x48A] (DISPUTED); player body[0x1149C:0x114B2]'; catalog range: 'body[0x163F2+], 168-byte stride'",
+      "after": "profile range: 'player body[0x47E] + body[0x1149C] + body[0x114BA]; school body[0x114B2] (+ §5 mirror body[0x115B2])'; catalog range: 'body[0x162B6+], 168-byte stride (6-byte header + 162-byte UTF-16 text body)'",
+      "reason": "stale-doc cleanup inline — labels now match the actual offsets the parser/editor use"
+    },
+    {
+      "ref": "src/lib/savefile/types.ts:SlotParse",
+      "file_path": "src/lib/savefile/types.ts",
+      "offset": null,
+      "before": "SlotParse had: playerName + schoolName",
+      "after": "SlotParse now has: playerName + playerNameCanonical (NEW, §22 copy from body 0x47E) + schoolName (now sourced from body 0x114B2)",
+      "reason": "expose the §22 canonical player-name copy so the inspector can show drift between mirror copies"
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx:Profile section",
+      "file_path": "src/components/SaveFileInspector.tsx",
+      "offset": null,
+      "before": "Profile section was read-only for both player name and school name. step-250 commentary claimed the affordance was 'removed pending editor.ts updates'.",
+      "after": "Profile section now exposes an inline-edit affordance for BOTH player name (cap 5 chars per §22) and school name (cap 6 chars per §5). Each shows a BETA pill since end-to-end in-game verification is left to player testing. If the §22 canonical copy has drifted from the character-record primary, a 'stale — will be overwritten on next edit' note appears next to the display value.",
+      "reason": "feature 2 + 3 of the brief — school name and player name now editable from the UI"
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx:Catalog section",
+      "file_path": "src/components/SaveFileInspector.tsx",
+      "offset": null,
+      "before": "Catalog entry rows had only an 'Edit catalog text' inline affordance. No way to remove an announcement.",
+      "after": "Catalog entry rows now have an 'Edit catalog text' affordance AND a 'Remove announcement' button. Staging a remove drops any pending text edit for the same slot (and vice versa). Removed slots render strike-through with a 'staged for removal' tag in the live preview; downloaded .sav has those slots zero-filled with the FF FF empty-slot sentinel so the in-game catalog screen treats them as empty.",
+      "reason": "additional requirement — per-entry remove affordance"
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx:PendingEditMap",
+      "file_path": "src/components/SaveFileInspector.tsx",
+      "offset": null,
+      "before": "PendingEditMap had: ritch + playerName + catalog + mail + gardenTile",
+      "after": "PendingEditMap now has: ritch + playerName + schoolName (NEW) + catalog + catalogClear (NEW, Record<offset, true>) + mail + gardenTile. pendingEditCount + editsToPendingList updated to surface the new fields.",
+      "reason": "plumbing for the new edit kinds"
+    }
+  ]
+}

@@ -4,10 +4,37 @@
 // game-safety is still BETA:
 //
 //   - Ritch (u32 LE at body 0x1CFD0) — confirmed safe
-//   - Player name (UTF-16 LE at body 0x1149C) — beta, capacity DISPUTED
+//   - Player name (UTF-16 LE) — written to THREE mirror copies:
+//       * body 0x47E   (10 bytes, §22 canonical authoritative)
+//       * body 0x1149C (22 bytes wide, character record per-display copy)
+//       * body 0x114BA (10 bytes, §12.1 secondary cached copy)
+//   - School/town name (UTF-16 LE) — written to TWO mirror copies:
+//       * body 0x114B2 (12 bytes, empirically observed in v2.31 EN saves)
+//       * body 0x115B2 (12 bytes, format-notes §5 documented)
 //   - Catalog announcement body text (body 0x162B6, stride 0xA8) — beta
+//   - Catalog announcement REMOVAL (zero-fill 168 bytes + trailing 0xFFFF sentinel)
 //   - Per-NPC mail body text (body 0x17400+, stride 0xA8) — beta
 //   - Garden plant tile (plant_id byte + grow_time byte) — beta
+//
+// step-252 fixes:
+//   1. Catalog/mail text edits were writing 2 bytes too far into each
+//      entry. STRIDED_ENTRY_HEADER_LEN was 8 but the parser reads from
+//      offset +6 (the on-disk header is 6 bytes, not 8). Empirical dump
+//      of tongari_en.dsv: text "WEEKLY CATALOG\nBreaking news…" starts
+//      at +6 (entry @ body 0x162B6). With headerLen=8 the writer skipped
+//      the first character ('W'), leaving the first 2 bytes of the
+//      original header in place. On re-load the parser then decoded
+//      those 2 stale header bytes as the first UTF-16 character (often
+//      a control char that broke the in-game render). Fix: header is 6.
+//   2. School name + player name editing surfaces added (previously
+//      neither field had an inline-edit affordance; school name was
+//      mis-located at 0x47E per step-250 but empirical evidence on
+//      v2.31 EN saves shows shop/school name at 0x114B2 and the
+//      §22-canonical player name at 0x47E).
+//   3. Catalog "Remove" affordance: zero-fills the 168-byte entry then
+//      writes the empty-slot sentinel `FF FF` at +0xA6:+0xA7. This is
+//      the exact byte pattern observed in fresh-save empty catalog
+//      slots (see entry 4..6 in tongari_en.dsv).
 //
 // step-262 (LaytonLoztew port) removed the `resident_name` edit kind —
 // the underlying "Town residents @ body 0x1E0E0 stride 0x22F8 max 8"
@@ -91,7 +118,9 @@ const TEXT_ENCODER_UTF16 = (() => {
 export type PendingEdit =
   | { kind: 'ritch'; value: number }
   | { kind: 'player_name'; value: string }
+  | { kind: 'school_name'; value: string }
   | { kind: 'catalog'; entryOffset: number; text: string }
+  | { kind: 'catalog_clear'; entryOffset: number }
   | { kind: 'mail'; entryOffset: number; text: string }
   | { kind: 'garden_tile'; recordOffset: number; plantId: number; growTime: number };
 
@@ -241,13 +270,55 @@ function fixExtra0Checksum(payload: Uint8Array, slot: 'A' | 'B'): number {
 // Edit-region constraints used by the UI
 // ---------------------------------------------------------------------------
 
-/** Player name is 10 bytes = 5 UTF-16 LE characters. */
+/** Player name capacity per §22 of the format notes: 10 bytes UTF-16 LE
+ *  (up to 5 characters). The §22 canonical authoritative location at body
+ *  0x47E is exactly 10 bytes wide; the character-record copy at body
+ *  0x1149C reserves more (zero-padded), so the 5-char cap is the safe
+ *  bound across all mirrors. */
 export const PLAYER_NAME_MAX_CHARS = 5;
 
-/** Each catalog / mail entry is 0xA8 = 168 bytes. The first 8 bytes are
- *  the entry header (we don't touch). The remaining 160 bytes hold UTF-16
- *  text → max 80 characters per entry. */
-export const STRIDED_ENTRY_HEADER_LEN = 8;
+/** Player-name mirror offsets (slot-relative body offsets). All written
+ *  on every player_name edit so the in-game render picks up the change
+ *  regardless of which copy the game reads. See step-252 header notes. */
+export const PLAYER_NAME_OFFSETS = [
+  /** §22 canonical authoritative — body 0x47E, 10 bytes. */
+  { offset: 0x47e, width: 10 },
+  /** Character-record per-display copy — body 0x1149C. The archive's
+   *  parser also reads this offset; width remains 22 (zero-pad beyond
+   *  the 10 name bytes) so we don't leave stale per-character data
+   *  between 0x114A6..0x114B1. */
+  { offset: 0x1149c, width: 22 },
+  /** §12.1 secondary cached copy — body 0x114BA, 10 bytes. */
+  { offset: 0x114ba, width: 10 },
+] as const;
+
+/** School / shop / town name. Capacity per §5 of the format notes: 12
+ *  bytes UTF-16 LE (up to 6 characters). */
+export const SCHOOL_NAME_MAX_CHARS = 6;
+
+/** School-name mirror offsets. v2.31 EN saves empirically store the
+ *  shop/town name at body 0x114B2 (verified via tongari_en.dsv: bytes
+ *  `53 00 68 00 6F 00 70 00` spell "Shop" starting at that offset).
+ *  Format notes §5 documents the offset as 0x115B2; that location is
+ *  empty in our v2.31 corpus but we write there too in case a different
+ *  build / region reads from it. */
+export const SCHOOL_NAME_OFFSETS = [
+  { offset: 0x114b2, width: 12 },
+  { offset: 0x115b2, width: 12 },
+] as const;
+
+/** Each catalog / mail entry is 0xA8 = 168 bytes. The on-disk layout
+ *  is a 6-byte header (00 00 status month-marker month day) followed by
+ *  162 bytes of UTF-16 LE body text. Confirmed empirically: in
+ *  tongari_en.dsv entry 0 the string "WEEKLY CATALOG\nBreaking news…"
+ *  starts at +6 inside its 168-byte slot.
+ *
+ *  step-252 fix: this constant was 8 prior to step-252, causing the
+ *  catalog / mail text writers to skip the first character of the new
+ *  text AND leave 2 stale bytes of the original header at +6..+7.
+ *  Re-loading then decoded those stale bytes as the leading UTF-16
+ *  codepoint of the entry. */
+export const STRIDED_ENTRY_HEADER_LEN = 6;
 export const CATALOG_TEXT_MAX_CHARS =
   Math.floor((OFFSETS.catalogStride - STRIDED_ENTRY_HEADER_LEN) / 2);
 export const MAIL_TEXT_MAX_CHARS =
@@ -284,33 +355,49 @@ export function applyEdits(
         break;
       }
       case 'player_name': {
+        // Encode once so we can sanity-check length against the
+        // tightest mirror copy. PLAYER_NAME_MAX_CHARS caps the input
+        // to 5 chars / 10 bytes UTF-16 LE — that's the §22 canonical
+        // capacity.
         const encLen = TEXT_ENCODER_UTF16.encode(edit.value, PLAYER_NAME_MAX_CHARS).length;
-        if (encLen > OFFSETS.playerNameLen) {
+        // Tightest mirror is 10 bytes (the §22 / §12.1 copies); the
+        // character-record copy at 0x1149C is wider so a 10-byte
+        // payload always fits there too.
+        if (encLen > 10) {
           throw new Error(
-            `Player name too long: encoded ${encLen} bytes, max ${OFFSETS.playerNameLen}.`,
+            `Player name too long: encoded ${encLen} bytes, max 10.`,
           );
         }
-        writeUtf16LeFixedWidth(
-          payload,
-          'A',
-          OFFSETS.playerName,
-          OFFSETS.playerNameLen,
-          edit.value,
-          PLAYER_NAME_MAX_CHARS,
-        );
-        writeUtf16LeFixedWidth(
-          payload,
-          'B',
-          OFFSETS.playerName,
-          OFFSETS.playerNameLen,
-          edit.value,
-          PLAYER_NAME_MAX_CHARS,
-        );
+        for (const { offset, width } of PLAYER_NAME_OFFSETS) {
+          writeUtf16LeFixedWidth(
+            payload, 'A', offset, width, edit.value, PLAYER_NAME_MAX_CHARS,
+          );
+          writeUtf16LeFixedWidth(
+            payload, 'B', offset, width, edit.value, PLAYER_NAME_MAX_CHARS,
+          );
+        }
+        break;
+      }
+      case 'school_name': {
+        const encLen = TEXT_ENCODER_UTF16.encode(edit.value, SCHOOL_NAME_MAX_CHARS).length;
+        if (encLen > 12) {
+          throw new Error(
+            `School name too long: encoded ${encLen} bytes, max 12.`,
+          );
+        }
+        for (const { offset, width } of SCHOOL_NAME_OFFSETS) {
+          writeUtf16LeFixedWidth(
+            payload, 'A', offset, width, edit.value, SCHOOL_NAME_MAX_CHARS,
+          );
+          writeUtf16LeFixedWidth(
+            payload, 'B', offset, width, edit.value, SCHOOL_NAME_MAX_CHARS,
+          );
+        }
         break;
       }
       case 'catalog': {
         // Write into the body of each catalog entry — text region only,
-        // header bytes unchanged.
+        // header bytes (the 6-byte status+date prefix) are preserved.
         const textStart = edit.entryOffset + STRIDED_ENTRY_HEADER_LEN;
         const byteWidth = OFFSETS.catalogStride - STRIDED_ENTRY_HEADER_LEN;
         for (const slot of ['A', 'B'] as const) {
@@ -322,6 +409,28 @@ export function applyEdits(
             edit.text,
             CATALOG_TEXT_MAX_CHARS,
           );
+        }
+        break;
+      }
+      case 'catalog_clear': {
+        // Zero-fill the entire 168-byte entry then write the empty-slot
+        // sentinel 0xFF 0xFF at the LAST 2 bytes (+0xA6..+0xA7). This
+        // mimics the byte pattern of unused catalog slots in fresh-save
+        // / partially-populated saves (verified against entries 4..6 of
+        // tongari_en.dsv: all-zero body with trailing `ff ff`). The
+        // parser's plausible-text heuristic skips entries with fewer
+        // than 4 non-(0x00|0xFF) bytes in the post-header region, so
+        // cleared slots disappear from the UI list and the in-game
+        // catalog screen treats the slot as empty.
+        const entry = edit.entryOffset;
+        for (const slot of ['A', 'B'] as const) {
+          const base = slot === 'A' ? SLOT_A_BASE : SLOT_B_BASE;
+          for (let i = 0; i < OFFSETS.catalogStride; i++) {
+            payload[base + entry + i] = 0;
+          }
+          // Trailing 0xFF 0xFF empty-slot sentinel.
+          payload[base + entry + OFFSETS.catalogStride - 2] = 0xff;
+          payload[base + entry + OFFSETS.catalogStride - 1] = 0xff;
         }
         break;
       }
