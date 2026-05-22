@@ -18,6 +18,7 @@ import type {
   CollectionStatRecord,
   DateTimeInfo,
   EventFlagSummary,
+  FriendMet,
   Game1Checksum,
   Game1Classmate,
   Game1Decode,
@@ -266,6 +267,29 @@ export const OFFSETS = {
   residentsStride: 0x22f8,
   residentsCount: 8,
   residentsNameLen: 16,
+
+  // Friends-met / NPC encounter region — body 0x500..0x4300 (15,616
+  // bytes). Within this region, every NPC the player has encountered or
+  // befriended appears as a u16 LE stored_value (= npc_data_ofs_id + 500,
+  // range 500..751) at one or more non-aligned offsets — there are
+  // multiple sub-tables (encounter log, friend list, gift log, etc.)
+  // and they don't all use the same record layout, so the same NPC may
+  // be referenced from several offsets inside this 15 KB block. NPC
+  // encoding cracked in translation-repo step-346 (commit 0941cbca, tag
+  // step-346-npc-encoding) via differential save analysis + ARM9 NPC
+  // tables at RAM 0x020A1660 / 0x020A1670 / 0x020A1690.
+  //
+  // The parser scans EVEN-aligned offsets only — odd-aligned reads
+  // would catch byte-pairs that straddle unrelated record boundaries
+  // and happen to land in the 500..751 range as false positives. The
+  // sub-region boundaries within this 15 KB block are NOT yet decoded
+  // (open question per translation-repo notes/savefile_format.md §55),
+  // so editing affordances are deliberately not exposed here — we just
+  // surface the deduplicated list of NPCs the player has met.
+  friendsRegionStart: 0x500,
+  friendsRegionEnd: 0x4300,
+  friendStoredValueMin: 500,
+  friendStoredValueMax: 751,
 } as const;
 
 /** Body-level RFC1071 checksum range length. Exported because the editor
@@ -897,6 +921,54 @@ function parseTownResidents(body: Uint8Array): TownResident[] {
 }
 
 // ---------------------------------------------------------------------------
+// Friends met — NPC encounter / friend-list region at body 0x500..0x4300
+// ---------------------------------------------------------------------------
+
+/** Scan body 0x500..0x4300 for u16 LE values in the range 500..751
+ *  (valid NPC stored_values per translation-repo step-346), deduplicate
+ *  by value, and return the list sorted by stored_value ascending.
+ *
+ *  We scan EVEN offsets only. The internal sub-tables in this 15 KB
+ *  region (encounter log, friend list, gift log, etc.) all align their
+ *  u16 stored_value fields on 2-byte boundaries; odd-aligned reads
+ *  would walk straight through unrelated record boundaries and pick up
+ *  byte-pairs that happen to land in the 500..751 range as false
+ *  positives. Empirically on tongari_en.dsv the even-aligned scan
+ *  produces exactly the player's met-NPC roster with no noise.
+ *
+ *  Sub-region boundaries within 0x500..0x4300 aren't yet decoded — the
+ *  same stored_value will commonly appear at several offsets (one per
+ *  sub-table that references the NPC). We track every offset where the
+ *  value appears for diagnostics but display only the deduped list. */
+export function parseFriendsMet(body: Uint8Array): FriendMet[] {
+  const offsetsByValue = new Map<number, number[]>();
+  const lo = OFFSETS.friendsRegionStart;
+  const hi = Math.min(OFFSETS.friendsRegionEnd, body.length);
+  const vLo = OFFSETS.friendStoredValueMin;
+  const vHi = OFFSETS.friendStoredValueMax;
+  for (let off = lo; off + 2 <= hi; off += 2) {
+    const v = body[off] | (body[off + 1] << 8);
+    if (v < vLo || v > vHi) continue;
+    let list = offsetsByValue.get(v);
+    if (!list) {
+      list = [];
+      offsetsByValue.set(v, list);
+    }
+    list.push(off);
+  }
+  const out: FriendMet[] = [];
+  for (const [storedValue, offsets] of offsetsByValue) {
+    out.push({
+      storedValue,
+      bodyOffsets: offsets,
+      iid: storedValue - 500,
+    });
+  }
+  out.sort((a, b) => a.storedValue - b.storedValue);
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Wizard-level candidate
 // ---------------------------------------------------------------------------
 
@@ -982,6 +1054,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
         plausible: false,
         note: 'Slot is uninitialised.',
       },
+      friendsMet: [],
     };
   }
 
@@ -1052,6 +1125,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     bankLog: parseBankLog(body),
     townResidents: parseTownResidents(body),
     wizardLevelCandidate: parseWizardLevelCandidate(body),
+    friendsMet: parseFriendsMet(body),
   };
 }
 
@@ -1587,6 +1661,7 @@ export const REGION_DESCRIPTORS = {
   ritch: { id: 'ritch', title: 'Ritch (wallet)', range: 'body[0x1CFD0], u32 LE', confidence: 'confirmed' as const },
   bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },
   townResidents: { id: 'townResidents', title: 'Town residents (8 slots × 0x22F8)', range: 'body[0x1E0E0:0x2F8A0], 0x22F8-byte stride, max 8 residents; first 16 B per slot = UTF-16 LE NPC name', confidence: 'confirmed' as const },
+  friendsMet: { id: 'friendsMet', title: 'Friends met — NPCs encountered / befriended (read-only)', range: 'body[0x500:0x4300], u16 LE stored_value in 500..751 (= npc_data_ofs_id + 500), even-aligned scan', confidence: 'candidate' as const },
   timestamps: { id: 'timestamps', title: 'Last-save + character-create timestamps', range: 'body[0x494] / body[0x4A4]', confidence: 'confirmed' as const },
   game1: { id: 'game1', title: "Game 1 (Magician's Quest / Enchanted Folk) decoder — dormant for Game 3", range: 'file[0x00..0x80000], LaytonLoztew-documented layout', confidence: 'confirmed' as const },
 };

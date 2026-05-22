@@ -584,5 +584,100 @@ console.log('\n--- Town residents parsing — upload_12 corpus save (populated) 
   }
 }
 
+// ---------------------------------------------------------------------------
+// Friends-Met parsing — read-only deduplicated scan of body 0x500..0x4300
+// for u16 LE values in 500..751 (NPC stored_values per translation-repo
+// step-346, commit 0941cbca). The encoding rule is:
+//     stored_value = npc_data_ofs_id + 500
+// so the 252 NPCs catalogued in notes/npc_encoding.json each have a
+// stored_value in 500..751.
+//
+// Test policy: the active slot for tongari_en.dsv is slot B (verified
+// above via parseBefore.activeSlot), so the friends-met list under test
+// is the one parsed out of slot B. The expected roster is read directly
+// from the fixture bytes (which we cross-checked via a standalone scan
+// before writing this assertion block) — this is the empirical anchor
+// for "the parser produces the right shape on a real save", just like
+// the upload_12 town-residents assertions are the empirical anchor for
+// the residents layout.
+//
+// Important data note: an earlier draft of the dispatch brief named
+// `[505→Zoe, 506→Chloe, 509→Anson, 517→Naomi]` as the expected list,
+// derived from a different save's offset annotations. The actual bytes
+// in this fixture do NOT contain stored_value 509 anywhere — the third
+// friend in this save is stored_value 507 (= Silvia, npc_data_ofs_id 7),
+// not 509 (Anson). We assert against the fixture's actual contents so
+// the test reflects ground truth rather than a typo'd reference. If the
+// fixture is later replaced with a save that DOES have Anson, this
+// assertion should be updated alongside the new fixture.
+// ---------------------------------------------------------------------------
+
+console.log('\n--- Friends-Met parsing (active slot, body 0x500..0x4300) ---');
+{
+  const active = parseBefore.activeSlot;
+  const activeSlotParse = active === 'A' ? slotABefore : slotBBefore;
+  const friends = activeSlotParse.friendsMet;
+
+  // Load the NPC encoding the same way the browser would.
+  const NPC_ENCODING_PATH = path.join(REPO_ROOT, 'public/data/npc_encoding.json');
+  const rawNpcEncoding = JSON.parse(fs.readFileSync(NPC_ENCODING_PATH, 'utf8'));
+  const npcByStored = rawNpcEncoding.mapping_stored_to_npc ?? {};
+
+  console.log(`  active slot: ${active}`);
+  console.log(`  total unique friends: ${friends.length}`);
+  for (const f of friends) {
+    const info = npcByStored[String(f.storedValue)];
+    const en = info ? info.en_name : '(unmapped)';
+    const jp = info ? info.jp_name : '—';
+    console.log(
+      `    stored=${f.storedValue} (0x${f.storedValue.toString(16).toUpperCase()}) ` +
+      `EN=${JSON.stringify(en)} JP=${JSON.stringify(jp)} ` +
+      `offsets=${f.bodyOffsets.map(o => '0x' + o.toString(16)).join(',')}`,
+    );
+  }
+
+  // Active slot for this fixture is B, and its even-aligned scan in
+  // body 0x500..0x4300 finds exactly these four NPC stored_values:
+  //   505 → Zoe   (offsets 0x3120)
+  //   506 → Chloe (offsets 0x2f86, 0x2f90, 0x32b0)
+  //   507 → Silvia (offsets 0x4160, 0x42f0)
+  //   517 → Naomi (offsets 0x1140, 0x12ee)
+  // No false positives, no missed entries — the dedup-after-even-scan
+  // strategy gives a clean roster.
+  const expected = [
+    { stored: 505, en: 'Zoe',    jp: 'ザマス' },
+    { stored: 506, en: 'Chloe',  jp: 'ゆうこ' },
+    { stored: 507, en: 'Silvia', jp: 'シルビア' },
+    { stored: 517, en: 'Naomi',  jp: 'ヨサコ' },
+  ];
+
+  assertEq('friends-met count = 4 (no false positives, no missing)', friends.length, expected.length);
+  expected.forEach((exp, i) => {
+    const got = friends[i];
+    assertEq(`friends-met[${i}] storedValue = ${exp.stored}`, got.storedValue, exp.stored);
+    assertEq(`friends-met[${i}] iid = ${exp.stored - 500}`, got.iid, exp.stored - 500);
+    const info = npcByStored[String(got.storedValue)];
+    assertEq(`friends-met[${i}] EN name = ${exp.en}`, info ? info.en_name : null, exp.en);
+    assertEq(`friends-met[${i}] JP name = ${exp.jp}`, info ? info.jp_name : null, exp.jp);
+  });
+
+  // The dedupe-by-value is the load-bearing invariant — without it, the
+  // same NPC would appear once per offset in the displayed list.
+  // Confirm by walking bodyOffsets and verifying we have at LEAST one
+  // entry per friend with multiple offsets (Chloe has 3, Naomi has 2,
+  // Silvia has 2 — see notes above).
+  const chloe = friends.find(f => f.storedValue === 506);
+  assertTrue('Chloe (506) has multiple offsets recorded (dedupe is real)',
+    chloe !== undefined && chloe.bodyOffsets.length > 1);
+
+  // Order must be ascending by stored_value (matches the spec).
+  for (let i = 1; i < friends.length; i++) {
+    assertTrue(
+      `friends-met sorted ascending: [${i - 1}].storedValue < [${i}].storedValue`,
+      friends[i - 1].storedValue < friends[i].storedValue,
+    );
+  }
+}
+
 console.log(`\n${failures === 0 ? 'ALL TESTS PASSED' : `${failures} TEST(S) FAILED`}`);
 process.exit(failures === 0 ? 0 : 1);

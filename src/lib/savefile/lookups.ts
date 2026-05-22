@@ -307,3 +307,139 @@ export function lookupStoredFromIid(
   const stored = encoding.iidToStored[iid];
   return stored === undefined ? null : stored;
 }
+
+// ---------------------------------------------------------------------------
+// NPC encoding: stored_value (u16 LE in save body 0x500..0x4300) ↔ NPC info.
+//
+// Cracked by the translation-repo research agent in step-346 (commit
+// 0941cbca, tag step-346-npc-encoding). Encoding rule:
+//   stored_value = npc_data_ofs_id + 500          (range 500..751, 252 NPCs)
+//
+// Differential save analysis (Tyler's OLD vs NEW save with two added
+// friends) + ARM9 NPC tables (RAM 0x020A1660 category bases, 0x020A1670
+// counts, 0x020A1690 cumulative starts) confirm the offset. The same
+// flat 0..251 namespace is used here as in NpcDataOfs.ofs; the
+// speaker_npc_id namespace (1000+) used by the dialog system is a
+// separate addressing scheme but references the same NPCs in the same
+// order.
+//
+// The source JSON is generated in the translation repo at
+//   notes/npc_encoding.json
+// and copied into this repo at public/data/npc_encoding.json (the
+// archive ships a frozen snapshot so the editor doesn't need to fetch
+// across repos at runtime).
+//
+// Internal sub-region boundaries within 0x500..0x4300 (encounter log /
+// friend list / gift log etc.) are NOT yet decoded — the same
+// stored_value may appear at multiple non-aligned offsets per friend.
+// Surface (parseFriendsMet) deduplicates by value to give a clean
+// per-NPC list rather than per-offset noise.
+// ---------------------------------------------------------------------------
+
+export interface NpcInfo {
+  /** npc_data_ofs_id — 0..251 positional index into NpcDataOfs.ofs /
+   *  NpcData.dec. Equal to `stored_value - 500`. */
+  iid: number;
+  /** Speaker namespace ID (1000 + category-base + intra-category index).
+   *  Distinct from `stored_value`; both reference the same NPC table. */
+  speakerNpcId: number;
+  /** NPC category 0..3 (matches tfnpc.ofs / tfnpccmn.ofs / tfnpcguest.ofs
+   *  / 4th creature table). */
+  category: number;
+  /** Intra-category index 0..(count-1). */
+  subIndex: number;
+  /** Japanese name from NpcData.dec. */
+  jpName: string;
+  /** English name (translated; v2.4-era).  */
+  enName: string;
+}
+
+export interface NpcEncoding {
+  /** stored_value (500..751) → NpcInfo. 252 entries when ok=true. */
+  storedToNpc: Record<number, NpcInfo>;
+  /** True if the JSON loaded and parsed; false on fetch/parse error. */
+  ok: boolean;
+}
+
+const EMPTY_NPC_ENCODING: NpcEncoding = {
+  storedToNpc: {},
+  ok: false,
+};
+
+let npcCached: NpcEncoding | null = null;
+let npcInflight: Promise<NpcEncoding> | null = null;
+
+function defaultNpcEncodingUrl(): string {
+  let base = (import.meta.env.BASE_URL ?? '/').toString();
+  if (!base.endsWith('/')) base += '/';
+  return `${base}data/npc_encoding.json`;
+}
+
+export async function loadNpcEncoding(url?: string): Promise<NpcEncoding> {
+  if (npcCached) return npcCached;
+  if (npcInflight) return npcInflight;
+  const resolvedUrl = url ?? defaultNpcEncodingUrl();
+  npcInflight = (async () => {
+    try {
+      const res = await fetch(resolvedUrl, { cache: 'force-cache' });
+      if (!res.ok) {
+        npcCached = EMPTY_NPC_ENCODING;
+        return npcCached;
+      }
+      const data = await res.json();
+      const raw = data?.mapping_stored_to_npc ?? {};
+      const storedToNpc: Record<number, NpcInfo> = {};
+      for (const [k, v] of Object.entries(raw)) {
+        const stored = Number(k);
+        const obj = v as {
+          npc_data_ofs_id?: number;
+          speaker_npc_id?: number;
+          category?: number;
+          sub_index?: number;
+          jp_name?: string;
+          en_name?: string;
+        };
+        if (!Number.isFinite(stored)) continue;
+        storedToNpc[stored] = {
+          iid: obj.npc_data_ofs_id ?? (stored - 500),
+          speakerNpcId: obj.speaker_npc_id ?? 0,
+          category: obj.category ?? 0,
+          subIndex: obj.sub_index ?? 0,
+          jpName: obj.jp_name ?? '',
+          enName: obj.en_name ?? '',
+        };
+      }
+      npcCached = {
+        storedToNpc,
+        ok: Object.keys(storedToNpc).length > 0,
+      };
+      return npcCached;
+    } catch {
+      npcCached = EMPTY_NPC_ENCODING;
+      return npcCached;
+    } finally {
+      npcInflight = null;
+    }
+  })();
+  return npcInflight;
+}
+
+/** Resolve a save-file stored_value (500..751) to its NpcInfo record.
+ *  Returns null when the encoding hasn't loaded or the value is outside
+ *  the valid 500..751 range. */
+export function lookupNpcByStored(
+  encoding: NpcEncoding,
+  storedValue: number,
+): NpcInfo | null {
+  const info = encoding.storedToNpc[storedValue];
+  return info ?? null;
+}
+
+/** Category labels matching the NPC encoding JSON's `categories` block.
+ *  Surfaced for display in the friends-met section. */
+export const NPC_CATEGORY_LABELS: Record<number, string> = {
+  0: 'main NPC',
+  1: 'staff / special',
+  2: 'guest / event',
+  3: 'mythical / creature',
+};

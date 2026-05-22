@@ -20,13 +20,17 @@ import {
 } from '../lib/savefile/editor';
 import {
   loadInventoryEncoding,
+  loadNpcEncoding,
   loadSavefileLookups,
   lookupIidFromStored,
   lookupItemName,
+  lookupNpcByStored,
   lookupPlantName,
   lookupStoredFromIid,
   resolveInventoryItem,
+  NPC_CATEGORY_LABELS,
   type InventoryEncoding,
+  type NpcEncoding,
   type SavefileLookups,
 } from '../lib/savefile/lookups';
 import type {
@@ -1063,6 +1067,147 @@ function InventoryBagSection({
 }
 
 // ---------------------------------------------------------------------------
+// Friends-Met section — read-only roster of NPCs the player has met /
+// befriended. Encoding cracked in translation-repo step-346: every u16
+// LE value in body 0x500..0x4300 within the range 500..751 is an
+// `npc_data_ofs_id + 500` reference, and the 0x500..0x4300 region holds
+// several sub-tables (encounter log, friend list, gift log, etc.) that
+// each store the same NPC ID at a different offset — so we dedupe and
+// sort by stored_value.
+//
+// Sub-region boundaries within this 15 KB block aren't decoded yet
+// (open question per translation-repo notes/savefile_format.md §55), so
+// editing affordances are deliberately not exposed yet — adding /
+// removing a friend would require knowing which sub-table to modify
+// and how to keep the others consistent. The section displays the
+// roster only.
+// ---------------------------------------------------------------------------
+
+interface FriendsMetSectionProps {
+  slot: SlotParse;
+  npcEncoding: NpcEncoding | null;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function FriendsMetSection({
+  slot,
+  npcEncoding,
+  notes,
+  setNotes,
+  fileLabel,
+  payloadSha,
+}: FriendsMetSectionProps) {
+  const friends = slot.friendsMet;
+  const total = friends.length;
+  const totalOffsets = friends.reduce((n, f) => n + f.bodyOffsets.length, 0);
+  return (
+    <Section
+      regionId={`${slot.label}-friendsMet`}
+      title={REGION_DESCRIPTORS.friendsMet.title}
+      range={REGION_DESCRIPTORS.friendsMet.range}
+      confidence={REGION_DESCRIPTORS.friendsMet.confidence}
+      parsedSnapshot={`${total} unique NPC${total === 1 ? '' : 's'} (${totalOffsets} stored_value reference${totalOffsets === 1 ? '' : 's'} across the 15 KB region)`}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p>
+        <strong>{total}</strong> unique NPC{total === 1 ? '' : 's'} that
+        this save has recorded an encounter / friendship / gift log entry
+        for. The scan walks <code>body[0x500..0x4300]</code> at even-aligned
+        u16 LE offsets and collects every value in the range{' '}
+        <code>500..751</code>, which is the NPC <code>stored_value</code>{' '}
+        space (= <code>npc_data_ofs_id + 500</code>, cracked in
+        translation-repo step-346).
+      </p>
+      <p className="note-text">
+        Read-only: the 15 KB region holds several sub-tables (encounter
+        log, friend list, gift log, ...) that all reference the same NPC
+        by storing the same u16 at different offsets, but the
+        sub-table boundaries aren&apos;t decoded yet — so we can&apos;t
+        safely add / remove individual entries without risking a desync.
+        See translation-repo <code>notes/savefile_format.md</code> §55
+        for the open question. This list is <em>distinct</em> from the
+        Town Residents table above: residents are the up-to-8 NPCs who
+        physically moved into your town and got a 0x22F8-byte house slot;
+        Friends Met is the broader roster of every NPC you&apos;ve
+        interacted with.
+      </p>
+      {npcEncoding && !npcEncoding.ok && (
+        <p className="csum-warn">
+          NPC encoding JSON failed to load — names will fall back to
+          their <code>stored_value</code> only.
+        </p>
+      )}
+      {total === 0 ? (
+        <p className="muted">
+          No friend / encounter records found in this slot&apos;s
+          0x500..0x4300 region. This is the normal state for a fresh save
+          before the player has talked to any NPC, or for a slot that
+          hasn&apos;t been written to recently.
+        </p>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>stored_value</th>
+              <th>EN name</th>
+              <th>JP name</th>
+              <th>Category</th>
+              <th>References</th>
+            </tr>
+          </thead>
+          <tbody>
+            {friends.map(f => {
+              const info = npcEncoding
+                ? lookupNpcByStored(npcEncoding, f.storedValue)
+                : null;
+              const catLabel = info
+                ? (NPC_CATEGORY_LABELS[info.category] ?? `cat ${info.category}`)
+                : '—';
+              return (
+                <tr key={f.storedValue}>
+                  <td>
+                    <code>{hex(f.storedValue, 4)}</code>{' '}
+                    <span className="muted">({f.storedValue})</span>
+                  </td>
+                  <td>
+                    {info ? (
+                      <strong>{info.enName || '(no EN name)'}</strong>
+                    ) : npcEncoding === null ? (
+                      <span className="muted">loading…</span>
+                    ) : (
+                      <span className="muted">(unmapped)</span>
+                    )}
+                  </td>
+                  <td>
+                    {info ? (
+                      <span lang="ja">{info.jpName || '—'}</span>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
+                  <td>{catLabel}</td>
+                  <td>
+                    <span title={f.bodyOffsets.map(o => hex(o, 4)).join(', ')}>
+                      {f.bodyOffsets.length}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Small UI primitives
 // ---------------------------------------------------------------------------
 
@@ -1524,6 +1669,10 @@ interface SlotViewProps {
    *  finishes; the inventory bag section falls back to raw stored_value
    *  hex when this isn't yet loaded. */
   inventoryEncoding: InventoryEncoding | null;
+  /** NPC stored_value ↔ NpcInfo encoding (translation-repo step-346).
+   *  `null` until the fetch finishes; the Friends-Met section falls
+   *  back to showing raw stored_value hex when this isn't yet loaded. */
+  npcEncoding: NpcEncoding | null;
 }
 
 function SlotView({
@@ -1536,6 +1685,7 @@ function SlotView({
   editable,
   lookups,
   inventoryEncoding,
+  npcEncoding,
 }: SlotViewProps) {
   if (slot.uninitialised) {
     return (
@@ -2212,6 +2362,27 @@ function SlotView({
         })()}
       </Section>
 
+      {/* Friends met — read-only deduplicated list of NPC stored_values in
+          body 0x500..0x4300. NPC encoding cracked in translation-repo
+          step-346 (commit 0941cbca). The Friends-Met list is DISTINCT
+          from the Town Residents table above — residents are NPCs who
+          have physically moved into the player's town (max 8, each gets
+          a full 0x22F8-byte slot with house decoration data), whereas
+          friends-met includes every NPC the player has talked to,
+          received a gift from, or otherwise interacted with (up to 252
+          per the NPC namespace). Sub-region boundaries within
+          0x500..0x4300 are not yet decoded — see translation-repo
+          notes/savefile_format.md §55 — so we surface only the
+          deduplicated roster, not per-sub-table editing affordances. */}
+      <FriendsMetSection
+        slot={slot}
+        npcEncoding={npcEncoding}
+        notes={notes}
+        setNotes={setNotes}
+        fileLabel={fileLabel}
+        payloadSha={payloadSha}
+      />
+
       {/* Garden */}
       <Section
         regionId={`${slot.label}-garden`}
@@ -2589,6 +2760,10 @@ export default function SaveFileInspector() {
   const [lookups, setLookups] = useState<SavefileLookups | null>(null);
   const [inventoryEncoding, setInventoryEncoding] =
     useState<InventoryEncoding | null>(null);
+  // step-NNN-friends-met: NPC encoding cracked in translation-repo
+  // step-346. Loaded once on mount; the Friends-Met section falls back to
+  // showing raw stored_value hex when this hasn't loaded yet.
+  const [npcEncoding, setNpcEncoding] = useState<NpcEncoding | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -2597,6 +2772,9 @@ export default function SaveFileInspector() {
     });
     loadInventoryEncoding().then(result => {
       if (!cancelled) setInventoryEncoding(result);
+    });
+    loadNpcEncoding().then(result => {
+      if (!cancelled) setNpcEncoding(result);
     });
     return () => {
       cancelled = true;
@@ -2930,6 +3108,7 @@ export default function SaveFileInspector() {
                 }
                 lookups={lookups}
                 inventoryEncoding={inventoryEncoding}
+                npcEncoding={npcEncoding}
               />
             )}
 

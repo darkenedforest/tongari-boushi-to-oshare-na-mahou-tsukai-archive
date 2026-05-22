@@ -1,0 +1,82 @@
+{
+  "step": "step-257-savefile-friends-met",
+  "timestamp": "2026-05-22T20:30:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "public/data/npc_encoding.json",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/public/data/npc_encoding.json",
+      "offset": null,
+      "before": "(file did not exist)",
+      "after": "Copied from the translation repo at C:/Users/Tyler/Documents/Repos/Tongari boushi translation app claude/notes/npc_encoding.json (shipped in translation-repo step-346, commit 0941cbca, tag step-346-npc-encoding). The JSON catalogues 252 NPCs across 4 categories with their stored_value (500..751), speaker_npc_id, jp_name, en_name, and category/sub_index. The archive site ships a frozen snapshot so the in-browser save-file editor doesn't need to fetch across repos at runtime.",
+      "reason": "The NPC encoding rule (stored_value = npc_data_ofs_id + 500) is the load-bearing lookup the new Friends-Met section needs to resolve raw save-file bytes into displayable NPC names."
+    },
+    {
+      "ref": "src/lib/savefile/lookups.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/lookups.ts",
+      "offset": null,
+      "before": "lookups.ts exposed inventory + item + UCC + plant lookup helpers (loadSavefileLookups, loadInventoryEncoding, lookupItemName, lookupIidFromStored, lookupStoredFromIid, resolveInventoryItem, etc.) but had no NPC-encoding loader — the only existing `lookupNpcName(npcId)` reads from the legacy `savefile_lookups.json` `npcs` map keyed by ROM npc_id, NOT by save-file stored_value, so it could not resolve the friend-list region's u16 values.",
+      "after": "Added a parallel `NpcEncoding` loader matching the InventoryEncoding pattern: `loadNpcEncoding()` (cached, fetched from /data/npc_encoding.json), `lookupNpcByStored(encoding, storedValue)` returning `{iid, speakerNpcId, category, subIndex, jpName, enName}` or null, the `NpcInfo` / `NpcEncoding` types, and a `NPC_CATEGORY_LABELS` map for display ('main NPC' / 'staff / special' / 'guest / event' / 'mythical / creature'). The new helpers handle the stored_value→NPC resolution that the Friends-Met section needs.",
+      "reason": "Mirrors the inventoryLookups pattern Tyler asked for in the dispatch brief. Keeps the bundle small (NPC table is fetched on demand, same as the inventory encoding) and the existing lookupNpcName helper untouched."
+    },
+    {
+      "ref": "src/lib/savefile/types.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/types.ts",
+      "offset": null,
+      "before": "SlotParse had `townResidents: TownResident[]` but no field for the friend / encounter-list region at body 0x500..0x4300. There was no FriendMet interface.",
+      "after": "Added a `FriendMet` interface (`storedValue`, `bodyOffsets[]`, `iid`) documenting the dedupe-by-value contract and the open question about sub-region boundaries within 0x500..0x4300 (translation-repo notes/savefile_format.md §55). Added `friendsMet: FriendMet[]` to SlotParse alongside `townResidents`. The interface deliberately stays minimal — name resolution is layered on at render time from the loaded NpcEncoding so the parser bundle doesn't have to embed all 252 names.",
+      "reason": "Type contract for the new parser path. Mirrors the InventoryBagSlot / TownResident shape (parser produces structural rows; component resolves names) the rest of the editor uses."
+    },
+    {
+      "ref": "src/lib/savefile/parser.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/parser.ts",
+      "offset": null,
+      "before": "Parser walked the documented save regions (catalog, mail, garden, inventory bag, town residents, etc.) but had no scan for the 0x500..0x4300 NPC-history region — that region was undecoded.",
+      "after": "Added `parseFriendsMet(body)` and exported it. The scanner walks body 0x500..0x4300 at EVEN-aligned u16 offsets, collects every value in 500..751 (the NPC stored_value range per translation-repo step-346), groups by value, and returns a list sorted ascending by stored_value. The 'even-aligned only' rule is the load-bearing false-positive filter — odd offsets walk straight through unrelated record boundaries; even-aligned scan on the tongari_en.dsv fixture yields exactly 4 NPCs with zero noise. Added matching OFFSETS constants (`friendsRegionStart`, `friendsRegionEnd`, `friendStoredValueMin`, `friendStoredValueMax`), wired the call into the populated-slot return of parseSlot, added an empty-array fallback to the uninitialised-slot branch, and registered a REGION_DESCRIPTORS.friendsMet entry for the inspector UI.",
+      "reason": "Core parser logic for the read-only Friends-Met view. Dedupe-by-value is the right shape because the 15 KB region contains several sub-tables (encounter log, friend list, gift log, etc.) that each reference the same NPC, so per-offset noise would obscure the actual roster."
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/components/SaveFileInspector.tsx",
+      "offset": null,
+      "before": "Inspector rendered checksum, profile, inventory, residents, catalog, etc. sections but had no Friends-Met UI. The component had no NpcEncoding state and never called loadNpcEncoding().",
+      "after": "Added a `FriendsMetSection` React component placed directly below the Town Residents section (matches the dispatch-brief layout request). The section renders a 5-column table (stored_value with hex+decimal, EN name, JP name, category label, reference count) with names resolved at render time via lookupNpcByStored(npcEncoding, storedValue). Untouched-but-loading states show 'loading…' instead of fake names; if npcEncoding loaded but ok=false it surfaces a load-failure warning. Threaded a new npcEncoding state through SlotView via a new NpcEncoding prop on SlotViewProps. The component's body copy explicitly explains the distinction between Town Residents (up to 8 NPCs who physically moved into the player's town) and Friends Met (broader roster of every NPC the player has interacted with) so users understand why both panels exist.",
+      "reason": "User-visible surface for the new parse path. Read-only because sub-region boundaries inside 0x500..0x4300 aren't yet decoded — adding/removing individual friends would require knowing which sub-table to modify to keep the others consistent."
+    },
+    {
+      "ref": "scripts/test_savefile_roundtrip.mjs",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/scripts/test_savefile_roundtrip.mjs",
+      "offset": null,
+      "before": "Test harness covered wrapper detection, checksum verification, active-slot detection, profile edits, ritch edits, catalog edits, inventory edits, and town-residents parsing. No coverage of the friends-met region.",
+      "after": "Added a Friends-Met assertion block scoped to the fixture's active slot (B). Loads npc_encoding.json synchronously from disk (mirrors the inventory_encoding pattern), prints each parsed friend with EN/JP name and offsets, then asserts: count = 4 (no false positives, no missed entries), each row's storedValue / iid / EN name / JP name matches, dedupe is real (Chloe@506 has multiple offsets), sort is ascending. The expected roster is `[505→Zoe, 506→Chloe, 507→Silvia, 517→Naomi]` — derived from a standalone even-aligned scan of the fixture bytes. (Dispatch-brief NOTE: the brief named `[505→Zoe, 506→Chloe, 509→Anson, 517→Naomi]` from a different save's offset annotations, but the actual fixture bytes don't contain stored_value 509 anywhere — the third friend is 507=Silvia, not 509=Anson. Asserting against the real fixture state rather than the typo'd reference is the correct call per CLAUDE.md 'never let a bailout clause hide ground truth' — we surface what's actually in the bytes.)",
+      "reason": "Empirical anchor for the parser path. Without coverage future refactors could silently re-break the friends-met scan exactly like step-262 did with town residents. The fixture's actual contents are the source of truth, not draft notes about a different save."
+    },
+    {
+      "ref": "notes/changes/step-257-savefile-friends-met.json",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/notes/changes/step-257-savefile-friends-met.json",
+      "offset": null,
+      "before": "(file did not exist)",
+      "after": "Change-tracking entry documenting the Friends-Met addition + dispatch-brief discrepancy diagnosis.",
+      "reason": "Required per CLAUDE.md 'Change tracking for the public changelog' rule — every commit records before/after data so release-time rollup can produce per-version detail pages."
+    }
+  ],
+  "fixture_discrepancy_note": {
+    "summary": "Dispatch brief named [505→Zoe, 506→Chloe, 509→Anson, 517→Naomi] as the expected Friends-Met list. Actual fixture content is [505→Zoe, 506→Chloe, 507→Silvia, 517→Naomi].",
+    "fixture_path": "C:/Users/Tyler/Desktop/Hack/DeSmuME-VS2019-x64-Release (1)/Battery/Saves for hacking/tongari_en.dsv",
+    "fixture_active_slot": "B (per parseBefore.activeSlot — last in-game save landed in slot B)",
+    "actual_offsets": {
+      "505 (Zoe)": "0x3120",
+      "506 (Chloe)": "0x2f86, 0x2f90, 0x32b0",
+      "507 (Silvia)": "0x4160, 0x42f0",
+      "517 (Naomi)": "0x1140, 0x12ee"
+    },
+    "brief_referenced_offsets": "0x3086, 0x30BD, 0x4260, 0x428D, 0x4297 — all five of these byte positions are 0x00 in this fixture's slot B, so the brief was citing a different save's data.",
+    "resolution": "Test asserts against actual fixture bytes (Silvia, not Anson). The parser logic is exactly what the brief specified — even-aligned u16 scan in 0x500..0x4300 with range 500..751 and dedupe-by-value. The discrepancy is in the expected-list draft text, not in the parser output."
+  },
+  "verification": {
+    "test_harness_result": "ALL TESTS PASSED — friends-met count = 4, all 4 EN/JP names match, Chloe (506) has multiple recorded offsets confirming dedupe is real, sort is ascending.",
+    "false_positives_before_tightening": 0,
+    "scan_strategy": "Even-aligned u16 LE scan in body[0x500..0x4300] with value range 500..751. No additional filtering was needed — the even-alignment rule alone gave a clean roster (4 entries, 8 total stored_value references across the region, all 4 resolve to real NPCs in npc_encoding.json).",
+    "browser_test": "Not performed — Astro dev server requires user interaction to drop the save file into the inspector. Verified the inspector compiles cleanly (esbuild bundle succeeds, tsc surfaces no NEW errors — only the two pre-existing unrelated errors in ChangelogDetail.tsx and rom-worker.ts that were on main before this change), and the test harness exercises the same parser code the React tree consumes."
+  }
+}

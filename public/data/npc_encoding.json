@@ -1,0 +1,2142 @@
+{
+  "about": "NPC encoding for Tongari Boushi to Oshare na Mahou Tsukai (NDS). The save file stores friend / met-NPC u16 LE values in body 0x500..0x4300 (slot A in active save). The stored_value is `npc_data_ofs_id + 500`, where npc_data_ofs_id is the position 0..251 in NpcDataOfs.ofs / NpcData.dec. The 252 NPCs span 4 categories matching tfnpc.ofs (cat 0, 140 main NPCs), tfnpccmn.ofs (cat 1, 33 staff/special), tfnpcguest.ofs (cat 2, 13 guest/event NPCs), and a 4th category of 66 mythical/creature NPCs.",
+  "method": "stored_value = npc_data_ofs_id + 500. Confirmed via differential save analysis (Tyler's OLD vs NEW saves with 2 added friends), cross-checked against ARM9 NPC tables (RAM 0x020A1660: cat bases [1000,2000,3000,4000] for speaker_npc_id namespace; RAM 0x020A1670: counts [140,33,13,66]; RAM 0x020A1690: cumulative starts [0,140,173,186]). The save file uses a flat 0..251 namespace + 500 offset; the speaker_npc_id namespace (1000+, used by the dialog system) is a separate addressing scheme. Both reference the same NpcDataOfs.ofs entries in identical order.",
+  "tables": {
+    "ram_addr_cat_bases_speaker_namespace": "0x020A1660",
+    "file_offset_cat_bases": "0xA1660",
+    "ram_addr_cat_counts": "0x020A1670",
+    "file_offset_cat_counts": "0xA1670",
+    "ram_addr_cumulative_starts": "0x020A1690",
+    "file_offset_cumulative_starts": "0xA1690",
+    "speaker_npc_id_decoder_function_ram": "0x0203522c",
+    "flat_index_returner_function_ram": "0x02035288",
+    "save_buffer_save_offset_low": "0x500",
+    "save_buffer_save_offset_high": "0x4300",
+    "save_offset_region_size_bytes": 15616,
+    "stored_value_range_low": 500,
+    "stored_value_range_high": 751,
+    "note": "The save offset region body 0x500..0x4300 contains the active NPC met-history / friend-list data; the same u16 stored_value may appear in multiple sub-tables (encounter log, friend list, gift log, etc.) within that region. Specific sub-region offsets within 0x500..0x4300 are not yet fully decoded; this encoding is for the u16 NPC ID value itself."
+  },
+  "categories": [
+    {
+      "cat": 0,
+      "speaker_npc_id_base": 1000,
+      "count": 140,
+      "speaker_npc_id_range": [
+        1000,
+        1139
+      ],
+      "stored_range": [
+        500,
+        639
+      ],
+      "ofs_id_range": [
+        0,
+        139
+      ],
+      "description": "Main NPCs (140) — uses tfnpc.ofs face textures"
+    },
+    {
+      "cat": 1,
+      "speaker_npc_id_base": 2000,
+      "count": 33,
+      "speaker_npc_id_range": [
+        2000,
+        2032
+      ],
+      "stored_range": [
+        640,
+        672
+      ],
+      "ofs_id_range": [
+        140,
+        172
+      ],
+      "description": "Staff/special NPCs (33) — uses tfnpccmn.ofs common face textures"
+    },
+    {
+      "cat": 2,
+      "speaker_npc_id_base": 3000,
+      "count": 13,
+      "speaker_npc_id_range": [
+        3000,
+        3012
+      ],
+      "stored_range": [
+        673,
+        685
+      ],
+      "ofs_id_range": [
+        173,
+        185
+      ],
+      "description": "Guest/event NPCs (13) — uses tfnpcguest.ofs guest face textures"
+    },
+    {
+      "cat": 3,
+      "speaker_npc_id_base": 4000,
+      "count": 66,
+      "speaker_npc_id_range": [
+        4000,
+        4065
+      ],
+      "stored_range": [
+        686,
+        751
+      ],
+      "ofs_id_range": [
+        186,
+        251
+      ],
+      "description": "Mythical/creature NPCs (66) — おばけ, ドラゴン, ネッシー etc."
+    }
+  ],
+  "verified_against": [
+    {
+      "stored": 505,
+      "npc_data_ofs_id": 5,
+      "speaker_npc_id": 1005,
+      "name_jp": "ザマス",
+      "name_en": "Zoe"
+    },
+    {
+      "stored": 506,
+      "npc_data_ofs_id": 6,
+      "speaker_npc_id": 1006,
+      "name_jp": "ゆうこ",
+      "name_en": "Chloe"
+    },
+    {
+      "stored": 509,
+      "npc_data_ofs_id": 9,
+      "speaker_npc_id": 1009,
+      "name_jp": "モンプチ",
+      "name_en": "Anson"
+    },
+    {
+      "stored": 517,
+      "npc_data_ofs_id": 17,
+      "speaker_npc_id": 1017,
+      "name_jp": "ヨサコ",
+      "name_en": "Naomi"
+    }
+  ],
+  "mapping_stored_to_npc": {
+    "500": {
+      "npc_data_ofs_id": 0,
+      "category": 0,
+      "sub_index": 0,
+      "speaker_npc_id": 1000,
+      "jp_name": "ハチ",
+      "en_name": "Ben"
+    },
+    "501": {
+      "npc_data_ofs_id": 1,
+      "category": 0,
+      "sub_index": 1,
+      "speaker_npc_id": 1001,
+      "jp_name": "リチャード",
+      "en_name": "Richard"
+    },
+    "502": {
+      "npc_data_ofs_id": 2,
+      "category": 0,
+      "sub_index": 2,
+      "speaker_npc_id": 1002,
+      "jp_name": "ルドルフ",
+      "en_name": "Rudolph"
+    },
+    "503": {
+      "npc_data_ofs_id": 3,
+      "category": 0,
+      "sub_index": 3,
+      "speaker_npc_id": 1003,
+      "jp_name": "ココア",
+      "en_name": "Cocoa"
+    },
+    "504": {
+      "npc_data_ofs_id": 4,
+      "category": 0,
+      "sub_index": 4,
+      "speaker_npc_id": 1004,
+      "jp_name": "チーコ",
+      "en_name": "Fifi"
+    },
+    "505": {
+      "npc_data_ofs_id": 5,
+      "category": 0,
+      "sub_index": 5,
+      "speaker_npc_id": 1005,
+      "jp_name": "ザマス",
+      "en_name": "Zoe"
+    },
+    "506": {
+      "npc_data_ofs_id": 6,
+      "category": 0,
+      "sub_index": 6,
+      "speaker_npc_id": 1006,
+      "jp_name": "ゆうこ",
+      "en_name": "Chloe"
+    },
+    "507": {
+      "npc_data_ofs_id": 7,
+      "category": 0,
+      "sub_index": 7,
+      "speaker_npc_id": 1007,
+      "jp_name": "シルビア",
+      "en_name": "Silvia"
+    },
+    "508": {
+      "npc_data_ofs_id": 8,
+      "category": 0,
+      "sub_index": 8,
+      "speaker_npc_id": 1008,
+      "jp_name": "すず",
+      "en_name": "Suzy"
+    },
+    "509": {
+      "npc_data_ofs_id": 9,
+      "category": 0,
+      "sub_index": 9,
+      "speaker_npc_id": 1009,
+      "jp_name": "モンプチ",
+      "en_name": "Anson"
+    },
+    "510": {
+      "npc_data_ofs_id": 10,
+      "category": 0,
+      "sub_index": 10,
+      "speaker_npc_id": 1010,
+      "jp_name": "ウッス",
+      "en_name": "Wuss"
+    },
+    "511": {
+      "npc_data_ofs_id": 11,
+      "category": 0,
+      "sub_index": 11,
+      "speaker_npc_id": 1011,
+      "jp_name": "ニャロス",
+      "en_name": "Chester"
+    },
+    "512": {
+      "npc_data_ofs_id": 12,
+      "category": 0,
+      "sub_index": 12,
+      "speaker_npc_id": 1012,
+      "jp_name": "くまっち",
+      "en_name": "Theo"
+    },
+    "513": {
+      "npc_data_ofs_id": 13,
+      "category": 0,
+      "sub_index": 13,
+      "speaker_npc_id": 1013,
+      "jp_name": "パンタ",
+      "en_name": "Damian"
+    },
+    "514": {
+      "npc_data_ofs_id": 14,
+      "category": 0,
+      "sub_index": 14,
+      "speaker_npc_id": 1014,
+      "jp_name": "べべ",
+      "en_name": "Bernard"
+    },
+    "515": {
+      "npc_data_ofs_id": 15,
+      "category": 0,
+      "sub_index": 15,
+      "speaker_npc_id": 1015,
+      "jp_name": "イナバ",
+      "en_name": "Ellis"
+    },
+    "516": {
+      "npc_data_ofs_id": 16,
+      "category": 0,
+      "sub_index": 16,
+      "speaker_npc_id": 1016,
+      "jp_name": "パメラ",
+      "en_name": "Pamela"
+    },
+    "517": {
+      "npc_data_ofs_id": 17,
+      "category": 0,
+      "sub_index": 17,
+      "speaker_npc_id": 1017,
+      "jp_name": "ヨサコ",
+      "en_name": "Naomi"
+    },
+    "518": {
+      "npc_data_ofs_id": 18,
+      "category": 0,
+      "sub_index": 18,
+      "speaker_npc_id": 1018,
+      "jp_name": "ビル",
+      "en_name": "Billy"
+    },
+    "519": {
+      "npc_data_ofs_id": 19,
+      "category": 0,
+      "sub_index": 19,
+      "speaker_npc_id": 1019,
+      "jp_name": "コロネ",
+      "en_name": "Molly"
+    },
+    "520": {
+      "npc_data_ofs_id": 20,
+      "category": 0,
+      "sub_index": 20,
+      "speaker_npc_id": 1020,
+      "jp_name": "カンクー",
+      "en_name": "Libby"
+    },
+    "521": {
+      "npc_data_ofs_id": 21,
+      "category": 0,
+      "sub_index": 21,
+      "speaker_npc_id": 1021,
+      "jp_name": "ハバナ",
+      "en_name": "Havana"
+    },
+    "522": {
+      "npc_data_ofs_id": 22,
+      "category": 0,
+      "sub_index": 22,
+      "speaker_npc_id": 1022,
+      "jp_name": "スワヒリ",
+      "en_name": "Abasi"
+    },
+    "523": {
+      "npc_data_ofs_id": 23,
+      "category": 0,
+      "sub_index": 23,
+      "speaker_npc_id": 1023,
+      "jp_name": "クルタン",
+      "en_name": "Ralph"
+    },
+    "524": {
+      "npc_data_ofs_id": 24,
+      "category": 0,
+      "sub_index": 24,
+      "speaker_npc_id": 1024,
+      "jp_name": "じんべい",
+      "en_name": "Derrick"
+    },
+    "525": {
+      "npc_data_ofs_id": 25,
+      "category": 0,
+      "sub_index": 25,
+      "speaker_npc_id": 1025,
+      "jp_name": "ウルル",
+      "en_name": "Whitney"
+    },
+    "526": {
+      "npc_data_ofs_id": 26,
+      "category": 0,
+      "sub_index": 26,
+      "speaker_npc_id": 1026,
+      "jp_name": "ジャンゴ",
+      "en_name": "Django"
+    },
+    "527": {
+      "npc_data_ofs_id": 27,
+      "category": 0,
+      "sub_index": 27,
+      "speaker_npc_id": 1027,
+      "jp_name": "ストラト",
+      "en_name": "Stuart"
+    },
+    "528": {
+      "npc_data_ofs_id": 28,
+      "category": 0,
+      "sub_index": 28,
+      "speaker_npc_id": 1028,
+      "jp_name": "サキ",
+      "en_name": "Tina"
+    },
+    "529": {
+      "npc_data_ofs_id": 29,
+      "category": 0,
+      "sub_index": 29,
+      "speaker_npc_id": 1029,
+      "jp_name": "バッファ",
+      "en_name": "Barkley"
+    },
+    "530": {
+      "npc_data_ofs_id": 30,
+      "category": 0,
+      "sub_index": 30,
+      "speaker_npc_id": 1030,
+      "jp_name": "スリーピィ",
+      "en_name": "Shawn"
+    },
+    "531": {
+      "npc_data_ofs_id": 31,
+      "category": 0,
+      "sub_index": 31,
+      "speaker_npc_id": 1031,
+      "jp_name": "あけみ",
+      "en_name": "Hanna"
+    },
+    "532": {
+      "npc_data_ofs_id": 32,
+      "category": 0,
+      "sub_index": 32,
+      "speaker_npc_id": 1032,
+      "jp_name": "ラム",
+      "en_name": "Felicia"
+    },
+    "533": {
+      "npc_data_ofs_id": 33,
+      "category": 0,
+      "sub_index": 33,
+      "speaker_npc_id": 1033,
+      "jp_name": "チュータロー",
+      "en_name": "Rodney"
+    },
+    "534": {
+      "npc_data_ofs_id": 34,
+      "category": 0,
+      "sub_index": 34,
+      "speaker_npc_id": 1034,
+      "jp_name": "ムグリ",
+      "en_name": "Neville"
+    },
+    "535": {
+      "npc_data_ofs_id": 35,
+      "category": 0,
+      "sub_index": 35,
+      "speaker_npc_id": 1035,
+      "jp_name": "きらり",
+      "en_name": "Sparkles"
+    },
+    "536": {
+      "npc_data_ofs_id": 36,
+      "category": 0,
+      "sub_index": 36,
+      "speaker_npc_id": 1036,
+      "jp_name": "ボナパルト",
+      "en_name": "Napoleon"
+    },
+    "537": {
+      "npc_data_ofs_id": 37,
+      "category": 0,
+      "sub_index": 37,
+      "speaker_npc_id": 1037,
+      "jp_name": "サミー",
+      "en_name": "Sammy"
+    },
+    "538": {
+      "npc_data_ofs_id": 38,
+      "category": 0,
+      "sub_index": 38,
+      "speaker_npc_id": 1038,
+      "jp_name": "ムーニ",
+      "en_name": "Moony"
+    },
+    "539": {
+      "npc_data_ofs_id": 39,
+      "category": 0,
+      "sub_index": 39,
+      "speaker_npc_id": 1039,
+      "jp_name": "オーラ",
+      "en_name": "Aurora"
+    },
+    "540": {
+      "npc_data_ofs_id": 40,
+      "category": 0,
+      "sub_index": 40,
+      "speaker_npc_id": 1040,
+      "jp_name": "ハンフリー",
+      "en_name": "Humphrey"
+    },
+    "541": {
+      "npc_data_ofs_id": 41,
+      "category": 0,
+      "sub_index": 41,
+      "speaker_npc_id": 1041,
+      "jp_name": "ライデン",
+      "en_name": "Thor"
+    },
+    "542": {
+      "npc_data_ofs_id": 42,
+      "category": 0,
+      "sub_index": 42,
+      "speaker_npc_id": 1042,
+      "jp_name": "ジェンヌ",
+      "en_name": "Starla"
+    },
+    "543": {
+      "npc_data_ofs_id": 43,
+      "category": 0,
+      "sub_index": 43,
+      "speaker_npc_id": 1043,
+      "jp_name": "ワイアット",
+      "en_name": "Wyatt"
+    },
+    "544": {
+      "npc_data_ofs_id": 44,
+      "category": 0,
+      "sub_index": 44,
+      "speaker_npc_id": 1044,
+      "jp_name": "トロイ",
+      "en_name": "Troy"
+    },
+    "545": {
+      "npc_data_ofs_id": 45,
+      "category": 0,
+      "sub_index": 45,
+      "speaker_npc_id": 1045,
+      "jp_name": "オウカ",
+      "en_name": "Holly"
+    },
+    "546": {
+      "npc_data_ofs_id": 46,
+      "category": 0,
+      "sub_index": 46,
+      "speaker_npc_id": 1046,
+      "jp_name": "りんこ",
+      "en_name": "Geraldine"
+    },
+    "547": {
+      "npc_data_ofs_id": 47,
+      "category": 0,
+      "sub_index": 47,
+      "speaker_npc_id": 1047,
+      "jp_name": "ハラショー",
+      "en_name": "Sergey"
+    },
+    "548": {
+      "npc_data_ofs_id": 48,
+      "category": 0,
+      "sub_index": 48,
+      "speaker_npc_id": 1048,
+      "jp_name": "メタボン",
+      "en_name": "Foggy"
+    },
+    "549": {
+      "npc_data_ofs_id": 49,
+      "category": 0,
+      "sub_index": 49,
+      "speaker_npc_id": 1049,
+      "jp_name": "たまみ",
+      "en_name": "Lucille"
+    },
+    "550": {
+      "npc_data_ofs_id": 50,
+      "category": 0,
+      "sub_index": 50,
+      "speaker_npc_id": 1050,
+      "jp_name": "もんち",
+      "en_name": "Mikey"
+    },
+    "551": {
+      "npc_data_ofs_id": 51,
+      "category": 0,
+      "sub_index": 51,
+      "speaker_npc_id": 1051,
+      "jp_name": "キッキ",
+      "en_name": "Becky"
+    },
+    "552": {
+      "npc_data_ofs_id": 52,
+      "category": 0,
+      "sub_index": 52,
+      "speaker_npc_id": 1052,
+      "jp_name": "おその",
+      "en_name": "Madison"
+    },
+    "553": {
+      "npc_data_ofs_id": 53,
+      "category": 0,
+      "sub_index": 53,
+      "speaker_npc_id": 1053,
+      "jp_name": "ヤマダ",
+      "en_name": "Jhonson"
+    },
+    "554": {
+      "npc_data_ofs_id": 54,
+      "category": 0,
+      "sub_index": 54,
+      "speaker_npc_id": 1054,
+      "jp_name": "グッチー",
+      "en_name": "Grimble"
+    },
+    "555": {
+      "npc_data_ofs_id": 55,
+      "category": 0,
+      "sub_index": 55,
+      "speaker_npc_id": 1055,
+      "jp_name": "ほっぺ",
+      "en_name": "Olivia"
+    },
+    "556": {
+      "npc_data_ofs_id": 56,
+      "category": 0,
+      "sub_index": 56,
+      "speaker_npc_id": 1056,
+      "jp_name": "ベーブ",
+      "en_name": "Brett"
+    },
+    "557": {
+      "npc_data_ofs_id": 57,
+      "category": 0,
+      "sub_index": 57,
+      "speaker_npc_id": 1057,
+      "jp_name": "ココット",
+      "en_name": "Chelsea"
+    },
+    "558": {
+      "npc_data_ofs_id": 58,
+      "category": 0,
+      "sub_index": 58,
+      "speaker_npc_id": 1058,
+      "jp_name": "シャーベット",
+      "en_name": "Shelly"
+    },
+    "559": {
+      "npc_data_ofs_id": 59,
+      "category": 0,
+      "sub_index": 59,
+      "speaker_npc_id": 1059,
+      "jp_name": "トット",
+      "en_name": "Tot"
+    },
+    "560": {
+      "npc_data_ofs_id": 60,
+      "category": 0,
+      "sub_index": 60,
+      "speaker_npc_id": 1060,
+      "jp_name": "セイヤ",
+      "en_name": "Frank"
+    },
+    "561": {
+      "npc_data_ofs_id": 61,
+      "category": 0,
+      "sub_index": 61,
+      "speaker_npc_id": 1061,
+      "jp_name": "サンダーソン",
+      "en_name": "Sanderson"
+    },
+    "562": {
+      "npc_data_ofs_id": 62,
+      "category": 0,
+      "sub_index": 62,
+      "speaker_npc_id": 1062,
+      "jp_name": "プイプイ",
+      "en_name": "Freya"
+    },
+    "563": {
+      "npc_data_ofs_id": 63,
+      "category": 0,
+      "sub_index": 63,
+      "speaker_npc_id": 1063,
+      "jp_name": "ヒロシ",
+      "en_name": "Nigel"
+    },
+    "564": {
+      "npc_data_ofs_id": 64,
+      "category": 0,
+      "sub_index": 64,
+      "speaker_npc_id": 1064,
+      "jp_name": "マシュー",
+      "en_name": "Matthew"
+    },
+    "565": {
+      "npc_data_ofs_id": 65,
+      "category": 0,
+      "sub_index": 65,
+      "speaker_npc_id": 1065,
+      "jp_name": "テンテン",
+      "en_name": "Jessica"
+    },
+    "566": {
+      "npc_data_ofs_id": 66,
+      "category": 0,
+      "sub_index": 66,
+      "speaker_npc_id": 1066,
+      "jp_name": "ハッピー",
+      "en_name": "Cherie"
+    },
+    "567": {
+      "npc_data_ofs_id": 67,
+      "category": 0,
+      "sub_index": 67,
+      "speaker_npc_id": 1067,
+      "jp_name": "トラボルた",
+      "en_name": "Tony"
+    },
+    "568": {
+      "npc_data_ofs_id": 68,
+      "category": 0,
+      "sub_index": 68,
+      "speaker_npc_id": 1068,
+      "jp_name": "ジャネット",
+      "en_name": "Janet"
+    },
+    "569": {
+      "npc_data_ofs_id": 69,
+      "category": 0,
+      "sub_index": 69,
+      "speaker_npc_id": 1069,
+      "jp_name": "メグ",
+      "en_name": "Meg"
+    },
+    "570": {
+      "npc_data_ofs_id": 70,
+      "category": 0,
+      "sub_index": 70,
+      "speaker_npc_id": 1070,
+      "jp_name": "せいべい",
+      "en_name": "Alexander"
+    },
+    "571": {
+      "npc_data_ofs_id": 71,
+      "category": 0,
+      "sub_index": 71,
+      "speaker_npc_id": 1071,
+      "jp_name": "けいた",
+      "en_name": "Eric"
+    },
+    "572": {
+      "npc_data_ofs_id": 72,
+      "category": 0,
+      "sub_index": 72,
+      "speaker_npc_id": 1072,
+      "jp_name": "ポロリン",
+      "en_name": "Petra"
+    },
+    "573": {
+      "npc_data_ofs_id": 73,
+      "category": 0,
+      "sub_index": 73,
+      "speaker_npc_id": 1073,
+      "jp_name": "ソーニャ",
+      "en_name": "Sonya"
+    },
+    "574": {
+      "npc_data_ofs_id": 74,
+      "category": 0,
+      "sub_index": 74,
+      "speaker_npc_id": 1074,
+      "jp_name": "ビスカス",
+      "en_name": "Laurel"
+    },
+    "575": {
+      "npc_data_ofs_id": 75,
+      "category": 0,
+      "sub_index": 75,
+      "speaker_npc_id": 1075,
+      "jp_name": "バーバラ",
+      "en_name": "Barbara"
+    },
+    "576": {
+      "npc_data_ofs_id": 76,
+      "category": 0,
+      "sub_index": 76,
+      "speaker_npc_id": 1076,
+      "jp_name": "はなこ",
+      "en_name": "Petal"
+    },
+    "577": {
+      "npc_data_ofs_id": 77,
+      "category": 0,
+      "sub_index": 77,
+      "speaker_npc_id": 1077,
+      "jp_name": "ラフレー",
+      "en_name": "Victoria"
+    },
+    "578": {
+      "npc_data_ofs_id": 78,
+      "category": 0,
+      "sub_index": 78,
+      "speaker_npc_id": 1078,
+      "jp_name": "チャミィ",
+      "en_name": "Brandy"
+    },
+    "579": {
+      "npc_data_ofs_id": 79,
+      "category": 0,
+      "sub_index": 79,
+      "speaker_npc_id": 1079,
+      "jp_name": "プリンス",
+      "en_name": "Marty"
+    },
+    "580": {
+      "npc_data_ofs_id": 80,
+      "category": 0,
+      "sub_index": 80,
+      "speaker_npc_id": 1080,
+      "jp_name": "カグヤ",
+      "en_name": "Marsha"
+    },
+    "581": {
+      "npc_data_ofs_id": 81,
+      "category": 0,
+      "sub_index": 81,
+      "speaker_npc_id": 1081,
+      "jp_name": "カルシウム",
+      "en_name": "Kelsey"
+    },
+    "582": {
+      "npc_data_ofs_id": 82,
+      "category": 0,
+      "sub_index": 82,
+      "speaker_npc_id": 1082,
+      "jp_name": "ロットン",
+      "en_name": "Gary"
+    },
+    "583": {
+      "npc_data_ofs_id": 83,
+      "category": 0,
+      "sub_index": 83,
+      "speaker_npc_id": 1083,
+      "jp_name": "キョンキョン",
+      "en_name": "Lydia"
+    },
+    "584": {
+      "npc_data_ofs_id": 84,
+      "category": 0,
+      "sub_index": 84,
+      "speaker_npc_id": 1084,
+      "jp_name": "グレース",
+      "en_name": "Grace"
+    },
+    "585": {
+      "npc_data_ofs_id": 85,
+      "category": 0,
+      "sub_index": 85,
+      "speaker_npc_id": 1085,
+      "jp_name": "ちょうじろう",
+      "en_name": "James"
+    },
+    "586": {
+      "npc_data_ofs_id": 86,
+      "category": 0,
+      "sub_index": 86,
+      "speaker_npc_id": 1086,
+      "jp_name": "フジ",
+      "en_name": "Delcy"
+    },
+    "587": {
+      "npc_data_ofs_id": 87,
+      "category": 0,
+      "sub_index": 87,
+      "speaker_npc_id": 1087,
+      "jp_name": "ももっぺ",
+      "en_name": "Blossom"
+    },
+    "588": {
+      "npc_data_ofs_id": 88,
+      "category": 0,
+      "sub_index": 88,
+      "speaker_npc_id": 1088,
+      "jp_name": "ＴＶ２０Ｃ",
+      "en_name": "TV-20C"
+    },
+    "589": {
+      "npc_data_ofs_id": 89,
+      "category": 0,
+      "sub_index": 89,
+      "speaker_npc_id": 1089,
+      "jp_name": "たいちょう",
+      "en_name": "Sarge"
+    },
+    "590": {
+      "npc_data_ofs_id": 90,
+      "category": 0,
+      "sub_index": 90,
+      "speaker_npc_id": 1090,
+      "jp_name": "クリスティン",
+      "en_name": "Crhristine"
+    },
+    "591": {
+      "npc_data_ofs_id": 91,
+      "category": 0,
+      "sub_index": 91,
+      "speaker_npc_id": 1091,
+      "jp_name": "イビラ",
+      "en_name": "Seth"
+    },
+    "592": {
+      "npc_data_ofs_id": 92,
+      "category": 0,
+      "sub_index": 92,
+      "speaker_npc_id": 1092,
+      "jp_name": "デューク",
+      "en_name": "Duke"
+    },
+    "593": {
+      "npc_data_ofs_id": 93,
+      "category": 0,
+      "sub_index": 93,
+      "speaker_npc_id": 1093,
+      "jp_name": "ガラッパ",
+      "en_name": "Amber"
+    },
+    "594": {
+      "npc_data_ofs_id": 94,
+      "category": 0,
+      "sub_index": 94,
+      "speaker_npc_id": 1094,
+      "jp_name": "ブラウニー",
+      "en_name": "Brownie"
+    },
+    "595": {
+      "npc_data_ofs_id": 95,
+      "category": 0,
+      "sub_index": 95,
+      "speaker_npc_id": 1095,
+      "jp_name": "マロン",
+      "en_name": "Patsy"
+    },
+    "596": {
+      "npc_data_ofs_id": 96,
+      "category": 0,
+      "sub_index": 96,
+      "speaker_npc_id": 1096,
+      "jp_name": "ホイップ",
+      "en_name": "Cherry"
+    },
+    "597": {
+      "npc_data_ofs_id": 97,
+      "category": 0,
+      "sub_index": 97,
+      "speaker_npc_id": 1097,
+      "jp_name": "イベリコ",
+      "en_name": "Kevin"
+    },
+    "598": {
+      "npc_data_ofs_id": 98,
+      "category": 0,
+      "sub_index": 98,
+      "speaker_npc_id": 1098,
+      "jp_name": "ウリ",
+      "en_name": "Phoebe"
+    },
+    "599": {
+      "npc_data_ofs_id": 99,
+      "category": 0,
+      "sub_index": 99,
+      "speaker_npc_id": 1099,
+      "jp_name": "プップ",
+      "en_name": "Abigail"
+    },
+    "600": {
+      "npc_data_ofs_id": 100,
+      "category": 0,
+      "sub_index": 100,
+      "speaker_npc_id": 1100,
+      "jp_name": "ほのか",
+      "en_name": "Shortcake"
+    },
+    "601": {
+      "npc_data_ofs_id": 101,
+      "category": 0,
+      "sub_index": 101,
+      "speaker_npc_id": 1101,
+      "jp_name": "カトリーヌ",
+      "en_name": "Catherine"
+    },
+    "602": {
+      "npc_data_ofs_id": 102,
+      "category": 0,
+      "sub_index": 102,
+      "speaker_npc_id": 1102,
+      "jp_name": "おたけ",
+      "en_name": "Shoomina"
+    },
+    "603": {
+      "npc_data_ofs_id": 103,
+      "category": 0,
+      "sub_index": 103,
+      "speaker_npc_id": 1103,
+      "jp_name": "ココ",
+      "en_name": "Chocolate"
+    },
+    "604": {
+      "npc_data_ofs_id": 104,
+      "category": 0,
+      "sub_index": 104,
+      "speaker_npc_id": 1104,
+      "jp_name": "サンディー",
+      "en_name": "Cassady"
+    },
+    "605": {
+      "npc_data_ofs_id": 105,
+      "category": 0,
+      "sub_index": 105,
+      "speaker_npc_id": 1105,
+      "jp_name": "ミント",
+      "en_name": "Mindy"
+    },
+    "606": {
+      "npc_data_ofs_id": 106,
+      "category": 0,
+      "sub_index": 106,
+      "speaker_npc_id": 1106,
+      "jp_name": "パキラ",
+      "en_name": "Patina"
+    },
+    "607": {
+      "npc_data_ofs_id": 107,
+      "category": 0,
+      "sub_index": 107,
+      "speaker_npc_id": 1107,
+      "jp_name": "リコピン",
+      "en_name": "Tomatlla"
+    },
+    "608": {
+      "npc_data_ofs_id": 108,
+      "category": 0,
+      "sub_index": 108,
+      "speaker_npc_id": 1108,
+      "jp_name": "メロリン",
+      "en_name": "Melany"
+    },
+    "609": {
+      "npc_data_ofs_id": 109,
+      "category": 0,
+      "sub_index": 109,
+      "speaker_npc_id": 1109,
+      "jp_name": "ルージュ",
+      "en_name": "Ruby"
+    },
+    "610": {
+      "npc_data_ofs_id": 110,
+      "category": 0,
+      "sub_index": 110,
+      "speaker_npc_id": 1110,
+      "jp_name": "ソルベ",
+      "en_name": "Sorbet"
+    },
+    "611": {
+      "npc_data_ofs_id": 111,
+      "category": 0,
+      "sub_index": 111,
+      "speaker_npc_id": 1111,
+      "jp_name": "ふごっぺ",
+      "en_name": "Freyer"
+    },
+    "612": {
+      "npc_data_ofs_id": 112,
+      "category": 0,
+      "sub_index": 112,
+      "speaker_npc_id": 1112,
+      "jp_name": "ひょうた",
+      "en_name": "Kona"
+    },
+    "613": {
+      "npc_data_ofs_id": 113,
+      "category": 0,
+      "sub_index": 113,
+      "speaker_npc_id": 1113,
+      "jp_name": "デリー",
+      "en_name": "Kapu"
+    },
+    "614": {
+      "npc_data_ofs_id": 114,
+      "category": 0,
+      "sub_index": 114,
+      "speaker_npc_id": 1114,
+      "jp_name": "ごんた",
+      "en_name": "Marcel"
+    },
+    "615": {
+      "npc_data_ofs_id": 115,
+      "category": 0,
+      "sub_index": 115,
+      "speaker_npc_id": 1115,
+      "jp_name": "ジュリー",
+      "en_name": "Julie"
+    },
+    "616": {
+      "npc_data_ofs_id": 116,
+      "category": 0,
+      "sub_index": 116,
+      "speaker_npc_id": 1116,
+      "jp_name": "ホセ",
+      "en_name": "Joseph"
+    },
+    "617": {
+      "npc_data_ofs_id": 117,
+      "category": 0,
+      "sub_index": 117,
+      "speaker_npc_id": 1117,
+      "jp_name": "クリスピー",
+      "en_name": "Cruller"
+    },
+    "618": {
+      "npc_data_ofs_id": 118,
+      "category": 0,
+      "sub_index": 118,
+      "speaker_npc_id": 1118,
+      "jp_name": "コロタ",
+      "en_name": "Castan"
+    },
+    "619": {
+      "npc_data_ofs_id": 119,
+      "category": 0,
+      "sub_index": 119,
+      "speaker_npc_id": 1119,
+      "jp_name": "ビター",
+      "en_name": "Bitter"
+    },
+    "620": {
+      "npc_data_ofs_id": 120,
+      "category": 0,
+      "sub_index": 120,
+      "speaker_npc_id": 1120,
+      "jp_name": "ダウト",
+      "en_name": "Spadda"
+    },
+    "621": {
+      "npc_data_ofs_id": 121,
+      "category": 0,
+      "sub_index": 121,
+      "speaker_npc_id": 1121,
+      "jp_name": "ルミナス",
+      "en_name": "Luminard"
+    },
+    "622": {
+      "npc_data_ofs_id": 122,
+      "category": 0,
+      "sub_index": 122,
+      "speaker_npc_id": 1122,
+      "jp_name": "ウイリアム",
+      "en_name": "William"
+    },
+    "623": {
+      "npc_data_ofs_id": 123,
+      "category": 0,
+      "sub_index": 123,
+      "speaker_npc_id": 1123,
+      "jp_name": "アポロ",
+      "en_name": "Apollo"
+    },
+    "624": {
+      "npc_data_ofs_id": 124,
+      "category": 0,
+      "sub_index": 124,
+      "speaker_npc_id": 1124,
+      "jp_name": "アントニオ",
+      "en_name": "Anthony"
+    },
+    "625": {
+      "npc_data_ofs_id": 125,
+      "category": 0,
+      "sub_index": 125,
+      "speaker_npc_id": 1125,
+      "jp_name": "フローラ",
+      "en_name": "Flora"
+    },
+    "626": {
+      "npc_data_ofs_id": 126,
+      "category": 0,
+      "sub_index": 126,
+      "speaker_npc_id": 1126,
+      "jp_name": "コメット",
+      "en_name": "Cosmina"
+    },
+    "627": {
+      "npc_data_ofs_id": 127,
+      "category": 0,
+      "sub_index": 127,
+      "speaker_npc_id": 1127,
+      "jp_name": "シードル",
+      "en_name": "Hailey"
+    },
+    "628": {
+      "npc_data_ofs_id": 128,
+      "category": 0,
+      "sub_index": 128,
+      "speaker_npc_id": 1128,
+      "jp_name": "リズ",
+      "en_name": "Lizzy"
+    },
+    "629": {
+      "npc_data_ofs_id": 129,
+      "category": 0,
+      "sub_index": 129,
+      "speaker_npc_id": 1129,
+      "jp_name": "ジュリエンヌ",
+      "en_name": "Jillian"
+    },
+    "630": {
+      "npc_data_ofs_id": 130,
+      "category": 0,
+      "sub_index": 130,
+      "speaker_npc_id": 1130,
+      "jp_name": "ココロン",
+      "en_name": "Amanda"
+    },
+    "631": {
+      "npc_data_ofs_id": 131,
+      "category": 0,
+      "sub_index": 131,
+      "speaker_npc_id": 1131,
+      "jp_name": "ホタル",
+      "en_name": "Lumina"
+    },
+    "632": {
+      "npc_data_ofs_id": 132,
+      "category": 0,
+      "sub_index": 132,
+      "speaker_npc_id": 1132,
+      "jp_name": "ロペス",
+      "en_name": "Larze"
+    },
+    "633": {
+      "npc_data_ofs_id": 133,
+      "category": 0,
+      "sub_index": 133,
+      "speaker_npc_id": 1133,
+      "jp_name": "ヒョウガ",
+      "en_name": "Leo"
+    },
+    "634": {
+      "npc_data_ofs_id": 134,
+      "category": 0,
+      "sub_index": 134,
+      "speaker_npc_id": 1134,
+      "jp_name": "くわっち",
+      "en_name": "Stanley"
+    },
+    "635": {
+      "npc_data_ofs_id": 135,
+      "category": 0,
+      "sub_index": 135,
+      "speaker_npc_id": 1135,
+      "jp_name": "ワオ",
+      "en_name": "Maureen"
+    },
+    "636": {
+      "npc_data_ofs_id": 136,
+      "category": 0,
+      "sub_index": 136,
+      "speaker_npc_id": 1136,
+      "jp_name": "バオバブ",
+      "en_name": "Michel"
+    },
+    "637": {
+      "npc_data_ofs_id": 137,
+      "category": 0,
+      "sub_index": 137,
+      "speaker_npc_id": 1137,
+      "jp_name": "シャミー",
+      "en_name": "Jamie"
+    },
+    "638": {
+      "npc_data_ofs_id": 138,
+      "category": 0,
+      "sub_index": 138,
+      "speaker_npc_id": 1138,
+      "jp_name": "モコ",
+      "en_name": "Melody"
+    },
+    "639": {
+      "npc_data_ofs_id": 139,
+      "category": 0,
+      "sub_index": 139,
+      "speaker_npc_id": 1139,
+      "jp_name": "マーサ",
+      "en_name": "Marcie"
+    },
+    "640": {
+      "npc_data_ofs_id": 140,
+      "category": 1,
+      "sub_index": 0,
+      "speaker_npc_id": 2000,
+      "jp_name": "こうちょう",
+      "en_name": "Principal Sol"
+    },
+    "641": {
+      "npc_data_ofs_id": 141,
+      "category": 1,
+      "sub_index": 1,
+      "speaker_npc_id": 2001,
+      "jp_name": "リカルド",
+      "en_name": "Mr. Vlad"
+    },
+    "642": {
+      "npc_data_ofs_id": 142,
+      "category": 1,
+      "sub_index": 2,
+      "speaker_npc_id": 2002,
+      "jp_name": "ドルイドン",
+      "en_name": "Mr. Oakley"
+    },
+    "643": {
+      "npc_data_ofs_id": 143,
+      "category": 1,
+      "sub_index": 3,
+      "speaker_npc_id": 2003,
+      "jp_name": "ミスキーキー",
+      "en_name": "Miss Strawe"
+    },
+    "644": {
+      "npc_data_ofs_id": 144,
+      "category": 1,
+      "sub_index": 4,
+      "speaker_npc_id": 2004,
+      "jp_name": "ダグラス",
+      "en_name": "Mr. Graves"
+    },
+    "645": {
+      "npc_data_ofs_id": 145,
+      "category": 1,
+      "sub_index": 5,
+      "speaker_npc_id": 2005,
+      "jp_name": "ピカード",
+      "en_name": "Piquard"
+    },
+    "646": {
+      "npc_data_ofs_id": 146,
+      "category": 1,
+      "sub_index": 6,
+      "speaker_npc_id": 2006,
+      "jp_name": "デイジー",
+      "en_name": "Daisy"
+    },
+    "647": {
+      "npc_data_ofs_id": 147,
+      "category": 1,
+      "sub_index": 7,
+      "speaker_npc_id": 2007,
+      "jp_name": "ビビ",
+      "en_name": "Vivian"
+    },
+    "648": {
+      "npc_data_ofs_id": 148,
+      "category": 1,
+      "sub_index": 8,
+      "speaker_npc_id": 2008,
+      "jp_name": "ローリィ",
+      "en_name": "Rolly"
+    },
+    "649": {
+      "npc_data_ofs_id": 149,
+      "category": 1,
+      "sub_index": 9,
+      "speaker_npc_id": 2009,
+      "jp_name": "トメ",
+      "en_name": "Malila"
+    },
+    "650": {
+      "npc_data_ofs_id": 150,
+      "category": 1,
+      "sub_index": 10,
+      "speaker_npc_id": 2010,
+      "jp_name": "メルシィ",
+      "en_name": "Marcy"
+    },
+    "651": {
+      "npc_data_ofs_id": 151,
+      "category": 1,
+      "sub_index": 11,
+      "speaker_npc_id": 2011,
+      "jp_name": "ジョージ",
+      "en_name": "George"
+    },
+    "652": {
+      "npc_data_ofs_id": 152,
+      "category": 1,
+      "sub_index": 12,
+      "speaker_npc_id": 2012,
+      "jp_name": "ブニャー",
+      "en_name": "Thom"
+    },
+    "653": {
+      "npc_data_ofs_id": 153,
+      "category": 1,
+      "sub_index": 13,
+      "speaker_npc_id": 2013,
+      "jp_name": "テツ",
+      "en_name": "Reginald"
+    },
+    "654": {
+      "npc_data_ofs_id": 154,
+      "category": 1,
+      "sub_index": 14,
+      "speaker_npc_id": 2014,
+      "jp_name": "ヒゲマル",
+      "en_name": "Charlie"
+    },
+    "655": {
+      "npc_data_ofs_id": 155,
+      "category": 1,
+      "sub_index": 15,
+      "speaker_npc_id": 2015,
+      "jp_name": "マッハ",
+      "en_name": "Mach"
+    },
+    "656": {
+      "npc_data_ofs_id": 156,
+      "category": 1,
+      "sub_index": 16,
+      "speaker_npc_id": 2016,
+      "jp_name": "こうちょう",
+      "en_name": "Principal Sol"
+    },
+    "657": {
+      "npc_data_ofs_id": 157,
+      "category": 1,
+      "sub_index": 17,
+      "speaker_npc_id": 2017,
+      "jp_name": "ゆうびんねこ",
+      "en_name": "Mail-Cat"
+    },
+    "658": {
+      "npc_data_ofs_id": 158,
+      "category": 1,
+      "sub_index": 18,
+      "speaker_npc_id": 2018,
+      "jp_name": "バイトねこ",
+      "en_name": "Purr Timer"
+    },
+    "659": {
+      "npc_data_ofs_id": 159,
+      "category": 1,
+      "sub_index": 19,
+      "speaker_npc_id": 2019,
+      "jp_name": "バイトねこ",
+      "en_name": "Purr Timer"
+    },
+    "660": {
+      "npc_data_ofs_id": 160,
+      "category": 1,
+      "sub_index": 20,
+      "speaker_npc_id": 2020,
+      "jp_name": "バイトねこ",
+      "en_name": "Purr Timer"
+    },
+    "661": {
+      "npc_data_ofs_id": 161,
+      "category": 1,
+      "sub_index": 21,
+      "speaker_npc_id": 2021,
+      "jp_name": "おうさま",
+      "en_name": "Prince Quartz"
+    },
+    "662": {
+      "npc_data_ofs_id": 162,
+      "category": 1,
+      "sub_index": 22,
+      "speaker_npc_id": 2022,
+      "jp_name": "だいじん",
+      "en_name": "Capulin"
+    },
+    "663": {
+      "npc_data_ofs_id": 163,
+      "category": 1,
+      "sub_index": 23,
+      "speaker_npc_id": 2023,
+      "jp_name": "メリッサ",
+      "en_name": "Miss Melissa"
+    },
+    "664": {
+      "npc_data_ofs_id": 164,
+      "category": 1,
+      "sub_index": 24,
+      "speaker_npc_id": 2024,
+      "jp_name": "リテイク",
+      "en_name": "Agent Remix"
+    },
+    "665": {
+      "npc_data_ofs_id": 165,
+      "category": 1,
+      "sub_index": 25,
+      "speaker_npc_id": 2025,
+      "jp_name": "げんぞう",
+      "en_name": "Donald"
+    },
+    "666": {
+      "npc_data_ofs_id": 166,
+      "category": 1,
+      "sub_index": 26,
+      "speaker_npc_id": 2026,
+      "jp_name": "ハッサン",
+      "en_name": "Hassan"
+    },
+    "667": {
+      "npc_data_ofs_id": 167,
+      "category": 1,
+      "sub_index": 27,
+      "speaker_npc_id": 2027,
+      "jp_name": "バイトねこ",
+      "en_name": "Purr Timer"
+    },
+    "668": {
+      "npc_data_ofs_id": 168,
+      "category": 1,
+      "sub_index": 28,
+      "speaker_npc_id": 2028,
+      "jp_name": "ジャクリーヌ",
+      "en_name": "Jaqueline"
+    },
+    "669": {
+      "npc_data_ofs_id": 169,
+      "category": 1,
+      "sub_index": 29,
+      "speaker_npc_id": 2029,
+      "jp_name": "ヴィッキー",
+      "en_name": "Miss Vicky"
+    },
+    "670": {
+      "npc_data_ofs_id": 170,
+      "category": 1,
+      "sub_index": 30,
+      "speaker_npc_id": 2030,
+      "jp_name": "ひめさま",
+      "en_name": "Princess Pearl"
+    },
+    "671": {
+      "npc_data_ofs_id": 171,
+      "category": 1,
+      "sub_index": 31,
+      "speaker_npc_id": 2031,
+      "jp_name": "シャッター",
+      "en_name": "Norman"
+    },
+    "672": {
+      "npc_data_ofs_id": 172,
+      "category": 1,
+      "sub_index": 32,
+      "speaker_npc_id": 2032,
+      "jp_name": "バイトねこ",
+      "en_name": "Purr Timer"
+    },
+    "673": {
+      "npc_data_ofs_id": 173,
+      "category": 2,
+      "sub_index": 0,
+      "speaker_npc_id": 3000,
+      "jp_name": "グレムリン",
+      "en_name": "Gremlin"
+    },
+    "674": {
+      "npc_data_ofs_id": 174,
+      "category": 2,
+      "sub_index": 1,
+      "speaker_npc_id": 3001,
+      "jp_name": "グレムリン",
+      "en_name": "Gremlin"
+    },
+    "675": {
+      "npc_data_ofs_id": 175,
+      "category": 2,
+      "sub_index": 2,
+      "speaker_npc_id": 3002,
+      "jp_name": "おばけ",
+      "en_name": "Ghost"
+    },
+    "676": {
+      "npc_data_ofs_id": 176,
+      "category": 2,
+      "sub_index": 3,
+      "speaker_npc_id": 3003,
+      "jp_name": "ドット",
+      "en_name": "Dot"
+    },
+    "677": {
+      "npc_data_ofs_id": 177,
+      "category": 2,
+      "sub_index": 4,
+      "speaker_npc_id": 3004,
+      "jp_name": "ケット・シー",
+      "en_name": "Cat Sith"
+    },
+    "678": {
+      "npc_data_ofs_id": 178,
+      "category": 2,
+      "sub_index": 5,
+      "speaker_npc_id": 3005,
+      "jp_name": "はなこちゃん",
+      "en_name": "Phantasm"
+    },
+    "679": {
+      "npc_data_ofs_id": 179,
+      "category": 2,
+      "sub_index": 6,
+      "speaker_npc_id": 3006,
+      "jp_name": "ざしきわらし",
+      "en_name": "Zashiki-warashi"
+    },
+    "680": {
+      "npc_data_ofs_id": 180,
+      "category": 2,
+      "sub_index": 7,
+      "speaker_npc_id": 3007,
+      "jp_name": "せかいじゅ",
+      "en_name": "World Tree"
+    },
+    "681": {
+      "npc_data_ofs_id": 181,
+      "category": 2,
+      "sub_index": 8,
+      "speaker_npc_id": 3008,
+      "jp_name": "おばけ",
+      "en_name": "Ghost"
+    },
+    "682": {
+      "npc_data_ofs_id": 182,
+      "category": 2,
+      "sub_index": 9,
+      "speaker_npc_id": 3009,
+      "jp_name": "ひとだま",
+      "en_name": "Spirit"
+    },
+    "683": {
+      "npc_data_ofs_id": 183,
+      "category": 2,
+      "sub_index": 10,
+      "speaker_npc_id": 3010,
+      "jp_name": "おばけ",
+      "en_name": "Ghost"
+    },
+    "684": {
+      "npc_data_ofs_id": 184,
+      "category": 2,
+      "sub_index": 11,
+      "speaker_npc_id": 3011,
+      "jp_name": "ひとだまに",
+      "en_name": "Spirit 2"
+    },
+    "685": {
+      "npc_data_ofs_id": 185,
+      "category": 2,
+      "sub_index": 12,
+      "speaker_npc_id": 3012,
+      "jp_name": "ひとだまさん",
+      "en_name": "Spirit 3"
+    },
+    "686": {
+      "npc_data_ofs_id": 186,
+      "category": 3,
+      "sub_index": 0,
+      "speaker_npc_id": 4000,
+      "jp_name": "ネッシー",
+      "en_name": "Nessie"
+    },
+    "687": {
+      "npc_data_ofs_id": 187,
+      "category": 3,
+      "sub_index": 1,
+      "speaker_npc_id": 4001,
+      "jp_name": "モケーレムベンベ",
+      "en_name": "Mokele-mbembe "
+    },
+    "688": {
+      "npc_data_ofs_id": 188,
+      "category": 3,
+      "sub_index": 2,
+      "speaker_npc_id": 4002,
+      "jp_name": "キャンディマン",
+      "en_name": "Candyman"
+    },
+    "689": {
+      "npc_data_ofs_id": 189,
+      "category": 3,
+      "sub_index": 3,
+      "speaker_npc_id": 4003,
+      "jp_name": "３だいこうちょう",
+      "en_name": "3rd Principal"
+    },
+    "690": {
+      "npc_data_ofs_id": 190,
+      "category": 3,
+      "sub_index": 4,
+      "speaker_npc_id": 4004,
+      "jp_name": "ポルターガイスト",
+      "en_name": "Spirit"
+    },
+    "691": {
+      "npc_data_ofs_id": 191,
+      "category": 3,
+      "sub_index": 5,
+      "speaker_npc_id": 4005,
+      "jp_name": "ユニコーン",
+      "en_name": "Unicorn"
+    },
+    "692": {
+      "npc_data_ofs_id": 192,
+      "category": 3,
+      "sub_index": 6,
+      "speaker_npc_id": 4006,
+      "jp_name": "スフィンクス",
+      "en_name": "Sphinx"
+    },
+    "693": {
+      "npc_data_ofs_id": 193,
+      "category": 3,
+      "sub_index": 7,
+      "speaker_npc_id": 4007,
+      "jp_name": "ミミック",
+      "en_name": "Mimic"
+    },
+    "694": {
+      "npc_data_ofs_id": 194,
+      "category": 3,
+      "sub_index": 8,
+      "speaker_npc_id": 4008,
+      "jp_name": "ドラゴン",
+      "en_name": "Dragon"
+    },
+    "695": {
+      "npc_data_ofs_id": 195,
+      "category": 3,
+      "sub_index": 9,
+      "speaker_npc_id": 4009,
+      "jp_name": "かせいじん",
+      "en_name": "Martian"
+    },
+    "696": {
+      "npc_data_ofs_id": 196,
+      "category": 3,
+      "sub_index": 10,
+      "speaker_npc_id": 4010,
+      "jp_name": "ドッペルゲンガー",
+      "en_name": "Doppleganger"
+    },
+    "697": {
+      "npc_data_ofs_id": 197,
+      "category": 3,
+      "sub_index": 11,
+      "speaker_npc_id": 4011,
+      "jp_name": "オオカミおとこ",
+      "en_name": "Werewolf"
+    },
+    "698": {
+      "npc_data_ofs_id": 198,
+      "category": 3,
+      "sub_index": 12,
+      "speaker_npc_id": 4012,
+      "jp_name": "しにがみ",
+      "en_name": "Death"
+    },
+    "699": {
+      "npc_data_ofs_id": 199,
+      "category": 3,
+      "sub_index": 13,
+      "speaker_npc_id": 4013,
+      "jp_name": "ガーゴイル",
+      "en_name": "Gargoyle"
+    },
+    "700": {
+      "npc_data_ofs_id": 200,
+      "category": 3,
+      "sub_index": 14,
+      "speaker_npc_id": 4014,
+      "jp_name": "なまはげ",
+      "en_name": "Krampus"
+    },
+    "701": {
+      "npc_data_ofs_id": 201,
+      "category": 3,
+      "sub_index": 15,
+      "speaker_npc_id": 4015,
+      "jp_name": "ミノタウロス",
+      "en_name": "Minotaur"
+    },
+    "702": {
+      "npc_data_ofs_id": 202,
+      "category": 3,
+      "sub_index": 16,
+      "speaker_npc_id": 4016,
+      "jp_name": "グレムリン",
+      "en_name": "Gremlin"
+    },
+    "703": {
+      "npc_data_ofs_id": 203,
+      "category": 3,
+      "sub_index": 17,
+      "speaker_npc_id": 4017,
+      "jp_name": "クイックシルバー",
+      "en_name": "Apparition"
+    },
+    "704": {
+      "npc_data_ofs_id": 204,
+      "category": 3,
+      "sub_index": 18,
+      "speaker_npc_id": 4018,
+      "jp_name": "オニ",
+      "en_name": "Ogre"
+    },
+    "705": {
+      "npc_data_ofs_id": 205,
+      "category": 3,
+      "sub_index": 19,
+      "speaker_npc_id": 4019,
+      "jp_name": "ドライアド",
+      "en_name": "Dryad"
+    },
+    "706": {
+      "npc_data_ofs_id": 206,
+      "category": 3,
+      "sub_index": 20,
+      "speaker_npc_id": 4020,
+      "jp_name": "ジャックフロスト",
+      "en_name": "Jack Frost"
+    },
+    "707": {
+      "npc_data_ofs_id": 207,
+      "category": 3,
+      "sub_index": 21,
+      "speaker_npc_id": 4021,
+      "jp_name": "ホムンクルス",
+      "en_name": "Homunculus"
+    },
+    "708": {
+      "npc_data_ofs_id": 208,
+      "category": 3,
+      "sub_index": 22,
+      "speaker_npc_id": 4022,
+      "jp_name": "つかいま",
+      "en_name": "Familiar"
+    },
+    "709": {
+      "npc_data_ofs_id": 209,
+      "category": 3,
+      "sub_index": 23,
+      "speaker_npc_id": 4023,
+      "jp_name": "マーメイド",
+      "en_name": "Mermaid"
+    },
+    "710": {
+      "npc_data_ofs_id": 210,
+      "category": 3,
+      "sub_index": 24,
+      "speaker_npc_id": 4024,
+      "jp_name": "セイレーン",
+      "en_name": "Siren"
+    },
+    "711": {
+      "npc_data_ofs_id": 211,
+      "category": 3,
+      "sub_index": 25,
+      "speaker_npc_id": 4025,
+      "jp_name": "イエティ",
+      "en_name": "Yeti"
+    },
+    "712": {
+      "npc_data_ofs_id": 212,
+      "category": 3,
+      "sub_index": 26,
+      "speaker_npc_id": 4026,
+      "jp_name": "ケルベロス",
+      "en_name": "Cerberus"
+    },
+    "713": {
+      "npc_data_ofs_id": 213,
+      "category": 3,
+      "sub_index": 27,
+      "speaker_npc_id": 4027,
+      "jp_name": "トム",
+      "en_name": "Tom"
+    },
+    "714": {
+      "npc_data_ofs_id": 214,
+      "category": 3,
+      "sub_index": 28,
+      "speaker_npc_id": 4028,
+      "jp_name": "ちていじん",
+      "en_name": "Subterranean"
+    },
+    "715": {
+      "npc_data_ofs_id": 215,
+      "category": 3,
+      "sub_index": 29,
+      "speaker_npc_id": 4029,
+      "jp_name": "きんだんのしょ",
+      "en_name": "Forbidden Tome"
+    },
+    "716": {
+      "npc_data_ofs_id": 216,
+      "category": 3,
+      "sub_index": 30,
+      "speaker_npc_id": 4030,
+      "jp_name": "ジャックランタン",
+      "en_name": "Jack-o'-Lantern"
+    },
+    "717": {
+      "npc_data_ofs_id": 217,
+      "category": 3,
+      "sub_index": 31,
+      "speaker_npc_id": 4031,
+      "jp_name": "？？？",
+      "en_name": "？？？"
+    },
+    "718": {
+      "npc_data_ofs_id": 218,
+      "category": 3,
+      "sub_index": 32,
+      "speaker_npc_id": 4032,
+      "jp_name": "かみかくし",
+      "en_name": "Spirited Away"
+    },
+    "719": {
+      "npc_data_ofs_id": 219,
+      "category": 3,
+      "sub_index": 33,
+      "speaker_npc_id": 4033,
+      "jp_name": "ナイトメア",
+      "en_name": "Nightmare"
+    },
+    "720": {
+      "npc_data_ofs_id": 220,
+      "category": 3,
+      "sub_index": 34,
+      "speaker_npc_id": 4034,
+      "jp_name": "バク",
+      "en_name": "Tapir"
+    },
+    "721": {
+      "npc_data_ofs_id": 221,
+      "category": 3,
+      "sub_index": 35,
+      "speaker_npc_id": 4035,
+      "jp_name": "ヘルハウンド",
+      "en_name": "Wild Hound"
+    },
+    "722": {
+      "npc_data_ofs_id": 222,
+      "category": 3,
+      "sub_index": 36,
+      "speaker_npc_id": 4036,
+      "jp_name": "ゴースト",
+      "en_name": "Ghost"
+    },
+    "723": {
+      "npc_data_ofs_id": 223,
+      "category": 3,
+      "sub_index": 37,
+      "speaker_npc_id": 4037,
+      "jp_name": "サテュロス",
+      "en_name": "Satyr"
+    },
+    "724": {
+      "npc_data_ofs_id": 224,
+      "category": 3,
+      "sub_index": 38,
+      "speaker_npc_id": 4038,
+      "jp_name": "ようせい",
+      "en_name": "Fairy"
+    },
+    "725": {
+      "npc_data_ofs_id": 225,
+      "category": 3,
+      "sub_index": 39,
+      "speaker_npc_id": 4039,
+      "jp_name": "サンタクロース",
+      "en_name": "Santa Claus"
+    },
+    "726": {
+      "npc_data_ofs_id": 226,
+      "category": 3,
+      "sub_index": 40,
+      "speaker_npc_id": 4040,
+      "jp_name": "ＵＦＯ",
+      "en_name": "ＵＦＯ"
+    },
+    "727": {
+      "npc_data_ofs_id": 227,
+      "category": 3,
+      "sub_index": 41,
+      "speaker_npc_id": 4041,
+      "jp_name": "かまいたち",
+      "en_name": "Wind Weasel"
+    },
+    "728": {
+      "npc_data_ofs_id": 228,
+      "category": 3,
+      "sub_index": 42,
+      "speaker_npc_id": 4042,
+      "jp_name": "なぞのサークル",
+      "en_name": "Mystery Circle"
+    },
+    "729": {
+      "npc_data_ofs_id": 229,
+      "category": 3,
+      "sub_index": 43,
+      "speaker_npc_id": 4043,
+      "jp_name": "デュラハン",
+      "en_name": "Dullahan"
+    },
+    "730": {
+      "npc_data_ofs_id": 230,
+      "category": 3,
+      "sub_index": 44,
+      "speaker_npc_id": 4044,
+      "jp_name": "マンティコア",
+      "en_name": "Manticore"
+    },
+    "731": {
+      "npc_data_ofs_id": 231,
+      "category": 3,
+      "sub_index": 45,
+      "speaker_npc_id": 4045,
+      "jp_name": "グリフォン",
+      "en_name": "Griffon"
+    },
+    "732": {
+      "npc_data_ofs_id": 232,
+      "category": 3,
+      "sub_index": 46,
+      "speaker_npc_id": 4046,
+      "jp_name": "ハーピー",
+      "en_name": "Harpy"
+    },
+    "733": {
+      "npc_data_ofs_id": 233,
+      "category": 3,
+      "sub_index": 47,
+      "speaker_npc_id": 4047,
+      "jp_name": "マッチうり",
+      "en_name": "Matchstick Girl"
+    },
+    "734": {
+      "npc_data_ofs_id": 234,
+      "category": 3,
+      "sub_index": 48,
+      "speaker_npc_id": 4048,
+      "jp_name": "クラーケン",
+      "en_name": "Kraken"
+    },
+    "735": {
+      "npc_data_ofs_id": 235,
+      "category": 3,
+      "sub_index": 49,
+      "speaker_npc_id": 4049,
+      "jp_name": "ゴーレム",
+      "en_name": "Golem"
+    },
+    "736": {
+      "npc_data_ofs_id": 236,
+      "category": 3,
+      "sub_index": 50,
+      "speaker_npc_id": 4050,
+      "jp_name": "カッパ",
+      "en_name": "Kappa"
+    },
+    "737": {
+      "npc_data_ofs_id": 237,
+      "category": 3,
+      "sub_index": 51,
+      "speaker_npc_id": 4051,
+      "jp_name": "レプラコーン",
+      "en_name": "Leprechaun"
+    },
+    "738": {
+      "npc_data_ofs_id": 238,
+      "category": 3,
+      "sub_index": 52,
+      "speaker_npc_id": 4052,
+      "jp_name": "マンティコア",
+      "en_name": "Shade"
+    },
+    "739": {
+      "npc_data_ofs_id": 239,
+      "category": 3,
+      "sub_index": 53,
+      "speaker_npc_id": 4053,
+      "jp_name": "ＵＦＯ",
+      "en_name": "UFO"
+    },
+    "740": {
+      "npc_data_ofs_id": 240,
+      "category": 3,
+      "sub_index": 54,
+      "speaker_npc_id": 4054,
+      "jp_name": "デュラハンからだ",
+      "en_name": "Dullahan's Body"
+    },
+    "741": {
+      "npc_data_ofs_id": 241,
+      "category": 3,
+      "sub_index": 55,
+      "speaker_npc_id": 4055,
+      "jp_name": "レプラコーン",
+      "en_name": "Leprechaun"
+    },
+    "742": {
+      "npc_data_ofs_id": 242,
+      "category": 3,
+      "sub_index": 56,
+      "speaker_npc_id": 4056,
+      "jp_name": "レプラコーン",
+      "en_name": "Leprechaun"
+    },
+    "743": {
+      "npc_data_ofs_id": 243,
+      "category": 3,
+      "sub_index": 57,
+      "speaker_npc_id": 4057,
+      "jp_name": "レプラコーン",
+      "en_name": "Leprechaun"
+    },
+    "744": {
+      "npc_data_ofs_id": 244,
+      "category": 3,
+      "sub_index": 58,
+      "speaker_npc_id": 4058,
+      "jp_name": "オオカミおとこ",
+      "en_name": "Werewolf"
+    },
+    "745": {
+      "npc_data_ofs_id": 245,
+      "category": 3,
+      "sub_index": 59,
+      "speaker_npc_id": 4059,
+      "jp_name": "ツリーハウス",
+      "en_name": "House"
+    },
+    "746": {
+      "npc_data_ofs_id": 246,
+      "category": 3,
+      "sub_index": 60,
+      "speaker_npc_id": 4060,
+      "jp_name": "モケーレムベンベ",
+      "en_name": "Mokele-Mbembe"
+    },
+    "747": {
+      "npc_data_ofs_id": 247,
+      "category": 3,
+      "sub_index": 61,
+      "speaker_npc_id": 4061,
+      "jp_name": "しにがみ",
+      "en_name": "Death"
+    },
+    "748": {
+      "npc_data_ofs_id": 248,
+      "category": 3,
+      "sub_index": 62,
+      "speaker_npc_id": 4062,
+      "jp_name": "チビィンクス",
+      "en_name": "Small Sphynx"
+    },
+    "749": {
+      "npc_data_ofs_id": 249,
+      "category": 3,
+      "sub_index": 63,
+      "speaker_npc_id": 4063,
+      "jp_name": "プチドラゴン",
+      "en_name": "Small Dragon"
+    },
+    "750": {
+      "npc_data_ofs_id": 250,
+      "category": 3,
+      "sub_index": 64,
+      "speaker_npc_id": 4064,
+      "jp_name": "オオカミおとこ",
+      "en_name": "Werewolf"
+    },
+    "751": {
+      "npc_data_ofs_id": 251,
+      "category": 3,
+      "sub_index": 65,
+      "speaker_npc_id": 4065,
+      "jp_name": "ホムンクルス",
+      "en_name": "Homunculus"
+    }
+  }
+}

@@ -195,6 +195,33 @@ export interface TownResident {
   firstBytesHex: string;
 }
 
+/** One row in the per-slot "Friends Met" view — a friend / met-NPC found
+ *  in the save-body 0x500..0x4300 NPC-history region.
+ *
+ *  Encoding (translation-repo step-346): the u16 LE `stored_value` is
+ *  `npc_data_ofs_id + 500`, range 500..751 across the 252 NPCs catalogued
+ *  in `notes/npc_encoding.json`. The save's encounter-log / friend-list /
+ *  gift-log sub-tables within 0x500..0x4300 each reference the same NPC by
+ *  storing the same u16 at multiple offsets, so we deduplicate per
+ *  stored_value to produce a clean per-NPC list rather than per-offset
+ *  noise.
+ *
+ *  The resolved `name_en`, `name_jp`, `iid`, `category`, and
+ *  `categoryLabel` are filled in by SaveFileInspector.tsx at render time
+ *  from the loaded NPC encoding JSON (the parser stays bundle-light by
+ *  not embedding all 252 names). When the JSON is still loading these
+ *  fields are null / empty and only the `storedValue` is shown. */
+export interface FriendMet {
+  /** u16 LE stored_value (500..751) found in body 0x500..0x4300. */
+  storedValue: number;
+  /** All body offsets in 0x500..0x4300 where this stored_value was found.
+   *  Useful for diagnostics; the display surfaces the count rather than
+   *  every offset. Even-aligned scan only — see parseFriendsMet doc. */
+  bodyOffsets: number[];
+  /** Resolved npc_data_ofs_id = storedValue - 500. */
+  iid: number;
+}
+
 export interface EventFlagSummary {
   /** Total bytes in the region 0x18..0x460. */
   totalBytes: number;
@@ -329,6 +356,14 @@ export interface SlotParse {
 
   // Wizard-level candidate (body 0x11488 + 0x5a). Read-only.
   wizardLevelCandidate: WizardLevelCandidate;
+
+  /** Friends / NPCs met — deduplicated list of u16 LE stored_values in
+   *  the range 500..751 found at even-aligned offsets in body
+   *  0x500..0x4300. NPC encoding cracked in translation-repo step-346.
+   *  Read-only in the inspector — sub-region boundaries inside that 15 KB
+   *  block (encounter log / friend list / gift log) aren't decoded yet,
+   *  so we can't safely add or remove individual entries. */
+  friendsMet: FriendMet[];
 }
 
 // ---------------------------------------------------------------------------
