@@ -4,13 +4,12 @@
 // game-safety is still BETA:
 //
 //   - Ritch (u32 LE at body 0x1CFD0) — confirmed safe
-//   - Player name (UTF-16 LE) — written to THREE mirror copies:
-//       * body 0x47E   (10 bytes, §22 canonical authoritative)
-//       * body 0x1149C (22 bytes wide, character record per-display copy)
-//       * body 0x114BA (10 bytes, §12.1 secondary cached copy)
-//   - School/town name (UTF-16 LE) — written to TWO mirror copies:
-//       * body 0x114B2 (12 bytes, empirically observed in v2.31 EN saves)
-//       * body 0x115B2 (12 bytes, format-notes §5 documented)
+//   - Player name (UTF-16 LE) — written to body 0x1149C ONLY
+//     (+ slot B mirror). 22-byte field width per §22.
+//   - Shop name (UTF-16 LE) — written to body 0x114B2 ONLY
+//     (+ slot B mirror). 12-byte field width per §5.
+//   - Town name (UTF-16 LE) — written to body 0x47E ONLY
+//     (+ slot B mirror). 10-byte field width / 5 chars per §22 layout.
 //   - Catalog announcement body text (body 0x162B6, stride 0xA8) — beta
 //   - Catalog announcement REMOVAL (zero-fill 168 bytes + trailing 0xFFFF sentinel)
 //   - Per-NPC mail body text (body 0x17400+, stride 0xA8) — beta
@@ -27,14 +26,48 @@
 //      those 2 stale header bytes as the first UTF-16 character (often
 //      a control char that broke the in-game render). Fix: header is 6.
 //   2. School name + player name editing surfaces added (previously
-//      neither field had an inline-edit affordance; school name was
-//      mis-located at 0x47E per step-250 but empirical evidence on
-//      v2.31 EN saves shows shop/school name at 0x114B2 and the
-//      §22-canonical player name at 0x47E).
+//      neither field had an inline-edit affordance).
 //   3. Catalog "Remove" affordance: zero-fills the 168-byte entry then
 //      writes the empty-slot sentinel `FF FF` at +0xA6:+0xA7. This is
 //      the exact byte pattern observed in fresh-save empty catalog
 //      slots (see entry 4..6 in tongari_en.dsv).
+//
+// step-258 fix (independent-field correction):
+//   step-252 assumed body 0x47E, body 0x1149C, and body 0x114BA were
+//   three "mirror copies" of the player name. The corpus check that led
+//   to that assumption looked at saves where Tyler had used the same
+//   name for player / shop / town, so every offset trivially matched
+//   and the "mirror" interpretation looked correct.
+//
+//   Submission #16 (Harry Potter playthrough where the user gave
+//   DIFFERENT names for player / shop / town) refuted that:
+//     - body 0x47E   = "HOGSMEADE"  (the TOWN name)
+//     - body 0x1149C = "WEASLEY"    (the PLAYER name)
+//     - body 0x114B2 = "Shop Weasleys" (the SHOP name; the prefix
+//                                       "Shop " is part of the
+//                                       user's chosen string)
+//     - body 0x114BA = " Weasleys"  (NOT a separate field — this is
+//                                    offset +8 INSIDE the 0x114B2
+//                                    shop-name field, just bytes 8..17
+//                                    of the same shop string)
+//     - body 0x115B2 = zeros        (empty in our entire v2.31 corpus —
+//                                    if it was ever a mirror in a
+//                                    different build/region we have no
+//                                    save evidence of it being read)
+//
+//   Three independent fields, three offsets. Editing player_name
+//   previously clobbered the town name (0x47E) and corrupted the
+//   middle of the shop name (writing to 0x114BA wrote into the shop
+//   field's bytes 8..17). step-258 stops that bleed and adds a
+//   separate town_name edit kind. The 0x115B2 secondary write is
+//   removed as dead code — empirically empty across the entire
+//   corpus (saves #1..#16), no evidence any save reads from there.
+//
+//   Existing wild-save corruption from the buggy editor is NOT
+//   repaired here; the fix only prevents future corruption. Users who
+//   accidentally clobbered their town/shop names through the buggy
+//   editor can re-edit those fields now that the three are
+//   independently exposed.
 //
 // step-262 (LaytonLoztew port) removed the `resident_name` edit kind. The
 // underlying "Town residents @ body 0x1E0E0 stride 0x22F8 max 8" region
@@ -127,7 +160,8 @@ const TEXT_ENCODER_UTF16 = (() => {
 export type PendingEdit =
   | { kind: 'ritch'; value: number }
   | { kind: 'player_name'; value: string }
-  | { kind: 'school_name'; value: string }
+  | { kind: 'shop_name'; value: string }
+  | { kind: 'town_name'; value: string }
   | { kind: 'catalog'; entryOffset: number; text: string }
   | { kind: 'catalog_clear'; entryOffset: number }
   | { kind: 'mail'; entryOffset: number; text: string }
@@ -288,42 +322,47 @@ function fixExtra0Checksum(payload: Uint8Array, slot: 'A' | 'B'): number {
 // Edit-region constraints used by the UI
 // ---------------------------------------------------------------------------
 
-/** Player name capacity per §22 of the format notes: 10 bytes UTF-16 LE
- *  (up to 5 characters). The §22 canonical authoritative location at body
- *  0x47E is exactly 10 bytes wide; the character-record copy at body
- *  0x1149C reserves more (zero-padded), so the 5-char cap is the safe
- *  bound across all mirrors. */
+/** Player name capacity per §22 of the format notes: up to 11 chars in
+ *  the character-record copy at body 0x1149C (22 bytes UTF-16 LE), but
+ *  the in-game UI caps player names at 5 chars in the name-entry screen,
+ *  so we keep the 5-char editor cap to match the player's actual data-
+ *  entry surface. The field is wider than 10 bytes (the character-
+ *  record copy at 0x1149C reserves 22 bytes / 11 chars) but we only
+ *  ever use the first 10 bytes for safety in case the field truncates
+ *  display elsewhere. step-258 corrected: 0x47E (TOWN) and 0x114BA
+ *  (inside the SHOP field) are NOT player-name mirrors — the player
+ *  name lives at body 0x1149C only. */
 export const PLAYER_NAME_MAX_CHARS = 5;
+export const PLAYER_NAME_OFFSET = 0x1149c;
+export const PLAYER_NAME_WIDTH = 22;
 
-/** Player-name mirror offsets (slot-relative body offsets). All written
- *  on every player_name edit so the in-game render picks up the change
- *  regardless of which copy the game reads. See step-252 header notes. */
-export const PLAYER_NAME_OFFSETS = [
-  /** §22 canonical authoritative — body 0x47E, 10 bytes. */
-  { offset: 0x47e, width: 10 },
-  /** Character-record per-display copy — body 0x1149C. The archive's
-   *  parser also reads this offset; width remains 22 (zero-pad beyond
-   *  the 10 name bytes) so we don't leave stale per-character data
-   *  between 0x114A6..0x114B1. */
-  { offset: 0x1149c, width: 22 },
-  /** §12.1 secondary cached copy — body 0x114BA, 10 bytes. */
-  { offset: 0x114ba, width: 10 },
-] as const;
+/** Shop name. Empirically observed at body 0x114B2 in v2.31 EN saves:
+ *  tongari_en.dsv shows "Shopタイラ" (8 chars), submission #16 shows
+ *  "Shop Weasleys" (13 chars). The underlying field is therefore at
+ *  least 26 bytes wide — the next structural boundary (the byte
+ *  pattern `00 09 10 01 00 10` at body 0x114E4 in submission #16)
+ *  sits ~50 bytes after the start of the shop-name field. We
+ *  zero-fill 32 bytes (16 chars) on every edit so an edit always
+ *  wipes any longer prior content, but cap the user-entered length
+ *  at 6 chars (12 bytes) to match the in-game name-entry surface.
+ *  Bytes beyond the 6-char input remain zero. step-258 also REMOVED
+ *  the secondary write to body 0x115B2: that offset has been empty
+ *  (zeros) in every v2.31 corpus save we've checked, and no save has
+ *  been observed reading from it. */
+export const SHOP_NAME_MAX_CHARS = 6;
+export const SHOP_NAME_OFFSET = 0x114b2;
+export const SHOP_NAME_WIDTH = 32;
 
-/** School / shop / town name. Capacity per §5 of the format notes: 12
- *  bytes UTF-16 LE (up to 6 characters). */
-export const SCHOOL_NAME_MAX_CHARS = 6;
-
-/** School-name mirror offsets. v2.31 EN saves empirically store the
- *  shop/town name at body 0x114B2 (verified via tongari_en.dsv: bytes
- *  `53 00 68 00 6F 00 70 00` spell "Shop" starting at that offset).
- *  Format notes §5 documents the offset as 0x115B2; that location is
- *  empty in our v2.31 corpus but we write there too in case a different
- *  build / region reads from it. */
-export const SCHOOL_NAME_OFFSETS = [
-  { offset: 0x114b2, width: 12 },
-  { offset: 0x115b2, width: 12 },
-] as const;
+/** Town name. Lives at body 0x47E. The underlying field is bounded
+ *  by the timestamp marker at body 0x494 (22 bytes / 11 chars). We
+ *  zero-fill 22 bytes on every edit so longer prior content gets
+ *  wiped, but cap user input at 5 chars (10 bytes) per the in-game
+ *  name-entry surface. step-252 had mis-labelled this offset as the
+ *  §22 canonical player-name copy; submission #16 (town="HOGSMEADE")
+ *  proved it's the town name. */
+export const TOWN_NAME_MAX_CHARS = 5;
+export const TOWN_NAME_OFFSET = 0x47e;
+export const TOWN_NAME_WIDTH = 22;
 
 /** Each catalog / mail entry is 0xA8 = 168 bytes. The on-disk layout
  *  is a 6-byte header (00 00 status month-marker month day) followed by
@@ -443,44 +482,66 @@ export function applyEdits(
         break;
       }
       case 'player_name': {
-        // Encode once so we can sanity-check length against the
-        // tightest mirror copy. PLAYER_NAME_MAX_CHARS caps the input
-        // to 5 chars / 10 bytes UTF-16 LE — that's the §22 canonical
-        // capacity.
+        // step-258 fix: write ONLY to body 0x1149C (+ slot B mirror).
+        // The pre-step-258 editor also wrote to body 0x47E (the TOWN
+        // name field) and body 0x114BA (offset +8 inside the SHOP
+        // name field) under the mistaken belief that they were
+        // player-name mirrors. Submission #16 proved they are
+        // independent fields. Writing to either of those clobbered
+        // unrelated data.
         const encLen = TEXT_ENCODER_UTF16.encode(edit.value, PLAYER_NAME_MAX_CHARS).length;
-        // Tightest mirror is 10 bytes (the §22 / §12.1 copies); the
-        // character-record copy at 0x1149C is wider so a 10-byte
-        // payload always fits there too.
         if (encLen > 10) {
           throw new Error(
             `Player name too long: encoded ${encLen} bytes, max 10.`,
           );
         }
-        for (const { offset, width } of PLAYER_NAME_OFFSETS) {
-          writeUtf16LeFixedWidth(
-            payload, 'A', offset, width, edit.value, PLAYER_NAME_MAX_CHARS,
-          );
-          writeUtf16LeFixedWidth(
-            payload, 'B', offset, width, edit.value, PLAYER_NAME_MAX_CHARS,
-          );
-        }
+        writeUtf16LeFixedWidth(
+          payload, 'A', PLAYER_NAME_OFFSET, PLAYER_NAME_WIDTH, edit.value, PLAYER_NAME_MAX_CHARS,
+        );
+        writeUtf16LeFixedWidth(
+          payload, 'B', PLAYER_NAME_OFFSET, PLAYER_NAME_WIDTH, edit.value, PLAYER_NAME_MAX_CHARS,
+        );
         break;
       }
-      case 'school_name': {
-        const encLen = TEXT_ENCODER_UTF16.encode(edit.value, SCHOOL_NAME_MAX_CHARS).length;
+      case 'shop_name': {
+        // step-258 fix: write ONLY to body 0x114B2 (+ slot B mirror).
+        // The pre-step-258 editor also wrote to body 0x115B2 under
+        // the assumption it was a §5-documented secondary mirror,
+        // but that offset has been empty (zeros) in every v2.31
+        // corpus save we have, and no save evidence supports it
+        // being read from anywhere.
+        const encLen = TEXT_ENCODER_UTF16.encode(edit.value, SHOP_NAME_MAX_CHARS).length;
         if (encLen > 12) {
           throw new Error(
-            `School name too long: encoded ${encLen} bytes, max 12.`,
+            `Shop name too long: encoded ${encLen} bytes, max 12.`,
           );
         }
-        for (const { offset, width } of SCHOOL_NAME_OFFSETS) {
-          writeUtf16LeFixedWidth(
-            payload, 'A', offset, width, edit.value, SCHOOL_NAME_MAX_CHARS,
-          );
-          writeUtf16LeFixedWidth(
-            payload, 'B', offset, width, edit.value, SCHOOL_NAME_MAX_CHARS,
+        writeUtf16LeFixedWidth(
+          payload, 'A', SHOP_NAME_OFFSET, SHOP_NAME_WIDTH, edit.value, SHOP_NAME_MAX_CHARS,
+        );
+        writeUtf16LeFixedWidth(
+          payload, 'B', SHOP_NAME_OFFSET, SHOP_NAME_WIDTH, edit.value, SHOP_NAME_MAX_CHARS,
+        );
+        break;
+      }
+      case 'town_name': {
+        // step-258 new edit kind: TOWN name at body 0x47E (+ slot B
+        // mirror). Previously this offset was being written by the
+        // player_name edit kind under the (false) assumption it was
+        // a player-name mirror, which clobbered the town name on
+        // every player rename.
+        const encLen = TEXT_ENCODER_UTF16.encode(edit.value, TOWN_NAME_MAX_CHARS).length;
+        if (encLen > 10) {
+          throw new Error(
+            `Town name too long: encoded ${encLen} bytes, max 10.`,
           );
         }
+        writeUtf16LeFixedWidth(
+          payload, 'A', TOWN_NAME_OFFSET, TOWN_NAME_WIDTH, edit.value, TOWN_NAME_MAX_CHARS,
+        );
+        writeUtf16LeFixedWidth(
+          payload, 'B', TOWN_NAME_OFFSET, TOWN_NAME_WIDTH, edit.value, TOWN_NAME_MAX_CHARS,
+        );
         break;
       }
       case 'catalog': {

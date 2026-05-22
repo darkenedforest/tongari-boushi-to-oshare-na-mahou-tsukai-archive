@@ -3,7 +3,8 @@
 // 1. Load the test save file from disk.
 // 2. Run the same parseSaveFile() the React inspector runs, snapshot.
 // 3. Apply a set of edits via applyEdits() — covers every edit kind:
-//    - school_name
+//    - shop_name (renamed from school_name in step-258)
+//    - town_name (new in step-258)
 //    - player_name (5 chars, the §22 cap)
 //    - catalog (text edit at one slot)
 //    - catalog_clear (remove at another slot)
@@ -13,6 +14,17 @@
 // 5. Assert the edits round-trip cleanly: read-back values match what
 //    we wrote, untouched fields are preserved, and all three checksum
 //    levels pass on the re-parsed save.
+//
+// step-258 additions:
+//   - Independent-field round-trip: edit each of {player, shop, town}
+//     in isolation and assert the other two are byte-identical to
+//     their pre-edit values. This is the regression test for the
+//     "player_name edit clobbered town + corrupted shop" bug step-258
+//     fixes.
+//   - submission #16 (Harry Potter playthrough, distinct names for
+//     player/shop/town) is loaded as a second fixture so we have an
+//     empirical anchor: player="WEASLEY", shop="Shop Weasleys",
+//     town="HOGSMEADE".
 //
 // Run with esbuild + Node (step-264 update — the prior "Node native
 // --experimental-strip-types" path the step-252 harness claimed works
@@ -102,8 +114,8 @@ console.log(`slot B body[0x00]=${slotBBefore.saveCounter.toString(16)} body[0x01
 
 console.log(`slot A:`);
 console.log(`  player name: ${JSON.stringify(slotABefore.playerName)}`);
-console.log(`  player name canonical (§22 copy): ${JSON.stringify(slotABefore.playerNameCanonical)}`);
-console.log(`  school name: ${JSON.stringify(slotABefore.schoolName)}`);
+console.log(`  shop name:   ${JSON.stringify(slotABefore.shopName)}`);
+console.log(`  town name:   ${JSON.stringify(slotABefore.townName)}`);
 console.log(`  ritch: ${slotABefore.ritch}`);
 console.log(`  catalog entries: ${slotABefore.catalogEntries.length}`);
 slotABefore.catalogEntries.slice(0, 5).forEach((e, i) => {
@@ -243,8 +255,9 @@ if (NEW_SLOT8_STORED === null || NEW_SLOT1_STORED === null) {
 }
 
 const edits = [
-  { kind: 'player_name', value: 'ABEL' },         // 4 chars, within 5-char §22 cap
-  { kind: 'school_name', value: 'Magus' },        // 5 chars, within 6-char §5 cap
+  { kind: 'player_name', value: 'ABEL' },         // 4 chars, within 5-char cap
+  { kind: 'shop_name', value: 'Magus' },          // 5 chars, within 6-char cap (renamed from school_name in step-258)
+  { kind: 'town_name', value: 'Town2' },          // 5 chars, within 5-char cap (new in step-258)
   { kind: 'ritch', value: 42424 },
   { kind: 'catalog', entryOffset: targetCatalogEdit.bodyOffset, text: 'STAGE-2-EDITED\nHello world!\nThis is a round-trip test.' },
   { kind: 'catalog_clear', entryOffset: targetCatalogRemove.bodyOffset },
@@ -276,8 +289,8 @@ const slotAAfter = parseAfter.slotA;
 const slotBAfter = parseAfter.slotB;
 console.log(`slot A:`);
 console.log(`  player name: ${JSON.stringify(slotAAfter.playerName)}`);
-console.log(`  player name canonical (§22 copy): ${JSON.stringify(slotAAfter.playerNameCanonical)}`);
-console.log(`  school name: ${JSON.stringify(slotAAfter.schoolName)}`);
+console.log(`  shop name:   ${JSON.stringify(slotAAfter.shopName)}`);
+console.log(`  town name:   ${JSON.stringify(slotAAfter.townName)}`);
 console.log(`  ritch: ${slotAAfter.ritch}`);
 console.log(`  catalog entries: ${slotAAfter.catalogEntries.length}`);
 slotAAfter.catalogEntries.slice(0, 5).forEach((e, i) => {
@@ -289,7 +302,8 @@ console.log(`  extra0 csum ok: ${slotAAfter.extra0Checksum.ok}`);
 
 console.log('\nslot B:');
 console.log(`  player name: ${JSON.stringify(slotBAfter.playerName)}`);
-console.log(`  school name: ${JSON.stringify(slotBAfter.schoolName)}`);
+console.log(`  shop name:   ${JSON.stringify(slotBAfter.shopName)}`);
+console.log(`  town name:   ${JSON.stringify(slotBAfter.townName)}`);
 console.log(`  ritch: ${slotBAfter.ritch}`);
 console.log(`  header csum ok: ${slotBAfter.checksum.ok}`);
 console.log(`  body csum ok:   ${slotBAfter.bodyChecksum.ok}`);
@@ -315,11 +329,12 @@ for (const bagSlot of slotBAfter.inventoryBag) {
 
 console.log('\n--- Assertions (edit round-trip) ---');
 assertEq('slot A player name after = ABEL', slotAAfter.playerName, 'ABEL');
-assertEq('slot A player name canonical (§22 copy) after = ABEL', slotAAfter.playerNameCanonical, 'ABEL');
-assertEq('slot A school name after = Magus', slotAAfter.schoolName, 'Magus');
+assertEq('slot A shop name after = Magus', slotAAfter.shopName, 'Magus');
+assertEq('slot A town name after = Town2', slotAAfter.townName, 'Town2');
 assertEq('slot A ritch after = 42424', slotAAfter.ritch, 42424);
 assertEq('slot B player name after = ABEL', slotBAfter.playerName, 'ABEL');
-assertEq('slot B school name after = Magus', slotBAfter.schoolName, 'Magus');
+assertEq('slot B shop name after = Magus', slotBAfter.shopName, 'Magus');
+assertEq('slot B town name after = Town2', slotBAfter.townName, 'Town2');
 assertEq('slot B ritch after = 42424', slotBAfter.ritch, 42424);
 
 assertTrue('slot A header csum still passes', slotAAfter.checksum.ok);
@@ -677,6 +692,190 @@ console.log('\n--- Friends-Met parsing (active slot, body 0x500..0x4300) ---');
       friends[i - 1].storedValue < friends[i].storedValue,
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// step-258: independent-field round-trip tests
+//
+// The pre-step-258 editor treated body 0x47E + 0x1149C + 0x114BA as three
+// mirror copies of the player name, mirroring every player_name write to
+// all three. Submission #16 (player="WEASLEY" shop="Shop Weasleys"
+// town="HOGSMEADE") proved the offsets are independent fields:
+//
+//   body 0x1149C = PLAYER (e.g. WEASLEY)
+//   body 0x114B2 = SHOP   (e.g. Shop Weasleys)
+//   body 0x47E   = TOWN   (e.g. HOGSMEADE)
+//
+// Tests below:
+//   1. Parse submission #16 (if available) and assert each parsed
+//      field shows its correct distinct value.
+//   2. Per-field isolation: edit each of {player, shop, town} on
+//      tongari_en.dsv individually and assert the other two fields
+//      are byte-identical to their pre-edit value. This catches any
+//      future regression where one edit accidentally writes to a
+//      sibling field's offset.
+// ---------------------------------------------------------------------------
+
+console.log('\n--- step-258: submission #16 parse fixture (3 distinct names) ---');
+
+const SAVE_16_PATH = 'C:/Users/Tyler/AppData/Local/Temp/save_16.dsv';
+let save16Parse = null;
+if (fs.existsSync(SAVE_16_PATH)) {
+  const save16 = new Uint8Array(fs.readFileSync(SAVE_16_PATH));
+  save16Parse = await parser.parseSaveFile(save16);
+  const s16Active = save16Parse.activeSlot === 'A' ? save16Parse.slotA : save16Parse.slotB;
+  console.log(`  save #16 active slot: ${save16Parse.activeSlot}`);
+  console.log(`  save #16 active-slot player: ${JSON.stringify(s16Active.playerName)}`);
+  console.log(`  save #16 active-slot shop:   ${JSON.stringify(s16Active.shopName)}`);
+  console.log(`  save #16 active-slot town:   ${JSON.stringify(s16Active.townName)}`);
+  assertEq(
+    'save #16 active-slot player name = "WEASLEY"',
+    s16Active.playerName,
+    'WEASLEY',
+  );
+  assertEq(
+    'save #16 active-slot shop name = "Shop Weasleys"',
+    s16Active.shopName,
+    'Shop Weasleys',
+  );
+  assertEq(
+    'save #16 active-slot town name = "HOGSMEADE"',
+    s16Active.townName,
+    'HOGSMEADE',
+  );
+} else {
+  console.log(`  SKIP — save #16 not found at ${SAVE_16_PATH}`);
+  console.log('  (download via _admin_save_files.py download 16 --to <path> to enable this anchor)');
+}
+
+console.log('\n--- step-258: per-field isolation (player edit must not touch shop/town) ---');
+{
+  // Edit ONLY player_name and assert the shop + town fields' raw bytes
+  // round-trip identical to the pre-edit values.
+  const isolEdits = [{ kind: 'player_name', value: 'IsoP' }];
+  const isolResult = editor.applyEdits(parseBefore.wrapper.payload, isolEdits);
+  const isolParse = await parser.parseSaveFile(isolResult.payload);
+  const isolA = isolParse.slotA;
+  const isolB = isolParse.slotB;
+
+  assertEq('isolated player edit: slot A playerName became IsoP', isolA.playerName, 'IsoP');
+  assertEq('isolated player edit: slot B playerName became IsoP', isolB.playerName, 'IsoP');
+  // shop + town must be byte-identical to before.
+  assertEq('isolated player edit: slot A shopName unchanged', isolA.shopName, slotABefore.shopName);
+  assertEq('isolated player edit: slot A townName unchanged', isolA.townName, slotABefore.townName);
+  assertEq('isolated player edit: slot B shopName unchanged', isolB.shopName, slotBBefore.shopName);
+  assertEq('isolated player edit: slot B townName unchanged', isolB.townName, slotBBefore.townName);
+
+  // Byte-level check: bytes at 0x47E (town) and 0x114B2 (shop) in the
+  // edited payload must equal their pre-edit values across the full
+  // field width. This catches the pre-step-258 bug at the byte layer,
+  // where decodeUtf16Le might NUL-terminate before showing a regression.
+  const SLOT_A_BASE = 0x100;
+  for (let i = 0; i < 10; i++) {
+    const orig = parseBefore.wrapper.payload[SLOT_A_BASE + 0x47e + i];
+    const after = isolResult.payload[SLOT_A_BASE + 0x47e + i];
+    if (orig !== after) {
+      console.error(`FAIL: isolated player edit corrupted town byte at slot A body 0x47E+${i}: 0x${orig.toString(16)} -> 0x${after.toString(16)}`);
+      failures++;
+    }
+  }
+  for (let i = 0; i < 12; i++) {
+    const orig = parseBefore.wrapper.payload[SLOT_A_BASE + 0x114b2 + i];
+    const after = isolResult.payload[SLOT_A_BASE + 0x114b2 + i];
+    if (orig !== after) {
+      console.error(`FAIL: isolated player edit corrupted shop byte at slot A body 0x114B2+${i}: 0x${orig.toString(16)} -> 0x${after.toString(16)}`);
+      failures++;
+    }
+  }
+  console.log('PASS: byte-level check — town (0x47E) and shop (0x114B2) fields untouched by player edit');
+}
+
+console.log('\n--- step-258: per-field isolation (shop edit must not touch player/town) ---');
+{
+  const isolEdits = [{ kind: 'shop_name', value: 'IsoS' }];
+  const isolResult = editor.applyEdits(parseBefore.wrapper.payload, isolEdits);
+  const isolParse = await parser.parseSaveFile(isolResult.payload);
+  const isolA = isolParse.slotA;
+  const isolB = isolParse.slotB;
+
+  assertEq('isolated shop edit: slot A shopName became IsoS', isolA.shopName, 'IsoS');
+  assertEq('isolated shop edit: slot B shopName became IsoS', isolB.shopName, 'IsoS');
+  assertEq('isolated shop edit: slot A playerName unchanged', isolA.playerName, slotABefore.playerName);
+  assertEq('isolated shop edit: slot A townName unchanged', isolA.townName, slotABefore.townName);
+  assertEq('isolated shop edit: slot B playerName unchanged', isolB.playerName, slotBBefore.playerName);
+  assertEq('isolated shop edit: slot B townName unchanged', isolB.townName, slotBBefore.townName);
+
+  const SLOT_A_BASE = 0x100;
+  for (let i = 0; i < 10; i++) {
+    const orig = parseBefore.wrapper.payload[SLOT_A_BASE + 0x47e + i];
+    const after = isolResult.payload[SLOT_A_BASE + 0x47e + i];
+    if (orig !== after) {
+      console.error(`FAIL: isolated shop edit corrupted town byte at slot A body 0x47E+${i}: 0x${orig.toString(16)} -> 0x${after.toString(16)}`);
+      failures++;
+    }
+  }
+  for (let i = 0; i < 22; i++) {
+    const orig = parseBefore.wrapper.payload[SLOT_A_BASE + 0x1149c + i];
+    const after = isolResult.payload[SLOT_A_BASE + 0x1149c + i];
+    if (orig !== after) {
+      console.error(`FAIL: isolated shop edit corrupted player byte at slot A body 0x1149C+${i}: 0x${orig.toString(16)} -> 0x${after.toString(16)}`);
+      failures++;
+    }
+  }
+  console.log('PASS: byte-level check — town (0x47E) and player (0x1149C) fields untouched by shop edit');
+}
+
+console.log('\n--- step-258: per-field isolation (town edit must not touch player/shop) ---');
+{
+  const isolEdits = [{ kind: 'town_name', value: 'IsoT' }];
+  const isolResult = editor.applyEdits(parseBefore.wrapper.payload, isolEdits);
+  const isolParse = await parser.parseSaveFile(isolResult.payload);
+  const isolA = isolParse.slotA;
+  const isolB = isolParse.slotB;
+
+  assertEq('isolated town edit: slot A townName became IsoT', isolA.townName, 'IsoT');
+  assertEq('isolated town edit: slot B townName became IsoT', isolB.townName, 'IsoT');
+  assertEq('isolated town edit: slot A playerName unchanged', isolA.playerName, slotABefore.playerName);
+  assertEq('isolated town edit: slot A shopName unchanged', isolA.shopName, slotABefore.shopName);
+  assertEq('isolated town edit: slot B playerName unchanged', isolB.playerName, slotBBefore.playerName);
+  assertEq('isolated town edit: slot B shopName unchanged', isolB.shopName, slotBBefore.shopName);
+
+  const SLOT_A_BASE = 0x100;
+  for (let i = 0; i < 12; i++) {
+    const orig = parseBefore.wrapper.payload[SLOT_A_BASE + 0x114b2 + i];
+    const after = isolResult.payload[SLOT_A_BASE + 0x114b2 + i];
+    if (orig !== after) {
+      console.error(`FAIL: isolated town edit corrupted shop byte at slot A body 0x114B2+${i}: 0x${orig.toString(16)} -> 0x${after.toString(16)}`);
+      failures++;
+    }
+  }
+  for (let i = 0; i < 22; i++) {
+    const orig = parseBefore.wrapper.payload[SLOT_A_BASE + 0x1149c + i];
+    const after = isolResult.payload[SLOT_A_BASE + 0x1149c + i];
+    if (orig !== after) {
+      console.error(`FAIL: isolated town edit corrupted player byte at slot A body 0x1149C+${i}: 0x${orig.toString(16)} -> 0x${after.toString(16)}`);
+      failures++;
+    }
+  }
+  console.log('PASS: byte-level check — shop (0x114B2) and player (0x1149C) fields untouched by town edit');
+}
+
+// If submission #16 is available, run the same byte-level isolation
+// check against ITS bytes — the empirical anchor where the three fields
+// hold genuinely distinct strings means a regression to mirror-writes
+// would show up as obvious cross-contamination.
+if (save16Parse && save16Parse.wrapper.payload) {
+  console.log('\n--- step-258: per-field isolation against submission #16 (distinct names) ---');
+  const s16Active = save16Parse.activeSlot === 'A' ? save16Parse.slotA : save16Parse.slotB;
+  // Apply only a player edit and confirm shop ("Shop Weasleys") + town
+  // ("HOGSMEADE") survive intact in the active slot.
+  const isolEdits = [{ kind: 'player_name', value: 'Harry' }];
+  const isolResult = editor.applyEdits(save16Parse.wrapper.payload, isolEdits);
+  const isolParse = await parser.parseSaveFile(isolResult.payload);
+  const isolActive = isolParse.activeSlot === 'A' ? isolParse.slotA : isolParse.slotB;
+  assertEq('save #16 isolated player edit: playerName = Harry', isolActive.playerName, 'Harry');
+  assertEq('save #16 isolated player edit: shopName still = "Shop Weasleys"', isolActive.shopName, 'Shop Weasleys');
+  assertEq('save #16 isolated player edit: townName still = "HOGSMEADE"', isolActive.townName, 'HOGSMEADE');
 }
 
 console.log(`\n${failures === 0 ? 'ALL TESTS PASSED' : `${failures} TEST(S) FAILED`}`);

@@ -289,24 +289,26 @@ export interface SlotParse {
   /** body[0x16:0x18] LE — format version sub-code (0x0900=v2.31, 0x102C=3DS). */
   formatVersionSubcode: number;
 
-  // Profile region (step-252 re-resolution):
-  //   - body 0x1149C : player display name (character record, primary)
-  //   - body 0x47E   : §22 canonical player-name copy (save-load
-  //                    screen title in some builds; surfaced as
-  //                    `playerNameCanonical`)
-  //   - body 0x114B2 : school / shop / town name (empirically observed
-  //                    in v2.31 EN saves — format notes §5 documents
-  //                    this offset as 0x115B2 but real data lives 0x100
-  //                    earlier).
+  // Profile region (step-258 re-resolution — three INDEPENDENT fields,
+  // not three mirrors of one field as step-252 mistakenly believed):
+  //   - body 0x1149C : PLAYER name  (character-record copy)
+  //   - body 0x114B2 : SHOP name    (the player's shop / business name)
+  //   - body 0x47E   : TOWN name    (the player's town name)
+  // Submission #16 (Harry Potter playthrough with distinct
+  // player="WEASLEY" / shop="Shop Weasleys" / town="HOGSMEADE") refuted
+  // step-252's "all three are player-name mirrors" claim. The
+  // pre-step-258 editor's player_name edit kind wrote to all three
+  // offsets and corrupted town + shop on every player rename.
   /** Player display name from the character record at body 0x1149C. */
   playerName: string;
-  /** §22 canonical player-name copy from body 0x47E (10 bytes UTF-16
-   *  LE / 5 chars). Distinct from `playerName` in saves where the
-   *  copies have drifted (e.g. legacy saves carried forward through a
-   *  name change). */
-  playerNameCanonical: string;
-  /** School / shop / town name from body 0x114B2 (UTF-16 LE, up to 6 chars). */
-  schoolName: string;
+  /** Shop name from body 0x114B2 (UTF-16 LE; 12 bytes / 6 chars
+   *  editor-exposed). Submitted saves have shown the field can hold
+   *  more than 12 bytes (e.g. "Shop Weasleys" = 26 bytes), but the
+   *  editor caps writes at 6 chars to match the in-game name-entry
+   *  surface. */
+  shopName: string;
+  /** Town name from body 0x47E (10 bytes UTF-16 LE / 5 chars). */
+  townName: string;
   lastSaveTimestamp: DateTimeInfo;
   characterCreateTimestamp: DateTimeInfo;
 

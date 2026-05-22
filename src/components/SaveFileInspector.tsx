@@ -12,7 +12,8 @@ import {
   CATALOG_TEXT_MAX_CHARS,
   MAIL_TEXT_MAX_CHARS,
   PLAYER_NAME_MAX_CHARS,
-  SCHOOL_NAME_MAX_CHARS,
+  SHOP_NAME_MAX_CHARS,
+  TOWN_NAME_MAX_CHARS,
   INVENTORY_BAG_COUNT,
   INVENTORY_QUANTITY_MIN,
   INVENTORY_QUANTITY_MAX,
@@ -183,7 +184,8 @@ function saveNotes(sha: string, notes: NotesByRegion) {
 interface PendingEditMap {
   ritch?: { value: number };
   playerName?: { value: string };
-  schoolName?: { value: string };
+  shopName?: { value: string };
+  townName?: { value: string };
   /** Keyed by entry's body offset within slot A. Holds the proposed new
    *  text for the catalog announcement at that offset. */
   catalog: Record<number, string>;
@@ -221,7 +223,8 @@ function pendingEditCount(edits: PendingEditMap): number {
   let n = 0;
   if (edits.ritch !== undefined) n++;
   if (edits.playerName !== undefined) n++;
-  if (edits.schoolName !== undefined) n++;
+  if (edits.shopName !== undefined) n++;
+  if (edits.townName !== undefined) n++;
   n += Object.keys(edits.catalog).length;
   n += Object.keys(edits.catalogClear).length;
   n += Object.keys(edits.mail).length;
@@ -238,8 +241,11 @@ function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
   if (edits.playerName !== undefined) {
     out.push({ kind: 'player_name', value: edits.playerName.value });
   }
-  if (edits.schoolName !== undefined) {
-    out.push({ kind: 'school_name', value: edits.schoolName.value });
+  if (edits.shopName !== undefined) {
+    out.push({ kind: 'shop_name', value: edits.shopName.value });
+  }
+  if (edits.townName !== undefined) {
+    out.push({ kind: 'town_name', value: edits.townName.value });
   }
   for (const [k, v] of Object.entries(edits.catalog)) {
     out.push({ kind: 'catalog', entryOffset: Number(k), text: v });
@@ -1857,44 +1863,38 @@ function SlotView({
         </details>
       </Section>
 
-      {/* Profile — step-252 re-resolution:
-            * Player name lives at body 0x1149C (primary character-record
-              copy), with §22-canonical mirror at body 0x47E and §12.1
-              secondary copy at body 0x114BA. The save-load-screen title
-              reads from the §22 location.
-            * School / shop / town name lives at body 0x114B2 (12 bytes
-              UTF-16 LE). Format-notes §5 docs the offset as 0x115B2 but
-              v2.31 EN saves consistently store it 0x100 lower; the
-              editor writes to BOTH locations to cover any build that
-              reads from the higher offset. */}
+      {/* Profile — step-258 re-resolution:
+            Three INDEPENDENT fields, not three mirrors. step-252 had
+            written player_name edits to all three of 0x47E + 0x1149C +
+            0x114BA on the assumption they were mirror copies; submission
+            #16 (player="WEASLEY" shop="Shop Weasleys" town="HOGSMEADE")
+            proved each offset holds a different field. The
+            pre-step-258 editor was clobbering town name + shop name
+            on every player rename.
+              * Player name @ body 0x1149C (character-record copy)
+              * Shop name   @ body 0x114B2
+              * Town name   @ body 0x47E
+            Each renders + edits independently; writes mirror to slot B
+            automatically inside applyEdits. */}
       <Section
         regionId={`${slot.label}-profile`}
         title={REGION_DESCRIPTORS.profile.title}
         range={REGION_DESCRIPTORS.profile.range}
         confidence={REGION_DESCRIPTORS.profile.confidence}
-        parsedSnapshot={`player=${JSON.stringify(slot.playerName)} schoolName=${JSON.stringify(slot.schoolName)} playerNameCanonical=${JSON.stringify(slot.playerNameCanonical)}`}
+        parsedSnapshot={`player=${JSON.stringify(slot.playerName)} shop=${JSON.stringify(slot.shopName)} town=${JSON.stringify(slot.townName)}`}
         {...labelArgs}
       >
         <dl className="kv">
           <dt>
             Player name{' '}
             <span className="muted small">
-              (body 0x1149C primary; mirrored to body 0x47E + 0x114BA;
-              UTF-16 LE × 5 chars max per §22)
+              (body 0x1149C, UTF-16 LE × 5 chars max)
             </span>
           </dt>
           <dd>
             <strong className="player-name">
               {slot.playerName || <span className="muted">(empty)</span>}
             </strong>
-            {slot.playerNameCanonical &&
-              slot.playerNameCanonical !== slot.playerName && (
-                <span className="muted small">
-                  {' '}— §22 canonical copy at body 0x47E reads{' '}
-                  <strong>{slot.playerNameCanonical}</strong> (stale; will
-                  be overwritten on next edit)
-                </span>
-              )}
             {editable && (
               <InlineEdit
                 label="player name"
@@ -1930,40 +1930,81 @@ function SlotView({
             )}
           </dd>
           <dt>
-            School / shop name{' '}
+            Shop name{' '}
             <span className="muted small">
-              (body 0x114B2 + 0x115B2 mirror, UTF-16 LE × 6 chars max per §5)
+              (body 0x114B2, UTF-16 LE × 6 chars max)
             </span>
           </dt>
           <dd>
             <strong className="player-name">
-              {slot.schoolName || <span className="muted">(empty)</span>}
+              {slot.shopName || <span className="muted">(empty)</span>}
             </strong>
             {editable && (
               <InlineEdit
-                label="school name"
+                label="shop name"
                 beta
                 pendingValue={
-                  editCtx.edits.schoolName !== undefined
-                    ? editCtx.edits.schoolName.value
+                  editCtx.edits.shopName !== undefined
+                    ? editCtx.edits.shopName.value
                     : null
                 }
-                initialDraft={slot.schoolName}
-                maxChars={SCHOOL_NAME_MAX_CHARS}
+                initialDraft={slot.shopName}
+                maxChars={SHOP_NAME_MAX_CHARS}
                 onCommit={draft => {
-                  if (draft.length > SCHOOL_NAME_MAX_CHARS) {
-                    return `Max ${SCHOOL_NAME_MAX_CHARS} characters.`;
+                  if (draft.length > SHOP_NAME_MAX_CHARS) {
+                    return `Max ${SHOP_NAME_MAX_CHARS} characters.`;
                   }
                   editCtx.setEdits(e => ({
                     ...e,
-                    schoolName: { value: draft },
+                    shopName: { value: draft },
                   }));
                   return null;
                 }}
                 onClear={() =>
                   editCtx.setEdits(e => {
                     const next = { ...e };
-                    delete next.schoolName;
+                    delete next.shopName;
+                    return next;
+                  })
+                }
+              />
+            )}
+          </dd>
+          <dt>
+            Town name{' '}
+            <span className="muted small">
+              (body 0x47E, UTF-16 LE × 5 chars max)
+            </span>
+          </dt>
+          <dd>
+            <strong className="player-name">
+              {slot.townName || <span className="muted">(empty)</span>}
+            </strong>
+            {editable && (
+              <InlineEdit
+                label="town name"
+                beta
+                pendingValue={
+                  editCtx.edits.townName !== undefined
+                    ? editCtx.edits.townName.value
+                    : null
+                }
+                initialDraft={slot.townName}
+                maxChars={TOWN_NAME_MAX_CHARS}
+                onCommit={draft => {
+                  if (draft.length > TOWN_NAME_MAX_CHARS) {
+                    return `Max ${TOWN_NAME_MAX_CHARS} characters.`;
+                  }
+                  editCtx.setEdits(e => ({
+                    ...e,
+                    townName: { value: draft },
+                  }));
+                  return null;
+                }}
+                onClear={() =>
+                  editCtx.setEdits(e => {
+                    const next = { ...e };
+                    delete next.townName;
                     return next;
                   })
                 }
@@ -1972,16 +2013,19 @@ function SlotView({
           </dd>
         </dl>
         <p className="note-text" style={{ marginTop: 8 }}>
-          <strong>step-252 re-resolution.</strong> The earlier
-          step-250 swap (labeling body 0x47E as "school name" based on
-          save14&apos;s "Revere" reading) was overturned by a wider
-          sweep of v2.31 EN saves — body 0x47E consistently holds the
-          §22-canonical player name (e.g.{' '}
-          <code>tongari_en.dsv</code> shows "FUNNY" at 0x47E and "Shop"
-          at 0x114B2, where 0x114B2 is the actual school/shop name
-          slot). Edits to either field write to multiple mirror copies
-          so the change is picked up regardless of which copy the
-          in-game render reads.
+          <strong>step-258 re-resolution.</strong> step-252 had treated
+          body 0x47E, body 0x1149C, and body 0x114BA as three "mirror
+          copies" of the player name, mirroring every player-name edit
+          to all three. Submission #16 (player &quot;WEASLEY&quot;, shop
+          &quot;Shop Weasleys&quot;, town &quot;HOGSMEADE&quot;) proved
+          that&apos;s wrong: body 0x47E holds the TOWN name, body 0x114B2
+          holds the SHOP name, and body 0x114BA is a misread offset
+          inside the same shop-name field. The fields are independent —
+          the editor now writes to each one in isolation. (No automatic
+          repair of previously-corrupted saves; if your town or shop
+          name got overwritten with your player name by the
+          pre-step-258 editor, re-edit those fields manually now that
+          they&apos;re individually exposed.)
         </p>
       </Section>
 

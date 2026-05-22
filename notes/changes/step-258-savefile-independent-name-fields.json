@@ -1,0 +1,71 @@
+{
+  "step": "step-258-savefile-independent-name-fields",
+  "timestamp": "2026-05-23T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/lib/savefile/editor.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/editor.ts",
+      "offset": null,
+      "before": "PendingEdit kind list included `school_name` and the `player_name` kind wrote to THREE offsets per the PLAYER_NAME_OFFSETS array: body 0x47E (10 bytes, labelled '§22 canonical authoritative'), body 0x1149C (22 bytes, labelled 'character record per-display copy'), and body 0x114BA (10 bytes, labelled '§12.1 secondary cached copy'). The school_name kind wrote to two offsets via SCHOOL_NAME_OFFSETS: body 0x114B2 + body 0x115B2. The header comment described the three player-name writes as 'mirror copies'.",
+      "after": "PendingEdit list updated to `player_name` (write only to body 0x1149C), `shop_name` (write only to body 0x114B2; renamed from school_name to reflect submission #16's empirical evidence that the field holds the SHOP name, not a school name), and a NEW `town_name` kind (write only to body 0x47E; previously this offset was being clobbered by player_name writes). PLAYER_NAME_OFFSETS / SCHOOL_NAME_OFFSETS arrays replaced with single-offset constants PLAYER_NAME_OFFSET / SHOP_NAME_OFFSET / TOWN_NAME_OFFSET. Each edit kind zero-fills the full readable field width (22 bytes for player at 0x1149C, 32 bytes for shop at 0x114B2, 22 bytes for town at 0x47E) so longer prior content is wiped, but caps user input at the in-game name-entry limits (5/6/5 chars respectively). The pre-step-258 dead-code write to body 0x115B2 is removed — that offset has been empty (zeros) in every v2.31 corpus save we've checked. The header comment block was rewritten to walk through the submission #16 evidence trail that refuted step-252's 'three mirrors of one field' interpretation.",
+      "reason": "Submission #16 (Harry Potter playthrough where the user gave DIFFERENT names for player / shop / town: player=WEASLEY, shop=Shop Weasleys, town=HOGSMEADE) proved that body 0x47E / 0x1149C / 0x114BA are NOT mirrors — they're independent fields. Step-252's editor was clobbering the town name on every player rename and corrupting the middle of the shop name field (0x114BA is at offset +8 INSIDE the 0x114B2 shop-name field). This is the bug fix."
+    },
+    {
+      "ref": "src/lib/savefile/parser.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/parser.ts",
+      "offset": null,
+      "before": "OFFSETS exposed schoolName=0x114B2 / schoolNameLen=12, playerNameCanonical=0x47E / playerNameCanonicalLen=10, and playerName=0x1149C / playerNameLen=22. parseSlot decoded three string fields: playerName (from 0x1149C), playerNameCanonical (from 0x47E, treated as a 'second copy of the player name'), and schoolName (from 0x114B2). REGION_DESCRIPTORS.profile range described 'player body[0x47E] + body[0x1149C] + body[0x114BA]; school body[0x114B2] (+ §5 mirror body[0x115B2])'.",
+      "after": "Three independent OFFSETS: playerName=0x1149C / playerNameLen=22, shopName=0x114B2 / shopNameLen=32 (widened so 'Shop Weasleys' = 26 bytes parses correctly; editor still caps writes at 6 chars), townName=0x47E / townNameLen=22 (widened so 'HOGSMEADE' = 18 bytes parses correctly; editor still caps writes at 5 chars). parseSlot now decodes three independent fields: playerName, shopName, townName — no more 'playerNameCanonical' / 'schoolName' aliases. REGION_DESCRIPTORS.profile range updated to 'player body[0x1149C]; shop body[0x114B2]; town body[0x47E]'. Documentation comment block rewritten to explain the submission #16 evidence and the independent-field interpretation.",
+      "reason": "Read widths needed to widen because submission #16 has shop name 'Shop Weasleys' (26 bytes / 13 chars) and town name 'HOGSMEADE' (18 bytes / 9 chars), both longer than the pre-step-258 12-byte / 10-byte read windows. The editor's write-width is widened correspondingly so an edit zero-fills the full field rather than leaving stale tail bytes; but user-entered character counts stay capped at the in-game name-entry surface limits."
+    },
+    {
+      "ref": "src/lib/savefile/types.ts",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/lib/savefile/types.ts",
+      "offset": null,
+      "before": "SlotParse had `playerName: string`, `playerNameCanonical: string`, `schoolName: string`. Documentation block described step-252's 'player name has multiple mirror copies' framework.",
+      "after": "SlotParse now has `playerName: string`, `shopName: string`, `townName: string` — three independent fields, no more 'canonical/secondary mirror' aliases. Documentation block rewritten to walk through the submission #16 evidence and explicitly cite it as the empirical refutation of step-252's mirror-copies framework.",
+      "reason": "Type contract reflecting the corrected field layout. Consumers (SaveFileInspector.tsx, test_savefile_roundtrip.mjs) updated in lockstep."
+    },
+    {
+      "ref": "src/components/SaveFileInspector.tsx",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/components/SaveFileInspector.tsx",
+      "offset": null,
+      "before": "Profile section rendered a 2-row dl: 'Player name' (with an InlineEdit affordance writing to all three pre-step-258 mirror offsets via the player_name edit kind) + 'School / shop name' (with an InlineEdit writing to body 0x114B2 + 0x115B2 via the school_name edit kind). The player-name row had a special-case footer text comparing playerName vs playerNameCanonical, with a 'will be overwritten on next edit' note. PendingEditMap had `playerName?` and `schoolName?` slots; editsToPendingList emitted those two kinds.",
+      "after": "Profile section renders a 3-row dl with three independent InlineEdit affordances: 'Player name' (writes to body 0x1149C only, 5-char cap), 'Shop name' (writes to body 0x114B2 only, 6-char cap), 'Town name' (writes to body 0x47E only, 5-char cap). The pre-step-258 playerName-vs-canonical 'stale copy' footer text is removed because the two offsets are not mirrors. PendingEditMap now carries `playerName?` / `shopName?` / `townName?`; editsToPendingList emits player_name / shop_name / town_name kinds. Section's note-text rewritten to explain the step-258 re-resolution against the step-252 mirror-copy framing, and explicitly tells users who suffered the pre-step-258 corruption to re-edit those fields manually (per the dispatch brief's 'do NOT try to repair wild-save corruption' instruction). REGION_DESCRIPTORS.profile title also rewritten from 'Player name + school/shop name (editable)' to 'Player + Shop + Town names (3 independent fields, editable)' so the inspector sidebar label tells the truth.",
+      "reason": "User-visible surface for the bug fix. Three independent affordances means users can now actually edit each of the three fields without clobbering the others."
+    },
+    {
+      "ref": "scripts/test_savefile_roundtrip.mjs",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/scripts/test_savefile_roundtrip.mjs",
+      "offset": null,
+      "before": "Test harness applied edits including `school_name: 'Magus'` and `player_name: 'ABEL'`. Asserted slot A/B playerName + playerNameCanonical + schoolName all became the expected values, treating playerNameCanonical as a should-also-update mirror. No isolation tests, no submission #16 fixture coverage.",
+      "after": "Test harness now applies `player_name`, `shop_name`, and `town_name` edits as three independent fields and asserts each one round-trips through both slots. Added a per-field isolation test block (step-258): for each of {player, shop, town}, apply ONLY that edit kind and assert the other two fields' parsed strings AND raw bytes (at slot A body 0x47E / 0x114B2 / 0x1149C across each field's full width) are byte-identical to their pre-edit values. The byte-level check catches the regression at a lower layer than the string-comparison check — decodeUtf16Le might NUL-terminate before showing a string-level corruption. Added a submission #16 fixture parse-assertion block: loads /tmp/save_16.dsv if present, asserts active-slot playerName=WEASLEY, shopName='Shop Weasleys', townName=HOGSMEADE. Added a submission #16 isolated-player-edit test: edit player_name to 'Harry', assert shop and town survive intact in the active slot. All 4 isolation suites pass against tongari_en.dsv, and the submission #16 assertions pass.",
+      "reason": "Empirical regression test for the bug fix. The isolation tests are the load-bearing guard against any future regression that re-merges the three fields into a mirror set."
+    },
+    {
+      "ref": "notes/changes/step-258-savefile-independent-name-fields.json",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/notes/changes/step-258-savefile-independent-name-fields.json",
+      "offset": null,
+      "before": "(file did not exist)",
+      "after": "Change-tracking entry for the step-258 archive-repo commit.",
+      "reason": "Required per CLAUDE.md 'Change tracking for the public changelog' rule — every commit records before/after data so release-time rollup can produce per-version detail pages."
+    }
+  ],
+  "submission_16_evidence": {
+    "summary": "Submission #16 is a Harry Potter-themed playthrough where the user gave DIFFERENT strings for player / shop / town, which refutes step-252's 'three mirror copies of one field' interpretation.",
+    "fixture_path": "C:/Users/Tyler/AppData/Local/Temp/save_16.dsv (downloaded from Supabase via _admin_save_files.py)",
+    "offsets_at_slot_A_body": {
+      "0x47E (alleged 'canonical player name')": "48 00 4f 00 47 00 53 00 4d 00 45 00 41 00 44 00 45 00 00 00 -> HOGSMEADE (TOWN name)",
+      "0x1149C (parser's existing playerName field)": "57 00 45 00 41 00 53 00 4c 00 45 00 59 00 00 00 -> WEASLEY (PLAYER name)",
+      "0x114B2 (alleged 'school' name)": "53 00 68 00 6f 00 70 00 20 00 57 00 65 00 61 00 73 00 6c 00 65 00 79 00 73 00 -> Shop Weasleys (SHOP name)",
+      "0x114BA (alleged 'secondary player name')": "20 00 57 00 65 00 61 00 73 00 6c 00 65 00 79 00 73 00 -> ' Weasleys' (NOT a separate field — bytes +8..+25 of the 0x114B2 shop-name field, just an offset misread)",
+      "0x115B2 (alleged 'documented mirror')": "00 00 00 00 00 00 00 ff 00 00 00 00 -> all zeros (NOT used by any save in our corpus)"
+    },
+    "cross_reference_tyler_test_save": "C:/Users/Tyler/Desktop/Hack/DeSmuME-VS2019-x64-Release (1)/Battery/Saves for hacking/tongari_en.dsv — body 0x47E reads 'FUNNY' and body 0x1149C reads 'タイラ', both player-named fields. This is the trap that fooled step-252 into thinking they were mirrors: Tyler used the same name for player and town in his test save, so every offset trivially matched and the 'mirror' interpretation looked correct. Submission #16's distinct-name playthrough was the empirical test that broke the false interpretation."
+  },
+  "verification": {
+    "test_harness_result": "ALL TESTS PASSED — all original assertions still pass, plus the 4 new step-258 isolation suites pass: (1) per-field isolation on tongari_en.dsv for each of player/shop/town (assert other two fields byte-identical), (2) submission #16 parse assertions (player=WEASLEY, shop='Shop Weasleys', town=HOGSMEADE), (3) submission #16 isolated player edit (player→Harry; shop+town unchanged).",
+    "browser_test": "Astro build completed with exit code 0 (no compile errors). Browser drop-test not performed — Astro dev server requires user interaction to drop the save file into the inspector. The Node test harness exercises the same parser + editor code the React tree consumes."
+  }
+}

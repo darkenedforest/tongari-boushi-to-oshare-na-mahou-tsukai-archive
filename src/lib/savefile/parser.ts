@@ -83,53 +83,64 @@ export const OFFSETS = {
   eventFlagsStart: 0x18,
   eventFlagsEnd: 0x460,
 
-  // Player + school name (body 0x460..0x4B0). step-252 re-resolution:
+  // Profile region — step-258 re-resolution:
   //
-  //  - body 0x47E holds the §22 "canonical authoritative" player name
-  //    (10 bytes UTF-16 LE; example "FUNNY" in tongari_en.dsv). In
-  //    earlier corpus saves Tyler's melonDS check on save14 saw
-  //    "Revere" here, and step-250 inferred that meant 0x47E was the
-  //    SCHOOL name — but a wider sweep of v2.31 EN saves (v2.31
-  //    tongari_en.dsv + 7 slot-snapshots) shows 0x47E consistently
-  //    holds the player's display name, while the school/shop name
-  //    actually lives at body 0x114B2 (the bytes `53 00 68 00 6F 00
-  //    70 00` spell "Shop" there). step-250's reclassification was
-  //    correct that 0x47E is NOT the only player-name copy, but
-  //    incorrect that it became the school slot — the school name
-  //    lives elsewhere.
+  // Three INDEPENDENT fields, not three mirrors. step-252 had labelled
+  // body 0x47E + 0x1149C + 0x114BA as "player-name mirror copies"
+  // because the corpus we checked at the time had Tyler using the same
+  // name for player / shop / town in every fixture, so every offset
+  // trivially matched. Submission #16 (Harry Potter playthrough with
+  // distinct names) refuted that:
   //
-  //  - body 0x114B2 is the empirically-observed school/shop/town
-  //    name location (12 bytes UTF-16 LE). Format notes §5 documents
-  //    this field at body 0x115B2, but the documented offset is
-  //    consistently 0x100 high relative to the actual location in
-  //    v2.31 EN saves. We read from 0x114B2 (matches the data) and
-  //    the editor writes to BOTH 0x114B2 and 0x115B2 so saves whose
-  //    build / region happens to use the higher offset also get the
-  //    edit applied.
-  schoolName: 0x114b2,
-  schoolNameLen: 12, // 6 UTF-16 LE chars (max)
-  /** §22 canonical authoritative player-name copy (10 bytes UTF-16
-   *  LE). Surfaced in the inspector as the player-name "second copy"
-   *  read-back; the editor mirrors writes here so the save-load
-   *  screen title (which reads from this offset in some builds)
-   *  matches the in-dialog name. */
-  playerNameCanonical: 0x47e,
-  playerNameCanonicalLen: 10,
+  //   - body 0x47E   = TOWN name   (e.g. "HOGSMEADE" in submission #16)
+  //                    10 bytes UTF-16 LE, up to 5 chars.
+  //   - body 0x1149C = PLAYER name (e.g. "WEASLEY" in submission #16)
+  //                    22 bytes UTF-16 LE, character-record copy.
+  //   - body 0x114B2 = SHOP name   (e.g. "Shop Weasleys" in submission #16,
+  //                    "Shopタイラ" in tongari_en.dsv)
+  //                    12+ bytes UTF-16 LE.
+  //
+  // Body 0x114BA and body 0x115B2 are NOT separate fields:
+  //   - 0x114BA is offset +8 inside the 0x114B2 shop-name field
+  //     (= bytes 8..17 of the same string).
+  //   - 0x115B2 is empty (zeros) in every v2.31 corpus save we've
+  //     checked. No empirical evidence any build/region reads from
+  //     it. step-252 wrote to it as a "documented mirror" but the
+  //     §5-format-notes claim that offset is the canonical shop
+  //     location was itself wrong — the data lives 0x100 earlier.
+  //
+  // The pre-step-258 editor treated player_name writes as mirrors
+  // across 0x47E + 0x1149C + 0x114BA, which clobbered the town name
+  // on every player rename and corrupted the middle of the shop
+  // name. step-258 separates the three fields and exposes them as
+  // independent edit kinds.
+  // Shop and town field WIDTHS used for reading. The in-game name-entry
+  // surface lets the player type at most ~6 chars for shop, ~5 for town,
+  // but submitted saves (e.g. submission #16) show the underlying byte
+  // fields can hold significantly longer strings — likely set by the
+  // game's "Shop "-prefix template or by older non-EN entry surfaces.
+  // We read up to the next known structural boundary so the inspector
+  // surfaces whatever the bytes contain. The EDITOR caps writes at the
+  // in-game-entry character limits via SHOP_NAME_MAX_CHARS /
+  // TOWN_NAME_MAX_CHARS in editor.ts and zero-fills the field through
+  // its full readable width so older long-string content is wiped on
+  // edit.
+  shopName: 0x114b2,
+  shopNameLen: 32, // up to 16 chars read; editor writes up to 6 chars + zero pads
+  /** Town name. Body 0x47E. Field runs up to the timestamp marker at
+   *  body 0x494, so read up to 22 bytes (11 chars). Editor caps writes
+   *  at 5 chars. */
+  townName: 0x47e,
+  townNameLen: 22,
   lastSaveTs: 0x494,
   charCreateTs: 0x4a4,
 
-  /** Body offset of the player's display name (inside the character
-   *  record at body 0x11488, intra offset +0x14). Verified against
-   *  save14: "Lamb" sits at body 0x1149C. Length 0x16 = 11 UTF-16
-   *  LE chars max per phase-7.
-   *
-   *  DISPUTED capacity — Game 1's mqreader.js documents the player
-   *  name as 20 BYTES = up to 10 UTF-16 LE chars. Game 3's capacity is
-   *  uncertain; our 22-byte / 11-char field width is a phase-7 guess.
-   *  We do NOT shorten the field because save14's "Lamb" only takes 4
-   *  chars, leaving us no positive evidence for either bound. */
+  /** Body offset of the player's display name. 22 bytes UTF-16 LE,
+   *  up to 11 chars (we cap the editor at 5 to match the in-game
+   *  name-entry surface). Phase-7 ARM9 trace identifies this as the
+   *  primary character-record copy at body 0x11488 + 0x14. */
   playerName: 0x1149c,
-  playerNameLen: 22, // up to 11 UTF-16 LE chars (DISPUTED — Game 1 documents 10)
+  playerNameLen: 22, // up to 11 UTF-16 LE chars (editor caps at 5)
 
   // Unconfirmed region — body[0x4300..0x4480], stride 8. Previously
   // (step-176/177) labelled "active inventory" with a (cat<<8)|sub
@@ -1033,8 +1044,8 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       perSaveFingerprint: 0xffff,
       formatVersionSubcode: 0xffff,
       playerName: '',
-      playerNameCanonical: '',
-      schoolName: '',
+      shopName: '',
+      townName: '',
       lastSaveTimestamp: { rawHex: '', decoded: '(uninit)' },
       characterCreateTimestamp: { rawHex: '', decoded: '(uninit)' },
       ritch: null,
@@ -1058,28 +1069,22 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     };
   }
 
+  // step-258 re-resolution: three independent fields, not three
+  // mirrors. See the OFFSETS comment block above for the submission
+  // #16 evidence trail.
   const playerName = decodeUtf16Le(
     body.subarray(OFFSETS.playerName, OFFSETS.playerName + OFFSETS.playerNameLen),
     11,
   );
 
-  // §22 canonical player-name copy (body 0x47E, 10 bytes / 5 chars).
-  // Surfaced so the inspector can show "name visible on save-load
-  // screen" alongside the character-record copy at 0x1149C. In well-
-  // synced saves these match; if they diverge it's usually because the
-  // game updated 0x1149C on a name change but the cached 0x47E copy is
-  // stale.
-  const playerNameCanonical = decodeUtf16Le(
-    body.subarray(
-      OFFSETS.playerNameCanonical,
-      OFFSETS.playerNameCanonical + OFFSETS.playerNameCanonicalLen,
-    ),
-    5,
+  const shopName = decodeUtf16Le(
+    body.subarray(OFFSETS.shopName, OFFSETS.shopName + OFFSETS.shopNameLen),
+    16,
   );
 
-  const schoolName = decodeUtf16Le(
-    body.subarray(OFFSETS.schoolName, OFFSETS.schoolName + OFFSETS.schoolNameLen),
-    6,
+  const townName = decodeUtf16Le(
+    body.subarray(OFFSETS.townName, OFFSETS.townName + OFFSETS.townNameLen),
+    11,
   );
 
   const lastSaveTimestamp = decodeDatetime(
@@ -1109,8 +1114,8 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     perSaveFingerprint: u16le(view, OFFSETS.perSaveFingerprint),
     formatVersionSubcode: u16le(view, OFFSETS.formatSubcode),
     playerName,
-    playerNameCanonical,
-    schoolName,
+    shopName,
+    townName,
     lastSaveTimestamp,
     characterCreateTimestamp,
     ritch,
@@ -1650,7 +1655,7 @@ export const REGION_DESCRIPTORS = {
   versionMagic: { id: 'versionMagic', title: 'Format version magic + sub-code', range: 'body[0x02:0x04] + body[0x16:0x18]', confidence: 'confirmed' as const },
   wizardLevelCandidate: { id: 'wizardLevelCandidate', title: 'Wizard level candidate (read-only — please test)', range: 'body[0x11488 + 0x5a]', confidence: 'candidate' as const },
   eventFlags: { id: 'eventFlags', title: 'Event flag region', range: 'body[0x18:0x460], ~1 KiB bit-flags', confidence: 'candidate' as const },
-  profile: { id: 'profile', title: 'Player name + school/shop name (editable)', range: 'player body[0x47E] + body[0x1149C] + body[0x114BA]; school body[0x114B2] (+ §5 mirror body[0x115B2])', confidence: 'candidate' as const },
+  profile: { id: 'profile', title: 'Player + Shop + Town names (3 independent fields, editable)', range: 'player body[0x1149C]; shop body[0x114B2]; town body[0x47E]', confidence: 'candidate' as const },
   inventory: { id: 'inventory', title: 'Region at body 0x4300 — semantics unconfirmed (previously labelled "active inventory")', range: 'body[0x4300:0x4480], 8-byte stride', confidence: 'disputed' as const },
   inventoryBag: { id: 'inventoryBag', title: 'Inventory bag — 15 slots (editable)', range: 'body[0x1D9B6:0x1DA14], 6-byte stride; per-slot u16 LE stored_value + 3B pad + u8 quantity', confidence: 'confirmed' as const },
   activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
