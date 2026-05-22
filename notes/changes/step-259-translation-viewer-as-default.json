@@ -1,0 +1,55 @@
+{
+  "step": "step-259-translation-viewer-as-default",
+  "timestamp": "2026-05-23T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/pages/translation/index.astro",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/pages/translation/index.astro",
+      "offset": null,
+      "before": "Imported TranslationBrowser.tsx + translation_snapshot_meta.json and rendered the search browser over a baked DB snapshot. Page title 'Translation Browser', lede about searching every EN line in the patch and submitting suggestions, meta line with dialog/items/NPCs counts + snapshot date, a 'Submission tips' details block, and a footer 'Open the JP↔EN ROM viewer →' link pointing to /translation/viewer/. Loaded the 11 MB translation_snapshot.json lazily from public/data/.",
+      "after": "Rewritten to render the in-browser JP↔EN ROM viewer that previously lived at /translation/viewer/. Imports TranslationViewer.tsx instead of TranslationBrowser.tsx. Page title 'Translation Viewer', lede explains the ROM-side parsing happens locally (no upload), meta line shows 'entire ROM' scope + 1,322 files + 83,979 Textblocks, 'How this works' details block explains the Load ROM flow / opcode tags / wildcard search. Breadcrumb is now 'Home › Translation' (the previous viewer.astro had 'Home › Translation › Viewer' since it sat one level deeper). Mounts <TranslationViewer ... client:only=\"react\" /> with the public translation_en_lookup.json.",
+      "reason": "Tyler asked for the route swap: what's at /translation/viewer/ becomes /translation/, hide the old landing without deleting it."
+    },
+    {
+      "ref": "src/pages/translation/viewer.astro",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/pages/translation/viewer.astro",
+      "offset": null,
+      "before": "Astro page at route /translation/viewer/ that mounted TranslationViewer.tsx with breadcrumb 'Home › Translation › Viewer'.",
+      "after": "File deleted. The route /translation/viewer/ is now served via astro.config.mjs `redirects` as a redirect to /translation/, so external links and bookmarks to the old URL still land somewhere sensible.",
+      "reason": "Viewer content moved up one level into /translation/index.astro. Astro's redirect mechanism preserves the old URL without duplicating the page."
+    },
+    {
+      "ref": "src/pages/translation/_archive/browser.astro",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/pages/translation/_archive/browser.astro",
+      "offset": null,
+      "before": "File did not exist.",
+      "after": "New file. A verbatim copy of the pre-step-259 /translation/index.astro contents (the search-browser landing), placed under an underscore-prefixed parent directory so Astro does NOT build it into a public route. A leading comment block explains why the file exists, when it was hidden, and how to restore it if needed. The Layout / TranslationBrowser / translation_snapshot_meta imports are updated from '../../...' to '../../../...' to reflect the extra directory depth.",
+      "reason": "Tyler said 'hide, not delete' for the old landing. Underscore-prefixed paths inside src/pages/ are Astro's standard non-public convention."
+    },
+    {
+      "ref": "astro.config.mjs",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/astro.config.mjs",
+      "offset": null,
+      "before": "defineConfig({ site, base, integrations: [react()], build: { assets: '_astro' } }) with no `redirects` key.",
+      "after": "Same config plus a `redirects: { '/translation/viewer': '/translation/' }` entry, so visitors to /translation/viewer/ are bounced to the new canonical URL.",
+      "reason": "Preserve any external links / bookmarks / search-engine results that point at the old /translation/viewer/ URL. Astro normalizes the trailing slash, so a single entry covers both /translation/viewer and /translation/viewer/."
+    },
+    {
+      "ref": "src/pages/index.astro",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/pages/index.astro",
+      "offset": null,
+      "before": "Translation home tile: title 'Translation', body 'Browse the in-progress dialog database — every textblock in the game with its Japanese source, working English translation, and per-row status.', CTA 'Browse strings →'.",
+      "after": "Same tile, new copy: title 'Translation', body 'Browse the in-progress fan translation side-by-side with the original Japanese, across the entire ROM. The English ships pre-loaded; the Japanese is parsed locally from your own copy of the NDS ROM, nothing uploaded.', CTA 'Open viewer →'. Body and CTA updated to describe the viewer (since that's what /translation/ now serves).",
+      "reason": "/translation/ now serves the viewer, not the search browser, so the home-page description and CTA had to match. Without the update, players would arrive at the viewer expecting the search browser they were promised."
+    },
+    {
+      "ref": "src/pages/field-guide/index.astro",
+      "file_path": "C:/Users/Tyler/Documents/Repos/tongari-boushi-archive/src/pages/field-guide/index.astro",
+      "offset": null,
+      "before": "Field-guide companion-tools list entry: <a href=/translation/><strong>Translation browser</strong></a> — for searching every dialog line in the game. JP source, working EN, per-row status, filterable by file and speaker.",
+      "after": "Same anchor, updated text: <a href=/translation/><strong>Translation viewer</strong></a> — for browsing the in-progress translation side-by-side with the original Japanese, across the entire ROM. The English ships pre-loaded; load your own copy of the NDS ROM in-browser to see the JP source alongside.",
+      "reason": "Same propagation. /translation/ is now the viewer, so the field-guide pointer needed updating to describe the viewer rather than the (now-hidden) search browser."
+    }
+  ]
+}

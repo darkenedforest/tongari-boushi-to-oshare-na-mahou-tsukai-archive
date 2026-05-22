@@ -1,22 +1,21 @@
 ---
+// Step-259: the Translation Viewer (JP↔EN side-by-side over the whole ROM)
+// is now the canonical /translation/ page. The previous /translation/
+// landing — a search browser over a baked snapshot of EN/JP/status from
+// the DB — is preserved at src/pages/translation/_archive/browser.astro
+// (Astro skips underscore-prefixed paths, so it's not built into the site).
 import Layout from '../../layouts/Layout.astro';
-import TranslationBrowser from '../../components/TranslationBrowser.tsx';
-import meta from '../../data/translation_snapshot_meta.json';
+import TranslationViewer from '../../components/TranslationViewer.tsx';
 
-// Only metadata is imported at build time. The 11 MB rows JSON lives in
-// public/data/translation_snapshot.json and is fetched lazily by the
-// React island on mount, so it doesn't bloat the first-paint bundle.
+// The EN-only lookup is shipped as a public asset. The main translation
+// repo's `_export_en_lookup_for_rom_viewer.py` writes it.
 const base = import.meta.env.BASE_URL;
-const counts = meta.counts;
-const generated = new Date(meta.generated_at);
-const generatedLabel = isNaN(generated.getTime())
-  ? meta.generated_at
-  : generated.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-// Strip trailing slash so we always emit "${base}/data/..." cleanly.
-const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
+const baseNorm = base.replace(/\/$/, '');
+const lookupUrl = `${baseNorm}/data/translation_en_lookup.json`;
+const decorationBase = `${baseNorm}/decorations/`;
 ---
 
-<Layout title="Translation Browser">
+<Layout title="Translation Viewer">
   <section class="page-header">
     <p class="breadcrumb">
       <a href={`${base}/`}>Home</a>
@@ -28,53 +27,58 @@ const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
       <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
       <img src={`${base}/decorations/dragonfly.png`} alt="" />
     </div>
-    <h1>Translation Browser ✦</h1>
+    <h1>Translation Viewer ✦</h1>
     <p class="lede">
-      Browse every English line that appears in the fan patch — dialog,
-      item names, and NPC names. Search by any phrase, filter by category,
-      and submit suggestions where you think the wording can be tighter,
-      clearer, or more faithful. Suggestions go to a moderation queue;
-      a reviewer reads each one before anything ships in the patch.
+      Browse the in-progress fan translation side-by-side with the original
+      Japanese, across the entire ROM. The English text comes from the
+      patch database hosted here. The Japanese text is extracted, in your
+      browser, from <em>your own copy</em> of the Tongari Boushi NDS ROM —
+      nothing about the ROM uploads to the server. Pick a Dialog Path on
+      the left, then a Slot (Index), to read the pair along with each
+      phrase row.
     </p>
     <p class="meta">
-      <span><strong>{counts.dialog.toLocaleString()}</strong> dialog</span>
+      <span>Scope: <strong>entire ROM</strong> (all translated surfaces)</span>
       <span class="dot">·</span>
-      <span><strong>{counts.items.toLocaleString()}</strong> items</span>
+      <span><strong>1,322</strong> files</span>
       <span class="dot">·</span>
-      <span><strong>{counts.npcs.toLocaleString()}</strong> NPCs</span>
-      <span class="dot">·</span>
-      <span class="generated">Snapshot from {generatedLabel}</span>
+      <span><strong>83,979</strong> Textblocks</span>
     </p>
     <details class="tips">
-      <summary>Submission tips</summary>
+      <summary>How this works</summary>
       <ul>
         <li>
-          The yellow <em>Max N chars</em> badge is the in-game text budget.
-          If you go over, the suggestion may not physically fit on the
-          screen — propose something at or under the limit when you can.
+          Click <strong>Load ROM…</strong> and pick your <code>.nds</code> file. The page
+          parses the ROM locally — there's no upload, and no copy is kept after
+          you close the tab.
         </li>
         <li>
-          Tags like <code>[NPC:1009]</code>, <code>▼</code>, and <code>§</code>
-          are control codes (name slots, page breaks, line endings).
-          Keep them where they are unless you're sure they need to move.
+          Tags like <code>[PLAYER_NAME]</code>, <code>[NPC:1009]</code>, and
+          <code>[LETTER_ADDRESSEE]</code> are runtime substitution slots. The
+          grey <code>&lt;i&gt;HEX&lt;/i&gt;</code> chips are raw control-code bytes the
+          game runs.
         </li>
         <li>
-          Anonymous is fine. If you want credit on accepted suggestions,
-          drop a name in the optional field.
+          Search supports <strong>wildcards</strong> — type <code>wi*.t*</code>
+          to match anything starting with <code>wi</code> followed by
+          <code>.t</code>. You can also search opcode tokens directly:
+          <code>[NPC_DAT:*]</code> finds every NPC-data slot,
+          <code>[COLOR:3]</code> finds all level-3 color tags.
+        </li>
+        <li>
+          When you search, the file tree collapses to show only files
+          with matching entries. Clear the search to see everything again.
+        </li>
+        <li>
+          The English side ships pre-loaded. You can still search and read
+          translations even without a ROM — but the Japanese panels stay
+          locked until you load one.
         </li>
       </ul>
     </details>
-    <p class="viewer-link">
-      <a href={`${base}/translation/viewer/`}>
-        Open the JP↔EN ROM viewer →
-      </a>
-      <span class="viewer-link-explain">
-        Browse your own ROM side-by-side with the published English.
-      </span>
-    </p>
   </section>
 
-  <TranslationBrowser dataUrl={dataUrl} client:load />
+  <TranslationViewer lookupUrl={lookupUrl} decorationBase={decorationBase} client:only="react" />
 </Layout>
 
 <style>
@@ -124,7 +128,6 @@ const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
   }
   .meta strong { color: var(--color-purple-600); }
   .meta .dot { opacity: 0.5; }
-  .meta .generated { color: var(--color-ink-soft); }
   .tips {
     background: var(--color-purple-50);
     border: 1px solid var(--color-purple-100);
@@ -152,22 +155,5 @@ const dataUrl = `${base.replace(/\/$/, '')}/data/translation_snapshot.json`;
     border-radius: 4px;
     font-family: ui-monospace, monospace;
     font-size: 0.85rem;
-  }
-  .viewer-link {
-    margin: 10px 0 0;
-    font-size: 0.95rem;
-  }
-  .viewer-link a {
-    color: var(--color-pink-600);
-    font-weight: 700;
-  }
-  .viewer-link a:hover {
-    color: var(--color-purple-600);
-  }
-  .viewer-link-explain {
-    display: block;
-    color: var(--color-ink-soft);
-    font-size: 0.85rem;
-    margin-top: 2px;
   }
 </style>
