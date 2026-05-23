@@ -1,0 +1,28 @@
+{
+  "step": "step-264-parser-sub-entry-split",
+  "timestamp": "2026-05-24T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "archive_repo:src/lib/rom/parser.ts",
+      "file_path": "src/lib/rom/parser.ts",
+      "before": "extractRomFiles emitted exactly one Textblock per RESO entry, hard-coded at sub_entry_id=0. The wire-format payload's inline SPEAKER (0x18) sub-entry boundaries were ignored, so every screen of a multi-sub-entry entry was concatenated into the same jp_wire string keyed at <entry_id>.0. The viewer joins JP↔EN on (entry_id, sub_entry_id); the EN lookup table is correctly keyed per-sub-entry, so 40.1..40.N showed '— untranslated —' even when the DB had validated EN, because the parser never produced JP at those keys.",
+      "after": "extractRomFiles now mirrors the local translator's extract_entries.py + wire_format.py split convention. For each RESO entry the parser (1) calls splitPreamble to peel leading/trailing non-body state CMDs, (2) calls splitIntoScreens to split the body on inline SPEAKER (0x18) boundaries, (3) for screens 2..N peels their own preamble via screenPreambleSplit, (4) renders each non-empty screen as its own Textblock keyed `${entry_id}.${sub_id}` (sub_id is the index of the EMITTED screen, so empty screens don't burn an id). renderWire and renderPlain now also strip `{kanji|reading}` furigana markup to match the project's DB representation. Verified: msg12001 entry 40 produces 5 Textblocks (40.0..40.4) whose jp_wire matches the DB byte-for-byte; msg20000 entry 1 produces 4 Textblocks; msg52000 entry 23 produces 2 Textblocks — all byte-identical to entries.jp_text_for_ai.",
+      "reason": "Fixes Translation Viewer rendering '— untranslated —' on pages 3-8 of msg12001/40 (and structurally identical multi-sub-entry surfaces across msg21-33, msg40-52, etc.). The DB and public translation_en_lookup.json have all sub-entries fully translated and validated; only the browser parser was lumping them together."
+    },
+    {
+      "ref": "archive_repo:src/lib/rom/opcodeRegistry.ts",
+      "file_path": "src/lib/rom/opcodeRegistry.ts",
+      "before": "Exported OPCODE_TAG_NAMES + tagName + formatTag only.",
+      "after": "Also exports INLINE_VISIBLE_OPCODES (Set of every catalogued opcode), PREAMBLE_PRIMARY_OPCODES ({0x16, 0x17, 0x18, 0x37}), and BODY_MARKER_OPCODES (INLINE_VISIBLE_OPCODES − PREAMBLE_PRIMARY_OPCODES). These mirror the same-named constants in src/translator/opcode_registry.py and are consumed by parser.ts's splitPreamble / screenPreambleSplit helpers to identify where 'body content begins.'",
+      "reason": "Required by the sub-entry split logic above."
+    },
+    {
+      "ref": "archive_repo:scripts/_verify_parser_subentry_split.mjs",
+      "file_path": "scripts/_verify_parser_subentry_split.mjs",
+      "before": null,
+      "after": "New verification harness. Loads the JP Rev 1 ROM, esbuild-bundles parser.ts to ESM, runs the parser against msg12001 entry 40, msg20000 entry 1, msg52000 entry 23, and compares each emitted Textblock's jp_wire against the corresponding entries.jp_text_for_ai row in the translation repo's SQLite. Exits non-zero on any mismatch. Run: `node scripts/_verify_parser_subentry_split.mjs` from the archive repo root.",
+      "reason": "Future-proofs the parser: any regression in the split logic will be caught by re-running this script against the JP Rev 1 ROM + the project DB."
+    }
+  ]
+}

@@ -109,3 +109,25 @@ export function formatTag(opcode: number, args: number[]): string {
   if (!args || args.length === 0) return `[${name}]`;
   return `[${name}:${args.join(':')}]`;
 }
+
+// Mirrors src/translator/opcode_registry.py:
+//   INLINE_VISIBLE_OPCODES  = frozenset(OPCODE_REGISTRY.keys())
+//   PREAMBLE_PRIMARY_OPCODES = {0x16, 0x17, 0x18, 0x37}
+//   BODY_MARKER_OPCODES     = INLINE_VISIBLE_OPCODES - PREAMBLE_PRIMARY_OPCODES
+//
+// Used by the entry splitter: split_preamble peels leading state CMDs until
+// it sees a BODY_MARKER opcode (or real text); split_into_screens treats
+// each inline SPEAKER (0x18) as a new screen / sub-entry boundary.
+export const INLINE_VISIBLE_OPCODES = new Set<number>(
+  Object.keys(OPCODE_TAG_NAMES).map((k) => Number(k)),
+);
+
+export const PREAMBLE_PRIMARY_OPCODES = new Set<number>([0x16, 0x17, 0x18, 0x37]);
+
+export const BODY_MARKER_OPCODES: Set<number> = (() => {
+  const s = new Set<number>();
+  for (const op of INLINE_VISIBLE_OPCODES) {
+    if (!PREAMBLE_PRIMARY_OPCODES.has(op)) s.add(op);
+  }
+  return s;
+})();

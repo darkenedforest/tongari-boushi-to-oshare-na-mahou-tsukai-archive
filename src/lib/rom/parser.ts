@@ -19,7 +19,7 @@
 // alignment in the DB): npc/, item/, recipe/, overlay binaries, ARM9
 // strings. Those surfaces have separate fix-manifest streams.
 
-import { formatTag } from './opcodeRegistry';
+import { BODY_MARKER_OPCODES, formatTag } from './opcodeRegistry';
 import type {
   ExtractedFileJP,
   FatEntry,
@@ -338,6 +338,17 @@ export function parseEntry(payload: Uint8Array): Token[] {
  * literal bytes the engine will run. We honour that. */
 import { OPCODE_TAG_NAMES } from './opcodeRegistry';
 
+// Ruby/furigana markup convention from the main repo's wire_format.py:
+// the kanji-reading pair is encoded as `{kanji|reading}` in the decoded
+// text stream, and the translator-facing render replaces it with just the
+// kanji (the reading is display-only ruby text that doesn't round-trip
+// into EN). We mirror that here so the parser's jp_wire matches the
+// project's DB representation byte-for-byte.
+const FURIGANA_RE = /\{([^|}]+)\|([^}]+)\}/g;
+function stripFurigana(text: string): string {
+  return text.replace(FURIGANA_RE, (_m, kanji) => kanji);
+}
+
 export function renderWire(tokens: Token[]): string {
   const parts: string[] = [];
   for (const tok of tokens) {
@@ -350,6 +361,7 @@ export function renderWire(tokens: Token[]): string {
         if (c === 0) t += '§';
         else t += tok.text[i];
       }
+      t = stripFurigana(t);
       parts.push(t);
     } else {
       if (OPCODE_TAG_NAMES[tok.opcode] !== undefined) {
@@ -373,10 +385,146 @@ export function renderPlain(tokens: Token[]): string {
         const c = tok.text.charCodeAt(i);
         if (c !== 0) t += tok.text[i];
       }
-      parts.push(t);
+      parts.push(stripFurigana(t));
     }
   }
   return parts.join('');
+}
+
+// ---------------------------------------------------------------------------
+// Entry → sub-entry split (mirrors src/translator/wire_format.py +
+//                         src/translator/extract_entries.py in the main repo)
+// ---------------------------------------------------------------------------
+//
+// In the wire format, a single RESO entry frequently contains MULTIPLE
+// dialog screens — each screen starts with an inline SPEAKER (0x18) CMD
+// followed by TEXTBOX (0x17) / EXPRESSION (0x16) state setup, then the
+// actual body text, optionally a trailing state cluster, and finally
+// either the entry terminator or the next SPEAKER cluster.
+//
+// The local translation tool's extract_entries.py splits each entry into
+// one "sub-entry" per screen — the DB primary key is
+// (file_id, entry_id, sub_entry_id) — so the EN lookup table is keyed the
+// same way. The browser parser must mirror that exact convention or the
+// viewer can't join its parsed JP against the lookup's EN: it sees one
+// concatenated JP block at sub_entry_id=0 while the EN side has 5
+// separately-keyed entries (40.0, 40.1, 40.2, 40.3, 40.4), and rows
+// 40.1–40.4 render "— untranslated —" because the parser never produced
+// JP at those keys.
+//
+// Convention ported verbatim from the Python:
+//   1. split_preamble peels off leading non-body CMDs and trailing non-body
+//      CMDs. Body content "starts" at the first TextToken with non-whitespace
+//      content OR at the first CmdToken whose opcode is in BODY_MARKER_OPCODES
+//      (which is every catalogued opcode EXCEPT 0x16/0x17/0x18/0x37 — those
+//      are PREAMBLE_PRIMARY structural state).
+//   2. split_into_screens scans the body for inline SPEAKER (0x18) at
+//      position > 0; every such SPEAKER begins a new screen.
+//   3. screen_preamble_split peels a fresh preamble off screens 2..N (the
+//      first screen reuses the entry-level preamble from step 1).
+//   4. Each screen whose rendered body text is non-empty becomes a sub-entry.
+
+function splitPreamble(tokens: Token[]): { leading: Token[]; body: Token[]; trailing: Token[] } {
+  // First body-relevant token index.
+  let firstBody = tokens.length;
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    if (tok.kind === 'text') {
+      // Treat NULs and spaces as not-yet-body, matching the Python
+      // .strip("\x00 ") test.
+      let hasContent = false;
+      for (let k = 0; k < tok.text.length; k++) {
+        const c = tok.text.charCodeAt(k);
+        if (c !== 0 && c !== 0x20) { hasContent = true; break; }
+      }
+      if (hasContent) { firstBody = i; break; }
+      continue;
+    }
+    if (BODY_MARKER_OPCODES.has(tok.opcode)) { firstBody = i; break; }
+  }
+
+  // Last body-relevant token index (scan backward).
+  let lastBody = -1;
+  for (let i = tokens.length - 1; i >= 0; i--) {
+    const tok = tokens[i];
+    if (tok.kind === 'text') {
+      let hasContent = false;
+      for (let k = 0; k < tok.text.length; k++) {
+        const c = tok.text.charCodeAt(k);
+        if (c !== 0 && c !== 0x20) { hasContent = true; break; }
+      }
+      if (hasContent) { lastBody = i; break; }
+      continue;
+    }
+    if (BODY_MARKER_OPCODES.has(tok.opcode)) { lastBody = i; break; }
+  }
+
+  if (firstBody > lastBody) {
+    // No body content at all — every CmdToken is leading.
+    const leadingOnly: Token[] = [];
+    for (const t of tokens) if (t.kind === 'cmd') leadingOnly.push(t);
+    return { leading: leadingOnly, body: [], trailing: [] };
+  }
+
+  const leading: Token[] = [];
+  for (let i = 0; i < firstBody; i++) {
+    const t = tokens[i];
+    if (t.kind === 'cmd') leading.push(t);
+  }
+  const body = tokens.slice(firstBody, lastBody + 1);
+  const trailing: Token[] = [];
+  for (let i = lastBody + 1; i < tokens.length; i++) {
+    const t = tokens[i];
+    if (t.kind === 'cmd') trailing.push(t);
+  }
+  return { leading, body, trailing };
+}
+
+/** Split a body token list on inline SPEAKER (0x18) boundaries.
+ *  Mirrors wire_format.split_into_screens. */
+function splitIntoScreens(body: Token[]): Token[][] {
+  if (body.length === 0) return [body];
+  const boundaries: number[] = [0];
+  for (let i = 1; i < body.length; i++) {
+    const tok = body[i];
+    if (tok.kind === 'cmd' && tok.opcode === 0x18) boundaries.push(i);
+  }
+  if (boundaries.length === 1) return [body];
+  const screens: Token[][] = [];
+  for (let j = 0; j < boundaries.length; j++) {
+    const start = boundaries[j];
+    const end = j + 1 < boundaries.length ? boundaries[j + 1] : body.length;
+    screens.push(body.slice(start, end));
+  }
+  return screens;
+}
+
+/** For sub-entries 2..N, peel off the leading state-CMD preamble (the
+ *  SPEAKER + TEXTBOX + EXPR cluster) and return (preamble, body). Stops
+ *  at the first TextToken OR the first BODY_MARKER opcode. */
+function screenPreambleSplit(screen: Token[]): { preamble: Token[]; body: Token[] } {
+  const preamble: Token[] = [];
+  let i = 0;
+  while (i < screen.length) {
+    const tok = screen[i];
+    if (tok.kind === 'cmd' && !BODY_MARKER_OPCODES.has(tok.opcode)) {
+      preamble.push(tok);
+      i += 1;
+      continue;
+    }
+    break;
+  }
+  return { preamble, body: screen.slice(i) };
+}
+
+/** True iff the rendered body has any visible content (matching the
+ *  Python `text_for_ai.strip("\x00 \n")` non-empty test). */
+function hasBodyContent(rendered: string): boolean {
+  for (let i = 0; i < rendered.length; i++) {
+    const c = rendered.charCodeAt(i);
+    if (c !== 0 && c !== 0x20 && c !== 0x0a) return true;
+  }
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -434,24 +582,59 @@ export function extractRomFiles(rom: Uint8Array, params: ExtractParams): {
         if (e.length === 0) continue;
         const payload = container.subarray(e.data_offset, e.data_offset + e.length);
         const tokens = parseEntry(payload);
-        const jp_wire = renderWire(tokens);
-        const jp_plain = renderPlain(tokens);
-        // Every RESO entry maps to one Textblock at sub_entry_id=0. Some
-        // surfaces (msg21-msg33, msg40-msg52) do have sub_entry_id > 0
-        // rows in the DB — those are speaker-split fragments that the
-        // browser parser doesn't yet split out of the wire-format payload,
-        // so they render as the full entry against the sub_entry=0 EN row.
-        // The viewer joins on `(entry_id, sub_entry_id)` and will show
-        // those higher sub_entry slots as text-only EN rows until the
-        // browser parser learns the split. See parser TODO in step-326
-        // report for the structural wire-format work that requires.
-        const tb: Textblock = {
-          entry_id: e.index,
-          sub_entry_id: 0,
-          jp_wire,
-          jp_plain,
-        };
-        textblocks.set(`${e.index}.0`, tb);
+
+        // Split the entry into one Textblock per inline-SPEAKER screen,
+        // matching the DB's (entry_id, sub_entry_id) primary key. The
+        // helpers above are direct ports of wire_format.split_preamble /
+        // split_into_screens / screen_preamble_split. See the comment
+        // block above splitPreamble for the full convention rationale.
+        const { body: entryBody } = splitPreamble(tokens);
+        const screens = splitIntoScreens(entryBody);
+
+        let subId = 0;
+        let emittedAny = false;
+        for (let s = 0; s < screens.length; s++) {
+          const screen = screens[s];
+          // First screen reuses the entry-level preamble (which we don't
+          // need to render — we only render the screen body). Later
+          // screens get a fresh preamble peeled off.
+          const screenBody = s === 0 ? screen : screenPreambleSplit(screen).body;
+
+          const jp_wire = renderWire(screenBody);
+          const jp_plain = renderPlain(screenBody);
+          // Empty-body screens are silently dropped (matching the Python's
+          // `if not text_for_ai.strip(strip_set): continue`), and we DO NOT
+          // burn a sub-entry id on them — sub_entry_id is the index of the
+          // emitted screen, not the index of the source-screen slot.
+          if (!hasBodyContent(jp_plain) && !hasBodyContent(jp_wire)) continue;
+
+          const tb: Textblock = {
+            entry_id: e.index,
+            sub_entry_id: subId,
+            jp_wire,
+            jp_plain,
+          };
+          textblocks.set(`${e.index}.${subId}`, tb);
+          subId += 1;
+          emittedAny = true;
+        }
+
+        // Defensive fallback: if every screen was empty (shouldn't happen
+        // for any RESO entry with non-zero length, but guard anyway), emit
+        // the whole entry at sub_entry_id=0 so the viewer still has a row
+        // to render rather than dropping the entry entirely.
+        if (!emittedAny) {
+          const jp_wire = renderWire(tokens);
+          const jp_plain = renderPlain(tokens);
+          if (jp_wire.length > 0 || jp_plain.length > 0) {
+            textblocks.set(`${e.index}.0`, {
+              entry_id: e.index,
+              sub_entry_id: 0,
+              jp_wire,
+              jp_plain,
+            });
+          }
+        }
       }
       extracted = {
         file_path: path,
