@@ -23,6 +23,40 @@
   },
   "releases": [
     {
+      "version": "2.4.2",
+      "date": "2026-05-23",
+      "headline": "Classroom-lesson audit (936 entries), catalog rewrites, UCC variant paperwork, Christine typo fix",
+      "summary": "A content + integrity release built on top of v2.4.1. Major translation work: a full classroom-lesson terminology audit across 38 msg52 files (936 of 1,020 lesson entries updated against Freedom and Game 1 canon — Headmaster, Witch-teacher, Minister, Part-Time Cat, Melissa, and Vicki lessons); a catalog-descriptions pass that reformatted 237 bug-book and fish-book entries to the catalog's actual 2-line / cap=48 display layout and rewrote 54 against the Japanese source (Yeti not Bigfoot, 300 million years not millennia, the sickle-weasel kamaitachi restoration, etc.); beta-tester edit suggestions (19 location-label and dialog fixes including a stray [SFX_TRIGGER] opcode cleanup in a Halogen price callout); UCC food multi-slot variant translations finally documented in the modern fix-manifest pipeline; and an NPC name typo fix (slot 90 read Crhristine — transposed rh).",
+      "changes": [
+        "Classroom-lesson terminology audit — 936 lesson entries across 38 msg52 files updated against Freedom and Game 1 canon, covering the Headmaster's intro and magic class, the Witch-teacher's classes, the Minister's storefront-setup intro, the Part-Time Cat tutorial, Melissa's shopkeeper lessons, and Vicki's fashion lessons. Cross-cutting terminology shifts: staff magic for ツエまほう, incantation magic for おまじない, lowercase magic ingredients (moondrop, rose dew), Mr. Genzo honorific.",
+        "Catalog descriptions (bug-book + fish-book) reformatted, restored, and JP-faithfully rewritten — 237 entries across msg99060/62/63 rewrapped to the catalog's 2-line / cap=48 display layout, with 54 entries rewritten against the Japanese source. Yuki-otoko corrected to Yeti, cockroach lifespan corrected from 'millennia' to '300 million years', kamaitachi sickle-weasel restored, winged-centipede meaning de-inverted, tuna marked as 'king of sashimi' per the JP.",
+        "Beta-tester edit suggestions applied (19 fixes) — Halogen's, Daisy's Flowers, The Emporium, Vivian's Boutique, Boys'/Girls' Bathroom apostrophe consistency, plus a stray [SFX_TRIGGER:536] opcode removed from a Halogen dialog price callout.",
+        "UCC food multi-slot variant translations — 49 sub-records (Stew, Cream Stew, Beef Stew, Ice Cream, Vanilla Ice Cream, Bread, Red Bean Bun, Choco Bun, Cream Bun, Jam Bun, Cake, Shortcake, Pasta, Carbonara, Napolitan) backfilled into the modern fix-manifest + approval-ledger + sentinel pipeline. No translation values changed; the work shipped in step-119 (2026-05-14) but predated the modern process-integrity rules.",
+        "Christine NPC name binary typo fix — slot 90 read 'Crhristine' (transposed rh) in the shipped NPC name binary; corrected to 'Christine' to match the DB."
+      ],
+      "changelogUrl": "/changelog/v2.4.2/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.4.2-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 14406659,
+          "patchSha256": "8fef47a2de6cccb46e3fa538ccc589ddce93a6852356f5e8413a4b609383bfcc"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.4.2-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3417079,
+          "patchSha256": "7d101774e51977db565eb47c6820cff6ad01a5d048df76c647724d4c9b986dbf"
+        }
+      ],
+      "patchedRomSha256": "9dfd650fabce9692e9d16ba827d82c5381cbfd199f14c99ec4185dfde6d43a65",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 9dfd650f…de6d43a65)."
+    },
+    {
       "version": "2.4.1",
       "date": "2026-05-20",
       "headline": "Overlay translations sweep + recipe-menu category labels",
