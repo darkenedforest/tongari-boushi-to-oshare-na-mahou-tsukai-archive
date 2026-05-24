@@ -415,7 +415,7 @@ export const COLLECTION_BITMAP_SPECS: readonly CollectionBitmapSpec[] = [
     setterAddr: 0x0201b7cc,
     label: null,
     semanticNote:
-      'semantics TBD (2344 bits = 293 bytes — by far the largest in the family). Strong candidate for the global story-event flag table. Pending caller-of-setters trace.',
+      'STRONG-CANDIDATE story-event flag table (2344 bits = 293 bytes — by far the largest in the family). Translation-repo step-365 caller-of-setters trace found 3 external BL callers reaching this bitmap via wrapper 0x0201B808, including an overlay-166 site whose preceding instruction is a string-write of a presumed event-id (consistent with "mark story-event N as completed"). Every other TBD bitmap in this family has zero external callers anywhere in ARM9 or the 180 overlays, so this one is uniquely distinguished as live story-tracking infrastructure.',
   },
 ] as const;
 
