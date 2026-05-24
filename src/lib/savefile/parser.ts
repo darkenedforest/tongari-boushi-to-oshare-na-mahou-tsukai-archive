@@ -15,6 +15,7 @@ import type {
   BankRecord,
   CatalogEntry,
   ChecksumInfo,
+  CollectionBitmap,
   CollectionStatRecord,
   DateTimeInfo,
   EventFlagSummary,
@@ -313,6 +314,111 @@ export const BODY_CSUM_RANGE_LEN = BODY_CSUM_LEN;
  *  via empirical csum verification on 36/36 initialised slots. */
 export const EXTRA0_OFFSET = 0x1cdf0;
 
+// ---------------------------------------------------------------------------
+// Collection-bitmap family (translation-repo notes/savefile_format.md §57)
+// ---------------------------------------------------------------------------
+//
+// Ten same-shape bitmaps packed back-to-back at slot_rel 0x1CDF2..0x1D0BD,
+// all serviced by the bit-set/bit-test primitive at ARM9 0x0201BCB0. Each
+// row below is one bitmap. The first (offset 0x1CDF2, 173 bits) is the
+// clothing+garden inventory whose semantics are fully decoded in §53; the
+// other nine are documented in §57 with width / setter address / Zeno-save
+// bit count but their precise meanings are TBD pending the ARM9
+// caller-of-setters trace (translation-repo step-365).
+//
+// An eleventh setter at ARM9 0x0201B6A8 also uses the same bit primitive
+// but with a base pointing into a separate BSS buffer (*0x020A3D14), so
+// that bitmap is NOT persisted into the save file and is intentionally
+// absent from this table.
+
+export interface CollectionBitmapSpec {
+  offset: number;
+  maxBits: number;
+  setterAddr: number;
+  label: string | null;
+  semanticNote: string;
+}
+
+export const COLLECTION_BITMAP_SPECS: readonly CollectionBitmapSpec[] = [
+  {
+    offset: 0x1cdf2,
+    maxBits: 173,
+    setterAddr: 0x0201b56c,
+    label: 'Clothing + Garden Inventory',
+    semanticNote:
+      '§53 confirmed: item_ids 1000..1139 (clothing) + 2000..2032 (garden decorations). Editable via the Inventory Bag section above.',
+  },
+  {
+    offset: 0x1ce08,
+    maxBits: 12,
+    setterAddr: 0x0201b5d8,
+    label: null,
+    semanticNote: 'semantics TBD (small 12-bit flag bank). Pending caller-of-setters trace (translation-repo step-365).',
+  },
+  {
+    offset: 0x1ce0a,
+    maxBits: 10,
+    setterAddr: 0x0201b60c,
+    label: null,
+    semanticNote: 'semantics TBD (small 10-bit flag bank). Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce0c,
+    maxBits: 20,
+    setterAddr: 0x0201b640,
+    label: null,
+    semanticNote: 'semantics TBD (20-bit flag bank). Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce0f,
+    maxBits: 24,
+    setterAddr: 0x0201b674,
+    label: null,
+    semanticNote:
+      'semantics TBD (24-bit field). Likely magazine-issues-read (fits ~30 issues, width matches the magazine count). Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce12,
+    maxBits: 266,
+    setterAddr: 0x0201b6dc,
+    label: null,
+    semanticNote:
+      'semantics TBD (266 bits). Bitmap A — 99 set in the Zeno reference save, strong fish-or-bug catalog candidate. Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce34,
+    maxBits: 266,
+    setterAddr: 0x0201b718,
+    label: null,
+    semanticNote:
+      'semantics TBD (266 bits). Bitmap B — 0 set in Zeno but same-width sibling of 0x1CE12, likely the other half of the fish-and-bug catalog pair. Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce56,
+    maxBits: 258,
+    setterAddr: 0x0201b754,
+    label: null,
+    semanticNote:
+      'semantics TBD (258 bits). Bitmap C — 162 set in Zeno (densest of the family); candidate "NPCs met" or "items-seen". Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce77,
+    maxBits: 258,
+    setterAddr: 0x0201b790,
+    label: null,
+    semanticNote:
+      'semantics TBD (258 bits). Bitmap D — 3 set in Zeno (sparsest); candidate rare-events / completion-stamps. Pending caller-of-setters trace.',
+  },
+  {
+    offset: 0x1ce98,
+    maxBits: 2344,
+    setterAddr: 0x0201b7cc,
+    label: null,
+    semanticNote:
+      'semantics TBD (2344 bits = 293 bytes — by far the largest in the family). Strong candidate for the global story-event flag table. Pending caller-of-setters trace.',
+  },
+] as const;
+
 /** Length of the extra[0] record AND the RFC1071 csum range over it.
  *  Stored u16 LE at extra[0][0:2] over extra[0][0..0x22F8] with the first
  *  2 bytes zeroed. */
@@ -393,6 +499,59 @@ function popcountBytes(view: Uint8Array): number {
     count += x;
   }
   return count;
+}
+
+/** Read N bits starting at byte offset `offset` from `body` and return
+ *  ONLY the count of set bits in that window, ignoring any trailing
+ *  bits inside the last byte that fall beyond `maxBits`. Used for
+ *  the collection-bitmap family (§57) where adjacent bitmaps share
+ *  the trailing bits of the last byte of their predecessor.
+ *
+ *  Byte width is `ceil(maxBits / 8)`. The final byte's high bits beyond
+ *  the bitmap's own range are masked off before being popcounted, so a
+ *  neighbouring bitmap's bits aren't accidentally attributed to this
+ *  one's population count. */
+export function popcountBitmapWindow(
+  body: Uint8Array,
+  offset: number,
+  maxBits: number,
+): number {
+  if (maxBits <= 0) return 0;
+  const fullBytes = Math.floor(maxBits / 8);
+  const tailBits = maxBits - fullBytes * 8;
+  const end = offset + fullBytes;
+  if (end > body.length) return 0;
+  let count = 0;
+  for (let i = offset; i < end; i++) {
+    let x = body[i];
+    x = x - ((x >> 1) & 0x55);
+    x = (x & 0x33) + ((x >> 2) & 0x33);
+    x = (x + (x >> 4)) & 0x0f;
+    count += x;
+  }
+  if (tailBits > 0 && end < body.length) {
+    const mask = (1 << tailBits) - 1;
+    let x = body[end] & mask;
+    x = x - ((x >> 1) & 0x55);
+    x = (x & 0x33) + ((x >> 2) & 0x33);
+    x = (x + (x >> 4)) & 0x0f;
+    count += x;
+  }
+  return count;
+}
+
+/** Hex-dump of the byte window that holds `maxBits` bits starting at
+ *  `offset`. Always returns the full `ceil(maxBits / 8)` bytes (so the
+ *  diagnostic view shows the same window the population count is
+ *  computed against). */
+function bitmapWindowHex(
+  body: Uint8Array,
+  offset: number,
+  maxBits: number,
+): string {
+  const byteLen = Math.ceil(maxBits / 8);
+  const end = Math.min(offset + byteLen, body.length);
+  return bytesToHex(body.subarray(offset, end));
 }
 
 // ---------------------------------------------------------------------------
@@ -1017,6 +1176,25 @@ function parseWizardLevelCandidate(body: Uint8Array): WizardLevelCandidate {
   };
 }
 
+/** Parse the collection-bitmap family at slot_rel 0x1CDF0
+ *  (translation-repo notes/savefile_format.md §57). Returns one
+ *  {offset, maxBits, populatedBits, rawHex, setterAddr, label,
+ *  semanticNote} record per spec in COLLECTION_BITMAP_SPECS. Read-only
+ *  in the inspector — the only semantically-decoded member of the
+ *  family is the §53 clothing+garden inventory, edited elsewhere via
+ *  the Inventory Bag section. */
+function parseCollectionBitmaps(body: Uint8Array): CollectionBitmap[] {
+  return COLLECTION_BITMAP_SPECS.map(spec => ({
+    offset: spec.offset,
+    maxBits: spec.maxBits,
+    populatedBits: popcountBitmapWindow(body, spec.offset, spec.maxBits),
+    rawHex: bitmapWindowHex(body, spec.offset, spec.maxBits),
+    setterAddr: spec.setterAddr,
+    label: spec.label,
+    semanticNote: spec.semanticNote,
+  }));
+}
+
 // ---------------------------------------------------------------------------
 // Slot parsing
 // ---------------------------------------------------------------------------
@@ -1066,6 +1244,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
         note: 'Slot is uninitialised.',
       },
       friendsMet: [],
+      collectionBitmaps: [],
     };
   }
 
@@ -1131,6 +1310,7 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     townResidents: parseTownResidents(body),
     wizardLevelCandidate: parseWizardLevelCandidate(body),
     friendsMet: parseFriendsMet(body),
+    collectionBitmaps: parseCollectionBitmaps(body),
   };
 }
 
@@ -1667,6 +1847,7 @@ export const REGION_DESCRIPTORS = {
   bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },
   townResidents: { id: 'townResidents', title: 'Town residents (8 slots × 0x22F8)', range: 'body[0x1E0E0:0x2F8A0], 0x22F8-byte stride, max 8 residents; first 16 B per slot = UTF-16 LE NPC name', confidence: 'confirmed' as const },
   friendsMet: { id: 'friendsMet', title: 'Friends met — NPCs encountered / befriended (read-only)', range: 'body[0x500:0x4300], u16 LE stored_value in 500..751 (= npc_data_ofs_id + 500), even-aligned scan', confidence: 'candidate' as const },
+  collectionBitmaps: { id: 'collectionBitmaps', title: 'Collection bitmaps — 10-bitmap family at slot+0x1CDF0 (read-only)', range: 'body[0x1CDF2:0x1D0BD], 459 bytes; ten same-shape bit sets serviced by ARM9 0x0201BCB0', confidence: 'candidate' as const },
   timestamps: { id: 'timestamps', title: 'Last-save + character-create timestamps', range: 'body[0x494] / body[0x4A4]', confidence: 'confirmed' as const },
   game1: { id: 'game1', title: "Game 1 (Magician's Quest / Enchanted Folk) decoder — dormant for Game 3", range: 'file[0x00..0x80000], LaytonLoztew-documented layout', confidence: 'confirmed' as const },
 };

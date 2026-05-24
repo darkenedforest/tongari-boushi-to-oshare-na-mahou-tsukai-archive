@@ -2427,6 +2427,105 @@ function SlotView({
         payloadSha={payloadSha}
       />
 
+      {/* Collection bitmaps — 10-bitmap family at slot+0x1CDF0 surfaced
+          for diagnostics (translation-repo notes/savefile_format.md §57,
+          step-364). Only the first member (0x1CDF2 / 173 bits) has
+          confirmed semantics — that's the §53 clothing+garden inventory
+          and it's editable via the Inventory Bag section above. The
+          other nine are surfaced read-only with their offsets, widths,
+          populated-bit counts, raw hex, and (semantics TBD) labels so
+          users can spot-correlate counts against in-game features while
+          the caller-of-setters trace (step-365) pins their meanings. */}
+      <Section
+        regionId={`${slot.label}-collectionBitmaps`}
+        title={REGION_DESCRIPTORS.collectionBitmaps.title}
+        range={REGION_DESCRIPTORS.collectionBitmaps.range}
+        confidence={REGION_DESCRIPTORS.collectionBitmaps.confidence}
+        parsedSnapshot={`${slot.collectionBitmaps.length} bitmaps; ${slot.collectionBitmaps.reduce((n, b) => n + b.populatedBits, 0)} bits populated across the family`}
+        {...labelArgs}
+      >
+        <p>
+          Ten same-shape collection bitmaps packed back-to-back at{' '}
+          <code>slot+0x1CDF2..0x1D0BD</code> (459 bytes total). All ten
+          are serviced by the bit-set/bit-test primitive at ARM9{' '}
+          <code>0x0201BCB0</code> — each row below is one bitmap and the{' '}
+          <em>setter</em> column is the ARM9 wrapper that owns it.
+        </p>
+        <p className="note-text">
+          Read-only diagnostic view. The first bitmap (<code>0x1CDF2</code>,
+          173 bits) is the §53 Clothing + Garden inventory and is editable
+          via the Inventory Bag section above. The other nine
+          (<em>semantics TBD</em>) are documented in translation-repo{' '}
+          <code>notes/savefile_format.md</code> §57; the caller-of-setters
+          trace (translation-repo step-365) is the work that pins them.
+          An eleventh setter at <code>0x0201B6A8</code> uses the same bit
+          primitive against a separate BSS buffer that is{' '}
+          <em>not</em> mirrored into the save file, so it is intentionally
+          absent from this list.
+        </p>
+        {slot.collectionBitmaps.length === 0 ? (
+          <p className="muted">No bitmap data — slot is uninitialised or too short.</p>
+        ) : (
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Offset</th>
+                <th>Max bits</th>
+                <th>Populated</th>
+                <th>Setter (ARM9)</th>
+                <th>Label / semantic note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slot.collectionBitmaps.map(bm => (
+                <tr key={bm.offset}>
+                  <td>
+                    <code>0x{bm.offset.toString(16).toUpperCase().padStart(5, '0')}</code>
+                  </td>
+                  <td>{bm.maxBits.toLocaleString()}</td>
+                  <td>
+                    <strong>{bm.populatedBits.toLocaleString()}</strong>
+                    <span className="muted"> / {bm.maxBits.toLocaleString()}</span>
+                  </td>
+                  <td>
+                    <code>0x{bm.setterAddr.toString(16).toUpperCase().padStart(8, '0')}</code>
+                  </td>
+                  <td>
+                    {bm.label ? (
+                      <strong>{bm.label}</strong>
+                    ) : (
+                      <span className="muted"><em>semantics TBD</em></span>
+                    )}
+                    <div className="note-text">{bm.semanticNote}</div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <details className="tile-details">
+          <summary>Show raw hex per bitmap (debugging)</summary>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Offset</th>
+                <th>Bytes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slot.collectionBitmaps.map(bm => (
+                <tr key={bm.offset}>
+                  <td>
+                    <code>0x{bm.offset.toString(16).toUpperCase().padStart(5, '0')}</code>
+                  </td>
+                  <td><code className="hex-cell muted">{bm.rawHex}</code></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      </Section>
+
       {/* Garden */}
       <Section
         regionId={`${slot.label}-garden`}

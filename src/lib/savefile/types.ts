@@ -231,6 +231,38 @@ export interface EventFlagSummary {
   previewHex: string;
 }
 
+/** One collection-style bitmap in the family at slot_rel 0x1CDF0
+ *  (translation-repo notes/savefile_format.md §57). All ten bitmaps in
+ *  this family are produced by ARM9 setters that funnel into the
+ *  bounds-checked bit primitive at 0x0201BCB0. Each is a thin wrapper
+ *  with its own (base, max_bits) pair. The first (offset 0x1CDF2, 173
+ *  bits) is the clothing+garden inventory from §53; the other nine are
+ *  same-family bitmaps whose semantics are still TBD pending the
+ *  caller-of-setters trace (step-365). */
+export interface CollectionBitmap {
+  /** Slot-relative body offset where this bitmap's bytes start. */
+  offset: number;
+  /** Max bit count (= argument the ARM9 setter passes to the bit
+   *  primitive). The on-disk byte width is `ceil(maxBits / 8)`. */
+  maxBits: number;
+  /** Population count — number of bits actually set in this slot's
+   *  copy of the bitmap. Diagnostic; useful for spot-identifying which
+   *  bitmap a category likely lives in. */
+  populatedBits: number;
+  /** Hex of the bitmap bytes for the diagnostic raw view. */
+  rawHex: string;
+  /** ARM9 setter function address that owns this bitmap (literal pool
+   *  word found in step-364 trace). Surfaced for debugging only. */
+  setterAddr: number;
+  /** Human-readable label when the semantic is known, or null when it
+   *  is still TBD pending the caller-of-setters trace. */
+  label: string | null;
+  /** Brief note shown in the inspector (e.g. "§53 confirmed",
+   *  "magazines-read candidate"). Always populated; tells the user
+   *  what to do with the row even when `label === null`. */
+  semanticNote: string;
+}
+
 export interface WizardLevelCandidate {
   /** Body offset (= 0x11488 + 0x5a). */
   bodyOffset: number;
@@ -366,6 +398,16 @@ export interface SlotParse {
    *  block (encounter log / friend list / gift log) aren't decoded yet,
    *  so we can't safely add or remove individual entries. */
   friendsMet: FriendMet[];
+
+  /** Collection-bitmap family at slot_rel 0x1CDF0 (translation-repo
+   *  notes/savefile_format.md §57, step-364). Ten same-shape bitmaps
+   *  packed back-to-back, all serviced by the bit primitive at ARM9
+   *  0x0201BCB0. Read-only — the inventory one is bit-by-bit cracked
+   *  in §53 and editable elsewhere via inventoryBag; the other nine
+   *  are surfaced as semantics-TBD diagnostic rows so the family is
+   *  visible in the inspector while the caller-of-setters trace
+   *  (step-365) pins their meanings. */
+  collectionBitmaps: CollectionBitmap[];
 }
 
 // ---------------------------------------------------------------------------
