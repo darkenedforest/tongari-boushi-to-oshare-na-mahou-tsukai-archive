@@ -31,6 +31,23 @@ const MAX_COMMENT = 2000;
 const MAX_AUTHOR = 40;
 const MAX_HARDWARE = 8;
 
+// Patch versions for the bug-report dropdown. Newest first so v2.5 is the
+// default selection for new submissions. Freeform "Other" is handled via
+// the OTHER_VERSION_SENTINEL below.
+const PATCH_VERSIONS = [
+  'v2.5',
+  'v2.4.2',
+  'v2.4.1',
+  'v2.4',
+  'v2.32',
+  'v2.31',
+  'v2.3',
+  'v2.2',
+  'v2.1',
+  'v2.0',
+];
+const OTHER_VERSION_SENTINEL = '__OTHER_VERSION__';
+
 // Hardware options for the bug-report form. Grouped via optgroup so the
 // dropdown stays scannable. Order is rough-chronological within each
 // group. The strings are submitted as-is into the report body.
@@ -291,16 +308,37 @@ function NewReportForm({
           required
         />
       </label>
-      <label className="field">
+      <div className="field">
         <span className="field-label">Patch version (optional)</span>
-        <input
-          type="text"
-          value={patchVersion}
-          onChange={e => setPatchVersion(e.target.value)}
-          placeholder="e.g. v2.4.2 — the version you were running when this happened"
-          maxLength={40}
-        />
-      </label>
+        <div className="hw-row">
+          <select
+            value={patchVersion.startsWith('Other: ') ? OTHER_VERSION_SENTINEL : patchVersion}
+            onChange={e => {
+              const v = e.target.value;
+              if (v === OTHER_VERSION_SENTINEL) setPatchVersion('Other: ');
+              else setPatchVersion(v);
+            }}
+            className="hw-select"
+          >
+            <option value="">— Select version —</option>
+            {PATCH_VERSIONS.map(v => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+            <option value={OTHER_VERSION_SENTINEL}>Other (type your own)…</option>
+          </select>
+          {patchVersion.startsWith('Other: ') && (
+            <input
+              type="text"
+              className="hw-other-input"
+              value={patchVersion.slice('Other: '.length)}
+              placeholder="Type version"
+              maxLength={40}
+              onChange={e => setPatchVersion('Other: ' + e.target.value)}
+              autoFocus
+            />
+          )}
+        </div>
+      </div>
       <div className="field">
         <span className="field-label">Hardware tested on (optional, add more if multiple)</span>
         <div className="hw-list">
