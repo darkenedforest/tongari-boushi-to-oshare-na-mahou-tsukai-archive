@@ -16,11 +16,12 @@ const base = import.meta.env.BASE_URL;
     Tongari Boushi shows dialog in two different shapes. Most NPC conversations
     play in a wide window pinned to the bottom of the dialog screen — the kind
     you'd expect from any DS RPG. But a lot of the game's chatter also pops up
-    in a small floating bubble: cooking verdicts, the rumor system, idle
-    one-liners from NPCs you walk past, talk-topic answers, the food-critic
-    reveal. Same engine, same fonts, very different containers. This page
-    explains how the engine decides which one to draw, and why the bubble
-    version has a real ceiling on how much English text it can hold.
+    in a small floating bubble: idle one-liners from NPCs you walk past,
+    food-critic verdicts, interaction prompts, and certain talk-topic
+    answers depending on the NPC's personality type. Same engine, same
+    fonts, very different containers. This page explains how the engine
+    decides which one to draw, and why the bubble version has a real
+    ceiling on how much English text it can hold.
   </p>
 
   <h2>What is overlay 157?</h2>
@@ -46,60 +47,73 @@ const base = import.meta.env.BASE_URL;
 
   <h2>Bubble vs window — how the engine picks</h2>
   <p>
-    Here's the thing that surprised us when we traced this through: the
-    text itself doesn't choose. The bubble-vs-window decision is made
-    entirely by <em>whatever piece of game logic asked for the dialog</em>,
-    one layer above the renderer. The renderer receives a single
-    selector byte from its caller and obeys it:
+    The text itself doesn't choose its container. The bubble-vs-window
+    decision is made entirely by <em>whatever piece of game logic asked
+    for the dialog</em>, one layer above the renderer. The renderer
+    receives a single selector byte from its caller and obeys it:
   </p>
   <ul>
     <li><strong>Selector = 0</strong> → window. 260 × 138 pixels, pinned
-      to the bottom of the screen. One line of text per page, but plenty
-      of room.</li>
+      to the bottom of the screen. Three lines of text per page, roughly
+      thirty characters each.</li>
     <li><strong>Selector = 1 through 4</strong> → bubble. 128 × 76 pixels,
       floating, with a tail pointing at the speaker. Up to two short
       lines per page.</li>
   </ul>
+
+  <h3>For village residents: personality decides</h3>
   <p>
-    The selector flows down from the system that triggered the dialog. We
-    can list every caller in the game, because there are only nine of them:
+    Each of the 140 village-resident NPCs (the animal villagers who move
+    in and out of your town) has a <strong>personality type</strong> stored
+    in the game's NPC data file. There are 12 personality types (6 male,
+    6 female), and each personality type maps to its own talk-topic
+    overlay — a chunk of game code that handles how that personality's
+    conversations play out.
   </p>
+  <p>
+    Two of those 12 personality types have their talk-topic overlays
+    coded to use <strong>bubble rendering</strong> for their dialog.
+    The other ten use windows. So which shape you see when you chat with
+    a villager depends on who they are — specifically, on their
+    personality type. You can't change it and the text file doesn't
+    control it.
+  </p>
+
+  <h3>For special characters and objects: separate paths</h3>
+  <p>
+    The game's NPC data file also has sections for special/staff NPCs
+    (the principal, teachers, shopkeepers, mail carriers), supernatural
+    characters (ghosts, gremlins, will-o'-wisps), and legendary creatures
+    (Nessie, Unicorn, Dragon, etc.). These characters don't go through
+    the personality-based overlay dispatch that villagers use — they have
+    their own dialog paths. The rendering mode for their conversations is
+    determined by whichever game system triggers their dialog.
+  </p>
+
+  <h3>For onemsg floating tips: always bubbles</h3>
+  <p>
+    The <code>data/onemsg/*.ofs</code> files — the short one-liners NPCs
+    say as you walk past them — always render as floating bubbles. They
+    enter the engine through a dedicated bubble wrapper that hardcodes
+    selector = 4. There is no way for an onemsg entry to render as a
+    window.
+  </p>
+
+  <h3>Other known bubble paths</h3>
   <table>
     <thead>
       <tr><th>What triggered the dialog</th><th>Result</th></tr>
     </thead>
     <tbody>
       <tr><td>Standard NPC conversation (the usual "talk to someone" flow)</td><td>Window</td></tr>
-      <tr><td>The cooking minigame's recipe / result dialog</td><td>Window</td></tr>
-      <tr><td>The "Suggested" talk-topic menu (the menu itself)</td><td>Window</td></tr>
-      <tr><td>Rumor playback ("did you hear about so-and-so?")</td><td>Bubble</td></tr>
-      <tr><td>Other talk-topic answers (the actual NPC reply to the topic)</td><td>Bubble</td></tr>
-      <tr><td>Interaction prompts (the small confirm bubbles)</td><td>Bubble</td></tr>
+      <tr><td>Talk-topic answers from bubble-personality villagers</td><td>Bubble</td></tr>
+      <tr><td>Talk-topic answers from other villagers</td><td>Window</td></tr>
+      <tr><td>Interaction prompts (small confirm bubbles)</td><td>Bubble</td></tr>
       <tr><td>Event confirms (e.g. the "you got an item" pop)</td><td>Bubble</td></tr>
-      <tr><td>Onemsg floating tips (the short pop-ups NPCs give as you walk by)</td><td>Bubble</td></tr>
+      <tr><td>Onemsg floating tips (NPCs you walk past)</td><td>Bubble</td></tr>
       <tr><td>Food-critic verdicts (the reveal bubble at the end of judging)</td><td>Bubble</td></tr>
     </tbody>
   </table>
-
-  <h3>One wrinkle: mid-dialog style flips</h3>
-  <p>
-    There's one observed quirk worth flagging. A single message entry is
-    allowed to flip styles from one page to the next. The classic
-    example lives at <code>data/message/msg52/05/msg52054.ofs</code>,
-    textblock 84: pages 1 and 4 render as windows, but pages 2 and 3
-    render as bubbles. Same entry, four pages, two different shapes.
-  </p>
-  <p>
-    In that specific case pages 2 and 3 are the speaker's ellipsis-only
-    "reacting silently" pages, and the engine deliberately shows them as
-    small floating bubbles to give them the right in-world feel. The
-    next page, which has actual words, flips back to the window. So the
-    behavior is structural, not a bug — but the exact trigger mechanism
-    (what tells the engine "render <em>this</em> page as a bubble even
-    though the surrounding entry is a window") is still being verified.
-    If you spot other entries that do this, that's expected; the
-    rendering is intentional.
-  </p>
 
   <h2>The 32-character bubble cap</h2>
   <p>
