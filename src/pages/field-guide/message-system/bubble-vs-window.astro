@@ -1,0 +1,187 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Bubble vs window — the dialogue page renderer"
+  description="Why some lines pop up in a floating bubble and others fill the bottom dialog box, and the empirical 32-character-per-page cap that bubble text has to fit inside."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Message System', href: `${base}/field-guide/message-system/` },
+    { label: 'Bubble vs window' },
+  ]}
+>
+  <p>
+    Tongari Boushi shows dialog in two different shapes. Most NPC conversations
+    play in a wide window pinned to the bottom of the dialog screen — the kind
+    you'd expect from any DS RPG. But a lot of the game's chatter also pops up
+    in a small floating bubble: cooking verdicts, the rumor system, idle
+    one-liners from NPCs you walk past, talk-topic answers, the food-critic
+    reveal. Same engine, same fonts, very different containers. This page
+    explains how the engine decides which one to draw, and why the bubble
+    version has a real ceiling on how much English text it can hold.
+  </p>
+
+  <h2>What is overlay 157?</h2>
+  <p>
+    Overlay 157 is the <strong>dialogue page renderer</strong>. Every on-screen
+    text bubble and every bottom-dialog text window the player sees in
+    conversation is built by code inside this overlay — it lays out lines,
+    runs the typewriter animation, picks colors, draws the bubble shape or
+    the window border, and tells the sprite hardware where to put each glyph.
+    A handful of other game systems live inside the same overlay too (most
+    notably the <em>rumor</em> system, the one where you can ask an NPC for
+    gossip about another NPC), but the bulk of what ov157 does, every time
+    a dialog runs, is render text.
+  </p>
+  <p>
+    Like all overlays, ov157 gets swapped into a shared RAM slot when it's
+    needed and unloaded when it isn't. See
+    <a href={`${base}/field-guide/how-the-game-works/overlay-knowledgebase/`}>the
+    overlay knowledgebase</a> for the general shape of how overlays load. For
+    the byte-level wire format ov157 reads from, see
+    <a href={`${base}/field-guide/message-system/wire-format/`}>the MSG wire format</a>.
+  </p>
+
+  <h2>Bubble vs window — how the engine picks</h2>
+  <p>
+    Here's the thing that surprised us when we traced this through: the
+    text itself doesn't choose. The bubble-vs-window decision is made
+    entirely by <em>whatever piece of game logic asked for the dialog</em>,
+    one layer above the renderer. The renderer receives a single
+    selector byte from its caller and obeys it:
+  </p>
+  <ul>
+    <li><strong>Selector = 0</strong> → window. 260 × 138 pixels, pinned
+      to the bottom of the screen. One line of text per page, but plenty
+      of room.</li>
+    <li><strong>Selector = 1 through 4</strong> → bubble. 128 × 76 pixels,
+      floating, with a tail pointing at the speaker. Up to two short
+      lines per page.</li>
+  </ul>
+  <p>
+    The selector flows down from the system that triggered the dialog. We
+    can list every caller in the game, because there are only nine of them:
+  </p>
+  <table>
+    <thead>
+      <tr><th>What triggered the dialog</th><th>Result</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Standard NPC conversation (the usual "talk to someone" flow)</td><td>Window</td></tr>
+      <tr><td>The cooking minigame's recipe / result dialog</td><td>Window</td></tr>
+      <tr><td>The "Suggested" talk-topic menu (the menu itself)</td><td>Window</td></tr>
+      <tr><td>Rumor playback ("did you hear about so-and-so?")</td><td>Bubble</td></tr>
+      <tr><td>Other talk-topic answers (the actual NPC reply to the topic)</td><td>Bubble</td></tr>
+      <tr><td>Interaction prompts (the small confirm bubbles)</td><td>Bubble</td></tr>
+      <tr><td>Event confirms (e.g. the "you got an item" pop)</td><td>Bubble</td></tr>
+      <tr><td>Onemsg floating tips (the short pop-ups NPCs give as you walk by)</td><td>Bubble</td></tr>
+      <tr><td>Food-critic verdicts (the reveal bubble at the end of judging)</td><td>Bubble</td></tr>
+    </tbody>
+  </table>
+
+  <h3>One wrinkle: mid-dialog style flips</h3>
+  <p>
+    There's one observed quirk worth flagging. A single message entry is
+    allowed to flip styles from one page to the next. The classic
+    example lives at <code>data/message/msg52/05/msg52054.ofs</code>,
+    textblock 84: pages 1 and 4 render as windows, but pages 2 and 3
+    render as bubbles. Same entry, four pages, two different shapes.
+  </p>
+  <p>
+    In that specific case pages 2 and 3 are the speaker's ellipsis-only
+    "reacting silently" pages, and the engine deliberately shows them as
+    small floating bubbles to give them the right in-world feel. The
+    next page, which has actual words, flips back to the window. So the
+    behavior is structural, not a bug — but the exact trigger mechanism
+    (what tells the engine "render <em>this</em> page as a bubble even
+    though the surrounding entry is a window") is still being verified.
+    If you spot other entries that do this, that's expected; the
+    rendering is intentional.
+  </p>
+
+  <h2>The 32-character bubble cap</h2>
+  <p>
+    The window path has plenty of room — three lines of roughly thirty
+    characters each. The bubble path is the tight one, and the bubble
+    cap turned out to be one of those translation-side traps that's
+    easy to miss until your text starts clipping.
+  </p>
+  <p>
+    Empirically, a single bubble page fits about <strong>32 visible
+    characters</strong>, across up to two short lines. We derived that
+    number two different ways and they landed on the same answer:
+  </p>
+  <h3>From the data: 15,083 onemsg phrase segments</h3>
+  <p>
+    The <code>data/onemsg/*.ofs</code> files hold all the floating-tip
+    bubble text (the short things NPCs say as you walk past them). When
+    we scanned every visible-character length across all 5,749 entries
+    in those files — 15,083 distinct bubble-page segments after splitting
+    on page breaks — the distribution had a hard cliff:
+  </p>
+  <pre><code>{`length (chars)  count
+    0 -  4      6095
+    5 -  9      1506
+   10 - 14      2010
+   15 - 19      2342
+   20 - 24      1972
+   25 - 29      1033
+   30 - 34       125
+   35+             0`}</code></pre>
+  <p>
+    Zero segments above 33 characters. Across more than fifteen thousand
+    samples. That's the kind of distribution you get when the people who
+    wrote the original Japanese were sizing to a real engine ceiling,
+    not just a stylistic preference.
+  </p>
+  <h3>From the engine: the per-style record at 0x021c336e</h3>
+  <p>
+    Independently, we read the renderer's own style record out of ov157.
+    The bubble's inner text-bounding-box width is 76 pixels (the window's
+    is 117), and the font is a 16-pixel proportional font that averages
+    about 4.5 pixels per character for typical mixed lowercase Latin
+    prose. Two lines per page. That works out to:
+  </p>
+  <pre><code>{`76 px width ÷ ~4.5 px per char ≈ 16-17 chars per line
+2 lines per page                ≈ 32-34 chars per page`}</code></pre>
+  <p>
+    Which lines up exactly with the empirical cliff. Bubble pages with
+    a lot of wide glyphs (heavy on <code>m</code>, <code>w</code>,
+    <code>W</code>, capital letters) will clip a bit sooner, around 28
+    chars; pages full of thin glyphs (<code>i</code>, <code>l</code>,
+    punctuation) can squeeze closer to 36 before they bind. For
+    everyday English we treat <strong>32 characters per page</strong> as
+    the safe practical cap, with the 28-32 range flagged as a soft
+    warning zone for wide-glyph content.
+  </p>
+
+  <h2>Why this matters for players</h2>
+  <p>
+    If you spot a bubble where text gets cut off, runs off the bubble
+    border, or simply ends mid-word with no continuation — that's almost
+    certainly a translation overflow against this 32-character cap. The
+    English version of a line that fit comfortably in Japanese can easily
+    blow past the limit, because Japanese packs more visible meaning per
+    glyph than English does.
+  </p>
+  <p>
+    These cases are real, fixable bugs, and the fix is to rewrite the
+    English line to fit. If you see one, please drop a note via the
+    <a href={`${base}/bug-reports/`}>bug-reports board</a>, ideally with
+    the location (what NPC, what activity, what they were talking about)
+    and a screenshot or short description of what was clipped. The
+    bubble-cap discovery directly drove a sweep of overflow fixes in
+    the v2.4.x patch line, and players catching ones we missed is how
+    the long tail gets cleaned up.
+  </p>
+
+  <h2>Related</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/message-system/`}>Message system overview</a> — wire format, opcode catalog, shared payloads.</li>
+    <li><a href={`${base}/field-guide/message-system/wire-format/`}>MSG wire format</a> — the byte stream ov157 reads from.</li>
+    <li><a href={`${base}/field-guide/how-the-game-works/overlay-knowledgebase/`}>Overlay knowledgebase</a> — how overlays load and swap in the first place.</li>
+    <li><a href={`${base}/field-guide/how-the-game-works/overlays/`}>Per-overlay catalog</a> — the full list, including ov157's detail page.</li>
+  </ul>
+</FieldGuideLayout>
