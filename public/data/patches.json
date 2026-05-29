@@ -31,15 +31,11 @@
         "Goblin Shark donation crash fixed — bubble text overflow in the fish encyclopedia verdict (entry 76, page 2 was 38 chars vs 32-char bubble cap). Rewrote to fit: 'Oh, this is wonderful! So utterly delicious!'",
         "Crafting quality table completely rewritten (msg99047) — 144 of 468 English segments exceeded the engine's 12-character buffer limit, any of which could crash the game on real hardware. 24 entries rewritten across quality adjectives, shine/vibes/style descriptors, tone descriptors, rhythm descriptors, placeholder delimiters, and product names.",
         "Mistranslation fix: ねいろ (tone/timbre) was mistranslated as 'color' in all 12 crafting tone-descriptor segments. Corrected to 'Joyful Tone', 'Dreamy Tone', 'Calming Tone', etc.",
-        "Five crafted item names unified across the game: Prank Quill (was Prank Pen / Prank Feather Pen / Prankster Pen), Lure Bouquet (was Invitation Bouquet), Charm Aroma (was Enchanting Aroma / Alluring Scent), Sereni-Tea (was Tranquili-Tea), Chic Clothes (was Stylish Clothes / Cool clothes).",
+        "Five crafted item names unified across the game: Prank Quill (was Prank Pen / Prank Feather Pen / Prankster Pen), Lure Bouquet (was Invitation Bouquet / Date Bouquet), Charm Aroma (was Enchanting Aroma / Alluring Scent / Alluring Aroma), Sereni-Tea (was Tranquili-Tea / Tranquility Tea / Relaxation Tea / Calming Tea), Chic Clothes (was Stylish Clothes / Cool clothes / Trendy clothes). 50 entries + 2 ucc_names slots updated across classroom lessons, recipe labels, Part-Time Cat crafting lines, category labels, fairy dialog, and lookup tables.",
         "Malila part-time payment text fixed — the line read 'This is your payment! Ritch.' with the amount missing; now reads 'This is your payment! 100 Ritch. Keep it safe, okay?'",
         "Shop name 'Very's' corrected to 'Berry's' in three dialog rows (ベリーズ was mistranslated as 'Very's').",
-        "Magic-input NPC label 'Shammy' corrected to 'Jamie' at inputmagic/msg.ofs entry 637 (npc_id 1137, JP シャミー).",
-        "Fungi Forest habitat dropdown label restored from a broken full sentence back to the short label form matching the JP source キノコの森.",
-        "Bubble text budget reclassification — 5,822 rows tagged with correct 32-char bubble cap (internal metadata only, no visible text changes).",
-        "Field guide updated with bubble vs window rendering findings from overlay 157 investigation.",
-        "Same-day fix: magic_glyphs table updated for 'Shammy' → 'Jamie' (the initial build read from the wrong source table).",
-        "Same-day fix: 14 additional item name occurrences corrected — variant spellings in classroom lessons, Part-Time Cat dialogs, category labels, and the ucc_names crafting table that the original unification pass missed (Tranquility Tea, Relaxation Tea, Calming Tea, Date Bouquet, Alluring Aroma, Trendy clothes, cool clothes)."
+        "Magic-input NPC label 'Shammy' corrected to 'Jamie' in both the entries table and the magic_glyphs table (npc_id 1137, JP シャミー).",
+        "Fungi Forest habitat dropdown label restored from a broken full sentence back to the short label form matching the JP source キノコの森."
       ],
       "changelogUrl": "/changelog/v2.5/",
       "downloads": [
