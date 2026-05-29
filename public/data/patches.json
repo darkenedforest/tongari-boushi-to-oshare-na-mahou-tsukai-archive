@@ -46,20 +46,20 @@
           "url": "/patches/tongari-boushi-en-v2.5-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
-          "patchSizeBytes": 15112570,
-          "patchSha256": "fbfec585b90ad9d7f28b121672e0cf33c572f72dade832e26f9998e61b46f594"
+          "patchSizeBytes": 15112138,
+          "patchSha256": "d2d5e3c227e986b37ae66da66fcdae5f0ef11c5c0c280077419b6d8dfe604da0"
         },
         {
           "label": "Rev 1",
           "url": "/patches/tongari-boushi-en-v2.5-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
-          "patchSizeBytes": 3970391,
-          "patchSha256": "a8a60fde4b75fa13f588f9e2ffc1c1d3b2e039fb13aac09d57d831a2f38570a9"
+          "patchSizeBytes": 3970398,
+          "patchSha256": "5b5f6d5638b28434fc7ef83abaa7f8a1e1e3adea30a65002a4aaaaeb147cb1d7"
         }
       ],
-      "patchedRomSha256": "2644e63b68cf7fcde7cf6a6449bbb9bac9567159d657ce599784f863546cfd4d",
-      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 2644e63b…546cfd4d)."
+      "patchedRomSha256": "805452f9858a1c04ff4bc9215717342361a6c4e7251f646e74864874e3b08ee2",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 805452f9…e3b08ee2)."
     },
     {
       "version": "2.4.2",
