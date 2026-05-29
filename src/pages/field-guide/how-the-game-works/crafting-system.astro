@@ -1,0 +1,176 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Crafting and items"
+  description="How the game stores crafted products, quality descriptions, recipe data, and the item icon pipeline."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'Crafting and items' },
+  ]}
+>
+  <h2>Item icons</h2>
+  <p>
+    The game's 656 item icons live in a single file:
+    <code>data/item/itemicon.ofs</code>. Each icon is a 32x32 pixel sprite.
+    The runtime mapping from item ID to icon index was found in the ARM9
+    binary at function <code>FUN_02052c54</code>. The formula is
+    <code>entry[+2] &amp; 0x7ff</code>, which extracts the icon index from
+    the item database entry. The global palette for item icons comes from
+    <code>global.lzs</code>.
+  </p>
+
+  <h2>Crafting product names (ucc_names)</h2>
+  <p>
+    Crafted products have their display names stored in a separate database
+    table called <code>ucc_names</code>. This table maps a slot number to an
+    English product name. It is separate from the main dialog entries table --
+    the crafting UI reads product names from <code>ucc_names</code> rather
+    than from message files.
+  </p>
+  <p>Key slots identified:</p>
+  <table>
+    <thead><tr><th>Slot</th><th>JP source</th><th>English name</th></tr></thead>
+    <tbody>
+      <tr><td>50</td><td>おさそいブーケ</td><td>Lure Bouquet</td></tr>
+      <tr><td>51</td><td>やすらぎティー</td><td>Sereni-Tea</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The <code>ucc_names</code> table feeds the crafting product display in
+    shops, inventory, and the Part-Time Cat crafting dialog.
+  </p>
+
+  <h2>Quality description table (msg99047)</h2>
+  <p>
+    <code>message/msg99/04/msg99047.ofs</code> is a crafting-quality
+    description lookup table, not regular dialog. Each entry contains exactly
+    12 NUL-separated segments (one per quality tier). The game's renderer
+    reads each segment into a fixed-size buffer when displaying a crafted
+    item's quality description.
+  </p>
+  <p>
+    The Japanese source text never exceeds 12 characters per segment across
+    all 468 segments (24 entries, each with roughly 12--20 segments). This
+    establishes an empirical 12-character-per-segment cap for this surface.
+  </p>
+
+  <h3>Entry layout</h3>
+  <table>
+    <thead><tr><th>Entries</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>0--2, 15--16, 27</td><td>Placeholder ellipsis segments (twelve repetitions of a filled-ellipsis glyph, NUL-separated)</td></tr>
+      <tr><td>3--6</td><td>Quality adjectives (Normal, Pretty, Dazzling, Mysterious)</td></tr>
+      <tr><td>7--14</td><td>Descriptors (shine, vibes, style, etc.) -- 12 segments each, covering quality tiers from lowest to highest</td></tr>
+      <tr><td>17</td><td>Tone / timbre descriptors (musical quality -- JP ねいろ)</td></tr>
+      <tr><td>18</td><td>Rhythm descriptors</td></tr>
+      <tr><td>22--25</td><td>Product names (must also fit within 12 characters)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    This is the surface that crashed the game when English segments exceeded
+    the buffer size. Entries like "a sparkly-bright shine" (21 characters) or
+    "Tummy-rumbling rhythm" (21 characters) overflowed the 12-character buffer
+    on real hardware.
+  </p>
+
+  <h2>Recipe data files</h2>
+  <p>
+    Three files under <code>data/recipe/</code> hold the crafting recipe
+    database:
+  </p>
+  <table>
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>recipedata.lzs</code></td>
+        <td>RESC v3.11 container. Holds the recipe ingredient lists, success
+        conditions, and output product mappings. The RESC format uses 48-byte
+        TOC entries with reversed-ASCII names and string deduplication.</td>
+      </tr>
+      <tr>
+        <td><code>recipemsg.lzs</code></td>
+        <td>Recipe narration strings. 87 unique narration strings, heavily
+        reused via pointer deduplication. These are the step-by-step text
+        shown during the crafting minigame.</td>
+      </tr>
+      <tr>
+        <td><code>mgcinfo.lzs</code></td>
+        <td>Magic info lookup. Binary item_id lookup table for magic-related
+        crafting.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Category labels (msg99138)</h2>
+  <p>
+    <code>message/msg99/13/msg99138.ofs</code> contains category labels for
+    the crafting product browser. Entries like "Sereni-Tea, etc." and "Chic
+    Clothes, etc." appear here as short labels for product categories.
+  </p>
+
+  <h2>The Part-Time Cat</h2>
+  <p>
+    The Part-Time Cat is the NPC that handles all crafting interactions. Its
+    dialog lives in <code>message/msg32/10/msg32108.ofs</code>. When the
+    player brings materials, the cat announces what it will make (for example,
+    "With these ingredients, I'll make a yummy Sereni-Tea, nya!"). These lines
+    reference crafted product names and must stay consistent with the
+    <code>ucc_names</code> table.
+  </p>
+
+  <h2>Classroom lessons</h2>
+  <p>
+    Crafting recipes are taught in classroom lessons stored in
+    <code>message/msg52/06/msg52063.ofs</code> (bouquet recipes) and
+    <code>message/msg52/06/msg52064.ofs</code> (tea and aroma recipes). Each
+    lesson entry contains multi-page instructions explaining how to craft a
+    specific product. Product names in these lessons must match the canonical
+    names in <code>ucc_names</code> and <code>msg99047</code>.
+  </p>
+
+  <h2>UCC asset files</h2>
+  <p>
+    The <code>data/ucc/</code> directory (27+ files plus subdirectories) holds
+    the 2D sprites and UI resources for the crafting interface:
+  </p>
+  <table>
+    <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>ucc/act/</code></td><td>Per-action crafting animation sprites (SZL-packed in .ofs containers)</td></tr>
+      <tr><td><code>ucc/brush/</code></td><td>Paint brush tool UI</td></tr>
+      <tr><td><code>ucc/dishup/</code></td><td>Cooking / dish-up interface</td></tr>
+      <tr><td><code>ucc/uccact_txt.ofs</code></td><td>Crafting action text sprites (17 SZL entries)</td></tr>
+      <tr><td><code>ucc/uccact_gra.ofs</code></td><td>Crafting action graphic sprites (16 SZL entries)</td></tr>
+      <tr><td><code>uccchtype.uctp</code></td><td>Crafting type table (purpose partially decoded)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Item name consistency</h2>
+  <p>
+    A single crafted item can appear in five or more different places across
+    the game's data: the <code>ucc_names</code> table, <code>msg99047</code>
+    quality descriptions, <code>msg99138</code> category labels, Part-Time Cat
+    dialog (<code>msg32108</code>), classroom lessons
+    (<code>msg52063</code>/<code>msg52064</code>), and sometimes the magic
+    glyph keyboard. All of these must use the same canonical English name.
+    Drift between surfaces causes player confusion -- for example,
+    "Invitation Bouquet" in one place versus "Lure Bouquet" in another for
+    the same JP item おさそいブーケ.
+  </p>
+
+  <h2>Source</h2>
+  <ul>
+    <li><code>data/item/itemicon.ofs</code> -- 656 item icons, 32x32 each</li>
+    <li><code>data/recipe/</code> -- recipe database (recipedata, recipemsg, mgcinfo)</li>
+    <li><code>data/ucc/</code> -- crafting UI sprites and assets</li>
+    <li><code>message/msg99/04/msg99047.ofs</code> -- quality description lookup table</li>
+    <li><code>message/msg99/13/msg99138.ofs</code> -- category labels</li>
+    <li><code>message/msg32/10/msg32108.ofs</code> -- Part-Time Cat dialog</li>
+    <li><code>message/msg52/06/msg52063.ofs</code>, <code>msg52064.ofs</code> -- classroom crafting lessons</li>
+    <li>ARM9 function <code>FUN_02052c54</code> -- item icon index extraction</li>
+  </ul>
+</FieldGuideLayout>

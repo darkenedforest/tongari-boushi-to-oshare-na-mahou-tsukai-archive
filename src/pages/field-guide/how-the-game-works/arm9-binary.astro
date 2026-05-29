@@ -1,0 +1,327 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="ARM9 binary"
+  description="The main game executable — 723 KB of persistent engine code that drives overlays, loads assets, and manages every game system."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'ARM9 binary' },
+  ]}
+>
+  <h2>Overview</h2>
+  <p>
+    arm9.bin is the persistent main executable. It loads at boot and stays
+    resident for the entire game session — unlike overlays, which swap in
+    and out of shared RAM slots as the player moves between game modes.
+    Every overlay calls into arm9 for shared services: asset loading,
+    sprite rendering, input polling, sound, dialog parsing, save data
+    access.
+  </p>
+  <p>
+    The binary is BLZ-compressed on the ROM cartridge: 564,500 bytes
+    compressed, 723,044 bytes decompressed. The BLZ footer sits just
+    before the trailing NDS module signature bytes
+    (<code>21 06 C0 DE</code> / <code>21 06 AE D5</code>), not at the
+    very end of the file. This detail matters — generic BLZ decompression
+    tools that look for the footer at EOF will fail.
+  </p>
+
+  <h2>Memory layout</h2>
+  <p>
+    The decompressed arm9 loads at address <code>0x02000000</code>.
+    Ghidra auto-analysis identified approximately 5,005 functions.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Address range</th><th>Size</th><th>Content</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x02000000</code>&ndash;<code>0x020001FF</code></td>
+        <td>512 B</td>
+        <td>NDS vector table + startup stubs</td>
+      </tr>
+      <tr>
+        <td><code>0x02000200</code>&ndash;<code>0x0209FFFF</code></td>
+        <td>~640 KB</td>
+        <td>Code (THUMB/ARM functions)</td>
+      </tr>
+      <tr>
+        <td><code>0x020A0000</code>&ndash;<code>0x020AA73F</code></td>
+        <td>~42 KB</td>
+        <td>Read-only data tables, constant pools, string literals</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>Notable fixed addresses within the data region:</p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Structure</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x020AA740</code></td>
+        <td>Master content-cache table (712 references)</td>
+      </tr>
+      <tr>
+        <td><code>0x020A9000</code></td>
+        <td>Global input state struct (key state, touch position)</td>
+      </tr>
+      <tr>
+        <td><code>0x020B6CA8</code></td>
+        <td>Primary sprite-cache struct</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Key subsystems</h2>
+  <p>
+    The following major subsystems have been identified through Ghidra
+    reverse engineering.
+  </p>
+
+  <h3>Content cache (asset loader)</h3>
+  <p>
+    The central asset-loading system. A master table at
+    <code>0x020AA740</code> holds 712 references. The generic loader
+    function at <code>FUN_02009894</code> takes:
+    <code>(loader_context, path_string, sub_index, max_size, flags,
+    type_code, ...)</code>.
+  </p>
+  <p>
+    The path string region spans approximately 28 KB of arm9 data space
+    and contains 131 unique path strings like
+    <code>"item/itemicon.ofs"</code>,
+    <code>"2d/audition.lzs"</code>,
+    <code>"npc/NpcData.lzs"</code>. The engine resolves these strings to
+    FAT file IDs at runtime. 16 named asset-loader wrapper functions have
+    been identified in arm9, each specialized for a specific content type
+    (item icons, UCC materials, recipes, etc.).
+  </p>
+  <p>
+    See the <a href={`${base}/field-guide/how-the-game-works/content-cache/`}>content cache</a>
+    page for the full loader call-site catalog and entry layout.
+  </p>
+
+  <h3>Sprite rendering pipeline</h3>
+  <p>
+    The OAM (Object Attribute Memory) sprite pipeline runs through arm9.
+    It manages a shadow-OAM buffer, flushes it to hardware via DMA during
+    the vertical blank, and allocates/frees sprite slots.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x0201F12C</code></td>
+        <td>Sprite constructor (primary cache at <code>0x020B6CA8</code>)</td>
+      </tr>
+      <tr>
+        <td><code>0x0201C3A0</code></td>
+        <td>Sprite constructor (alternate cache)</td>
+      </tr>
+      <tr>
+        <td><code>0x020769C0</code></td>
+        <td>OAM flush to main screen</td>
+      </tr>
+      <tr>
+        <td><code>0x02076A00</code></td>
+        <td>OAM flush to sub screen</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Input system</h3>
+  <p>
+    Hardware key state and touch-screen input are managed by a global
+    struct at <code>0x020A9000</code>. Overlays read from this struct via
+    accessor functions rather than polling hardware directly.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0x02006488</code></td><td>Get touch X</td></tr>
+      <tr><td><code>0x02006494</code></td><td>Get touch Y</td></tr>
+      <tr><td><code>0x0200650C</code></td><td>Get touch pressed state</td></tr>
+      <tr><td><code>0x02006DE4</code></td><td>Test key edge-pressed (bitmask)</td></tr>
+      <tr><td><code>0x02006DFC</code></td><td>Test key edge-released</td></tr>
+      <tr><td><code>0x02006D7C</code></td><td>Test key held</td></tr>
+    </tbody>
+  </table>
+  <p>Standard key bitmasks:</p>
+  <table>
+    <thead>
+      <tr><th>Key</th><th>Bit</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>A</td><td><code>0x01</code></td></tr>
+      <tr><td>B</td><td><code>0x02</code></td></tr>
+      <tr><td>SELECT</td><td><code>0x04</code></td></tr>
+      <tr><td>START</td><td><code>0x08</code></td></tr>
+      <tr><td>RIGHT</td><td><code>0x10</code></td></tr>
+      <tr><td>LEFT</td><td><code>0x20</code></td></tr>
+      <tr><td>UP</td><td><code>0x40</code></td></tr>
+      <tr><td>DOWN</td><td><code>0x80</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Sound manager</h3>
+  <p>A singleton manages all audio playback.</p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0x0202BC88</code></td><td>Get sound manager instance</td></tr>
+      <tr><td><code>0x0202BF90</code></td><td>Load sound bank (category, bank_id)</td></tr>
+      <tr><td><code>0x0202BFE8</code></td><td>Poll bank load complete</td></tr>
+      <tr><td><code>0x0202C028</code></td><td>Play/sustain sound</td></tr>
+      <tr><td><code>0x0202C074</code></td><td>Get playback parameter</td></tr>
+      <tr><td><code>0x02085AE8</code></td><td>Play SFX by ID (thin wrapper)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Scene manager</h3>
+  <p>
+    Manages overlay loading and scene transitions. Each overlay's scene
+    vtable (typically 6 entries: init, update, draw_bg, draw_obj, destroy,
+    free) is called by the scene manager's per-frame dispatch loop.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x02018698</code></td>
+        <td>Register scene-exit slot (slot_id, owner, flag)</td>
+      </tr>
+      <tr>
+        <td><code>0x02003CC0</code></td>
+        <td>Poll "renderer fully released"</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Dialog system</h3>
+  <p>
+    The dialog parser and dispatch live primarily in arm9, with rendering
+    delegated to ov157.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x02066C58</code></td>
+        <td>Universal dialog parser entry — calls ov157's <code>dialogue_renderer_init_canonical()</code></td>
+      </tr>
+      <tr>
+        <td><code>0x02049CB8</code></td>
+        <td>Dialog record iterator init</td>
+      </tr>
+      <tr>
+        <td><code>0x02049D1C</code></td>
+        <td>Bind iterator to data buffer</td>
+      </tr>
+      <tr>
+        <td><code>0x02049D5C</code></td>
+        <td>Get record count</td>
+      </tr>
+      <tr>
+        <td><code>0x02049D6C</code></td>
+        <td>Get record by index (returns base + idx x 28 bytes)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Wallet / save data</h3>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0x0201B95C</code></td><td>Get wallet struct pointer</td></tr>
+      <tr><td><code>0x020451E8</code></td><td>Get wallet cash (clamped to 999,999)</td></tr>
+      <tr><td><code>0x020451D8</code></td><td>Set wallet cash</td></tr>
+      <tr><td><code>0x020451A0</code></td><td>Get bank balance (clamped to 9,999,999)</td></tr>
+      <tr><td><code>0x02045190</code></td><td>Set bank balance</td></tr>
+    </tbody>
+  </table>
+
+  <h3>NPC data access</h3>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0x0201B21C</code></td><td>Get NPC record by index (stride 196 bytes, save-buffer-B)</td></tr>
+      <tr><td><code>0x0201B560</code></td><td>Query NPC friendship/role stride</td></tr>
+      <tr><td><code>0x02199D70</code></td><td>Test "is NPC present?"</td></tr>
+      <tr><td><code>0x0219E12C</code></td><td>Query "does NPC know spell at tier N?"</td></tr>
+      <tr><td><code>0x0201A364</code></td><td>Get spell weight for card selection</td></tr>
+    </tbody>
+  </table>
+
+  <h3>RNG</h3>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x01FF8E00</code></td>
+        <td>Uniform random(lo, hi) — returns integer in [lo, hi)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Math intrinsics</h3>
+  <table>
+    <thead>
+      <tr><th>Address</th><th>Function</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x02002194</code></td>
+        <td>Signed 32-bit divmod (quotient in r0, remainder in r1)</td>
+      </tr>
+      <tr>
+        <td><code>0x020023A0</code></td>
+        <td>Unsigned 32-bit divmod</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Content-ID lookup tables</h2>
+  <p>
+    arm9 contains five 9-byte (key, file_id) lookup tables that the
+    engine uses to resolve content IDs to ROM file IDs. The largest table
+    at offset <code>0x7EE5F</code> has 180 records covering 14 different
+    top-level folders.
+  </p>
+
+  <h2>Editing arm9</h2>
+  <p>
+    The ARM9 binary can be edited in-place if the edit stays within the
+    same byte count. The BLZ compression can be removed (the NDS loader
+    handles uncompressed arm9 if the module-params are zeroed), which
+    makes the binary larger on cartridge but allows direct hex editing of
+    the decompressed code.
+  </p>
+  <p>
+    String literals embedded in arm9 (like NPC action verbs in the menu
+    pool) can be edited as long as the replacement fits the original byte
+    budget.
+  </p>
+</FieldGuideLayout>

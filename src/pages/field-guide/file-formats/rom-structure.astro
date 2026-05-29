@@ -1,0 +1,358 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="ROM file structure"
+  description="Where everything lives in the NDS ROM — folders, file counts, and what each directory contains."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'ROM file structure' },
+  ]}
+>
+  <p>
+    The NDS ROM for <em>Tongari Boushi to Oshare na Mahou Tsukai</em> extracts
+    via <code>ndstool</code> into a flat directory tree. Six root-level files
+    hold the executable code and ROM metadata; all game content lives under a
+    single <code>data/</code> tree with roughly 30 subdirectories.
+  </p>
+
+  <h2>Root files</h2>
+  <p>
+    Six files sit at the top level of the extracted ROM. These are standard NDS
+    structures present in every retail cartridge.
+  </p>
+  <table>
+    <thead><tr><th>File</th><th>Role</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>header.bin</code></td>
+        <td>ROM header</td>
+        <td>Standard 512-byte NDS header (game code, icon offset, FAT/FNT pointers, etc.)</td>
+      </tr>
+      <tr>
+        <td><code>arm9.bin</code></td>
+        <td>Main executable</td>
+        <td>BLZ-compressed. 564 KB on-ROM, 723 KB decompressed. Contains the game engine, string tables, and ARM9 overlay dispatch.</td>
+      </tr>
+      <tr>
+        <td><code>arm7.bin</code></td>
+        <td>Sub-processor executable</td>
+        <td>ARM7 coprocessor code (audio, Wi-Fi, touch). Unmodified by the translation.</td>
+      </tr>
+      <tr>
+        <td><code>y9.bin</code></td>
+        <td>ARM9 overlay table</td>
+        <td>Describes all 180 overlays: RAM load address, compressed size, decompressed size, BLZ flags.</td>
+      </tr>
+      <tr>
+        <td><code>y7.bin</code></td>
+        <td>ARM7 overlay table</td>
+        <td>Same structure as y9.bin but for the ARM7 side. Empty in this game (no ARM7 overlays).</td>
+      </tr>
+      <tr>
+        <td><code>banner.bin</code></td>
+        <td>Icon and title strings</td>
+        <td>The 32x32 icon shown in the DS menu, plus the game title in each language slot.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Overlay directory</h2>
+  <p>
+    <code>overlay/</code> contains 180 <code>.bin</code> files
+    (<code>overlay_0000.bin</code> through <code>overlay_0179.bin</code>).
+    Each is a BLZ-compressed ARM9 code module that loads into a specific RAM
+    slot at runtime. Overlays implement individual game systems: minigames,
+    menus, NPC AI routines, shop logic, crafting, and so on. The overlay table
+    in <code>y9.bin</code> maps each overlay ID to its load address and size.
+    See the overlay system page for the full decoded function inventory.
+  </p>
+
+  <h2>Data directory overview</h2>
+  <p>
+    <code>data/</code> is the main content tree. It holds around 2,500 files
+    organized into purpose-specific subdirectories. Most files are either
+    <code>.ofs</code> (raw RESO containers) or <code>.lzs</code> (LZS-wrapped
+    LZ11-compressed RESO containers). A handful are raw <code>.bin</code>,
+    <code>.dat</code>, or domain-specific formats.
+  </p>
+
+  <h3>2d/</h3>
+  <p>
+    45 files. UI sprites, fonts, and animation resources. A mix of
+    <code>.lzs</code> compressed containers and <code>.ofs</code> RESO
+    containers. Examples: <code>audition.lzs</code>, <code>bank_in.lzs</code>,
+    <code>buyitem.lzs</code>, and a <code>selwindow/</code> subdirectory. The
+    2D art pipeline for menus and HUD elements pulls from these files.
+  </p>
+
+  <h3>charmake/</h3>
+  <p>
+    2 <code>.ofs</code> files. Character creation UI resources (the screens
+    where the player designs their avatar at game start).
+  </p>
+
+  <h3>coordinate/</h3>
+  <p>
+    6 files. Coordinate/clothing system resources. <code>crditype.ofs</code>
+    contains 20 SZL-packed sprite sets used by the outfit selection UI.
+  </p>
+
+  <h3>inputstr/</h3>
+  <p>
+    5 files. Text input UI resources (the keyboard/character picker screens).
+  </p>
+
+  <h3>item/</h3>
+  <p>
+    14 files. The item database: <code>itemicon.ofs</code> (656 item icons as
+    packed sprites), <code>ItemNoList.itnt</code>, item tables
+    (<code>.itnt</code>, <code>.dat</code>), and binary lookup files that map
+    item IDs to names and categories.
+  </p>
+
+  <h3>magazine/</h3>
+  <p>
+    66 files. 65 <code>.ofs</code> containers (one per in-game magazine issue)
+    plus 1 <code>.lzs</code>. Magazine composition data and pre-rendered page
+    layouts for the in-game collectible magazine system.
+  </p>
+
+  <h3>magic/</h3>
+  <p>
+    2 <code>.lzs</code> files. Magic system data. <code>magic.lzs</code>
+    contains the spell database with effect banks, glyph mappings, and recipe
+    data for the wand-drawing system.
+  </p>
+
+  <h3>map/</h3>
+  <p>
+    40 files across 13 subdirectories:
+  </p>
+  <table>
+    <thead><tr><th>Subdirectory</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>attribute/</code></td><td>Tile attribute flags</td></tr>
+      <tr><td><code>collision/</code></td><td>Collision geometry</td></tr>
+      <tr><td><code>event_rect/</code></td><td>Event trigger rectangles</td></tr>
+      <tr><td><code>field/</code></td><td>Field map definitions</td></tr>
+      <tr><td><code>fish/</code></td><td>Fish spawn point tables</td></tr>
+      <tr><td><code>insect/</code></td><td>Insect spawn point tables</td></tr>
+      <tr><td><code>mapitem/</code></td><td>Map item placement</td></tr>
+      <tr><td><code>mushroom/</code></td><td>Mushroom spawn point tables</td></tr>
+      <tr><td><code>plane/</code></td><td>Ground plane geometry</td></tr>
+      <tr><td><code>rep/</code></td><td>Map representation data</td></tr>
+      <tr><td><code>route/</code></td><td>NPC walking routes</td></tr>
+      <tr><td><code>shop/</code></td><td>Shop zone boundaries</td></tr>
+      <tr><td><code>weather/</code></td><td>Weather region definitions</td></tr>
+    </tbody>
+  </table>
+
+  <h3>message/</h3>
+  <p>
+    Approximately 1,700 <code>.ofs</code> files in a deep category tree. This
+    is where ALL game dialog lives. The directory hierarchy organizes messages
+    by function:
+  </p>
+  <table>
+    <thead><tr><th>Range</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>msg00</code> - <code>msg12</code></td><td>System and event dialog</td></tr>
+      <tr><td><code>msg20</code> - <code>msg31</code></td><td>Per-NPC personality dialog (12 directories, ~45 files each)</td></tr>
+      <tr><td><code>msg32</code> - <code>msg33</code></td><td>Grouped dialog</td></tr>
+      <tr><td><code>msg40</code> - <code>msg52</code></td><td>Large groups with 11 subdirectories each; classroom and lesson content</td></tr>
+      <tr><td><code>msg98</code> - <code>msg99</code></td><td>System lookups, UI labels, crafting tables, encyclopedia text</td></tr>
+    </tbody>
+  </table>
+
+  <h3>minigame/</h3>
+  <p>5 files. Minigame-specific resources.</p>
+
+  <h3>model/</h3>
+  <p>
+    Approximately 200 files across several sub-trees holding all 3D assets:
+  </p>
+  <table>
+    <thead><tr><th>Subdirectory</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>item/</code></td><td>Item 3D models</td></tr>
+      <tr><td><code>map/</code></td><td>World geometry: <code>ground/</code>, <code>obj/</code>, <code>plane/</code>, <code>fish/</code></td></tr>
+      <tr><td><code>npc/</code></td><td>NPC models and textures, including <code>tex/face/</code> for face meshes</td></tr>
+      <tr><td><code>player/</code></td><td>Player character models</td></tr>
+      <tr><td><code>shop/</code></td><td>Shop interior models</td></tr>
+      <tr><td><code>ucc/</code></td><td>User-created content models</td></tr>
+      <tr><td><code>uma/</code></td><td>Horse models</td></tr>
+      <tr><td><code>meffect/</code></td><td>Magic effects: <code>mefftex.ofs</code> (854 BTX0 textures), <code>meffect.ofs</code> (854 BMD0 models)</td></tr>
+      <tr><td><code>odori/</code></td><td>Dance animations</td></tr>
+    </tbody>
+  </table>
+
+  <h3>mydesign/</h3>
+  <p>2 files. Player custom design system resources.</p>
+
+  <h3>npc/</h3>
+  <p>
+    29 files. The NPC data layer:
+  </p>
+  <ul>
+    <li><code>NpcData.lzs</code> -- master NPC database with names</li>
+    <li><code>NpcDataOfs.ofs</code> -- 252 SZL-packed personality records</li>
+    <li><code>NpcCstm.ofs</code> -- 140 customization parameter sets</li>
+    <li><code>NpcFas.npfs</code>, <code>NpcClothInfo.nci</code>, <code>NpcSchedule.init</code> -- fashion, clothing info, daily schedules</li>
+  </ul>
+
+  <h3>npcstamp/</h3>
+  <p>
+    2 files. <code>npcstamp.ofs</code> (140 SZL-packed RGCN personality stamps
+    for the rumor board) and <code>npcstpcmn.lzs</code> (shared NCER + NCLR
+    palette data).
+  </p>
+
+  <h3>onemsg/</h3>
+  <p>
+    12 <code>.ofs</code> files. One-shot floating messages rendered as speech
+    bubbles above characters' heads. These tooltip/hint messages have a 32-character
+    page cap.
+  </p>
+
+  <h3>pc_shop/</h3>
+  <p>
+    14 files across subdirectories: <code>foodmenu/</code>,
+    <code>redecoration/inner/</code>, <code>redecoration/outer/</code>,
+    <code>selling/</code>. Shop menu layout and pricing data.
+  </p>
+
+  <h3>recipe/</h3>
+  <p>
+    3 files. The crafting recipe system:
+    <code>recipedata.lzs</code> (RESC v3.11 container with the recipe database),
+    <code>recipemsg.lzs</code> (recipe narration strings),
+    <code>mgcinfo.lzs</code> (magic info lookup table).
+    See the <a href={`${base}/field-guide/file-formats/recipe-files/`}>recipe files</a> page.
+  </p>
+
+  <h3>script/</h3>
+  <p>
+    383 <code>.ofs</code> files. Game event scripts containing bytecode
+    programs that drive cutscenes, triggered events, and scripted sequences.
+  </p>
+
+  <h3>shop/</h3>
+  <p>2 <code>.bin</code> files. Shop inventory configuration data.</p>
+
+  <h3>start/</h3>
+  <p>13 files. Game startup and intro sequence resources.</p>
+
+  <h3>talk/</h3>
+  <p>
+    1 file: <code>word.dat</code>. The banned/swear-word filter list used by
+    the text input system.
+  </p>
+
+  <h3>talkstart/</h3>
+  <p>
+    40 <code>.ofs</code> files. Dialog trigger tables. Each file represents a
+    scenario type (greeting, shopping, weather chat, etc.); records within each
+    file map (scenario, zone) pairs to specific message files in
+    <code>message/</code>.
+  </p>
+
+  <h3>title/</h3>
+  <p>1 file. Title screen resources.</p>
+
+  <h3>topic/</h3>
+  <p>4 files. Conversation topic data for the NPC dialog system.</p>
+
+  <h3>trendranking/</h3>
+  <p>2 files. Trend ranking system resources.</p>
+
+  <h3>ucc/</h3>
+  <p>
+    27+ files plus <code>act/</code>, <code>brush/</code>, and
+    <code>dishup/</code> subdirectories. User-created content resources for the
+    dress-up and custom item systems.
+  </p>
+
+  <h3>uwasa/</h3>
+  <p>1 <code>.bin</code> file. Rumor (<em>uwasa</em>) system data.</p>
+
+  <h3>Loose files at data/ root</h3>
+  <p>
+    About two dozen <code>.lzs</code> files sit directly in <code>data/</code>
+    rather than in a subdirectory. These are global resources used across
+    multiple game systems:
+  </p>
+  <ul>
+    <li>
+      <code>global.lzs</code> -- 68 KB compressed, 166 KB decompressed.
+      RESO v1.21 container with 53 entries including fonts, palettes, and
+      shared game tables. Byte-identical between NDS and 3DS except for one
+      entry.
+    </li>
+    <li>
+      Other examples: <code>bbs.lzs</code>, <code>catchdisp.lzs</code>,
+      <code>defcos.lzs</code>, <code>entryitmname.lzs</code>,
+      <code>goodslist.lzs</code>, <code>inputbbs.lzs</code>,
+      <code>inputmail.lzs</code>, <code>letter.lzs</code>,
+      <code>locker.lzs</code>, <code>mailorder.lzs</code>,
+      <code>makeprofile.lzs</code>.
+    </li>
+  </ul>
+
+  <h3>sound_data.sdat</h3>
+  <p>
+    33 MB. Nintendo SDAT sound bank containing all game audio: background music,
+    sound effects, and jingles. Standard SDAT format shared across most DS games.
+  </p>
+
+  <h2>File addressing at runtime</h2>
+  <p>
+    The game engine never references files by path at runtime. Instead, it uses
+    numeric file IDs from the NDS File Allocation Table (FAT). The File Name
+    Table (FNT) maps these IDs back to human-readable paths at extraction time,
+    but the running code only ever works with ID numbers.
+  </p>
+  <p>Key file ID ranges:</p>
+  <table>
+    <thead><tr><th>ID range</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>511 - 1838</td><td>Message files (<code>data/message/</code>)</td></tr>
+      <tr><td>2122 - 2133</td><td>One-shot messages (<code>data/onemsg/</code>)</td></tr>
+      <tr><td>2151 - 2533</td><td>Script files (<code>data/script/</code>)</td></tr>
+      <tr><td>2550 - 2589</td><td>Talkstart files (<code>data/talkstart/</code>)</td></tr>
+    </tbody>
+  </table>
+  <p>
+    This means that adding or removing files from the ROM would shift every ID
+    above the insertion point, breaking all hardcoded references in the ARM9
+    binary and overlays. The translation patch modifies file contents in place
+    without adding or removing any files.
+  </p>
+
+  <h2>3DS version (TBAF archives)</h2>
+  <p>
+    The 3DS port of the game uses TBAF (<code>.tarc</code>) archives instead of
+    the NDS flat directory layout. TBAF is a simple archive format that bundles
+    the same underlying game data into larger container files. The actual file
+    formats inside the archives are identical to the NDS versions --
+    <code>.ofs</code> RESO containers, <code>.lzs</code> compressed wrappers,
+    and the same Nitro graphics formats.
+  </p>
+  <p>
+    <code>global.lzs</code> is byte-identical between the NDS and 3DS ROMs
+    except for a single entry within the RESO container. The translation patch
+    targets the NDS ROM; the 3DS version is a separate extraction and
+    repackaging problem due to the TBAF wrapper.
+  </p>
+
+  <h2>Cross-references</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/file-formats/reso/`}>RESO containers</a> -- the container format used by <code>.ofs</code> and <code>.lzs</code> files</li>
+    <li><a href={`${base}/field-guide/file-formats/lz11/`}>LZS / LZ11 compression</a> -- the compression wrapper around most assets</li>
+    <li><a href={`${base}/field-guide/file-formats/blz-arm9/`}>BLZ and the plaintext-ARM9 trick</a> -- compression used on <code>arm9.bin</code> and overlays</li>
+    <li><a href={`${base}/field-guide/file-formats/recipe-files/`}>The recipe/ folder</a> -- detailed breakdown of the three recipe files</li>
+  </ul>
+</FieldGuideLayout>

@@ -1,0 +1,148 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="NPC data system"
+  description="How the game stores NPC identities, personalities, and visual data — from the master database to face textures."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'How the Game Works', href: `${base}/field-guide/how-the-game-works/` },
+    { label: 'NPC data system' },
+  ]}
+>
+  <h2>Speaker ID ranges</h2>
+  <p>
+    The dialog system identifies every speaker by a numeric ID. The ID
+    determines whether the game renders a full 3D character model or
+    displays text without a portrait.
+  </p>
+  <table>
+    <thead><tr><th>Range</th><th>Type</th><th>Count</th><th>Rendering</th></tr></thead>
+    <tbody>
+      <tr><td>1000--1251</td><td>Named villager NPCs</td><td>252</td><td>Full 3D scene (face mesh + texture + body)</td></tr>
+      <tr><td>2000+</td><td>System speakers</td><td>~42 in DB</td><td>No portrait (narrator, crowd, announcements)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>NPC data files</h2>
+  <p>
+    All NPC data lives under <code>data/npc/</code> (29 files total).
+    The files below are the ones most relevant to modding and translation.
+  </p>
+
+  <h3>NpcData.lzs</h3>
+  <p>
+    The master NPC database. LZS-compressed, contains NPC names as binary
+    strings. This is where the translation patch writes English NPC names.
+    The ROM ships with Japanese names; the patch overwrites them in the
+    decompressed binary.
+  </p>
+
+  <h3>NpcDataOfs.ofs</h3>
+  <p>
+    252 SZL-packed personality records, one per named NPC (IDs 1000--1251).
+    Each record decompresses to 88--200 bytes.
+  </p>
+  <table>
+    <thead><tr><th>Offset</th><th>Type</th><th>Field</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>u8</td><td>constant <code>0x00</code></td></tr>
+      <tr><td><code>+0x01</code></td><td>u8</td><td><code>personality_template</code> (0--10, 11 distinct types)</td></tr>
+      <tr><td><code>+0x02</code></td><td>u16</td><td><code>face_or_age</code> (0--30, 31 distinct values; not a direct index into the face texture file)</td></tr>
+      <tr><td><code>+0x04</code>--<code>+0x07</code></td><td>4 x u8</td><td>body parameters (height, build, etc.)</td></tr>
+      <tr><td><code>+0x08</code>--<code>+0x0b</code></td><td>4 x u8</td><td>clothing-layer IDs</td></tr>
+      <tr><td><code>+0x0c</code> onward</td><td>UTF-16 LE</td><td>JP NPC name (null-terminated)</td></tr>
+      <tr><td>after null</td><td>UTF-16 LE</td><td>greeting / quote</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Other NPC files</h3>
+  <table>
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>NpcCstm.ofs</code></td><td>140 customization parameter sets (1:1 with face textures). Controls per-NPC visual variations.</td></tr>
+      <tr><td><code>NpcFas.npfs</code></td><td>NPC fashion / clothing data.</td></tr>
+      <tr><td><code>NpcClothInfo.nci</code></td><td>NPC clothing info table.</td></tr>
+      <tr><td><code>NpcSchedule.init</code></td><td>NPC daily schedule data.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Personality types</h2>
+  <p>
+    The <code>personality_template</code> byte at offset <code>+0x01</code>
+    in each NpcDataOfs record determines an NPC's behavioral archetype.
+    There are 11 distinct personality types (values 0--10). The personality
+    type controls:
+  </p>
+  <ul>
+    <li>Which dialog files the NPC draws from (<code>msg20</code>--<code>msg31</code> each correspond to a personality grouping).</li>
+    <li>Whether the NPC's dialog renders as a bubble or a window (the personality type feeds into the <code>bubble_sel</code> selector in the dialog renderer).</li>
+    <li>Talk topic preferences and conversation style.</li>
+  </ul>
+  <p>
+    The personality system is what gives each NPC their characteristic way
+    of speaking, even though many NPCs share the same underlying dialog
+    templates.
+  </p>
+
+  <h2>Face textures and visual identity</h2>
+  <p>
+    Named NPCs are rendered in full 3D. There are no 2D portrait sprites.
+    The face rendering pipeline uses three texture files:
+  </p>
+  <table>
+    <thead><tr><th>Path</th><th>Contents</th></tr></thead>
+    <tbody>
+      <tr><td><code>model/npc/tex/face/tfnpc.ofs</code></td><td>140 face textures (base face meshes). 252 NPCs share 140 faces; individual identity comes from body parameters, clothing layers, and hair.</td></tr>
+      <tr><td><code>model/npc/tex/face/tfnpccmn.ofs</code></td><td>33 common face overlay textures (eyes, mouth positions, blush states). Composited at runtime to create expressions.</td></tr>
+      <tr><td><code>model/npc/tex/face/tfnpcguest.ofs</code></td><td>13 guest NPC face textures for special or temporary characters.</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The <code>NpcCstm.ofs</code> customization records (140 entries, 1:1 with
+    <code>tfnpc.ofs</code>) hold the per-NPC parameters that differentiate
+    NPCs who share the same base face.
+  </p>
+
+  <h2>NPC stamps</h2>
+  <p>
+    <code>data/npcstamp/npcstamp.ofs</code> contains 140 SZL-packed RGCN
+    entries. Despite the name, these are not NPC portrait images. They are
+    small personality stamp icons used on the rumor board and trend ranking
+    system. The shared palette and cell layout come from the sibling file
+    <code>npcstpcmn.lzs</code>, an RESC container with NCER at offset
+    <code>0xa0</code> and NCLR at offset <code>0x110</code>.
+  </p>
+
+  <h2>Special character paths</h2>
+  <p>
+    Not all characters go through the villager personality system. Special
+    characters like the principal, teachers, and shopkeepers use separate
+    dialog paths that bypass the personality-based bubble/window selector.
+    Their dialog routing is hardcoded in the ARM9 binary rather than driven
+    by the <code>NpcDataOfs</code> <code>personality_template</code> byte.
+  </p>
+
+  <h2>NPC names in the translation</h2>
+  <p>
+    The translation patch updates NPC names in two places:
+  </p>
+  <ol>
+    <li><strong>NpcData.lzs</strong> -- the master binary that the game reads at runtime for display names.</li>
+    <li><strong>The <code>npc_names</code> table in the translation database</strong> -- the source of truth for canonical English names, which feeds the NpcData.lzs binary writer during ROM rebuild.</li>
+  </ol>
+  <p>
+    82 rows still have drift between the database canonical name and the
+    binary. This is tracked internally but has not been fully reconciled.
+  </p>
+
+  <h2>Source</h2>
+  <ul>
+    <li><code>data/npc/</code> -- 29 NPC data files in the ROM filesystem</li>
+    <li><code>data/npcstamp/</code> -- stamp icon container</li>
+    <li><code>model/npc/tex/face/</code> -- face texture containers</li>
+    <li>NpcDataOfs record layout from binary analysis of decompressed SZL records</li>
+  </ul>
+</FieldGuideLayout>

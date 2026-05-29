@@ -20,6 +20,10 @@ const base = import.meta.env.BASE_URL;
   </p>
 
   <div class="fg-cards">
+    <a href={`${base}/field-guide/how-the-game-works/arm9-binary/`} class="fg-card">
+      <h3>ARM9 binary</h3>
+      <p>The main game executable — 723 KB of persistent engine code that stays resident from boot. Asset loading, input, sound, dialog parsing, save data, and every shared service the overlays depend on.</p>
+    </a>
     <a href={`${base}/field-guide/how-the-game-works/overlays-system/`} class="fg-card">
       <h3>The overlay system</h3>
       <p>180 overlays, shared RAM slots, controller-and-body pattern. Why ov137 is loaded almost always and ov003 only when you're at a shop.</p>
@@ -43,6 +47,14 @@ const base = import.meta.env.BASE_URL;
     <a href={`${base}/field-guide/how-the-game-works/memory-map/`} class="fg-card">
       <h3>Memory map</h3>
       <p>What's at each address range in main RAM. Where the engine lives, where overlays land, where the game state struct sits.</p>
+    </a>
+    <a href={`${base}/field-guide/how-the-game-works/npc-data/`} class="fg-card">
+      <h3>NPC data system</h3>
+      <p>Where NPC identities, personalities, and face textures live. Speaker ID ranges, the NpcDataOfs record layout, and the 140-face-to-252-NPC mapping.</p>
+    </a>
+    <a href={`${base}/field-guide/how-the-game-works/crafting-system/`} class="fg-card">
+      <h3>Crafting and items</h3>
+      <p>How the game stores crafted products, quality descriptions, recipe data, and the item icon pipeline. The UCC system, the 12-char buffer cap, and why one item name appears in five places.</p>
     </a>
   </div>
 

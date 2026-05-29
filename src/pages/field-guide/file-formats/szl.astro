@@ -1,0 +1,143 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="SZL containers"
+  description="Konami's compressed sprite wrapper — a 16-byte header plus LZ11, yielding standard Nitro graphics inside."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'File Formats', href: `${base}/field-guide/file-formats/` },
+    { label: 'SZL containers' },
+  ]}
+>
+  <p>
+    When an outer <code>.ofs</code> container
+    (<a href={`${base}/field-guide/file-formats/reso/`}>RESO</a>) has an entry
+    with <code>type_tag == 'szl'</code> (stored reversed as <code>'lzs'</code>
+    in the RESO TOC), the payload is an SZL container. SZL is Konami's
+    proprietary compression wrapper: a fixed 16-byte header followed by a
+    standard NDS <a href={`${base}/field-guide/file-formats/lz11/`}>LZ11</a>
+    bitstream. Decompressing the LZ11 layer yields standard Nitro graphics
+    resources (NCGR, NCLR, NCER, NANR, NSCR) — typically a complete sprite set
+    packed as a RESO variant=0 sub-container.
+  </p>
+
+  <p>
+    The name "SZL" appears to be internal Konami tooling nomenclature. The
+    <code>"1.00"</code> version string in the header and the <code>'sfo'</code>
+    tag in the outer LZS wrapper both suggest a versioned asset pipeline format
+    that Konami used across multiple DS titles.
+  </p>
+
+  <h2>Header layout</h2>
+  <table>
+    <thead><tr><th>Offset</th><th>Size</th><th>Field</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>4</td><td>version magic</td><td><code>"1.00"</code> (ASCII)</td></tr>
+      <tr><td><code>+0x04</code></td><td>12</td><td>padding</td><td>null bytes</td></tr>
+      <tr><td><code>+0x10</code></td><td>1</td><td>LZ11 marker</td><td><code>0x11</code> (standard NDS LZ11)</td></tr>
+      <tr><td><code>+0x11</code></td><td>3</td><td>decompressed size</td><td>uint24 LE</td></tr>
+      <tr><td><code>+0x14</code></td><td>varies</td><td>LZ11 bitstream</td><td>standard NDS LZ11 encoding</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Total header overhead: 16 bytes before the LZ11 data begins.
+  </p>
+
+  <h2>Decompressed contents</h2>
+  <p>
+    The decompressed payload is always a standard Nitro RESO variant=0
+    container holding some combination of:
+  </p>
+  <ul>
+    <li><strong>NCGR</strong> — tile graphics</li>
+    <li><strong>NCLR</strong> — palette</li>
+    <li><strong>NCER</strong> — cell/sprite layout</li>
+    <li><strong>NANR</strong> — animation sequences</li>
+    <li><strong>NSCR</strong> — background screen maps</li>
+  </ul>
+  <p>
+    These are standard NDS SDK resources that any
+    <a href={`${base}/field-guide/file-formats/nitro-graphics/`}>Nitro-format tool</a>
+    can edit once decompressed.
+  </p>
+
+  <h2>Where SZL appears in the game</h2>
+  <p>
+    SZL entries are widespread — they appear in OFS containers across many
+    different game systems:
+  </p>
+  <table>
+    <thead><tr><th>Container</th><th>SZL entries</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td><code>coordinate/crditype.ofs</code></td><td>20</td><td>Clothing type sprites</td></tr>
+      <tr><td><code>npc/NpcDataOfs.ofs</code></td><td>252</td><td>Per-NPC personality data (not just sprites — contains mixed data)</td></tr>
+      <tr><td><code>npcstamp/npcstamp.ofs</code></td><td>140</td><td>Personality stamp icons for rumor board</td></tr>
+      <tr><td><code>ucc/uccact_txt.ofs</code></td><td>17</td><td>UCC crafting text sprites</td></tr>
+      <tr><td><code>ucc/uccact_gra.ofs</code></td><td>16</td><td>UCC crafting graphic sprites</td></tr>
+      <tr><td><code>ucc/brush/brush_2d.ofs</code></td><td>1</td><td>Paint brush UI sprite</td></tr>
+      <tr><td><code>ucc/dishup/dishup_2d.ofs</code></td><td>2</td><td>Dish-up cooking UI sprites</td></tr>
+      <tr><td><code>2d/neticon.ofs</code></td><td>2</td><td>Network/wireless icons</td></tr>
+      <tr><td><code>charmake/chmk_mod.ofs</code></td><td>2</td><td>Character maker model UI</td></tr>
+      <tr><td><code>charmake/chmk_mot.ofs</code></td><td>2</td><td>Character maker motion UI</td></tr>
+      <tr><td><code>magazine/Trophy.ofs</code></td><td>several</td><td>Trophy display sprites</td></tr>
+      <tr><td><code>ucc/act/*.ofs</code></td><td>various</td><td>Per-action crafting sprites</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Total: 161 SZL entries successfully decompressed and rendered across the game.
+  </p>
+
+  <h3>Special case: npcstamp.ofs</h3>
+  <p>
+    The 140 SZL-packed entries in <code>npcstamp.ofs</code> decompress to bare
+    NCGR (tile graphic only, no palette or cell layout). The palette and NCER
+    come from a sibling file — <code>npcstpcmn.lzs</code> (an
+    <a href={`${base}/field-guide/file-formats/resc/`}>RESC</a> container with
+    NCER at offset <code>0xa0</code> and NCLR at offset <code>0x110</code>).
+    This is the only known case where SZL entries don't contain a
+    self-sufficient sprite set.
+  </p>
+
+  <h2>Relationship to the LZS outer wrapper</h2>
+  <p>
+    Don't confuse SZL with LZS. They are different layers:
+  </p>
+  <ul>
+    <li>
+      <strong>LZS</strong> (<code>.lzs</code> files) — Konami's outer
+      file-level compression wrapper (16-byte header with <code>"1.00"</code>
+      magic and <code>'sfo'</code> tag, followed by LZ11). Used on standalone
+      compressed files.
+    </li>
+    <li>
+      <strong>SZL</strong> — appears as RESO entries inside <code>.ofs</code>
+      containers. Same concept (version header + LZ11) but used at the
+      per-entry level within a container rather than at the file level.
+    </li>
+  </ul>
+  <p>
+    Both use the <code>"1.00"</code> version string and LZ11 compression,
+    suggesting they come from the same Konami asset pipeline. The distinction is
+    purely about where they appear: SZL is entry-level (inside a RESO), LZS is
+    file-level (the <code>.lzs</code> extension on disk).
+  </p>
+
+  <h2>Decoding</h2>
+  <p>Python pseudocode for SZL decompression:</p>
+  <pre><code>{`def decode_szl(entry_data):
+    assert entry_data[0:4] == b"1.00"  # version check
+    # Skip 16-byte header, decompress LZ11 starting at offset 0x10
+    assert entry_data[0x10] == 0x11    # LZ11 marker
+    decompressed_size = int.from_bytes(entry_data[0x11:0x14], 'little')
+    return lz11_decompress(entry_data[0x10:], decompressed_size)`}</code></pre>
+  <p>
+    The <code>lz11_decompress</code> function is the same standard NDS LZ11
+    decoder documented on the
+    <a href={`${base}/field-guide/file-formats/lz11/`}>LZ11 page</a>. The only
+    SZL-specific work is skipping the 16-byte version header before handing the
+    stream to the LZ11 decoder.
+  </p>
+</FieldGuideLayout>

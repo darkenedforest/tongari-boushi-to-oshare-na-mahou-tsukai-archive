@@ -29,15 +29,15 @@ const base = import.meta.env.BASE_URL;
     </a>
     <a href={`${base}/field-guide/file-formats/`} class="fg-card">
       <h3>File Formats</h3>
-      <p>Every container and wire format I've decoded: RESO, RESC, LZ11, the Nintendo Nitro graphics formats, the game's custom Konami extensions, and the SZL-wrapped <code>recipe/</code> folder.</p>
+      <p>The ROM's file organization, every container and wire format decoded so far: RESO, RESC, LZ11, SZL, BLZ, the Nintendo Nitro graphics formats, and the game's custom Konami extensions.</p>
     </a>
     <a href={`${base}/field-guide/how-the-game-works/`} class="fg-card">
       <h3>How the Game Works</h3>
-      <p>How the engine actually runs: the overlay system (with the per-overlay knowledgebase), the content cache, how a 2D UI screen gets composed from a recipe, and how sprites reach the screen.</p>
+      <p>How the engine actually runs: the ARM9 binary and its subsystems, the overlay system (with the per-overlay knowledgebase and three fully decoded overlays), NPC data and personality types, the crafting system, the content cache, and the sprite pipeline.</p>
     </a>
     <a href={`${base}/field-guide/message-system/`} class="fg-card">
       <h3>The Message System</h3>
-      <p>How dialog is stored. The message wire format with its opcodes and color tags, plus the shared-payload trick the game uses to save space on repeated lines.</p>
+      <p>How dialog flows from a game event to rendered text on screen. The four-step dialog chain, the message wire format with its opcodes and color tags, bubble vs window rendering, and the shared-payload trick the game uses to save space on repeated lines.</p>
     </a>
     <a href={`${base}/field-guide/names-and-words/`} class="fg-card">
       <h3>Names &amp; Words</h3>

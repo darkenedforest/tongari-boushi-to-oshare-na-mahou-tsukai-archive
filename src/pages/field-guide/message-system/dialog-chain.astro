@@ -1,0 +1,370 @@
+---
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Dialog chain"
+  description="How the game routes a world event to a specific line of dialog — from trigger tables through message files to the renderer."
+  crumbs={[
+    { label: 'Field Guide', href: `${base}/field-guide/` },
+    { label: 'Message System', href: `${base}/field-guide/message-system/` },
+    { label: 'Dialog chain' },
+  ]}
+>
+  <p>
+    When a player talks to an NPC, enters an area, or uses an item, the
+    engine has to figure out which specific line of dialog to show. That
+    resolution isn't a single lookup — it's a four-step chain that starts
+    with an abstract event ID and ends with rendered UTF-16-LE text on
+    screen. Every piece of dialog in the game travels this chain, and
+    understanding it is the key to finding where any given line lives in
+    the ROM.
+  </p>
+
+  <h2>The chain at a glance</h2>
+  <ol>
+    <li>
+      <strong>Game event</strong> — an NPC interaction, area entry, item
+      use, or scripted trigger fires an event ID.
+    </li>
+    <li>
+      <strong>Content-ID lookup</strong> — a 9-byte record table in
+      <code>arm9.bin</code> (or an overlay) resolves the event's content
+      ID to a numeric ROM file ID.
+    </li>
+    <li>
+      <strong>Talkstart resolution</strong> — the talkstart file at that
+      file ID maps a (scenario, slot) pair to a specific message file ID
+      using fixed 20-byte records.
+    </li>
+    <li>
+      <strong>Message file playback</strong> — the message file (a RESO
+      v1.21 variant=1 container) holds the actual dialog: CMD records and
+      UTF-16-LE text. Overlay 157 renders the result on screen.
+    </li>
+  </ol>
+  <p>
+    Steps 2 and 3 are pure indirection — they exist so the engine can
+    route thousands of distinct events to the right file using compact
+    integer tables instead of path strings. The engine never references
+    files by path at runtime; a grep of <code>arm9.bin</code> for path
+    strings like "talkstart", "msg", or "message" returns zero matches.
+    Everything is integer file IDs from the NDS FAT/FNT.
+  </p>
+
+  <h2>File-ID addressing</h2>
+  <p>
+    The NDS file allocation table (FAT) assigns every file in the ROM a
+    sequential integer ID. The file name table (FNT) maps those IDs to
+    directory paths — but only extraction tools use the FNT. The running
+    game works exclusively with the integer IDs. The dialog-relevant
+    ranges are:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Folder</th><th>File-ID range</th><th>Count</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>data/message/</code> (deep tree)</td><td>511 -- 1838</td><td>1,328</td></tr>
+      <tr><td><code>data/script/</code></td><td>2151 -- 2533</td><td>383</td></tr>
+      <tr><td><code>data/onemsg/</code></td><td>2122 -- 2133</td><td>12</td></tr>
+      <tr><td><code>data/talk/</code> (single <code>word.dat</code>)</td><td>2549</td><td>1</td></tr>
+      <tr><td><code>data/talkstart/</code></td><td>2550 -- 2589</td><td>40</td></tr>
+      <tr><td><code>data/topic/</code></td><td>2591 -- 2594</td><td>4</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Content-ID lookup tables</h2>
+  <p>
+    The first resolution step converts a content ID (the abstract "I want
+    content X" value) into a file ID. The engine does this by scanning
+    tables of fixed 9-byte records. Each record packs two (key, file_id)
+    pairs:
+  </p>
+  <pre><code>{`byte 0      = 0x00
+bytes 1..2  = u16 LE key
+bytes 3..4  = u16 LE file_id
+bytes 5..6  = u16 LE key
+bytes 7..8  = u16 LE file_id`}</code></pre>
+  <p>
+    Eight such tables exist across the ROM — five baked into
+    <code>arm9.bin</code> and three in overlays:
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Location</th>
+        <th>Records</th>
+        <th>Key range</th>
+        <th>File-ID range</th>
+        <th>Folders covered</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>arm9 @ 0x7ee5f</code></td>
+        <td>180</td>
+        <td>0xf02e -- 0xf3c6</td>
+        <td>613 -- 2642</td>
+        <td>message, minigame, model, mydesign, npc, onemsg, pc_shop, recipe, script, shop, start, talkstart, topic, ucc (14 folders)</td>
+      </tr>
+      <tr>
+        <td><code>arm9 @ 0x7c4dc</code></td>
+        <td>8</td>
+        <td>0x0c3a -- 0x0c76</td>
+        <td>2569 -- 2642</td>
+        <td>talkstart, topic, ucc</td>
+      </tr>
+      <tr>
+        <td><code>arm9 @ 0x7c75d</code></td>
+        <td>14</td>
+        <td>0x0e2e -- 0x0e79</td>
+        <td>1746 -- 1898</td>
+        <td>message, minigame, model</td>
+      </tr>
+      <tr>
+        <td><code>arm9 @ 0x7ca14</code></td>
+        <td>18</td>
+        <td>0x0f87 -- 0x0fb6</td>
+        <td>774 -- 989</td>
+        <td>message</td>
+      </tr>
+      <tr>
+        <td><code>arm9 @ 0x7dc42</code></td>
+        <td>12</td>
+        <td>0xf02c -- 0xf044</td>
+        <td>339 -- 737</td>
+        <td>2d, message</td>
+      </tr>
+      <tr>
+        <td><code>ov027 @ 0x299b</code></td>
+        <td>14</td>
+        <td>0x00f1 -- 0x015b</td>
+        <td>248 -- 350</td>
+        <td>2d</td>
+      </tr>
+      <tr>
+        <td><code>ov126 @ 0x3935</code></td>
+        <td>8</td>
+        <td>0x01b6 -- 0x0962</td>
+        <td>484 -- 2416</td>
+        <td>map, message, model, pc_shop, script</td>
+      </tr>
+      <tr>
+        <td><code>ov143 @ 0xd04</code></td>
+        <td>33</td>
+        <td>0x03ee -- 0x0470</td>
+        <td>1007 -- 1137</td>
+        <td>message</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    The biggest table (180 records at <code>arm9 0x7ee5f</code>) covers
+    14 different top-level folders — dialog, NPC data, scripts, models,
+    and more all route through the same lookup mechanism. A few example
+    entries from that table:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Content ID</th><th>File ID</th><th>Resolves to</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>0xf37a</code></td><td>2550</td><td><code>talkstart/tkst00.ofs</code></td></tr>
+      <tr><td><code>0xf37e</code></td><td>2555</td><td><code>talkstart/tkst05.ofs</code></td></tr>
+      <tr><td><code>0xf37f</code></td><td>2560</td><td><code>talkstart/tkst10.ofs</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Talkstart files</h2>
+  <p>
+    The 40 talkstart files (<code>data/talkstart/tkstNN.ofs</code>) are
+    the second hop in the chain. They are RESO v1.21 variant=1
+    containers, and each entry inside one holds a header followed by an
+    array of fixed 20-byte records. Each talkstart file represents a
+    scenario type — greeting, shopping, combat, and so on — and each
+    record within it is a specific slot for that scenario, identifying
+    which character or zone is involved and which message file to load.
+  </p>
+
+  <h3>Entry header</h3>
+  <p>Each entry begins with a 16-byte header:</p>
+  <table>
+    <thead>
+      <tr><th>Offset</th><th>Type</th><th>Field</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>u32</td><td>record_count</td></tr>
+      <tr><td><code>+0x04</code></td><td>u32</td><td>header_size (always 16)</td></tr>
+      <tr><td><code>+0x08</code></td><td>u32</td><td>unknown</td></tr>
+      <tr><td><code>+0x0c</code></td><td>u32</td><td>total_entry_size (= 16 + record_count x 20)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Record type bytes</h3>
+  <p>
+    Each 20-byte record has a <strong>type byte at offset +0x12</strong>
+    that determines how the rest of the record is interpreted. Three type
+    bytes are classified:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Type byte</th><th>Meaning</th><th>File-ID field</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>0x02</code></td>
+        <td>Dialog trigger</td>
+        <td>u16 at <code>+0x04</code></td>
+        <td>Loads and plays the message file at that file ID</td>
+      </tr>
+      <tr>
+        <td><code>0x0b</code></td>
+        <td>Asset preload</td>
+        <td>u16 at <code>+0x00</code></td>
+        <td>Preloads a UI, sound, or 2D resource at scene start</td>
+      </tr>
+      <tr>
+        <td><code>0xff</code></td>
+        <td>Data reference</td>
+        <td>u16 at <code>+0x04</code></td>
+        <td>Tracks an asset (<code>tkst20</code>--<code>31</code>) or indexes a per-scenario lookup (<code>tkst40</code>--<code>51</code>)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>Worked example: tkst20 entry 0</h3>
+  <p>
+    Entry 0 of <code>tkst20.ofs</code> is a verified chain. A selection
+    of its records shows the pattern:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Record index</th><th>Resolves to</th><th>Content</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0x1388 (5000)</td><td><code>magic/magic.lzs</code></td><td>Magic-list popup text</td></tr>
+      <tr><td>0x138a (5002)</td><td><code>message/msg01/00/msg01001.ofs</code></td><td>Dialog file</td></tr>
+      <tr><td>0x138b (5003)</td><td><code>message/msg20/04/msg20043.ofs</code></td><td>Dialog file</td></tr>
+      <tr><td>0x13ab (5035)</td><td><code>message/msg98/05/msg98050.ofs</code></td><td>Dialog file</td></tr>
+    </tbody>
+  </table>
+  <p>
+    Triggers 5002 through 5035 walk through roughly 36 different message
+    files spaced exactly 32 file IDs apart. This is "play the same
+    scenario but in a different NPC's voice" — one trigger per active
+    speaker for that scenario.
+  </p>
+
+  <h2>Message files</h2>
+  <p>
+    The message files (<code>data/message/*.ofs</code>) are the terminal
+    node of the chain — where actual dialog text lives. Each is a RESO
+    v1.21 variant=1 container with up to 100 sparse slots. Each slot
+    holds a dialog entry consisting of alternating CMD records (delimited
+    by <code>0x2400</code> open / <code>0x3B00</code> close) and
+    UTF-16-LE body text.
+  </p>
+  <p>
+    The body text uses <code>U+0000</code> as phrase boundaries,
+    a dedicated break marker for page/line breaks within a phrase, and
+    <code>{`{kanji|reading}`}</code> notation for furigana. The full
+    byte-level wire format is documented on the
+    <a href={`${base}/field-guide/message-system/wire-format/`}>wire format page</a>.
+  </p>
+  <p>
+    Total across the game: 1,328 message containers holding 50,196
+    dialog entries.
+  </p>
+
+  <h3>The message folder tree</h3>
+  <p>
+    The <code>data/message/</code> directory organizes its roughly 1,700
+    files by category:
+  </p>
+  <table>
+    <thead>
+      <tr><th>Prefix</th><th>Subdirectories</th><th>Content</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>msg00</code> -- <code>msg12</code></td><td><code>/00/</code></td><td>System and event dialog</td></tr>
+      <tr><td><code>msg20</code> -- <code>msg31</code></td><td><code>/00/</code> through <code>/06/</code></td><td>Per-NPC personality dialog (12 personality types, roughly 45 files each)</td></tr>
+      <tr><td><code>msg32</code> -- <code>msg33</code></td><td><code>/00/</code> through <code>/13/</code></td><td>Grouped dialog (NPCs by category)</td></tr>
+      <tr><td><code>msg40</code> -- <code>msg52</code></td><td><code>/00/</code> through <code>/10/</code></td><td>Large groups (11 subdirs each) — classroom lessons, seasonal events</td></tr>
+      <tr><td><code>msg98</code></td><td><code>/00/</code> through <code>/09/</code></td><td>System messages, error text</td></tr>
+      <tr><td><code>msg99</code></td><td><code>/00/</code> through <code>/14/</code></td><td>UI labels, crafting tables, encyclopedia entries, lookup data</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Runtime rendering</h2>
+  <p>
+    Once the chain resolves to a message file and a slot within it,
+    overlay 157 (the dialog renderer, always resident during
+    conversations) takes over. The caller passes a <code>bubble_sel</code>
+    byte that determines the rendering mode:
+  </p>
+  <ul>
+    <li>
+      <strong>0 = WINDOW</strong> — a 260 x 138 pixel dialog box at the
+      bottom of the screen, typically three lines of roughly 30
+      characters each.
+    </li>
+    <li>
+      <strong>1--4 = BUBBLE</strong> — a 128 x 76 pixel floating bubble
+      above the speaker, two lines maximum, with a practical cap of 32
+      visible characters per page.
+    </li>
+  </ul>
+  <p>
+    The renderer maintains a 660-byte instance struct per active dialog
+    and runs a 9-state per-frame state machine to handle typewriter
+    animation, color, and layout. The full rendering details are on the
+    <a href={`${base}/field-guide/message-system/bubble-vs-window/`}>bubble vs window page</a>.
+  </p>
+
+  <h2>Onemsg files</h2>
+  <p>
+    The 12 files in <code>data/onemsg/</code> are single-shot floating
+    messages — the tooltip text that appears over characters' heads as
+    the player walks past them. These always render as bubbles (32-char
+    page cap) and use the same RESO v1.21 format as regular message
+    files, but are loaded through a separate code path that bypasses
+    talkstart resolution entirely. They enter the renderer with
+    <code>bubble_sel = 4</code> hardcoded.
+  </p>
+
+  <h2>Open questions</h2>
+  <p>
+    Three parts of the chain are not yet fully traced:
+  </p>
+  <ul>
+    <li>
+      <strong>The tokenizer function.</strong> The exact ARM function that
+      parses the raw <code>0x2400</code>...<code>0x3B00</code> byte
+      stream into the 28-byte records the dispatch consumes has not been
+      identified. The strongest candidates are functions reachable from
+      <code>arm9 @ 0x0200ba54</code>.
+    </li>
+    <li>
+      <strong>Slot selection.</strong> A message file can hold up to 100
+      slots. The logic that selects which slot to play for a given dialog
+      trigger lives in the arm9 scene manager and has not been fully
+      reverse-engineered.
+    </li>
+    <li>
+      <strong>Additional talkstart type bytes.</strong> Only type bytes
+      <code>0x02</code>, <code>0x0b</code>, and <code>0xff</code> are
+      classified. <code>tkst32</code> alone uses roughly 40 different
+      type bytes whose meanings are unknown.
+    </li>
+  </ul>
+
+  <h2>Related</h2>
+  <ul>
+    <li><a href={`${base}/field-guide/message-system/wire-format/`}>Wire format</a> — the byte-level CMD + text encoding inside message files.</li>
+    <li><a href={`${base}/field-guide/message-system/opcodes/`}>Opcode catalog</a> — all 88 CMD opcodes with hex values and arg layouts.</li>
+    <li><a href={`${base}/field-guide/message-system/bubble-vs-window/`}>Bubble vs window</a> — how ov157 picks the rendering container and the 32-char bubble cap.</li>
+    <li><a href={`${base}/field-guide/message-system/shared-payloads/`}>Shared payloads</a> — TOC deduplication within message containers.</li>
+  </ul>
+</FieldGuideLayout>

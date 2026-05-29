@@ -191,6 +191,70 @@ const base = import.meta.env.BASE_URL;
     the long tail gets cleaned up.
   </p>
 
+  <h2>Inside ov157: the renderer's architecture</h2>
+  <p>
+    Overlay 157 was fully semantically decoded — all 251 functions named
+    and classified. The dialogue renderer portion uses a 660-byte
+    (<code>0x294</code>) instance struct, allocated by
+    <code>dialogue_renderer_ctor()</code> at <code>0x021c0e3c</code>.
+    The canonical entry point is <code>dialogue_renderer_init_canonical()</code>
+    at <code>0x021c0ef8</code>, called from the ARM9 universal dialog
+    parser at <code>FUN_02066c58</code>. The fourth parameter is the
+    bubble selector byte described above.
+  </p>
+
+  <h3>Per-style records at 0x021c336e</h3>
+  <p>
+    Two 31-byte (<code>0x1f</code>) records describe the visual parameters
+    for each rendering mode. The renderer indexes these by the bubble
+    selector byte:
+  </p>
+  <table>
+    <thead><tr><th>Field</th><th>Record 0 (window)</th><th>Record 1 (bubble)</th></tr></thead>
+    <tbody>
+      <tr><td>Line height</td><td>6 px</td><td>5 px</td></tr>
+      <tr><td>Max lines per page</td><td>1 (per rendered page segment)</td><td>2</td></tr>
+      <tr><td>Text color (RGB)</td><td>(216, 216, 249)</td><td>(228, 204, 249)</td></tr>
+      <tr><td>Drop shadow color</td><td>(100, 100, &mdash;)</td><td>&mdash;</td></tr>
+      <tr><td>Origin offset (x, y)</td><td>(0, 0)</td><td>(+56, +80)</td></tr>
+      <tr><td>Position (x, y)</td><td>(0x104, 0x8a)</td><td>(0x80, 0x4c)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Instance struct key offsets</h3>
+  <table>
+    <thead><tr><th>Offset</th><th>Field</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>+0x00</code></td><td>vptr</td><td>Points to vtable at <code>0x021c33b4</code> (7 slots)</td></tr>
+      <tr><td><code>+0x24</code></td><td>line_array_ptr</td><td>Glyph buffer for the current page</td></tr>
+      <tr><td><code>+0x2d</code></td><td>state_byte</td><td>9-state per-frame dispatcher</td></tr>
+      <tr><td><code>+0x42</code></td><td>pos_x</td><td>0x104 (window) or 0x80 (bubble)</td></tr>
+      <tr><td><code>+0x44</code></td><td>pos_y</td><td>0x8a (window) or 0x4c (bubble)</td></tr>
+      <tr><td><code>+0x4b</code></td><td><strong>bubble_sel</strong></td><td>THE selector byte. Read/written 33 times across the overlay. Indexes all style tables.</td></tr>
+      <tr><td><code>+0x84</code></td><td>choice_widget</td><td>Sub-renderable for multi-choice prompts</td></tr>
+      <tr><td><code>+0x108</code></td><td>tag_widget</td><td>Sub-renderable for speaker name tags</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Key functions</h3>
+  <table>
+    <thead><tr><th>Address</th><th>Function</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>0x021c0e3c</code></td><td>dialogue_renderer_ctor()</td><td>Allocates the 660-byte instance</td></tr>
+      <tr><td><code>0x021c0ef8</code></td><td>dialogue_renderer_init_canonical()</td><td>Canonical entry — param_4 is bubble_sel</td></tr>
+      <tr><td><code>0x021c0f48</code></td><td>dialogue_renderer_init_method()</td><td>Vtable slot 2 — populates instance, calls layout pipeline</td></tr>
+      <tr><td><code>0x021c115c</code></td><td>dialogue_runtime_step()</td><td>Vtable slot 3 — per-frame 9-state machine</td></tr>
+      <tr><td><code>0x021c144c</code></td><td>dialogue_finalize_frame()</td><td>Vtable slot 4 — per-frame blit</td></tr>
+    </tbody>
+  </table>
+  <p>
+    The <a href={`${base}/field-guide/how-the-game-works/overlays/157/`}>ov157
+    detail page</a> in the per-overlay catalog has the full function listing.
+    The rumor (uwasa) system that shares this overlay has its own set of 8
+    state machines handling NPC reputation, gossip listening, and
+    save-buffer writes.
+  </p>
+
   <h2>Related</h2>
   <ul>
     <li><a href={`${base}/field-guide/message-system/`}>Message system overview</a> — wire format, opcode catalog, shared payloads.</li>
