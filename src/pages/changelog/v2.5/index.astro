@@ -1,0 +1,236 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import data from '../../../data/changelog_v2.5.json';
+
+const base = import.meta.env.BASE_URL;
+
+function formatDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+const totalOther = data.otherChanges?.length ?? 0;
+---
+
+<Layout title={`Changelog · v${data.version}`}>
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <a href={`${base}/changelog/`}>Changelog</a>
+      <span aria-hidden="true">›</span>
+      <span>v{data.version}</span>
+    </p>
+    <div class="header-sprites" aria-hidden="true">
+      <img src={`${base}/decorations/butterfly-yellow.png`} alt="" />
+      <img src={`${base}/decorations/magic-lamp-crystal.png`} alt="" />
+      <img src={`${base}/decorations/dragonfly.png`} alt="" />
+    </div>
+    <div class="title-row">
+      <h1>v{data.version} <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
+      <time datetime={data.date}>{formatDate(data.date)}</time>
+    </div>
+    <p class="lede">{data.headline}</p>
+    <p class="back-link">
+      <a href={`${base}/changelog/`}>← Back to changelog index</a>
+      <span class="sep">·</span>
+      <a href={`${base}/patches/`}>Download patches</a>
+    </p>
+  </section>
+
+  <section class="summary card">
+    <h2>Release summary</h2>
+    <p>{data.summary}</p>
+  </section>
+
+  <section class="changes">
+    <h2>What changed for players</h2>
+    <p class="counters">
+      <strong>{totalOther}</strong> change groups in this release.
+      Two crash fixes, a full crafting-quality table rewrite, five item-name
+      unifications, and six dialog/label corrections.
+    </p>
+    <div class="change-list">
+      {data.otherChanges.map((c) => (
+        <article class="change-card">
+          <h3>{c.title}</h3>
+          <p>{c.body}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <section class="ship-info card">
+    <h2>How v2.5 shipped</h2>
+    {data.shipFormats?.map((f) => (
+      <p><strong>{f.label}</strong> — {f.description}</p>
+    ))}
+    {data.shipNote && <p class="ship-note">{data.shipNote}</p>}
+    <ul class="ship-files">
+      <li>Patched ROM SHA-256: <code>8d1f541b…b2d3ddd0</code>.</li>
+      <li>xdelta3 patch filenames: <code>tongari-boushi-en-v2.5-rev0.xdelta</code> and <code>tongari-boushi-en-v2.5-rev1.xdelta</code> matching the Rev 0 / Rev 1 ROM revisions.</li>
+    </ul>
+  </section>
+
+  <section class="source card">
+    <h2>Source</h2>
+    <ul>
+      <li><code>notes/CHANGELOG_v2.5.md</code> — full prose changelog with under-the-hood details.</li>
+      <li><code>notes/fixes/step-362-malila-parttime-payment.json</code> — Malila payment fix manifest.</li>
+      <li><code>notes/fixes/step-361-edit-suggestions-applied.json</code> — Berry's + Jamie fix manifest.</li>
+      <li><code>notes/fixes/step-363-fungi-forest-habitat-label.json</code> — Fungi Forest label fix manifest.</li>
+      <li><code>notes/fixes/step-373-bubble-budget-reclassification.json</code> — bubble budget reclassification manifest.</li>
+      <li><code>notes/fixes/step-375-goblin-shark-bubble-overflow.json</code> — Goblin Shark crash fix manifest.</li>
+      <li><code>notes/fixes/step-376-crafting-quality-table-rewrite.json</code> — crafting quality table rewrite manifest.</li>
+      <li><code>notes/fixes/step-377-item-name-unification.json</code> — item name unification manifest.</li>
+    </ul>
+  </section>
+</Layout>
+
+<style>
+  .page-header { padding: 40px 0 20px; }
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+  .header-sprites {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin: 6px 0 4px;
+    opacity: 0.78;
+  }
+  .header-sprites img {
+    width: 40px;
+    height: 40px;
+  }
+  .header-sprites img:nth-child(2) {
+    width: 48px;
+    height: 48px;
+  }
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin: 0 0 8px;
+  }
+  .title-row h1 {
+    margin: 0;
+  }
+  .title-row time {
+    color: var(--color-ink-soft);
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+  .sparkle-mark {
+    color: var(--color-pink-400);
+  }
+  .lede {
+    max-width: 72ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 1.02rem;
+  }
+  .back-link {
+    margin: 14px 0 0;
+    font-size: 0.92rem;
+  }
+  .back-link a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .back-link a:hover {
+    color: var(--color-pink-600);
+  }
+  .back-link .sep {
+    margin: 0 8px;
+    color: var(--color-ink-soft);
+    opacity: 0.5;
+  }
+  .summary, .ship-info, .source {
+    padding: 22px 26px;
+    margin: 20px 0;
+    background: var(--surface-strong);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-pink-100);
+    box-shadow: var(--shadow-soft);
+  }
+  .summary h2, .ship-info h2, .source h2, .changes h2 {
+    margin: 0 0 12px;
+    font-size: 1.2rem;
+    color: var(--color-purple-600);
+  }
+  .summary p, .ship-info p, .source ul {
+    line-height: 1.6;
+    color: var(--color-ink);
+    margin: 0 0 8px;
+  }
+  .ship-note {
+    background: var(--color-pink-50);
+    border-left: 3px solid var(--color-pink-400);
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+  }
+  .ship-files {
+    margin: 8px 0 0;
+    padding-left: 22px;
+    line-height: 1.7;
+    font-size: 0.92rem;
+  }
+  .ship-files code {
+    background: var(--color-purple-50);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.88em;
+  }
+  .changes {
+    margin: 20px 0;
+  }
+  .counters {
+    color: var(--color-ink-soft);
+    font-size: 0.92rem;
+    margin: 0 0 16px;
+  }
+  .counters strong {
+    color: var(--color-purple-600);
+  }
+  .change-list {
+    display: grid;
+    gap: 14px;
+  }
+  .change-card {
+    padding: 20px 24px;
+    background: var(--surface-strong);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-pink-100);
+    box-shadow: var(--shadow-soft);
+  }
+  .change-card h3 {
+    margin: 0 0 8px;
+    color: var(--color-pink-600);
+    font-size: 1.05rem;
+  }
+  .change-card p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 0.95rem;
+  }
+</style>

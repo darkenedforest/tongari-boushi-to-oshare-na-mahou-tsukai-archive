@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import v25meta from '../../data/changelog_v2.5_meta.json';
 import v242meta from '../../data/changelog_v2.4.2_meta.json';
 import v241meta from '../../data/changelog_v2.4.1_meta.json';
 import v24meta from '../../data/changelog_v2.4_meta.json';
@@ -23,6 +24,19 @@ type ReleaseCard = {
 
 const releases: ReleaseCard[] = [
   {
+    version: v25meta.version,
+    date: v25meta.date,
+    href: `${base}/changelog/v2.5/`,
+    headline: v25meta.headline,
+    totalChanges:
+      v25meta.counts.crashFixes +
+      v25meta.counts.craftingQualityTableRewrites +
+      v25meta.counts.itemNameUnifications +
+      v25meta.counts.dialogFixes +
+      v25meta.counts.bubbleBudgetReclassifications,
+    isLatest: true,
+  },
+  {
     version: v242meta.version,
     date: v242meta.date,
     href: `${base}/changelog/v2.4.2/`,
@@ -34,7 +48,6 @@ const releases: ReleaseCard[] = [
       v242meta.counts.betaEditSuggestionRows +
       v242meta.counts.uccFoodSubrecordPaperwork +
       v242meta.counts.npcNameBinaryTypoFixes,
-    isLatest: true,
   },
   {
     version: v241meta.version,

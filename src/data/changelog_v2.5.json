@@ -1,0 +1,55 @@
+{
+  "version": "2.5",
+  "date": "2026-05-28",
+  "headline": "Goblin Shark crash fix, crafting quality table rewrite, item name unification, mistranslation fixes",
+  "summary": "v2.5 is a stability + content release built on top of v2.4.2. Two player-reported crashes are fixed: the Goblin Shark donation crash (bubble text overflow in the fish encyclopedia, reported by Zeno against v2.3.2) and a crafting quality table buffer overflow that could crash the game when using crafted items like the Prank Quill (reported by Zeno against v2.4.2). The crafting quality description table (msg99047) was completely rewritten — 144 of 468 English segments exceeded the engine's 12-character buffer limit, and all 24 entries were reworked to fit. A mistranslation was discovered and fixed in the process: the JP word ねいろ (tone/timbre) had been translated as 'color' across all 12 quality-tier segments. Five crafted item names that had inconsistent translations across the game were unified to one canonical name each. Six smaller dialog and label fixes also landed, plus a bubble-text budget metadata reclassification for 5,822 rows and a field guide documentation update.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.4.2: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "v2.5 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's MD5.",
+  "otherChanges": [
+    {
+      "title": "Goblin Shark donation crash fixed — bubble text overflow (step-375)",
+      "body": "Donating the Goblin Shark to the fish encyclopedia triggered a food-critic verdict bubble (message/msg99/06/msg99062.ofs entry 76) whose second page was 38 visible characters — 6 over the 32-char bubble cap. On real hardware this caused an instant crash; emulators showed screen glitches. The English text was rewritten to fit: page 2 went from 'I've never tasted anything this delicious before!' (38 chars) to 'So utterly delicious!' (21 chars). The Japanese source for this row is the single exclamation おぉ すばらしい！§ — the prior English had imported a second sentence from the parallel window-path sibling at msg32086, which was unnecessary and caused the overflow."
+    },
+    {
+      "title": "Crafting quality table rewrite — msg99047 buffer overflow fix (step-376)",
+      "body": "Using certain crafted items (e.g. the Prank Quill) triggered a crash on real hardware. The root cause: message/msg99/04/msg99047.ofs is a crafting-quality description lookup table where each entry contains 12 NUL-separated segments (one per quality tier). The game's renderer reads each segment into a fixed-size buffer. The Japanese source text never exceeds 12 characters per segment across all 468 segments — but 144 of the English segments were over that limit, some reaching 35 characters. 24 entries were rewritten: quality adjectives (entries 3–6), shine/vibes/style descriptors (entries 7–14), tone descriptors (entry 17), rhythm descriptors (entry 18), placeholder delimiters (entries 0–2, 15–16, 27), and product names (entries 22–25). Note: this surface's 12-character-per-segment cap was derived empirically from the JP source data, not from engine bytecode. If you see clipped or broken text in crafting-quality descriptions, please report it via the bug-report form."
+    },
+    {
+      "title": "Mistranslation fix: ねいろ (tone/timbre) corrected from 'color' (step-376)",
+      "body": "Entry 17 of the crafting quality table (tone descriptors) had been entirely mistranslated. The JP ねいろ means 'tone' or 'timbre' (musical quality), not 'color'. Every segment had been mistranslated as 'A color that makes your heart skip', 'An enchanting color', etc. Retranslated correctly: 'Joyful Tone', 'Dreamy Tone', 'Calming Tone', etc."
+    },
+    {
+      "title": "Item name unification — five crafted items standardized (step-377)",
+      "body": "Five crafted item names had inconsistent English translations scattered across dialog files, classroom lessons, recipe labels, and lookup tables. Each was unified: Prank Quill (JP イタズラはねペン — was Prank Pen, Prank Feather Pen, Prankster Pen, and 'Pranks, pens, and such'), Lure Bouquet (JP おさそいブーケ — was Invitation Bouquet, 18 chars over the 12-char cap), Charm Aroma (JP みわくのかおり — was Enchanting Aroma and Alluring Scent), Sereni-Tea (JP やすらぎティー — was Tranquili-Tea, 13 chars), Chic Clothes (JP イケてるふく — was Stylish Clothes and Cool clothes)."
+    },
+    {
+      "title": "Malila part-time payment text — missing ritch amount restored (step-362)",
+      "body": "After completing a part-time job for Granny Malila, her payment-confirmation dialog read 'This is your payment! Ritch. Keep it safe, okay?' — the 100 ritch amount was missing. The line now reads 'This is your payment! 100 Ritch. Keep it safe, okay?' matching the JP source and the other payment dialogs in the file. Fixes bug report #8 from pandabearcare against v2.4.2."
+    },
+    {
+      "title": "Shop name 'Very's' corrected to 'Berry's' — three dialog rows (step-361)",
+      "body": "The in-game shop name ベリーズ ('Berry's') had been mistranslated as 'Very's' in three dialog rows across msg40086, msg44086, and msg47086. Each was corrected to 'Berry's' with the colored shop-label opcodes ([COLOR:4]…[COLOR:1]) preserved."
+    },
+    {
+      "title": "Magic-input NPC label 'Shammy' corrected to 'Jamie' (step-361)",
+      "body": "The magic-input panel at 2d/inputmagic/msg.ofs entry 637 displayed 'Shammy' for npc_id 1137 (JP シャミー), inconsistent with the rest of the game where she appears as 'Jamie'. The shipping NPC-name binary already read 'Jamie'; the dialog-row label was the outlier."
+    },
+    {
+      "title": "Fungi Forest habitat dropdown label restored (step-363)",
+      "body": "The habitat-filter dropdown in the catalog/journal UI had the Fungi Forest row translated as a full sentence ('I took a packed lunch and went out to spend the day in Fungi Forest.') instead of the short label the JP source specifies (キノコの森). Restored to 'Fungi Forest' matching the two other habitat labels in the same dropdown."
+    },
+    {
+      "title": "Bubble text budget reclassification (step-373)",
+      "body": "5,822 translation rows across all onemsg/*.ofs files and message/msg99/06/msg99062.ofs were reclassified from budget_class = DEFAULT to budget_class = BUBBLE in the translation DB. This tags them with the correct 32-character-per-page cap so that future overflow checks catch bubble-rendered text. No visible text was changed — internal metadata correction only."
+    },
+    {
+      "title": "Field guide updated — bubble vs window rendering (step-374)",
+      "body": "The archive site's field guide page on bubble vs window rendering was updated with findings from the overlay 157 investigation. Key changes: removed an unverified claim about mid-entry style flips, added documentation about how NPC personality types influence dialog rendering paths, clarified special-character dialog paths, and corrected the caller table."
+    }
+  ]
+}

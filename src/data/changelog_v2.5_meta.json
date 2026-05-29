@@ -1,0 +1,14 @@
+{
+  "version": "2.5",
+  "date": "2026-05-28",
+  "headline": "Goblin Shark crash fix, crafting quality table rewrite, item name unification, mistranslation fixes",
+  "summary": "A stability + content release built on top of v2.4.2. Fixes two crashes (Goblin Shark donation and crafting quality table buffer overflow), rewrites the entire crafting quality description table to fit the engine's 12-char segment cap, unifies five crafted item names across all surfaces, corrects the ねいろ mistranslation (color → tone/timbre), and lands six smaller dialog/label fixes plus a bubble-text metadata reclassification.",
+  "previousVersionLabel": "v2.4.2",
+  "counts": {
+    "crashFixes": 2,
+    "craftingQualityTableRewrites": 24,
+    "itemNameUnifications": 5,
+    "dialogFixes": 6,
+    "bubbleBudgetReclassifications": 5822
+  }
+}

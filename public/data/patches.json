@@ -23,6 +23,45 @@
   },
   "releases": [
     {
+      "version": "2.5",
+      "date": "2026-05-28",
+      "headline": "Goblin Shark crash fix, crafting quality table rewrite, item name unification, mistranslation fixes",
+      "summary": "A stability + content release built on top of v2.4.2. Fixes two crashes reported by beta testers: the Goblin Shark donation crash (bubble text overflow in the fish encyclopedia) and the crafting quality table buffer overflow that could crash the game when using crafted items like the Prank Quill. The crafting quality table (msg99047) was completely rewritten — 144 segments that exceeded the engine's 12-character buffer limit were shortened to fit, including a mistranslation fix where 'color' was corrected to 'tone/timbre' for the JP word ねいろ. Five crafted item names were unified across all surfaces (Prank Quill, Lure Bouquet, Charm Aroma, Sereni-Tea, Chic Clothes). Also: Malila's part-time payment text restored (missing '100' ritch amount), shop name 'Very's' corrected to 'Berry's' in three dialog rows, magic-input NPC label 'Shammy' corrected to 'Jamie', Fungi Forest habitat dropdown label restored from a broken full sentence, bubble text budget metadata reclassified for 5,822 rows, and field guide documentation updated with bubble vs window rendering findings.",
+      "changes": [
+        "Goblin Shark donation crash fixed — bubble text overflow in the fish encyclopedia verdict (entry 76, page 2 was 38 chars vs 32-char bubble cap). Rewrote to fit: 'Oh, this is wonderful! So utterly delicious!'",
+        "Crafting quality table completely rewritten (msg99047) — 144 of 468 English segments exceeded the engine's 12-character buffer limit, any of which could crash the game on real hardware. 24 entries rewritten across quality adjectives, shine/vibes/style descriptors, tone descriptors, rhythm descriptors, placeholder delimiters, and product names.",
+        "Mistranslation fix: ねいろ (tone/timbre) was mistranslated as 'color' in all 12 crafting tone-descriptor segments. Corrected to 'Joyful Tone', 'Dreamy Tone', 'Calming Tone', etc.",
+        "Five crafted item names unified across the game: Prank Quill (was Prank Pen / Prank Feather Pen / Prankster Pen), Lure Bouquet (was Invitation Bouquet), Charm Aroma (was Enchanting Aroma / Alluring Scent), Sereni-Tea (was Tranquili-Tea), Chic Clothes (was Stylish Clothes / Cool clothes).",
+        "Malila part-time payment text fixed — the line read 'This is your payment! Ritch.' with the amount missing; now reads 'This is your payment! 100 Ritch. Keep it safe, okay?'",
+        "Shop name 'Very's' corrected to 'Berry's' in three dialog rows (ベリーズ was mistranslated as 'Very's').",
+        "Magic-input NPC label 'Shammy' corrected to 'Jamie' at inputmagic/msg.ofs entry 637 (npc_id 1137, JP シャミー).",
+        "Fungi Forest habitat dropdown label restored from a broken full sentence back to the short label form matching the JP source キノコの森.",
+        "Bubble text budget reclassification — 5,822 rows tagged with correct 32-char bubble cap (internal metadata only, no visible text changes).",
+        "Field guide updated with bubble vs window rendering findings from overlay 157 investigation."
+      ],
+      "changelogUrl": "/changelog/v2.5/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.5-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 15112709,
+          "patchSha256": "8142df1242bf9615e6db6c6ccd3e8f825f482fba1b834150958300e6aa650a5a"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.5-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3970527,
+          "patchSha256": "00d9d629e67b3612a3f65b6e4288f4aa3b7cf6d325e713701702b3ec9e9c1ee9"
+        }
+      ],
+      "patchedRomSha256": "8d1f541bfacac8cbc53907647ed459660fbec09d7824a63649e3ca79b2d3ddd0",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 8d1f541b…b2d3ddd0)."
+    },
+    {
       "version": "2.4.2",
       "date": "2026-05-23",
       "headline": "Classroom-lesson audit (936 entries), catalog rewrites, UCC variant paperwork, Christine typo fix",
