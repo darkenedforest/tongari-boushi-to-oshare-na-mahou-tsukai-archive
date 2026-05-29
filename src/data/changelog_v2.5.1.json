@@ -1,0 +1,31 @@
+{
+  "version": "2.5.1",
+  "date": "2026-05-29",
+  "headline": "Magic Pen label fix, recipe category crash prevention, Soba Noodles rename, grammatical A-prefix pass",
+  "summary": "v2.5.1 is a hotfix release on top of v2.5. It corrects a mistranslated label entry (Magic Pen was rendered as a full sentence about practicing magic), fixes the recipe-category concatenation suffix to prevent buffer overflow crashes, renames 'Buckwheat noodles' to 'Soba Noodles' for accuracy, and adds grammatical 'A' articles to 38 recipe category names.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.5: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "v2.5.1 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's MD5.",
+  "otherChanges": [
+    {
+      "title": "Magic Pen label fix — mistranslated sentence replaced with correct label (step-383)",
+      "body": "msg99098.ofs entry 54 — the JP まほうのペン ('Magic Pen') had been mistranslated as 'I do believe I made a horrible mistake while practicing magic.' This entry is a label in the recipe crafting UI, not dialog. Before: 'I do believe I made a horrible mistake while practicing magic.§'. After: 'A Magical Pen§'. The entry is a recipe category name and appears in the crafting interface as a short label."
+    },
+    {
+      "title": "Recipe category concatenation suffix fix — crash prevention (step-384)",
+      "body": "msg99098.ofs entry 4 contains the JP suffix をつくろう！ ('let's make [one]!') which the game engine concatenates with recipe category names from entries 6–61. The prior English translation 'Let's make one!§' (16 chars) was too long when combined with category names — the game's concatenation buffer has a limited capacity, and long combined strings caused crashes on real hardware. Before: 'Let's make one!§'. After: '!§'. The suffix is now a single exclamation mark, matching the minimal punctuation-only approach and giving maximum room to the category name portion. Testing confirmed the combined string works up to at least 15 characters."
+    },
+    {
+      "title": "Buckwheat noodles renamed to Soba Noodles (step-384)",
+      "body": "msg99098.ofs entry 26 — the JP そば ('soba') was translated literally as 'Buckwheat noodles'. Soba is the standard English loanword for this dish. Before: 'Buckwheat noodles§'. After: 'Soba Noodles§'."
+    },
+    {
+      "title": "Grammatical 'A' prefix added to 38 recipe category names (step-384)",
+      "body": "38 recipe category names in msg99098.ofs (entries 6–61) had bare-noun labels that read unnaturally in the crafting UI when the game displays them as 'Make [a/an] ___!'. Each was prefixed with 'A ' where grammatically appropriate. Examples: 'Cake' → 'A Cake', 'Pie' → 'A Pie', 'Stew' → 'A Stew', 'Pizza' → 'A Pizza', 'Shirt' → 'A Shirt', 'Bouquet' → 'A Bouquet', 'Tiara' → 'A Tiara', 'Burger Stk' → 'A Burger Stk'. Names where 'A' didn't fit (plurals, mass nouns) were left unchanged: Ice Cream, Curry and Rice, Ramen Noodles, Meat Dishes, Pancakes, Fried Rice, Pasta, Udon, Soba Noodles, Bread, Fried Chicken, Bottoms, Leggings, etc."
+    }
+  ]
+}

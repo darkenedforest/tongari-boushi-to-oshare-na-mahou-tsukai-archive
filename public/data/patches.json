@@ -23,6 +23,39 @@
   },
   "releases": [
     {
+      "version": "2.5.1",
+      "date": "2026-05-29",
+      "headline": "Magic Pen label fix, recipe category crash prevention, Soba Noodles rename, grammatical A-prefix pass",
+      "summary": "A hotfix release on top of v2.5. Corrects a mistranslated label (Magic Pen was a full sentence about practicing magic), fixes the recipe-category concatenation suffix that could overflow the engine's buffer when combined with long category names, renames Buckwheat noodles to Soba Noodles, and adds grammatical 'A' articles to 38 recipe category names that read as bare nouns.",
+      "changes": [
+        "Magic Pen label fix — msg99098 entry 54 had the JP まほうのペン ('Magic Pen') mistranslated as a full sentence. Now reads 'A Magical Pen' as a proper label.",
+        "Recipe category concatenation suffix — entry 4's suffix 'Let's make one!' was too long when combined with category names, risking crashes on real hardware. Shortened to '!' to give maximum room to the category name portion.",
+        "Buckwheat noodles renamed to Soba Noodles — そば is a standard English loanword.",
+        "38 recipe category names prefixed with 'A' for natural English grammar in the crafting UI (e.g. 'Cake' → 'A Cake', 'Stew' → 'A Stew', 'Bouquet' → 'A Bouquet')."
+      ],
+      "changelogUrl": "/changelog/v2.5.1/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.5.1-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 15112050,
+          "patchSha256": "eef3196481929104ed1c5199c0351f2aaae36650c8b3a4d8c5f911b518fc9870"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.5.1-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 3970304,
+          "patchSha256": "be1b305ccb49b0f3ace6217120ed73c05b8b431b58e132517ebc4729f624b742"
+        }
+      ],
+      "patchedRomSha256": "621937dcce3bd25647cd61630816b28a37232e77ac8aac4e94e93aaef17e71f0",
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 621937dc…ef17e71f0)."
+    },
+    {
       "version": "2.5",
       "date": "2026-05-28",
       "headline": "Goblin Shark crash fix, crafting quality table rewrite, item name unification, mistranslation fixes",

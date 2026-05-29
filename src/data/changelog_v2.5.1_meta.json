@@ -1,0 +1,13 @@
+{
+  "version": "2.5.1",
+  "date": "2026-05-29",
+  "headline": "Magic Pen label fix, recipe category crash prevention, Soba Noodles rename, grammatical A-prefix pass",
+  "summary": "A hotfix release on top of v2.5. Corrects a mistranslated label (Magic Pen was a full sentence), fixes the recipe-category concatenation suffix that could overflow the engine's buffer when combined with long category names, renames Buckwheat noodles to Soba Noodles, and adds grammatical 'A' articles to 38 recipe category names that read as bare nouns.",
+  "previousVersionLabel": "v2.5",
+  "counts": {
+    "labelFixes": 1,
+    "suffixFixes": 1,
+    "renames": 1,
+    "grammarPrefixAdditions": 38
+  }
+}

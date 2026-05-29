@@ -35,6 +35,7 @@ const MAX_HARDWARE = 8;
 // default selection for new submissions. Freeform "Other" is handled via
 // the OTHER_VERSION_SENTINEL below.
 const PATCH_VERSIONS = [
+  'v2.5.1',
   'v2.5',
   'v2.4.2',
   'v2.4.1',
