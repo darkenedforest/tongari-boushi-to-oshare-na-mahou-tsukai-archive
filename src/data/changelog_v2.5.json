@@ -50,6 +50,14 @@
     {
       "title": "Field guide updated — bubble vs window rendering (step-374)",
       "body": "The archive site's field guide page on bubble vs window rendering was updated with findings from the overlay 157 investigation. Key changes: removed an unverified claim about mid-entry style flips, added documentation about how NPC personality types influence dialog rendering paths, clarified special-character dialog paths, and corrected the caller table."
+    },
+    {
+      "title": "Magic-input NPC label — magic_glyphs table fix (step-380)",
+      "body": "The step-361 'Shammy' → 'Jamie' fix had only updated the entries table, but the magic-input panel is rebuilt from the magic_glyphs table. The magic_glyphs slot for npc_id 1137 still read 'Shammy', so the shipped ROM still showed the old name. Fixed by updating the correct source table."
+    },
+    {
+      "title": "Item name unification — missed occurrences fixed (step-381)",
+      "body": "The step-377 item name unification missed 14 additional occurrences across classroom lesson dialogs, the Part-Time Cat crafting lines, category labels, and the ucc_names crafting-product table. Variant spellings that the original pass didn't catch: Lure Bouquet had one lesson still saying 'Invitation Bouquet' plus two grammar errors ('an Lure Bouquet' → 'a Lure Bouquet'), and ucc_names slot 50 said 'Date Bouquet'. Sereni-Tea had four lesson entries saying 'Tranquility Tea', two entries saying 'Relaxation Tea', and ucc_names slot 51 saying 'Calming Tea'. Charm Aroma had one entry saying '★Alluring Aroma'. Chic Clothes had entries saying 'cool clothes' and 'Trendy clothes'. All 14 entries and 2 ucc_names slots corrected."
     }
   ]
 }

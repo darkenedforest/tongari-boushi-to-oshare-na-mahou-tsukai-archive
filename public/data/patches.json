@@ -37,7 +37,9 @@
         "Magic-input NPC label 'Shammy' corrected to 'Jamie' at inputmagic/msg.ofs entry 637 (npc_id 1137, JP シャミー).",
         "Fungi Forest habitat dropdown label restored from a broken full sentence back to the short label form matching the JP source キノコの森.",
         "Bubble text budget reclassification — 5,822 rows tagged with correct 32-char bubble cap (internal metadata only, no visible text changes).",
-        "Field guide updated with bubble vs window rendering findings from overlay 157 investigation."
+        "Field guide updated with bubble vs window rendering findings from overlay 157 investigation.",
+        "Same-day fix: magic_glyphs table updated for 'Shammy' → 'Jamie' (the initial build read from the wrong source table).",
+        "Same-day fix: 14 additional item name occurrences corrected — variant spellings in classroom lessons, Part-Time Cat dialogs, category labels, and the ucc_names crafting table that the original unification pass missed (Tranquility Tea, Relaxation Tea, Calming Tea, Date Bouquet, Alluring Aroma, Trendy clothes, cool clothes)."
       ],
       "changelogUrl": "/changelog/v2.5/",
       "downloads": [
