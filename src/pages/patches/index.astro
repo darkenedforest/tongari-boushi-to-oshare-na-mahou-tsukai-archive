@@ -109,17 +109,51 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     media="all"
   />
 
-  <!-- ───────────────────────── In-browser ROM patcher ───────────────────── -->
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>Patches</span>
+    </p>
+    <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
+    <p class="lede">
+      English fan-translation patches for the original Japanese DS ROM. The
+      quickest way is the in-browser patcher just below — pick a version, drop
+      in your ROM, done. If you'd rather patch manually, every
+      <code>.xdelta</code> is also downloadable below for use with Delta Patcher.
+    </p>
+  </section>
+
+  <!-- ───────────────────────── In-browser ROM patcher (hero) ────────────── -->
   <section class="web-patcher card" id="web-patcher" aria-labelledby="web-patcher-title">
-    <div class="wp-header">
-      <h2 id="web-patcher-title">
-        Patch your ROM in your browser <span class="sparkle-mark" aria-hidden="true">✦</span>
-      </h2>
-      <p class="wp-lede">
-        No downloads, no extra tools. Pick a version, choose your Japanese
-        <code>.nds</code> ROM, and get the English game back out — everything
-        runs locally in your browser, and your ROM never leaves your device.
-      </p>
+    <div class="wp-banner">
+      <div class="wp-glitter" aria-hidden="true">
+        <span class="wp-star s1">✦</span>
+        <span class="wp-star s2">✧</span>
+        <span class="wp-star s3">✦</span>
+        <span class="wp-star s4">✧</span>
+        <span class="wp-star s5">✦</span>
+        <span class="wp-star s6">✧</span>
+      </div>
+      <img
+        class="wp-sprite"
+        src={`${base}/decorations/magic-lamp-crystal.png`}
+        alt=""
+        aria-hidden="true"
+      />
+      <div class="wp-header">
+        <span class="wp-recommend-chip">
+          <span class="wp-chip-star" aria-hidden="true">✦</span> The easy way to patch
+        </span>
+        <h2 id="web-patcher-title">
+          Patch your ROM in your browser
+        </h2>
+        <p class="wp-lede">
+          No downloads, no extra tools. Pick a version, choose your Japanese
+          <code>.nds</code> ROM, and get the English game back out — everything
+          runs locally in your browser, and your ROM never leaves your device.
+        </p>
+      </div>
     </div>
 
     <div class="wp-controls">
@@ -192,6 +226,11 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
         </button>
       </div>
     </div>
+
+    <p class="wp-handoff">
+      Prefer to patch offline? Grab a patch file and instructions below
+      <span class="wp-handoff-arrow" aria-hidden="true">↓</span>
+    </p>
 
     <p class="wp-powered">
       <a href="https://github.com/marcrobledo/RomPatcher.js" target="_blank" rel="noopener">
@@ -307,25 +346,10 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     })();
   </script>
 
-  <section class="page-header">
-    <p class="breadcrumb">
-      <a href={`${base}/`}>Home</a>
-      <span aria-hidden="true">›</span>
-      <span>Patches</span>
-    </p>
-    <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
-    <p class="lede">
-      English fan-translation patches for the original Japanese DS ROM. The
-      quickest way is the in-browser patcher above — pick a version, drop in
-      your ROM, done. If you'd rather patch manually, every <code>.xdelta</code>
-      is also downloadable below for use with Delta Patcher.
-    </p>
-  </section>
-
   <section class="how-to card">
     <h2>Prefer to patch manually?</h2>
     <p class="muted" style="margin-top: -6px;">
-      You don't need to — the in-browser patcher at the top does everything
+      You don't need to — the in-browser patcher above does everything
       locally. But if you'd rather use a desktop tool, here's the Delta Patcher
       route.
     </p>
@@ -1026,50 +1050,144 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     }
   }
 
-  /* ── In-browser patcher card ──────────────────────────────────────── */
+  /* ── In-browser patcher — promoted HERO block ─────────────────────── */
   .web-patcher {
-    margin: 32px 0 36px;
-    padding: 30px 32px;
-    background:
-      linear-gradient(180deg, rgba(245, 240, 255, 0.9), rgba(255, 255, 255, 1) 45%);
-    border: 1px solid var(--color-purple-200);
+    margin: 28px 0 40px;
+    padding: 0 0 26px;
+    background: var(--surface-strong);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-lg);
+    /* Gradient ring border via double-background trick. */
+    background-image:
+      linear-gradient(var(--surface-strong), var(--surface-strong)),
+      linear-gradient(120deg, var(--color-pink-200), var(--color-purple-200), var(--color-blue-200));
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
     box-shadow: var(--shadow-pop);
     position: relative;
     overflow: hidden;
   }
 
-  .web-patcher::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 24px;
-    right: 24px;
-    height: 4px;
-    background: linear-gradient(90deg, var(--color-blue-400), var(--color-purple-400), var(--color-pink-400));
-    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+  /* ── Banner band behind the header ──────────────────────────────── */
+  .wp-banner {
+    position: relative;
+    padding: 30px 32px 26px;
+    background:
+      radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.45) 0 1.5px, transparent 2.5px),
+      linear-gradient(120deg,
+        var(--color-pink-100) 0%,
+        var(--color-purple-100) 48%,
+        var(--color-blue-100) 100%);
+    border-bottom: 1px solid var(--color-purple-100);
+    overflow: hidden;
+  }
+
+  .wp-header {
+    position: relative;
+    z-index: 2;
+  }
+
+  .wp-recommend-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--color-purple-600);
+    border: 1px solid var(--color-pink-200);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.02em;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(2px);
+  }
+
+  .wp-chip-star {
+    color: var(--color-pink-400);
+    animation: wp-twinkle 2.4s ease-in-out infinite;
   }
 
   .wp-header h2 {
     margin: 0 0 8px;
-    font-size: 1.45rem;
+    font-size: 1.7rem;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  /* Floating decorative sprite (matches the latest-release card vibe). */
+  .wp-sprite {
+    position: absolute;
+    top: -14px;
+    right: 20px;
+    width: 88px;
+    height: 88px;
+    z-index: 1;
+    pointer-events: none;
+    user-select: none;
+    transform: rotate(8deg);
+    filter: drop-shadow(0 6px 10px rgba(109, 76, 166, 0.25));
+    animation: wp-float 5s ease-in-out infinite;
+  }
+
+  /* ── Glittering stars scattered across the banner ───────────────── */
+  .wp-glitter {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .wp-star {
+    position: absolute;
+    color: white;
+    text-shadow: 0 0 6px rgba(255, 126, 182, 0.7);
+    opacity: 0.85;
+    animation: wp-twinkle 3s ease-in-out infinite;
+  }
+
+  .wp-star.s1 { top: 16%;  left: 7%;   font-size: 0.9rem;  animation-delay: 0s;    color: var(--color-pink-200); }
+  .wp-star.s2 { top: 64%;  left: 16%;  font-size: 0.7rem;  animation-delay: 0.6s;  color: white; }
+  .wp-star.s3 { top: 30%;  left: 46%;  font-size: 0.8rem;  animation-delay: 1.1s;  color: var(--color-blue-200); }
+  .wp-star.s4 { top: 74%;  left: 54%;  font-size: 1rem;    animation-delay: 0.3s;  color: white; }
+  .wp-star.s5 { top: 22%;  left: 70%;  font-size: 0.75rem; animation-delay: 1.5s;  color: var(--color-purple-200); }
+  .wp-star.s6 { top: 58%;  left: 80%;  font-size: 0.85rem; animation-delay: 0.9s;  color: white; }
+
+  @keyframes wp-twinkle {
+    0%, 100% { opacity: 0.25; transform: scale(0.85); }
+    50%      { opacity: 1;    transform: scale(1.15); }
+  }
+
+  @keyframes wp-float {
+    0%, 100% { transform: rotate(8deg)  translateY(0); }
+    50%      { transform: rotate(5deg)  translateY(-7px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wp-star,
+    .wp-chip-star,
+    .wp-sprite { animation: none; }
   }
 
   .wp-lede {
-    max-width: 64ch;
+    max-width: 60ch;
     margin: 0;
     line-height: 1.6;
     color: var(--color-ink);
   }
 
   .wp-lede code {
-    background: var(--color-purple-50);
+    background: rgba(255, 255, 255, 0.7);
     padding: 1px 6px;
     border-radius: 6px;
     font-size: 0.9em;
   }
 
   .wp-controls {
-    margin: 22px 0 18px;
+    margin: 24px 32px 18px;
   }
 
   .wp-field {
@@ -1129,8 +1247,38 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     color: var(--color-blue-600);
   }
 
+  /* Soft downward handoff to the offline-download section. */
+  .wp-handoff {
+    margin: 22px 32px 0;
+    padding: 12px 18px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(255, 240, 246, 0.6), rgba(245, 240, 255, 0.6));
+    border: 1px dashed var(--color-purple-200);
+    border-radius: var(--radius-pill);
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    font-weight: 600;
+  }
+
+  .wp-handoff-arrow {
+    display: inline-block;
+    margin-left: 6px;
+    color: var(--color-purple-400);
+    font-weight: 700;
+    animation: wp-bob 1.8s ease-in-out infinite;
+  }
+
+  @keyframes wp-bob {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(3px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .wp-handoff-arrow { animation: none; }
+  }
+
   .wp-powered {
-    margin: 18px 0 0;
+    margin: 14px 32px 0;
     text-align: right;
     font-size: 0.78rem;
   }
@@ -1152,10 +1300,24 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
 <style is:global>
   #rom-patcher-container {
     background-color: transparent !important;
-    padding: 18px 0 0 !important;
+    padding: 4px 32px 0 !important;
     max-width: none !important;
     color: var(--color-ink) !important;
     line-height: 1.7;
+  }
+
+  /* Soft framed panel around the ROM picker + checksum readout so it reads
+     as a contained "drop your ROM here" zone rather than loose form rows. */
+  #rom-patcher-container #rom-patcher-row-file-rom {
+    background: var(--color-purple-50);
+    border: 1px solid var(--color-purple-100);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+    margin-bottom: 12px !important;
+  }
+
+  #rom-patcher-container #rom-patcher-rom-info {
+    padding: 0 4px;
   }
 
   #rom-patcher-container .text-muted {
@@ -1164,37 +1326,47 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
 
   #rom-patcher-container input[type='file'],
   #rom-patcher-container select {
-    background-color: var(--color-purple-50);
-    border: 1px solid var(--color-purple-100);
+    background-color: #ffffff;
+    border: 1px solid var(--color-purple-200);
     border-radius: var(--radius-sm);
     color: var(--color-ink);
+    padding: 8px 12px;
   }
 
   #rom-patcher-container input[type='file']:hover:not(:disabled),
   #rom-patcher-container select:hover:not(:disabled) {
-    background-color: var(--color-purple-100);
+    background-color: var(--color-purple-50);
+    border-color: var(--color-purple-400);
   }
 
   #rom-patcher-container input[type='file']:focus:not(:disabled),
   #rom-patcher-container select:focus:not(:disabled) {
+    border-color: var(--color-purple-400);
     box-shadow: 0 0 0 3px var(--color-purple-100);
   }
 
-  /* Apply button — reuse the site's gradient .btn look. */
+  /* Apply button — prominent primary gradient pill matching the site .btn. */
+  #rom-patcher-container #rom-patcher-row-apply {
+    margin-top: 18px;
+  }
+
   #rom-patcher-container button#rom-patcher-button-apply {
     background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
     color: white;
     border-radius: var(--radius-pill);
-    padding: 12px 26px;
+    padding: 13px 32px;
     font-family: var(--font-display);
     font-weight: 700;
+    font-size: 1.02rem;
     box-shadow: var(--shadow-pop);
-    min-width: 160px;
+    min-width: 190px;
+    transition: transform 0.12s ease, box-shadow 0.15s ease;
   }
 
   #rom-patcher-container button#rom-patcher-button-apply:not(:disabled):hover {
     background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
     transform: translateY(-2px);
+    box-shadow: 0 16px 36px rgba(233, 63, 142, 0.30);
   }
 
   #rom-patcher-container input[type='file'].valid {

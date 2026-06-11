@@ -1,0 +1,23 @@
+{
+  "step": "step-387-web-patcher-restyle",
+  "timestamp": "2026-06-11T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "src/pages/patches/index.astro#order",
+      "file_path": "src/pages/patches/index.astro",
+      "offset": null,
+      "before": "Page opened with the in-browser patcher form, then the page-header (breadcrumb + 'Patches' title + description lede), then how-to + release history. The bare form sat above any header/description.",
+      "after": "Reordered so the page reads: page-header (breadcrumb + title + description) FIRST, then the in-browser patcher hero, then the how-to card and release history. Updated the lede + how-to copy to say the patcher is 'just below' / 'above' instead of 'above' / 'at the top'. All patcher IDs, scripts, and init logic unchanged.",
+      "reason": "Tyler review: it felt weird to open cold on a bare form with no title/description above it."
+    },
+    {
+      "ref": "src/pages/patches/index.astro#hero",
+      "file_path": "src/pages/patches/index.astro",
+      "offset": null,
+      "before": "Patcher was a plain pastel card with a thin top accent line and a single static sparkle in the heading.",
+      "after": "Promoted the patcher to a stylish hero block (layout + CSS only): a pink->purple->blue pastel gradient banner band behind the header; six animated twinkling glitter stars (the site sparkle motif); a floating crystal magic-lamp decoration sprite (matches the latest-release card); a gradient ring border + --shadow-pop for elevation; a tasteful pastel 'The easy way to patch' recommend pill (NOT a 'NEW' badge); a soft dashed downward handoff line 'Prefer to patch offline? Grab a patch file and instructions below'; and tightened RomPatcher control theming (framed ROM-picker panel, white pastel-bordered inputs/select, prominent gradient-pill Apply button). prefers-reduced-motion disables the animations.",
+      "reason": "Tyler review: wants visual 'design fanfare' (glitter, banner, stylish) presenting the in-browser patcher as the recommended way to patch, with offline files clearly secondary below."
+    }
+  ]
+}
