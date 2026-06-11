@@ -1,0 +1,23 @@
+{
+  "step": "step-386-web-patcher",
+  "timestamp": "2026-06-11T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "public/rom-patcher-js/",
+      "file_path": "public/rom-patcher-js/",
+      "offset": null,
+      "before": "(absent)",
+      "after": "Vendored marcrobledo/RomPatcher.js v3.x rom-patcher-js/ folder (webapp + core + 3 web workers + modules + assets + style.css) plus its MIT LICENSE. One-line source patch: ROM_PATCHER_JS_PATH now derives from the webapp script's own URL (document.currentScript.src) instead of the hardcoded './rom-patcher-js/' relative to the document, so web-worker spawn URLs and zip.workerScriptsPath resolve correctly under the GitHub Pages base subpath.",
+      "reason": "Provide the client-side patching engine, same-origin, base-path-safe."
+    },
+    {
+      "ref": "src/pages/patches/index.astro",
+      "file_path": "src/pages/patches/index.astro",
+      "offset": null,
+      "before": "Patches page: page-header + Delta-Patcher how-to + release history. No in-browser patching.",
+      "after": "Added a boxed 'Patch your ROM in your browser' card at the top with a version dropdown (newest first, default latest v2.5.1) wired to RomPatcher.js in predefined-patch mode via BASE_URL-prefixed paths. Auto-rev-detection: onloadrom computes the ROM md5 and stages the matching Rev 0/Rev 1 patch; each rev validates against its own md5 (requireValidation:true) so the staged patch and validated ROM stay in lockstep. Pastel-themed RomPatcher controls via is:global overrides. 'Powered by RomPatcher.js' attribution link. Updated the page lede + how-to heading to present the in-browser patcher as the primary path while keeping the Delta Patcher download/instructions intact for manual users.",
+      "reason": "Let visitors patch entirely client-side without external tools; refresh stale 'Delta Patcher only' copy."
+    }
+  ]
+}

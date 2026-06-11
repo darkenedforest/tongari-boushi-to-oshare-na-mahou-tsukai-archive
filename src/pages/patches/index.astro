@@ -52,6 +52,38 @@ function resolveLocalUrl(path: string): string {
   return `${base}/${trimmed}`;
 }
 
+// ── In-browser patcher config ─────────────────────────────────────────
+// Build the list of versions the web patcher can apply: only releases whose
+// downloads are locally-hosted .xdelta files (v2.3 → latest). Each version
+// carries its two ROM-revision entries (Rev 0 / Rev 1) so the patcher can
+// auto-detect which revision the visitor's ROM is by MD5.
+const webPatcherVersions = releases
+  .filter((r) => r.downloads.some((d: any) => d.isLocal))
+  .map((r) => {
+    const revs = r.downloads
+      .filter((d: any) => d.isLocal)
+      .map((d: any) => ({
+        label: d.label, // "Rev 0" / "Rev 1"
+        file: resolveLocalUrl(d.url),
+        inputMd5: d.romMd5,
+      }));
+    return {
+      version: r.version,
+      // Resulting patched-ROM sha256 (when known) lets us self-verify in dev.
+      patchedRomSha256: r.patchedRomSha256 ?? null,
+      outputName: `Tongari Boushi to Oshare na Mahou Tsukai (English v${r.version})`,
+      revs,
+    };
+  });
+
+const webPatcherConfig = {
+  romPatcherBase: `${base}/rom-patcher-js/`,
+  webappScript: `${base}/rom-patcher-js/RomPatcher.webapp.js`,
+  styleSheet: `${base}/rom-patcher-js/style.css`,
+  poweredByImg: `${base}/rom-patcher-js/assets/powered_by_rom_patcher_js.png`,
+  versions: webPatcherVersions,
+};
+
 // Render very light markdown: **bold** spans only.
 function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: string }> {
   const parts: Array<{ kind: 'text' | 'bold'; value: string }> = [];
@@ -69,6 +101,212 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
 ---
 
 <Layout title="Patches">
+  <!-- RomPatcher.js stylesheet (vendored, MIT — marcrobledo/RomPatcher.js) -->
+  <link
+    rel="stylesheet"
+    type="text/css"
+    href={`${base}/rom-patcher-js/style.css`}
+    media="all"
+  />
+
+  <!-- ───────────────────────── In-browser ROM patcher ───────────────────── -->
+  <section class="web-patcher card" id="web-patcher" aria-labelledby="web-patcher-title">
+    <div class="wp-header">
+      <h2 id="web-patcher-title">
+        Patch your ROM in your browser <span class="sparkle-mark" aria-hidden="true">✦</span>
+      </h2>
+      <p class="wp-lede">
+        No downloads, no extra tools. Pick a version, choose your Japanese
+        <code>.nds</code> ROM, and get the English game back out — everything
+        runs locally in your browser, and your ROM never leaves your device.
+      </p>
+    </div>
+
+    <div class="wp-controls">
+      <label class="wp-field">
+        <span class="wp-field-label">Patch version</span>
+        <select id="wp-version-select" class="wp-select"></select>
+      </label>
+      <p class="wp-rev-hint">
+        <strong>Rev 0 vs Rev 1:</strong> Rev 0 is the original cartridge dump;
+        Rev 1 is Nintendo's later revision. You don't need to pick — the tool
+        reads your ROM and selects the matching patch automatically, and warns
+        you if the file isn't a recognized Japanese dump.
+      </p>
+    </div>
+
+    <!-- RomPatcher.js container. The three IDs below are required by the
+         webapp; the rest are informational. -->
+    <div id="rom-patcher-container" class="wp-rompatcher">
+      <div class="rom-patcher-row margin-bottom" id="rom-patcher-row-file-rom">
+        <div class="text-right">
+          <label for="rom-patcher-input-file-rom" data-localize="yes">ROM file:</label>
+        </div>
+        <div class="rom-patcher-container-input">
+          <input type="file" id="rom-patcher-input-file-rom" class="empty" disabled />
+        </div>
+      </div>
+
+      <div class="margin-bottom text-selectable text-mono text-muted" id="rom-patcher-rom-info">
+        <div class="rom-patcher-row">
+          <div class="text-right">CRC32:</div>
+          <div class="text-truncate"><span id="rom-patcher-span-crc32"></span></div>
+        </div>
+        <div class="rom-patcher-row">
+          <div class="text-right">MD5:</div>
+          <div class="text-truncate"><span id="rom-patcher-span-md5"></span></div>
+        </div>
+        <div class="rom-patcher-row">
+          <div class="text-right">SHA-1:</div>
+          <div class="text-truncate"><span id="rom-patcher-span-sha1"></span></div>
+        </div>
+        <div class="rom-patcher-row" id="rom-patcher-row-info-rom">
+          <div class="text-right">ROM:</div>
+          <div class="text-truncate"><span id="rom-patcher-span-rom-info"></span></div>
+        </div>
+      </div>
+
+      <!-- Patch selector: RomPatcher requires this element. We drive it via
+           our own version dropdown + auto-rev-detection, so it stays a
+           single, read-only entry showing the chosen patch. -->
+      <div class="rom-patcher-row margin-bottom" id="rom-patcher-row-file-patch" hidden>
+        <div class="text-right">
+          <label for="rom-patcher-input-file-patch" data-localize="yes">Patch file:</label>
+        </div>
+        <div class="rom-patcher-container-input">
+          <select id="rom-patcher-select-patch"></select>
+        </div>
+      </div>
+
+      <div class="rom-patcher-row margin-bottom text-selectable text-mono text-muted" id="rom-patcher-row-patch-requirements">
+        <div class="text-right text-mono" id="rom-patcher-patch-requirements-type">ROM requirements:</div>
+        <div class="text-truncate" id="rom-patcher-patch-requirements-value"></div>
+      </div>
+
+      <div class="text-center" id="rom-patcher-row-apply">
+        <div id="rom-patcher-row-error-message" class="margin-bottom">
+          <span id="rom-patcher-error-message"></span>
+        </div>
+        <button id="rom-patcher-button-apply" class="btn wp-apply" data-localize="yes" disabled>
+          Apply patch
+        </button>
+      </div>
+    </div>
+
+    <p class="wp-powered">
+      <a href="https://github.com/marcrobledo/RomPatcher.js" target="_blank" rel="noopener">
+        Powered by RomPatcher.js
+      </a>
+    </p>
+  </section>
+
+  <!-- Patcher config consumed by the inline init script below. -->
+  <script
+    type="application/json"
+    id="wp-config"
+    is:inline
+    set:html={JSON.stringify(webPatcherConfig)}
+  />
+
+  <!-- RomPatcher.js webapp (vendored, MIT). is:inline so Astro serves it
+       verbatim from public/ rather than trying to bundle it. -->
+  <script type="text/javascript" is:inline src={`${base}/rom-patcher-js/RomPatcher.webapp.js`}></script>
+
+  <script is:inline>
+    (function () {
+      const cfg = JSON.parse(document.getElementById('wp-config').textContent);
+      const versions = cfg.versions;
+      const sel = document.getElementById('wp-version-select');
+
+      // Populate the version dropdown (newest first; default = first/latest).
+      versions.forEach(function (v, i) {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = 'v' + v.version + (i === 0 ? ' (latest)' : '');
+        sel.appendChild(opt);
+      });
+
+      let currentVersionIndex = 0;
+      let currentRomMd5 = null; // md5 of the ROM the visitor loaded, if any
+
+      // Pick the rev entry for a version: match the loaded ROM's md5 if we
+      // have one; otherwise default to Rev 0.
+      function pickRev(version) {
+        if (currentRomMd5) {
+          const m = version.revs.find(function (r) {
+            return r.inputMd5.toLowerCase() === currentRomMd5.toLowerCase();
+          });
+          if (m) return m;
+        }
+        return version.revs[0];
+      }
+
+      // Build the embeded-patch descriptor RomPatcher expects for a rev.
+      // Validation is against THIS rev's md5 only — each rev's .xdelta is
+      // source-specific, so a Rev 1 ROM must get the Rev 1 patch. If the
+      // wrong rev is staged for the loaded ROM, validation fails (button
+      // stays disabled) and onloadrom swaps in the correct rev, which then
+      // re-validates and enables Apply. This keeps the staged patch and the
+      // validated ROM in lockstep.
+      function patchDescriptor(version, rev) {
+        return {
+          file: rev.file,
+          name: 'v' + version.version + ' — ' + rev.label,
+          outputName: version.outputName,
+          outputExtension: 'nds',
+          inputMd5: rev.inputMd5,
+        };
+      }
+
+      function applyVersion(index) {
+        currentVersionIndex = index;
+        const version = versions[index];
+        const rev = pickRev(version);
+        RomPatcherWeb.setEmbededPatches(patchDescriptor(version, rev));
+      }
+
+      sel.addEventListener('change', function () {
+        applyVersion(parseInt(this.value, 10) || 0);
+      });
+
+      function init() {
+        RomPatcherWeb.initialize(
+          {
+            language: 'en',
+            requireValidation: true,
+            outputSuffix: false,
+            // When the visitor loads a ROM, compute its md5 and (if it
+            // matches the other revision of the selected version) swap to the
+            // matching rev so the right patch is applied automatically.
+            onloadrom: function (romFile) {
+              try {
+                currentRomMd5 = romFile.hashMD5();
+              } catch (e) {
+                currentRomMd5 = null;
+              }
+              const version = versions[currentVersionIndex];
+              const rev = pickRev(version);
+              // Only re-fetch if the auto-detected rev differs from what's
+              // currently staged (avoids a redundant fetch on every load).
+              if (rev && rev.file !== (window.__wpCurrentPatchFile || null)) {
+                window.__wpCurrentPatchFile = rev.file;
+                RomPatcherWeb.setEmbededPatches(patchDescriptor(version, rev));
+              }
+            },
+          },
+          patchDescriptor(versions[0], pickRev(versions[0]))
+        );
+        window.__wpCurrentPatchFile = pickRev(versions[0]).file;
+      }
+
+      if (document.readyState === 'complete') {
+        init();
+      } else {
+        window.addEventListener('load', init);
+      }
+    })();
+  </script>
+
   <section class="page-header">
     <p class="breadcrumb">
       <a href={`${base}/`}>Home</a>
@@ -77,14 +315,20 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     </p>
     <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
     <p class="lede">
-      English fan-translation patches for the original Japanese DS ROM. Pick the
-      patch that matches your ROM revision, run it through Delta Patcher, and
-      you'll get an English <code>.nds</code> file out the other side.
+      English fan-translation patches for the original Japanese DS ROM. The
+      quickest way is the in-browser patcher above — pick a version, drop in
+      your ROM, done. If you'd rather patch manually, every <code>.xdelta</code>
+      is also downloadable below for use with Delta Patcher.
     </p>
   </section>
 
   <section class="how-to card">
-    <h2>How to apply a patch</h2>
+    <h2>Prefer to patch manually?</h2>
+    <p class="muted" style="margin-top: -6px;">
+      You don't need to — the in-browser patcher at the top does everything
+      locally. But if you'd rather use a desktop tool, here's the Delta Patcher
+      route.
+    </p>
     <ol class="how-list">
       <li>
         <strong>Figure out which ROM revision you have.</strong>
@@ -780,5 +1024,188 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       left: 10px;
       transform: none;
     }
+  }
+
+  /* ── In-browser patcher card ──────────────────────────────────────── */
+  .web-patcher {
+    margin: 32px 0 36px;
+    padding: 30px 32px;
+    background:
+      linear-gradient(180deg, rgba(245, 240, 255, 0.9), rgba(255, 255, 255, 1) 45%);
+    border: 1px solid var(--color-purple-200);
+    box-shadow: var(--shadow-pop);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .web-patcher::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 24px;
+    right: 24px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--color-blue-400), var(--color-purple-400), var(--color-pink-400));
+    border-radius: 0 0 var(--radius-pill) var(--radius-pill);
+  }
+
+  .wp-header h2 {
+    margin: 0 0 8px;
+    font-size: 1.45rem;
+  }
+
+  .wp-lede {
+    max-width: 64ch;
+    margin: 0;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+
+  .wp-lede code {
+    background: var(--color-purple-50);
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+  }
+
+  .wp-controls {
+    margin: 22px 0 18px;
+  }
+
+  .wp-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-width: 360px;
+  }
+
+  .wp-field-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-purple-600);
+    font-size: 0.95rem;
+  }
+
+  .wp-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding: 11px 38px 11px 16px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--color-purple-200);
+    background-color: white;
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-soft);
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%239b7bd9' d='M6 8 0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .wp-select:hover,
+  .wp-select:focus {
+    border-color: var(--color-purple-400);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--color-purple-100);
+  }
+
+  .wp-rev-hint {
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    background: var(--color-blue-50);
+    border-left: 3px solid var(--color-blue-400);
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    max-width: 70ch;
+  }
+
+  .wp-rev-hint strong {
+    color: var(--color-blue-600);
+  }
+
+  .wp-powered {
+    margin: 18px 0 0;
+    text-align: right;
+    font-size: 0.78rem;
+  }
+
+  .wp-powered a {
+    color: var(--color-ink-soft);
+    opacity: 0.7;
+    transition: opacity 0.15s ease;
+  }
+
+  .wp-powered a:hover {
+    opacity: 1;
+    color: var(--color-purple-600);
+  }
+</style>
+
+<!-- Global overrides for RomPatcher.js's own (global) #rom-patcher-* rules.
+     RomPatcher injects child elements at runtime, so these can't be scoped. -->
+<style is:global>
+  #rom-patcher-container {
+    background-color: transparent !important;
+    padding: 18px 0 0 !important;
+    max-width: none !important;
+    color: var(--color-ink) !important;
+    line-height: 1.7;
+  }
+
+  #rom-patcher-container .text-muted {
+    color: var(--color-ink-soft);
+  }
+
+  #rom-patcher-container input[type='file'],
+  #rom-patcher-container select {
+    background-color: var(--color-purple-50);
+    border: 1px solid var(--color-purple-100);
+    border-radius: var(--radius-sm);
+    color: var(--color-ink);
+  }
+
+  #rom-patcher-container input[type='file']:hover:not(:disabled),
+  #rom-patcher-container select:hover:not(:disabled) {
+    background-color: var(--color-purple-100);
+  }
+
+  #rom-patcher-container input[type='file']:focus:not(:disabled),
+  #rom-patcher-container select:focus:not(:disabled) {
+    box-shadow: 0 0 0 3px var(--color-purple-100);
+  }
+
+  /* Apply button — reuse the site's gradient .btn look. */
+  #rom-patcher-container button#rom-patcher-button-apply {
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    border-radius: var(--radius-pill);
+    padding: 12px 26px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    box-shadow: var(--shadow-pop);
+    min-width: 160px;
+  }
+
+  #rom-patcher-container button#rom-patcher-button-apply:not(:disabled):hover {
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    transform: translateY(-2px);
+  }
+
+  #rom-patcher-container input[type='file'].valid {
+    background-color: #e2ffd9;
+  }
+
+  #rom-patcher-container input[type='file'].invalid {
+    background-color: #ffe0e0;
+  }
+
+  .rom-patcher-spinner:before {
+    background-color: var(--color-purple-400);
   }
 </style>
