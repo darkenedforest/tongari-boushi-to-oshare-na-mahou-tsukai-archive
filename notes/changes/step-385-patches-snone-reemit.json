@@ -1,0 +1,143 @@
+{
+  "step": "step-385-patches-snone-reemit",
+  "timestamp": "2026-06-11T00:00:00Z",
+  "kind": "other",
+  "rows": [
+    {
+      "ref": "patches:2.3:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.3-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=4229fd39260a90b830e1572a0960c8329c438016bbf3910be02ea0cb82bf62bb size=15122386",
+      "after": "sha256=9d1c16fdb07c9c3db6de1fadd9f1f88aa9d81a1c7d6fcdaa3bd4f7f46bf9068e size=16925285",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.3:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.3-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=92f451a83a796f6488cd034950d81b1289075962ed84e1b035e3469e819961cb size=3847174",
+      "after": "sha256=206df031f80dab2423017f8e819df67ac3d0ca43ce0524ee7611f86ee384ffeb size=3873543",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.31:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.31-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=a9a33d648f73dabe44896fc643ddddf80269f13ba2b4062b80a1399f64efedbd size=15122495",
+      "after": "sha256=162c2ebce2178974baff222b21def71b3102cddddd21122d7f2f4c06abedb08a size=16923421",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.31:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.31-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=09a2ba70c0e18b2e9b5308002e03f8fda10553f13c8f75c39a105317792af7c0 size=3832935",
+      "after": "sha256=400515967b4cc887c5f99b425efdd91a7e3bc1b15f067706fc47a878f5deb9c1 size=3855606",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.32:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.32-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=7ea3710e64602ae5aa087bcafc9a033ca8786bbcae55f130d008f4967aec1221 size=14380602",
+      "after": "sha256=907634bcb744ea3f8f503f572f219cc8180ff17d406fcd487cc70bbf98c82b93 size=16898502",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.32:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.32-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=3830a54b9de14feb5c15858e4d9dacbff95bd837d8fb2b5050b38c721ffe6611 size=3242410",
+      "after": "sha256=74ea108c5bdb3d22d3807d868b13d665bab9eb83e8281d5618d8ed656e532932 size=3824445",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.4:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.4-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=5c3a633fc927b3b934739baefa553e7e3d1d5784730bb821bb56daa848fe6715 size=15105777",
+      "after": "sha256=99e5c56481bbf3381b5d0721ea2395a607e9e98c285c085d95322b55afc1b192 size=16916955",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.4:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.4-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=043a89d5b28bbcb391751740da685c3885bb49d7bd866e0002b5484a4de4a149 size=3814936",
+      "after": "sha256=82c45bec39fa2a60128198e7f20de6a0e4e509196827aec97d1896a7805c94a3 size=3843057",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.4.1:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.4.1-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=0b687fb61cab07d4da8571ccfb2930035a1f757995a47124bdad0d9113680d0b size=15111612",
+      "after": "sha256=04f984646ed21da99f147e6a9f341f8ce54a7e4e8ab0199bcccd0254983490c1 size=16924138",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.4.1:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.4.1-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=348f1aaeb827ee849782b788ef57d3ef8e12d87c24e24362e91afafd86dd4529 size=3969675",
+      "after": "sha256=63f7a2e7a8b60395742bc0fb68454c14c99c994b402754ace82f53a77a40223f size=4011463",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.4.2:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.4.2-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=8fef47a2de6cccb46e3fa538ccc589ddce93a6852356f5e8413a4b609383bfcc size=14406659",
+      "after": "sha256=26ff6640a32305949bde0e8d700904640e5d5b5628329524bbcb1215480344eb size=16930254",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.4.2:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.4.2-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=7d101774e51977db565eb47c6820cff6ad01a5d048df76c647724d4c9b986dbf size=3417079",
+      "after": "sha256=722cd332c806205dd6bb1409bf0a5f607ceb30312f6861b4ac8f7dd2e10a7774 size=4017549",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.5:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.5-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=d2d5e3c227e986b37ae66da66fcdae5f0ef11c5c0c280077419b6d8dfe604da0 size=15112138",
+      "after": "sha256=d8f73548c686102d6855908f51a25250b5495b1c48682815dd9860d73c4822d5 size=16929839",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.5:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.5-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=5b5f6d5638b28434fc7ef83abaa7f8a1e1e3adea30a65002a4aaaaeb147cb1d7 size=3970398",
+      "after": "sha256=01c4da2431b8b973e56560123e81ac027d892a0464a8b431a28d882f3d7f50ef size=4017118",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.5.1:rev0",
+      "file_path": "public/patches/tongari-boushi-en-v2.5.1-rev0.xdelta",
+      "offset": null,
+      "before": "sha256=eef3196481929104ed1c5199c0351f2aaae36650c8b3a4d8c5f911b518fc9870 size=15112050",
+      "after": "sha256=162bc0364ec67a5ea101b5d3dfeb02f9d268296ff536c0d60c3b3f739f6334f0 size=16929833",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "patches:2.5.1:rev1",
+      "file_path": "public/patches/tongari-boushi-en-v2.5.1-rev1.xdelta",
+      "offset": null,
+      "before": "sha256=be1b305ccb49b0f3ace6217120ed73c05b8b431b58e132517ebc4729f624b742 size=3970304",
+      "after": "sha256=42f5510b951fbbeff0044dfd90bbeb2f67de7b299e620dbc82880aa1dec525d6 size=4017119",
+      "reason": "re-emit -S none for RomPatcher.js compatibility; patched ROM byte-identical"
+    },
+    {
+      "ref": "public/data/patches.json",
+      "file_path": "public/data/patches.json",
+      "offset": null,
+      "before": "all 16 downloads[] entries carried LZMA-secondary-compressed patch sizes + sha256",
+      "after": "all 16 downloads[] entries updated to the -S none patch sizes + sha256; url, romMd5, label, and all patchedRomSha256/patchedRomMd5 fields left unchanged",
+      "reason": "metadata now matches the re-emitted -S none patch files served on the site"
+    }
+  ]
+}
