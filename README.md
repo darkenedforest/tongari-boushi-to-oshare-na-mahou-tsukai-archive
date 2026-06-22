@@ -2,7 +2,6 @@
 
 A fan-built reference site for the Japan-only NDS game *Tongari Boushi to Oshare na Mahou Tsukai* (Magician's Quest 2).
 
-Built as a companion to the fan English translation project at [darkenedforest/tongari-boushi-translation-claude-2026](https://github.com/darkenedforest/tongari-boushi-translation-claude-2026).
 
 ## Stack
 
