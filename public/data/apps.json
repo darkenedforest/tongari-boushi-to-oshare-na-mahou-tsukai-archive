@@ -74,6 +74,93 @@
         }
       ],
       "sourceUrl": null
+    },
+    {
+      "slug": "taplex",
+      "name": "TapLex",
+      "tagline": "Draw a box over any on-screen text — a game, a manga panel, a menu — and tap the words to get readings, meanings, and a pop-up dictionary right where you're reading.",
+      "category": "Language learning",
+      "platform": "Android",
+      "status": "available",
+      "accent": "#2FA8DC",
+      "accentSoft": "#BDE7F7",
+      "icon": "/apps/taplex/icon.png",
+      "summary": "TapLex is a floating overlay that turns text in any app into a tappable dictionary. Point it at a region of the screen — a line of game dialogue, a manga panel, a menu — and it captures just that box, hands the crop to the AI you picked, and lays the sentence back out as clickable words with furigana over the kanji. Tap a word for its reading, meaning, and part of speech; ask a follow-up when you want more. Save anything worth keeping to a word list, and every capture is kept in your history.",
+      "download": {
+        "file": "/apps/taplex/TapLex-v1.0.apk",
+        "version": "1.0",
+        "sizeBytes": 28235193,
+        "sha256": "7301c14f383c100011a93b41f42b614af041b3d38535b99460935bb957b857dd",
+        "minAndroid": "7",
+        "build": "debug",
+        "updated": "2026-07-06"
+      },
+      "howItWorks": [
+        "It solves a specific kind of stuck. When you're reading Japanese in a game or a manga, the text is baked into the image — you can't select it, so you can't look anything up. Switching to a dictionary or an OCR app means leaving the thing you're reading, retyping what you can make out, and losing your place.",
+        "TapLex floats a little bubble over everything instead. Tap it and drag a box over the text you're stuck on. It hides itself so it won't show up in the shot, snaps a screenshot of just that region, then hands the crop to whichever AI you've set up.",
+        "A moment later the same box fills with the sentence rebuilt as tappable words, with the reading printed as small furigana above each kanji. Tap any word and a popup gives its reading, meaning, and part of speech, plus a short note on nuance and a button to hear it spoken.",
+        "Still not sure why a word means what it does? Ask a follow-up right in the popup and it explains, in the context of that sentence. Save any word to your list in a tap, flip the box between the translation and the game underneath so you never lose your place, and revisit anything later from your history."
+      ],
+      "features": [
+        { "title": "Draw a box over anything", "body": "The overlay rides over any app — games, manga readers, browsers, menus. Position a box over the exact text you're stuck on and capture just that." },
+        { "title": "Tappable words with furigana", "body": "The captured sentence comes back as clickable chips, with the reading set above every kanji as ruby text." },
+        { "title": "Pop-up dictionary", "body": "Tap a word for its reading, meaning, part of speech, and a one-line note on nuance — without ever leaving the game." },
+        { "title": "Ask a follow-up", "body": "Chat back for a deeper explanation of a word or grammar point, answered in the context of the sentence you're reading." },
+        { "title": "Hear it out loud", "body": "Built-in text-to-speech speaks the word, with optional higher-quality Azure neural voices if you add a key." },
+        { "title": "Save words & keep history", "body": "Build a categorized word list one tap at a time, and every capture is stored so you can go back to it." },
+        { "title": "Your choice of AI", "body": "Works with Claude (Anthropic), ChatGPT (OpenAI), or Gemini (Google) using your own API key — pick the provider and model you like." },
+        { "title": "Toggle between views", "body": "Flip a box between the translated words and the game showing through underneath, so you can check the original at a glance." },
+        { "title": "Reads many languages", "body": "Not just Japanese — pick the language you're reading and the one you want back, with runtime switching across 14 languages." }
+      ],
+      "requirements": [
+        "Android 7.0 or newer",
+        "Permission to draw over other apps, plus a screen-capture permission — the app asks for both on first run so it can show the box and snapshot the text inside it",
+        "An API key from Anthropic, OpenAI, or Google — you bring your own, and the app talks straight to that provider",
+        "An internet connection"
+      ],
+      "install": [
+        "Download the APK below onto your Android phone.",
+        "Open the downloaded file. Android will ask whether to allow installs from your browser or Files app — allow it. This is the normal \"install unknown apps\" prompt for anything that doesn't come from the Play Store.",
+        "Tap Install, then Open.",
+        "In the app's Settings, choose your provider (Claude, ChatGPT, or Gemini), paste your API key, and pick a model.",
+        "Optional but recommended: enable TapLex under Android's Settings → Accessibility — it makes screen capture lighter on the battery.",
+        "Tap Start TapLex, open your game or manga, then tap the floating bubble and drag a box over the text you want to read."
+      ],
+      "privacy": "TapLex sends each captured image straight to whichever AI provider you choose, using the API key you enter — nothing is routed through this site or any server of mine. Your saved words and capture history live on your phone.",
+      "buildNote": "This is a developer (debug) build, shared as-is — the same app I use day to day, not a Play Store release. It installs by sideloading, which is why Android shows the extra permission prompts.",
+      "screenshots": [
+        {
+          "src": "/apps/taplex/screenshots/tl-01-home.png",
+          "alt": "TapLex home screen with a Start TapLex button, a shiba mascot holding a phone, and counters for words saved and categories, plus a three-step quick-start.",
+          "caption": "Tap Start, open your game, and a floating bubble rides over everything."
+        },
+        {
+          "src": "/apps/taplex/screenshots/tl-02-select.png",
+          "alt": "A dashed selection box being dragged over a speech bubble in a manga panel, with green add and red cancel buttons beneath it.",
+          "caption": "Drag a box over the text you're stuck on — a game line, a manga bubble, a menu."
+        },
+        {
+          "src": "/apps/taplex/screenshots/tl-03-words.png",
+          "alt": "The selected box filled with a Japanese sentence rebuilt as tappable words, with furigana printed above the kanji.",
+          "caption": "The box fills with the sentence as tappable words, furigana over every kanji."
+        },
+        {
+          "src": "/apps/taplex/screenshots/tl-04-define.png",
+          "alt": "A dictionary popup for お姉ちゃん showing the reading おねえちゃん, the meaning 'big sister', its part of speech, a nuance note, and a speaker button.",
+          "caption": "Tap a word for its reading, meaning, part of speech, and a note on nuance — with a button to hear it."
+        },
+        {
+          "src": "/apps/taplex/screenshots/tl-05-followup.png",
+          "alt": "A follow-up question, 'I thought big sister was あね?', answered with an explanation comparing あね and お姉ちゃん.",
+          "caption": "Ask a follow-up right in the popup and it explains — here, あね vs. お姉ちゃん."
+        },
+        {
+          "src": "/apps/taplex/screenshots/tl-06-wordlist.png",
+          "alt": "The Word List tab showing saved words like ちょうど and 引っぱって with their readings, meanings, and part-of-speech tags, filterable by category.",
+          "caption": "Save anything worth keeping to a categorized word list."
+        }
+      ],
+      "sourceUrl": null
     }
   ]
 }
