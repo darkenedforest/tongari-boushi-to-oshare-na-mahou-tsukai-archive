@@ -1,0 +1,250 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import appsData from '../../../public/data/apps.json';
+
+const base = import.meta.env.BASE_URL;
+const apps = appsData.apps;
+
+function resolve(path: string): string {
+  return `${base}/${path.replace(/^\/+/, '')}`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+}
+---
+
+<Layout title="Apps" description="Homemade Japanese-learning apps — free Android downloads.">
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <span>Apps</span>
+    </p>
+    <h1>Apps <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
+    <p class="lede">{appsData.intro}</p>
+  </section>
+
+  <section class="store">
+    <div class="store-grid">
+      {apps.map((app) => {
+        const available = app.status === 'available';
+        const inner = (
+          <>
+            <span class="app-icon-tile" style={`--accent:${app.accent};--accent-soft:${app.accentSoft};`}>
+              <img src={resolve(app.icon)} alt="" width="72" height="72" loading="lazy" />
+            </span>
+            <span class="app-body">
+              <span class="app-title-row">
+                <span class="app-name">{app.name}</span>
+                {!available && <span class="app-soon-chip">Coming soon</span>}
+              </span>
+              <span class="app-cat chip">{app.category}</span>
+              <span class="app-tagline">{app.tagline}</span>
+              <span class="app-foot">
+                <span class="app-meta">
+                  {app.platform}
+                  {available && app.download && (
+                    <> · Free · {formatBytes(app.download.sizeBytes)}</>
+                  )}
+                </span>
+                {available
+                  ? <span class="app-cta">View app <span aria-hidden="true">→</span></span>
+                  : <span class="app-cta muted">In progress</span>}
+              </span>
+            </span>
+          </>
+        );
+        return available ? (
+          <a href={`${base}/apps/${app.slug}/`} class="app-card live">{inner}</a>
+        ) : (
+          <div class="app-card soon">{inner}</div>
+        );
+      })}
+    </div>
+
+    <p class="store-foot">
+      These are Android apps you install by sideloading — download the file and
+      open it on your phone. Each app's page has step-by-step install
+      instructions. They're free; some need an API key you provide yourself.
+    </p>
+  </section>
+</Layout>
+
+<style>
+  .page-header {
+    padding: 40px 0 12px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0 0 12px;
+  }
+
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+
+  .sparkle-mark {
+    color: var(--color-pink-400);
+  }
+
+  .lede {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    font-size: 1.05rem;
+  }
+
+  .store {
+    margin: 16px 0 40px;
+  }
+
+  .store-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 20px;
+  }
+
+  .app-card {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    padding: 22px 24px;
+    background: var(--surface-strong);
+    border: 1px solid var(--color-pink-100);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    text-decoration: none;
+    color: var(--color-ink);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .app-card.live:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-pop);
+    border-color: var(--color-pink-200);
+  }
+
+  .app-card.soon {
+    opacity: 0.72;
+  }
+
+  .app-icon-tile {
+    flex: 0 0 auto;
+    width: 88px;
+    height: 88px;
+    display: grid;
+    place-items: center;
+    border-radius: 22px;
+    background: linear-gradient(160deg, #ffffff, var(--color-pink-50));
+    border: 1px solid var(--color-pink-100);
+    box-shadow: 0 6px 16px rgba(233, 63, 142, 0.15);
+  }
+
+  .app-icon-tile img {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    display: block;
+  }
+
+  .app-body {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+  }
+
+  .app-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .app-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.35rem;
+    color: var(--color-purple-600);
+    line-height: 1.1;
+  }
+
+  .app-cat {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    padding: 3px 12px;
+  }
+
+  .app-soon-chip {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-soft);
+    background: var(--color-purple-50);
+    border: 1px solid var(--color-purple-100);
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+  }
+
+  .app-tagline {
+    color: var(--color-ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .app-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  .app-meta {
+    font-size: 0.82rem;
+    color: var(--color-ink-soft);
+    font-weight: 600;
+  }
+
+  .app-cta {
+    font-weight: 700;
+    color: var(--color-pink-600);
+    font-size: 0.95rem;
+    white-space: nowrap;
+  }
+
+  .app-cta.muted {
+    color: var(--color-ink-soft);
+  }
+
+  .store-foot {
+    margin: 28px auto 10px;
+    max-width: 70ch;
+    text-align: center;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 480px) {
+    .app-card {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 14px;
+    }
+    .app-foot {
+      width: 100%;
+    }
+  }
+</style>

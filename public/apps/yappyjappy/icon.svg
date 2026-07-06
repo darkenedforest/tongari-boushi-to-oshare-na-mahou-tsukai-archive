@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108" role="img" aria-label="YappyJappy app icon">
+  <!-- Faithful reproduction of the app's adaptive launcher icon:
+       a white chat bubble with three dots on a cherry-blossom pink field. -->
+  <defs>
+    <clipPath id="yj-squircle">
+      <rect x="0" y="0" width="108" height="108" rx="24" ry="24" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#yj-squircle)">
+    <rect width="108" height="108" fill="#FFB7C5" />
+    <!-- speech bubble -->
+    <path fill="#FFFFFF"
+      d="M30,32 h48 a10,10 0 0 1 10,10 v22 a10,10 0 0 1 -10,10 h-26 l-10,10 l0,-10 h-12 a10,10 0 0 1 -10,-10 v-22 a10,10 0 0 1 10,-10 z" />
+    <!-- three dots -->
+    <circle cx="41" cy="53" r="4" fill="#3D348B" />
+    <circle cx="54" cy="53" r="4" fill="#F35B7F" />
+    <circle cx="67" cy="53" r="4" fill="#3D348B" />
+  </g>
+</svg>

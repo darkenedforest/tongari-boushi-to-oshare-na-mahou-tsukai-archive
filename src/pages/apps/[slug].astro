@@ -1,0 +1,466 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import appsData from '../../../public/data/apps.json';
+
+export function getStaticPaths() {
+  return appsData.apps.map((app) => ({
+    params: { slug: app.slug },
+    props: { app },
+  }));
+}
+
+const { app } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+function resolve(path: string): string {
+  return `${base}/${path.replace(/^\/+/, '')}`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(0)} MB`;
+}
+
+function formatDate(iso: string): string {
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC',
+  });
+}
+
+const dl = app.download;
+const shots = app.screenshots ?? [];
+const styleVars = `--accent:${app.accent};--accent-soft:${app.accentSoft};`;
+---
+
+<Layout title={app.name} description={app.summary}>
+  <section class="page-header">
+    <p class="breadcrumb">
+      <a href={`${base}/`}>Home</a>
+      <span aria-hidden="true">›</span>
+      <a href={`${base}/apps/`}>Apps</a>
+      <span aria-hidden="true">›</span>
+      <span>{app.name}</span>
+    </p>
+  </section>
+
+  <!-- ───────────────────────────── Hero ───────────────────────────── -->
+  <section class="app-hero" style={styleVars}>
+    <div class="hero-icon-wrap">
+      <span class="hero-icon-tile">
+        <img src={resolve(app.icon)} alt={`${app.name} icon`} width="112" height="112" />
+      </span>
+    </div>
+    <div class="hero-main">
+      <h1>{app.name}</h1>
+      <p class="hero-tagline">{app.tagline}</p>
+      <div class="hero-meta">
+        <span class="chip">{app.category}</span>
+        <span class="meta-dot" aria-hidden="true">•</span>
+        <span>{app.platform} {dl.minAndroid}+</span>
+        <span class="meta-dot" aria-hidden="true">•</span>
+        <span>v{dl.version}</span>
+        <span class="meta-dot" aria-hidden="true">•</span>
+        <span>{formatBytes(dl.sizeBytes)}</span>
+      </div>
+      <div class="hero-actions">
+        <a class="btn hero-download" href={resolve(dl.file)} download>
+          <span aria-hidden="true">⬇</span> Download APK
+        </a>
+        <span class="hero-sub">Free · sideload install · updated {formatDate(dl.updated)}</span>
+      </div>
+      {app.requirements?.some((r: string) => /api key/i.test(r)) && (
+        <p class="hero-keynote">
+          <strong>Heads up:</strong> this one needs your own AI API key (Claude,
+          ChatGPT, or Gemini) to chat. <a href="#need">What you'll need ↓</a>
+        </p>
+      )}
+    </div>
+  </section>
+
+  <p class="app-summary">{app.summary}</p>
+
+  {shots.length > 0 && (
+    <section class="shots" aria-label="Screenshots">
+      <div class="shots-strip">
+        {shots.map((s: any) => (
+          <figure class="shot">
+            <img src={resolve(s.src)} alt={s.alt} loading="lazy" />
+            {s.caption && <figcaption>{s.caption}</figcaption>}
+          </figure>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <!-- ─────────────────────────── How it works ─────────────────────── -->
+  <section class="app-section">
+    <h2>How it works</h2>
+    {app.howItWorks.map((p: string) => <p class="prose">{p}</p>)}
+  </section>
+
+  <!-- ───────────────────────────── Features ───────────────────────── -->
+  <section class="app-section">
+    <h2>What it does</h2>
+    <div class="feature-grid">
+      {app.features.map((f: any) => (
+        <div class="feature">
+          <h3>{f.title}</h3>
+          <p>{f.body}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ────────────────────────── What you'll need ──────────────────── -->
+  <section class="app-section" id="need">
+    <h2>What you'll need</h2>
+    <ul class="need-list">
+      {app.requirements.map((r: string) => <li>{r}</li>)}
+    </ul>
+  </section>
+
+  <!-- ───────────────────────────── Install ────────────────────────── -->
+  <section class="app-section install card" style={styleVars}>
+    <h2>Install it</h2>
+    {app.buildNote && <p class="build-note">{app.buildNote}</p>}
+    <ol class="install-list">
+      {app.install.map((step: string) => <li>{step}</li>)}
+    </ol>
+    <div class="install-download">
+      <a class="btn" href={resolve(dl.file)} download>
+        <span aria-hidden="true">⬇</span> Download {app.name} v{dl.version} ({formatBytes(dl.sizeBytes)})
+      </a>
+      <details class="hash-details">
+        <summary>File details</summary>
+        <dl class="hash-dl">
+          <dt>File</dt><dd>{dl.file.split('/').pop()}</dd>
+          <dt>Size</dt><dd>{dl.sizeBytes.toLocaleString()} bytes ({formatBytes(dl.sizeBytes)})</dd>
+          <dt>SHA-256</dt><dd><code>{dl.sha256}</code></dd>
+          <dt>Build</dt><dd>{dl.build}</dd>
+          <dt>Min Android</dt><dd>{dl.minAndroid}</dd>
+        </dl>
+      </details>
+    </div>
+  </section>
+
+  {app.privacy && (
+    <section class="app-section">
+      <h2>Privacy</h2>
+      <p class="prose">{app.privacy}</p>
+    </section>
+  )}
+
+  <p class="back-link"><a href={`${base}/apps/`}>← All apps</a></p>
+</Layout>
+
+<style>
+  .page-header {
+    padding: 34px 0 4px;
+  }
+
+  .breadcrumb {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+
+  .breadcrumb a {
+    color: var(--color-purple-400);
+    font-weight: 600;
+  }
+
+  /* ── Hero ─────────────────────────────────────────────────────── */
+  .app-hero {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    margin: 14px 0 8px;
+    padding: 30px 32px;
+    border-radius: var(--radius-lg);
+    background:
+      radial-gradient(circle at 90% 12%, rgba(255, 255, 255, 0.6) 0 2px, transparent 3px),
+      linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 55%, white) 0%, var(--color-purple-50) 70%, var(--color-blue-50) 100%);
+    border: 1px solid var(--color-pink-100);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .hero-icon-tile {
+    display: grid;
+    place-items: center;
+    width: 132px;
+    height: 132px;
+    border-radius: 30px;
+    background: #fff;
+    border: 1px solid var(--color-pink-100);
+    box-shadow: 0 10px 26px rgba(233, 63, 142, 0.22);
+  }
+
+  .hero-icon-tile img {
+    width: 112px;
+    height: 112px;
+    border-radius: 24px;
+    display: block;
+  }
+
+  .hero-main {
+    min-width: 0;
+  }
+
+  .hero-main h1 {
+    margin: 0 0 6px;
+    font-size: 2.2rem;
+  }
+
+  .hero-tagline {
+    margin: 0 0 14px;
+    color: var(--color-ink);
+    font-size: 1.1rem;
+    line-height: 1.5;
+    max-width: 52ch;
+  }
+
+  .hero-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--color-ink-soft);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 18px;
+  }
+
+  .meta-dot { color: var(--color-pink-200); }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .hero-download {
+    font-size: 1.05rem;
+  }
+
+  .hero-sub {
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+    font-weight: 600;
+  }
+
+  .hero-keynote {
+    margin: 16px 0 0;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.7);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--color-ink);
+  }
+
+  .hero-keynote strong { color: var(--color-pink-600); }
+
+  .app-summary {
+    max-width: 68ch;
+    margin: 22px 0 8px;
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: var(--color-ink);
+  }
+
+  /* ── Screenshots ─────────────────────────────────────────────── */
+  .shots {
+    margin: 22px 0 8px;
+  }
+
+  .shots-strip {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding: 6px 2px 16px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .shot {
+    flex: 0 0 auto;
+    width: 216px;
+    margin: 0;
+    scroll-snap-align: start;
+  }
+
+  .shot img {
+    width: 216px;
+    height: auto;
+    display: block;
+    border-radius: 20px;
+    border: 3px solid #fff;
+    box-shadow: var(--shadow-soft);
+    background: #fff;
+  }
+
+  .shot figcaption {
+    margin-top: 8px;
+    font-size: 0.82rem;
+    color: var(--color-ink-soft);
+    text-align: center;
+    line-height: 1.4;
+  }
+
+  /* ── Sections ────────────────────────────────────────────────── */
+  .app-section {
+    margin: 34px 0;
+    max-width: 78ch;
+  }
+
+  .app-section > h2 {
+    font-size: 1.5rem;
+    margin: 0 0 14px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--color-pink-100);
+  }
+
+  .prose {
+    line-height: 1.7;
+    color: var(--color-ink);
+    margin: 0 0 14px;
+  }
+
+  /* ── Feature grid ────────────────────────────────────────────── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 14px;
+  }
+
+  .feature {
+    background: var(--surface-strong);
+    border: 1px solid var(--color-pink-100);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-soft);
+  }
+
+  .feature h3 {
+    margin: 0 0 6px;
+    font-size: 1.02rem;
+    color: var(--color-pink-600);
+  }
+
+  .feature p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    color: var(--color-ink-soft);
+  }
+
+  /* ── Requirements ────────────────────────────────────────────── */
+  .need-list {
+    margin: 0;
+    padding-left: 22px;
+    line-height: 1.7;
+  }
+
+  .need-list li {
+    margin: 6px 0;
+    color: var(--color-ink);
+  }
+
+  .need-list li::marker { color: var(--color-pink-400); }
+
+  /* ── Install ─────────────────────────────────────────────────── */
+  .install {
+    padding: 26px 30px;
+    background: linear-gradient(180deg, color-mix(in srgb, var(--accent-soft) 22%, white), var(--surface-strong) 55%);
+  }
+
+  .install > h2 {
+    margin-top: 0;
+    border-bottom: none;
+  }
+
+  .build-note {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    background: var(--color-blue-50);
+    border-left: 3px solid var(--color-blue-400);
+    border-radius: var(--radius-sm);
+    font-size: 0.9rem;
+    color: var(--color-ink);
+    line-height: 1.55;
+  }
+
+  .install-list {
+    margin: 0 0 20px;
+    padding-left: 24px;
+    display: grid;
+    gap: 10px;
+    line-height: 1.6;
+  }
+
+  .install-list li { color: var(--color-ink); }
+  .install-list li::marker { color: var(--color-purple-400); font-weight: 700; }
+
+  .install-download {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .hash-details {
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+    width: 100%;
+  }
+
+  .hash-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--color-purple-600);
+  }
+
+  .hash-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 14px;
+    margin: 12px 0 0;
+  }
+
+  .hash-dl dt {
+    font-weight: 700;
+    color: var(--color-ink-soft);
+  }
+
+  .hash-dl dd {
+    margin: 0;
+    min-width: 0;
+    word-break: break-all;
+  }
+
+  .hash-dl code {
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.8rem;
+    color: var(--color-purple-600);
+  }
+
+  .back-link {
+    margin: 30px 0 50px;
+    font-weight: 700;
+  }
+
+  @media (max-width: 640px) {
+    .app-hero {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 24px 22px;
+    }
+    .hero-main h1 { font-size: 1.9rem; }
+  }
+</style>
