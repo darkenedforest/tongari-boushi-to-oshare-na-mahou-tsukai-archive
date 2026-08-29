@@ -214,9 +214,9 @@ def build_email(release: dict) -> tuple[str, str, str]:
         "",
         "-- ",
         "You're getting this because you subscribed to patch updates on the",
-        "Tongari Boushi archive site. To unsubscribe, use the form at",
-        f"{unsub_url} (there's an \"Unsubscribe here\" link under the email",
-        "box), or just reply to this email with \"unsubscribe\".",
+        "Tongari Boushi archive site. To unsubscribe, open",
+        f"{unsub_url} — the signup pop-up opens with an \"Unsubscribe here\"",
+        "link — or just reply to this email with \"unsubscribe\".",
     ]
     text = "\n".join(lines)
 
@@ -241,8 +241,8 @@ def build_email(release: dict) -> tuple[str, str, str]:
 <p style="font-size: 0.85em; color: #8a7a9e;">
 You're getting this because you subscribed to patch updates on the
 Tongari Boushi archive site. <a href="{unsub_url}">Unsubscribe here</a>
-(use the "Unsubscribe" link under the email box), or reply to this
-email with "unsubscribe".
+(the signup pop-up opens with an "Unsubscribe here" link), or reply to
+this email with "unsubscribe".
 </p>
 </body></html>
 """

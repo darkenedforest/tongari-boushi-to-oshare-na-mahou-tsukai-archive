@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import SubscribeBadge from '../components/SubscribeBadge.astro';
+import SubscribeSeal from '../components/SubscribeSeal.astro';
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -15,9 +15,9 @@ const base = import.meta.env.BASE_URL;
         uncover end up, so I can come back to them and so anyone else who's
         curious can poke around.
       </p>
-      <p class="hero-subscribe">
-        <SubscribeBadge />
-      </p>
+      <div class="hero-subscribe">
+        <SubscribeSeal size="md" />
+      </div>
     </div>
     <div class="hero-decoration" aria-hidden="true">
       <img class="title-castle" src={`${base}/decorations/title_castle_day.png`} alt="" />

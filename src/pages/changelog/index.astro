@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import SubscribeBadge from '../../components/SubscribeBadge.astro';
+import SubscribeSeal from '../../components/SubscribeSeal.astro';
 import v26meta from '../../data/changelog_v2.6_meta.json';
 import v251meta from '../../data/changelog_v2.5.1_meta.json';
 import v25meta from '../../data/changelog_v2.5_meta.json';
@@ -171,6 +171,9 @@ function formatDate(iso: string): string {
 
 <Layout title="Changelog">
   <section class="page-header">
+    <div class="header-seal">
+      <SubscribeSeal size="md" />
+    </div>
     <p class="breadcrumb">
       <a href={`${base}/`}>Home</a>
       <span aria-hidden="true">›</span>
@@ -188,9 +191,6 @@ function formatDate(iso: string): string {
       ARM9 byte that changed. Built for contributors and power users
       who want to see exactly what moved. For the "what's new" summary
       of each release, head to <a href={`${base}/patches/`}>Patches</a>.
-    </p>
-    <p class="header-subscribe">
-      <SubscribeBadge />
     </p>
   </section>
 
@@ -232,6 +232,22 @@ function formatDate(iso: string): string {
 <style>
   .page-header {
     padding: 40px 0 20px;
+    position: relative;
+  }
+
+  .header-seal {
+    position: absolute;
+    top: 30px;
+    right: 0;
+    z-index: 5;
+  }
+
+  @media (max-width: 760px) {
+    .header-seal {
+      position: static;
+      margin: 0 0 10px;
+      text-align: center;
+    }
   }
   .breadcrumb {
     display: flex;
@@ -273,9 +289,6 @@ function formatDate(iso: string): string {
     font-size: 0.88em;
   }
 
-  .header-subscribe {
-    margin: 16px 0 0;
-  }
 
   .releases {
     margin: 24px 0 50px;

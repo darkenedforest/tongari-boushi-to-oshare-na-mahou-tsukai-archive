@@ -408,8 +408,9 @@ subcommands).
 
 ## Patch release email subscriptions
 
-The subscribe card on `/patches/` (and the badges linking to it from the
-homepage and changelog) collects emails into a `patch_subscribers` table.
+The gold "Get patch updates!" seal at the top of `/patches/` (and on the
+homepage and changelog) opens a pop-up that collects emails into a
+`patch_subscribers` table.
 It's an **append-only log**: every subscribe or unsubscribe click inserts a
 row, and the sender script replays the log (latest action per email wins)
 to get the active list. The anon key can only INSERT — the table is not
@@ -491,9 +492,10 @@ list looks wrong.
 Recipients ride in the SMTP envelope only (true BCC) — subscribers never
 see each other's addresses. A batch that fails or an address Gmail
 refuses is reported at the end (exit code 1) so you can resend to just
-those. Every email includes unsubscribe instructions (the card on
-`/patches/#subscribe` has an unsubscribe mode, and "reply 'unsubscribe'"
-is honored by hand via the `unsubscribe` subcommand).
+those. Every email includes unsubscribe instructions
+(`/patches/#subscribe` auto-opens the signup pop-up, which has an
+unsubscribe mode, and "reply 'unsubscribe'" is honored by hand via the
+`unsubscribe` subcommand).
 
 Gmail informally caps free accounts around ~500 recipients/day. If the
 list ever outgrows that, swap Gmail for a real sender (e.g. Buttondown or
