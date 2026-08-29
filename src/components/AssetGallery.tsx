@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface AssetRecord {
   png_path: string;            // relative to BASE_URL, served from /assets/
@@ -135,7 +136,10 @@ export default function AssetGallery({ manifestUrl }: Props) {
         </div>
       )}
 
-      {selected && (
+      {/* Portal to <body>: the page container's z-index:1 stacking context
+          would trap this overlay below the sticky site header, which then
+          covers (and swallows clicks on) the close button. */}
+      {selected && createPortal(
         <div className="lightbox" onClick={() => setSelected(null)} role="dialog">
           <div className="lightbox-inner" onClick={e => e.stopPropagation()}>
             <button className="lightbox-close" onClick={() => setSelected(null)} aria-label="Close">×</button>
@@ -157,7 +161,8 @@ export default function AssetGallery({ manifestUrl }: Props) {
               </dl>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`

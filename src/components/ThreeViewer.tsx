@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface ModelRecord {
   name: string;
@@ -270,7 +271,10 @@ function ViewerModal({ model, onClose }: { model: ModelRecord; onClose: () => vo
 
   const title = model.label_en || model.label_jp || model.name;
 
-  return (
+  // Portal to <body>: the page container's z-index:1 stacking context would
+  // trap this overlay below the sticky site header, which then covers (and
+  // swallows clicks on) the top of the modal.
+  return createPortal(
     <div className="viewer-modal" onClick={onClose} role="dialog">
       <div className="viewer-modal-inner" onClick={e => e.stopPropagation()}>
         <button className="viewer-close" onClick={onClose} aria-label="Close">×</button>
@@ -306,6 +310,7 @@ function ViewerModal({ model, onClose }: { model: ModelRecord; onClose: () => vo
         .viewer-meta dd { margin: 0; color: var(--color-ink); font-size: 0.9rem; word-break: break-all; }
         .viewer-meta code { background: var(--color-purple-50); padding: 1px 6px; border-radius: 4px; font-size: 0.85em; }
       `}</style>
-    </div>
+    </div>,
+    document.body
   );
 }

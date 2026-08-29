@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase, supabaseConfigured, BUG_BUCKET, getOrCreateSession } from '../lib/supabase';
 
 interface ReportImage { id: number; url: string; }
@@ -754,11 +755,15 @@ export default function BugReportsBoard() {
         ))}
       </div>
 
-      {lightbox && (
+      {/* Portal to <body>: the page container's z-index:1 stacking context
+          would trap this overlay below the sticky site header, which then
+          covers (and swallows clicks on) the close button. */}
+      {lightbox && createPortal(
         <div className="lightbox" onClick={() => setLightbox(null)} role="dialog">
           <button className="lightbox-close" onClick={() => setLightbox(null)} aria-label="Close">×</button>
           <img src={lightbox} alt="" />
-        </div>
+        </div>,
+        document.body
       )}
 
       <style>{`
