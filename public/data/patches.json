@@ -41,16 +41,16 @@
           "url": "/patches/tongari-boushi-en-v2.6-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
-          "patchSizeBytes": 15260483,
-          "patchSha256": "a281dd667c04ddcac2c8fc103a0b802eff35089ed4ad42c0506b44a1448dc980"
+          "patchSizeBytes": 18203796,
+          "patchSha256": "518df9b3a657129978be9b324497771b7f77051769a463172c971f5385b21863"
         },
         {
           "label": "Rev 1",
           "url": "/patches/tongari-boushi-en-v2.6-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
-          "patchSizeBytes": 4119056,
-          "patchSha256": "949ed1a57c06db57a171e36d8ff5249803fb450df3b53e516d14d4ad663e0ac7"
+          "patchSizeBytes": 4949739,
+          "patchSha256": "3682398973817b5e2ab8c9f5efd1f5fdc3dad5883c31f66bf86a8b425fbe742b"
         }
       ]
     },
