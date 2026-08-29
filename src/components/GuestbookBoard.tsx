@@ -28,11 +28,9 @@ const PALETTE = [
 // Plain "paper" background colors offered alongside the game-art backgrounds.
 const PAPERS = ['#ffffff', '#fff0f6', '#f5f0ff', '#eaf6ff', '#fff8ee', '#e8f8e8', '#4a2e5e'];
 
-const TEXT_SIZES = [
-  { label: 'S', px: 18 },
-  { label: 'M', px: 26 },
-  { label: 'L', px: 38 },
-];
+const TEXT_DEFAULT_SIZE = 26;
+const TEXT_MIN_SIZE = 10;
+const TEXT_MAX_SIZE = 120;
 
 type Tool = 'draw' | 'erase' | 'fill' | 'select';
 
@@ -385,7 +383,7 @@ function CardEditor({ base, onClose, onPosted }: {
       mode, id: selected.id,
       startX: p.x, startY: p.y, elX: selected.x, elY: selected.y,
       startDist: Math.max(8, Math.hypot(p.x - selected.x, p.y - selected.y)),
-      startScale: selected.kind === 'stamp' ? selected.scale : 1,
+      startScale: selected.kind === 'stamp' ? selected.scale : selected.size,
       startAngle: Math.atan2(p.y - selected.y, p.x - selected.x),
       startRot: selected.rot,
     };
@@ -424,10 +422,16 @@ function CardEditor({ base, onClose, onPosted }: {
           y: Math.max(0, Math.min(CARD_H, g.elY + (p.y - g.startY))),
         };
       }
-      if (g.mode === 'resize' && el.kind === 'stamp') {
+      if (g.mode === 'resize') {
         const dist = Math.max(8, Math.hypot(p.x - el.x, p.y - el.y));
-        const scale = Math.max(0.4, Math.min(7, g.startScale * (dist / g.startDist)));
-        return { ...el, scale };
+        const ratio = dist / g.startDist;
+        if (el.kind === 'stamp') {
+          return { ...el, scale: Math.max(0.4, Math.min(7, g.startScale * ratio)) };
+        }
+        return {
+          ...el,
+          size: Math.max(TEXT_MIN_SIZE, Math.min(TEXT_MAX_SIZE, g.startScale * ratio)),
+        };
       }
       if (g.mode === 'rotate') {
         const ang = Math.atan2(p.y - el.y, p.x - el.x);
@@ -461,7 +465,7 @@ function CardEditor({ base, onClose, onPosted }: {
     const el: TextEl = {
       kind: 'text', id: nextId++, text: 'hello ✦',
       x: CARD_W / 2, y: CARD_H / 2,
-      color, size: 26, rot: 0,
+      color, size: TEXT_DEFAULT_SIZE, rot: 0,
     };
     setEls((prev) => [...prev, el]);
     setSelectedId(el.id);
@@ -495,9 +499,9 @@ function CardEditor({ base, onClose, onPosted }: {
       .filter((e): e is TextEl => e.kind === 'text')
       .map((e) => e.text)
       .join('') || ' ';
-    await Promise.all(
-      TEXT_SIZES.map((s) => document.fonts.load(`${s.px * SAVE_SCALE}px 'DotGothic16'`, allText))
-    ).catch(() => {});
+    // One load is enough: face loading is size-independent, only the
+    // glyph coverage (second argument) matters.
+    await document.fonts.load(`${TEXT_DEFAULT_SIZE * SAVE_SCALE}px 'DotGothic16'`, allText).catch(() => {});
     const W = CARD_W * SAVE_SCALE;
     const H = CARD_H * SAVE_SCALE;
     const out = document.createElement('canvas');
@@ -511,7 +515,13 @@ function CardEditor({ base, onClose, onPosted }: {
     ctx.fillRect(0, 0, W, H);
     if (isImageBg) {
       const img = await loadImage(`${base}${bg}`);
-      ctx.drawImage(img, 0, 0, W, H);
+      // Cover-crop to the card (the editor shows the bg with
+      // object-fit: cover) — plain drawImage would stretch any
+      // background that isn't exactly 4:3.
+      const s = Math.max(W / img.width, H / img.height);
+      const dw = img.width * s;
+      const dh = img.height * s;
+      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
     }
     if (isImageBg && soften) {
       ctx.fillStyle = 'rgba(255,255,255,0.55)';
@@ -703,18 +713,10 @@ function CardEditor({ base, onClose, onPosted }: {
                       maxLength={60}
                       onChange={(e) => updateSelected({ text: e.target.value })}
                     />
-                    <div className="gb-tool-row">
-                      {TEXT_SIZES.map((s) => (
-                        <button
-                          key={s.label}
-                          className={`gb-tool small ${selected.size === s.px ? 'on' : ''}`}
-                          onClick={() => updateSelected({ size: s.px })}
-                        >
-                          {s.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="gb-hint">Pick a palette color to recolor this text.</p>
+                    <p className="gb-hint">
+                      Drag the ⤡ handle on the card to resize. Pick a palette
+                      color to recolor this text.
+                    </p>
                   </>
                 )}
                 <button className="gb-tool small danger" onClick={deleteSelected}>Delete</button>
@@ -818,13 +820,11 @@ function CardEditor({ base, onClose, onPosted }: {
                       onPointerDown={(e) => startHandleGesture(e, 'rotate')}
                       aria-label="Rotate"
                     >↻</button>
-                    {selected.kind === 'stamp' && (
-                      <button
-                        className="gb-handle gb-handle-resize"
-                        onPointerDown={(e) => startHandleGesture(e, 'resize')}
-                        aria-label="Resize"
-                      >⤡</button>
-                    )}
+                    <button
+                      className="gb-handle gb-handle-resize"
+                      onPointerDown={(e) => startHandleGesture(e, 'resize')}
+                      aria-label="Resize"
+                    >⤡</button>
                   </div>
                 </div>
               )}
