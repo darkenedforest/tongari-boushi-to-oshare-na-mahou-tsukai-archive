@@ -97,6 +97,7 @@ function CardEditor({ base, onClose, onPosted }: {
   const [els, setEls] = useState<El[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [drawer, setDrawer] = useState<'stamps' | 'bg' | null>(null);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [saveOpen, setSaveOpen] = useState(false);
   const [savePreview, setSavePreview] = useState<string | null>(null);
@@ -154,6 +155,32 @@ function CardEditor({ base, onClose, onPosted }: {
   useEffect(() => {
     return () => { if (savePreview) URL.revokeObjectURL(savePreview); };
   }, [savePreview]);
+
+  // Close the color pop-out when clicking anywhere else.
+  useEffect(() => {
+    if (!paletteOpen) return;
+    const onDocDown = (e: PointerEvent) => {
+      if (!(e.target as Element)?.closest?.('.gb-color-wrap')) setPaletteOpen(false);
+    };
+    document.addEventListener('pointerdown', onDocDown);
+    return () => document.removeEventListener('pointerdown', onDocDown);
+  }, [paletteOpen]);
+
+  // Losing window focus mid-stroke can swallow the pointerup — drop any
+  // in-flight gesture so the editor never comes back wedged.
+  useEffect(() => {
+    const clear = () => {
+      activePointer.current = null;
+      lastCell.current = null;
+      gesture.current = null;
+    };
+    window.addEventListener('blur', clear);
+    document.addEventListener('visibilitychange', clear);
+    return () => {
+      window.removeEventListener('blur', clear);
+      document.removeEventListener('visibilitychange', clear);
+    };
+  }, []);
 
   function pixCtx(): CanvasRenderingContext2D | null {
     return pixCanvas.current?.getContext('2d', { willReadFrequently: true }) || null;
@@ -288,7 +315,17 @@ function CardEditor({ base, onClose, onPosted }: {
   function onPointerDown(e: React.PointerEvent) {
     if (saveOpen) return;
     if (e.button !== 0) return; // left click / touch / pen only
-    if (activePointer.current !== null) return; // one pointer at a time
+    if (activePointer.current !== null) {
+      // A different pointer while one is mid-gesture: that's a second
+      // finger — ignore it. The SAME pointer pressing again means its
+      // pointerup got lost (alt-tab, popup, focus steal): the lock is
+      // stale, so reset it and let this press through. Without this a
+      // single lost release would disable drawing forever.
+      if (activePointer.current !== e.pointerId) return;
+      activePointer.current = null;
+      lastCell.current = null;
+      gesture.current = null;
+    }
     try {
       (e.target as Element).setPointerCapture?.(e.pointerId);
     } catch {
@@ -330,7 +367,12 @@ function CardEditor({ base, onClose, onPosted }: {
     e.stopPropagation();
     if (!selected) return;
     if (e.button !== 0) return;
-    if (activePointer.current !== null) return;
+    if (activePointer.current !== null) {
+      if (activePointer.current !== e.pointerId) return;
+      // Same pointer pressing again — the previous release was lost.
+      lastCell.current = null;
+      gesture.current = null;
+    }
     try {
       (e.target as Element).setPointerCapture?.(e.pointerId);
     } catch {
@@ -603,24 +645,43 @@ function CardEditor({ base, onClose, onPosted }: {
                   <span style={{ width: b * 4, height: b * 4 }} />
                 </button>
               ))}
-            </div>
-
-            <div className="gb-palette" role="listbox" aria-label="Colors">
-              {PALETTE.map((c) => (
+              <span className="gb-sub-label gb-color-label">Color</span>
+              <div className="gb-color-wrap">
                 <button
-                  key={c}
-                  className={`gb-swatch ${color === c ? 'on' : ''}`}
-                  style={{ background: c }}
-                  onClick={() => {
-                    setColor(c);
-                    // Recolor selected text only in Move mode — picking a
-                    // brush color while drawing must not touch the card.
-                    if (selected?.kind === 'text' && tool === 'select') updateSelected({ color: c });
-                    if (tool === 'erase') setTool('draw');
-                  }}
-                  aria-label={`Color ${c}`}
-                />
-              ))}
+                  className="gb-color-chip"
+                  style={{ background: color }}
+                  onClick={() => setPaletteOpen((o) => !o)}
+                  aria-label="Choose color"
+                  aria-expanded={paletteOpen}
+                >
+                  <span className="gb-color-caret" aria-hidden>▾</span>
+                </button>
+                {paletteOpen && (
+                  <div className="gb-palette-pop">
+                    <div className="gb-palette" role="listbox" aria-label="Colors">
+                      {PALETTE.map((c) => (
+                        <button
+                          key={c}
+                          className={`gb-swatch ${color === c ? 'on' : ''}`}
+                          style={{ background: c }}
+                          onClick={() => {
+                            setColor(c);
+                            setPaletteOpen(false);
+                            if (selected?.kind === 'text' && tool === 'select') {
+                              // Recoloring the selected text — stay in Move.
+                              updateSelected({ color: c });
+                            } else if (tool === 'erase' || tool === 'select') {
+                              // Picking a color means "I want to draw with it".
+                              setTool('draw');
+                            }
+                          }}
+                          aria-label={`Color ${c}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {selected && (
@@ -1129,6 +1190,23 @@ export default function GuestbookBoard() {
         .gb-brush span { display: block; background: var(--color-ink); }
         .gb-brush.on { border-color: var(--color-pink-400); background: var(--color-pink-50); }
 
+        .gb-color-label { margin-left: 8px; }
+        .gb-color-wrap { position: relative; display: inline-block; }
+        .gb-color-chip {
+          width: 34px; height: 30px; padding: 0; cursor: pointer;
+          border: 2px solid var(--color-purple-200);
+          display: inline-flex; align-items: center; justify-content: center;
+        }
+        .gb-color-caret {
+          color: white; font-size: 0.7rem; line-height: 1;
+          text-shadow: 0 0 3px rgba(0,0,0,0.7);
+        }
+        .gb-palette-pop {
+          position: absolute; top: 34px; left: 0; z-index: 30;
+          width: 216px; padding: 6px;
+          background: white; border: 2px solid var(--color-purple-200);
+          box-shadow: var(--shadow-pop);
+        }
         .gb-palette {
           display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px;
         }
