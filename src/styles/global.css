@@ -1,7 +1,9 @@
 /* ─────────────────────────────────────────────────────────────────────
    Theme — pastel pink / purple / blue with sparkle accents, loosely
    inspired by the Konami Tongari Boushi page and the Magician's Quest
-   wiki vibe. Soft rounded surfaces, soft drop shadows, kawaii energy.
+   wiki vibe. PIXEL EDITION: same palette, same art, same layout — but
+   dot-matrix type (DotGothic16 / Pixelify Sans), square game-box
+   surfaces, and hard-edged offset shadows like a DS-era menu window.
    ───────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -42,19 +44,30 @@
   --surface-strong: #ffffff;
   --surface-soft:   rgba(255, 255, 255, 0.55);
 
-  /* Shadows */
-  --shadow-soft: 0 8px 24px rgba(155, 123, 217, 0.18);
-  --shadow-pop:  0 12px 32px rgba(233, 63, 142, 0.22);
+  /* Shadows — hard pixel offsets instead of soft blurs */
+  --shadow-soft: 4px 4px 0 rgba(155, 123, 217, 0.35);
+  --shadow-pop:  6px 6px 0 rgba(233, 63, 142, 0.30);
 
-  /* Type */
-  --font-display: 'Quicksand', 'Hiragino Maru Gothic ProN', 'M PLUS Rounded 1c', system-ui, -apple-system, sans-serif;
-  --font-body:    'Quicksand', 'Hiragino Maru Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
+  /* Type — pixel faces first, the old rounded stacks as fallback */
+  --font-display: 'Pixelify Sans', 'Quicksand', 'Hiragino Maru Gothic ProN', 'M PLUS Rounded 1c', system-ui, -apple-system, sans-serif;
+  --font-body:    'DotGothic16', 'Quicksand', 'Hiragino Maru Gothic ProN', 'Noto Sans JP', system-ui, -apple-system, sans-serif;
 
-  /* Radii */
-  --radius-sm: 10px;
-  --radius-md: 18px;
-  --radius-lg: 28px;
-  --radius-pill: 999px;
+  /* Radii — everything is a game box now */
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-pill: 0;
+}
+
+/* Squash the radii that components hard-code (pills, thumbs, chips) so
+   every surface reads as a pixel window, not a mix of round and square. */
+*, *::before, *::after {
+  border-radius: 0 !important;
+}
+
+/* The site's decoration art is upscaled DS sprite work — render it crisp. */
+img[src*="/decorations/"] {
+  image-rendering: pixelated;
 }
 
 * { box-sizing: border-box; }
@@ -69,8 +82,11 @@ body {
   font-family: var(--font-body);
   color: var(--color-ink);
   background: var(--bg-sky) fixed;
-  -webkit-font-smoothing: antialiased;
   position: relative;
+  /* DotGothic16 draws at a 16px grid — a touch more size and leading
+     keeps dense archive text comfortable. */
+  font-size: 1.02rem;
+  line-height: 1.65;
 }
 
 /* Faint sparkle pattern over the whole page */
@@ -106,8 +122,8 @@ h1, h2, h3, h4 {
   margin-top: 0;
 }
 
-h1 { font-size: 2.4rem; letter-spacing: 0.02em; }
-h2 { font-size: 1.6rem; }
+h1 { font-size: 2.3rem; letter-spacing: 0.03em; }
+h2 { font-size: 1.55rem; letter-spacing: 0.02em; }
 h3 { font-size: 1.2rem; }
 
 /* Pill / chip — used for filters, tags, breadcrumbs */
@@ -125,13 +141,13 @@ h3 { font-size: 1.2rem; }
   border: 1px solid var(--color-purple-100);
 }
 
-/* Card surface */
+/* Card surface — chunky two-tone game-box frame */
 .card {
   background: var(--surface-strong);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
   padding: 24px;
-  border: 1px solid var(--color-pink-100);
+  border: 2px solid var(--color-pink-200);
 }
 
 /* Primary action button */
@@ -152,9 +168,9 @@ h3 { font-size: 1.2rem; }
 }
 
 .btn:hover {
-  transform: translateY(-2px);
+  transform: translate(-2px, -2px);
   color: white;
-  box-shadow: 0 16px 36px rgba(233, 63, 142, 0.30);
+  box-shadow: 8px 8px 0 rgba(233, 63, 142, 0.30);
 }
 
 .btn-secondary {
