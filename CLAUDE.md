@@ -46,11 +46,11 @@ Push to `main` → `.github/workflows/deploy.yml` runs `npm install` +
 Commit messages use `step-NNN: <description>` — increment N from the latest
 commit.
 
-## ⚠️ Committing — the working tree carries ~69k unstaged DELETIONS
+## Committing
 
-`git status` shows tens of thousands of pre-existing unstaged file deletions
-(3D/2D assets). **Never `git add -A` or `git commit -a`** — that would commit
-all of them. Always stage your specific files explicitly
+The ~69k unstaged working-tree deletions that used to live here were restored
+on 2026-08-29 (they were accidental; the deployed site always used the
+committed tree). The tree is clean now. Still stage specific files explicitly
 (`git add public/... src/...`) and confirm with
 `git diff --cached --name-status | grep '^D'` that **no deletions are staged**.
 Because the tree is dirty, integrating remote changes needs autostash:

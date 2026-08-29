@@ -1,0 +1,13 @@
+{
+  "version": "2.6",
+  "date": "2026-08-29",
+  "headline": "4,278 conversations restored to full length, 4,325 newly translated lines, and every character now goes by their official name",
+  "summary": "The biggest correctness release since the translation began. A long-standing data-alignment bug had been shipping thousands of multi-screen conversations one screen short, so the final line — often the punchline, the question, or the choice prompt — simply never appeared. v2.6 realigns all 4,278 affected conversations, translates the 4,325 lines that were being dropped, and restores the 20 choice boxes that had become impossible to answer (the study-session rune question and the classmate-confession scenes among them). On top of that, the whole cast now goes by their officially decided English names: 101 nameplates were renamed, and every mention of those characters inside dialogue was brought in line with the name on the nameplate.",
+  "previousVersionLabel": "v2.5.1",
+  "counts": {
+    "realignedConversations": 4278,
+    "newlyTranslatedLines": 4325,
+    "nameplateRenames": 101,
+    "dialogNameAlignments": 394
+  }
+}

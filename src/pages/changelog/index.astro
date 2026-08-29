@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import v26meta from '../../data/changelog_v2.6_meta.json';
 import v251meta from '../../data/changelog_v2.5.1_meta.json';
 import v25meta from '../../data/changelog_v2.5_meta.json';
 import v242meta from '../../data/changelog_v2.4.2_meta.json';
@@ -25,6 +26,18 @@ type ReleaseCard = {
 
 const releases: ReleaseCard[] = [
   {
+    version: v26meta.version,
+    date: v26meta.date,
+    href: `${base}/changelog/v2.6/`,
+    headline: v26meta.headline,
+    totalChanges:
+      v26meta.counts.realignedConversations +
+      v26meta.counts.newlyTranslatedLines +
+      v26meta.counts.nameplateRenames +
+      v26meta.counts.dialogNameAlignments,
+    isLatest: true,
+  },
+  {
     version: v251meta.version,
     date: v251meta.date,
     href: `${base}/changelog/v2.5.1/`,
@@ -34,7 +47,6 @@ const releases: ReleaseCard[] = [
       v251meta.counts.suffixFixes +
       v251meta.counts.renames +
       v251meta.counts.grammarPrefixAdditions,
-    isLatest: true,
   },
   {
     version: v25meta.version,

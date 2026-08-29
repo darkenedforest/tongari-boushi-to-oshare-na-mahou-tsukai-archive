@@ -1,0 +1,47 @@
+{
+  "version": "2.6",
+  "date": "2026-08-29",
+  "headline": "4,278 conversations restored to full length, 4,325 newly translated lines, and every character now goes by their official name",
+  "summary": "The biggest correctness release since the translation began. A long-standing data-alignment bug had been shipping thousands of multi-screen conversations one screen short, so the final line — often the punchline, the question, or the choice prompt — simply never appeared. v2.6 realigns all 4,278 affected conversations, translates the 4,325 lines that were being dropped, and restores the 20 choice boxes that had become impossible to answer (the study-session rune question and the classmate-confession scenes among them). On top of that, the whole cast now goes by their officially decided English names: 101 nameplates were renamed, and every mention of those characters inside dialogue was brought in line with the name on the nameplate.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.5.1: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "v2.6 ships one patch per ROM revision. Both behave identically — pick the one that matches your ROM's revision.",
+  "otherChanges": [
+    {
+      "title": "Conversations no longer end one screen early",
+      "body": "A pipeline alignment bug meant the game's internal speaker-marker screens pushed every following English line one screen late, and the last screen of the conversation fell off entirely. 4,278 conversations were realigned so every line sits on the screen it translates, and every conversation ships all of its screens again."
+    },
+    {
+      "title": "4,325 lines translated for the first time",
+      "body": "The dropped final lines had never actually been translated — the row that should have held them was mislabelled as done. All of them are now translated, validated against each screen's line-length limits, and shipped."
+    },
+    {
+      "title": "20 unanswerable questions fixed",
+      "body": "Twenty conversations lost the instruction that opens the Yes/No or multiple-choice box, so the game asked a question and never showed the buttons. All twenty choice boxes are back — including the classmate study-session rune check and the garage-sale trade prompt from the bug-report board."
+    },
+    {
+      "title": "Every character now uses their official English name",
+      "body": "The community name research settled the official English name for every NPC. 101 nameplates changed — Chocolate is now Coco, Shortcake is Honoka, Ruby is Rouge, Purr Timer is Part-Time Cat, Prince Quartz is King, and dozens more, including the creatures (Wild Hound is Hellhound, Apparition is Quicksilver, Small Dragon is Little Dragon)."
+    },
+    {
+      "title": "Dialogue matches the nameplates",
+      "body": "394 dialogue mentions of those characters were brought in line with the new nameplates — Vicki is Vicky, Tome is Malila, the Oni is the Ogre, the Crop Circle is the Mystery Circle, and the Grim Reaper is now called Death, matching what his nameplate has always said in this release. Common words that merely look like names (the gemstone Ruby, chocolate the food, the Haunted House) were individually checked and left alone."
+    },
+    {
+      "title": "Shammy is Shammy everywhere",
+      "body": "Her nameplate and the magic-input word list used to disagree (Shammy vs Jamie). Both now read Shammy, her officially decided name, and the word list entry for Miss Vicky now matches her nameplate too."
+    },
+    {
+      "title": "Recovered fixes that had silently reverted",
+      "body": "The recipe category labels, cooking narration, magic-input translations and NPC name tables had quietly reverted to older bytes in the development tree. The build's verification gates caught all of it before release, and v2.6 re-ships the fixed versions. Players on v2.5.1 were not affected."
+    },
+    {
+      "title": "The build now verifies NPC names inside compressed files",
+      "body": "The release verification gate previously could not see NPC display names because they live inside compressed data files. It now decompresses and reads the actual name records out of the built ROM, which is how three missing renames and the stale name tables were caught."
+    }
+  ]
+}
