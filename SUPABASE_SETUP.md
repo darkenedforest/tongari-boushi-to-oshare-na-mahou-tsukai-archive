@@ -406,6 +406,100 @@ To manage captured saves: see `src/translator/_admin_save_files.py` in
 the translation repo (`list`, `download`, `set-status`, `delete`
 subcommands).
 
+## Patch release email subscriptions
+
+The subscribe card on `/patches/` (and the badges linking to it from the
+homepage and changelog) collects emails into a `patch_subscribers` table.
+It's an **append-only log**: every subscribe or unsubscribe click inserts a
+row, and the sender script replays the log (latest action per email wins)
+to get the active list. The anon key can only INSERT — the table is not
+readable from the browser, so visitor emails can't be harvested.
+
+In the Supabase dashboard, open **SQL Editor → New query**, paste this,
+and click "Run":
+
+```sql
+create table patch_subscribers (
+  id bigint primary key generated always as identity,
+  email text not null
+    check (char_length(email) <= 320 and email ~* '^[^@\s]+@[^@\s]+\.[^@\s]+$'),
+  action text not null default 'subscribe'
+    check (action in ('subscribe','unsubscribe')),
+  created_at timestamptz not null default now()
+);
+
+-- Row-Level Security ---------------------------------------------
+alter table patch_subscribers enable row level security;
+
+-- Anyone can insert (subscribe / unsubscribe from the site, no auth).
+create policy insert_patch_subscribers on patch_subscribers
+  for insert with check (true);
+
+-- Nobody can read via the anon key — the list stays private. The
+-- announcement script uses the service-role key, which bypasses RLS.
+create policy read_patch_subscribers_blocked on patch_subscribers
+  for select using (false);
+
+-- Column-level grants: the public key may only write email + action.
+-- Without this, a visitor could supply their own created_at and forge
+-- the log's timeline (id is "generated always", so it can't be forged
+-- either way — and the send script replays by id, not created_at).
+revoke insert on public.patch_subscribers from anon, authenticated;
+grant insert (email, action) on public.patch_subscribers to anon, authenticated;
+```
+
+The existing `PUBLIC_SUPABASE_URL` / `PUBLIC_SUPABASE_ANON_KEY` secrets
+cover this table too — no new secrets, no redeploy needed beyond the one
+that ships the card.
+
+### Sending an announcement when a patch ships
+
+`scripts/send_patch_announcement.py` (in this repo) builds the email from
+the newest release in `public/data/patches.json` and BCC-sends it through
+Gmail SMTP. One-time prep: create a Google **app password** for the
+sending Gmail account (myaccount.google.com → Security → 2-Step
+Verification → App passwords — requires 2FA on the account).
+
+Put the credentials in a file named `.env.announce` in the repo root
+(it's gitignored — **don't** type the secrets at the PowerShell prompt,
+PowerShell writes every typed line to a plaintext history file):
+
+```
+PUBLIC_SUPABASE_URL=https://YOUR-REF.supabase.co
+SUPABASE_SERVICE_KEY=...service-role key...   # dashboard -> API Keys
+GMAIL_ADDRESS=you@gmail.com
+GMAIL_APP_PASSWORD=...16-char app password...
+```
+
+Then:
+
+```powershell
+python scripts\send_patch_announcement.py list                  # peek at the list
+python scripts\send_patch_announcement.py send --dry-run        # preview
+python scripts\send_patch_announcement.py send --test-to you@gmail.com  # send to yourself
+python scripts\send_patch_announcement.py send                  # the real thing
+python scripts\send_patch_announcement.py unsubscribe someone@example.com  # manual removal
+```
+
+The real `send` shows the full recipient list and asks for confirmation
+before anything goes out (`--yes` skips it for scripted runs). **Look at
+that list**: the table accepts unauthenticated inserts, so a sudden burst
+of addresses is the signature of someone bulk-subscribing strangers to
+get them spammed — abort and clean the table from the dashboard if the
+list looks wrong.
+
+Recipients ride in the SMTP envelope only (true BCC) — subscribers never
+see each other's addresses. A batch that fails or an address Gmail
+refuses is reported at the end (exit code 1) so you can resend to just
+those. Every email includes unsubscribe instructions (the card on
+`/patches/#subscribe` has an unsubscribe mode, and "reply 'unsubscribe'"
+is honored by hand via the `unsubscribe` subcommand).
+
+Gmail informally caps free accounts around ~500 recipients/day. If the
+list ever outgrows that, swap Gmail for a real sender (e.g. Buttondown or
+Resend) — only `cmd_send`'s SMTP block needs to change; collection and
+the site stay as they are.
+
 ## Cost
 
 Free tier limits are generous for a fan-site bug board:

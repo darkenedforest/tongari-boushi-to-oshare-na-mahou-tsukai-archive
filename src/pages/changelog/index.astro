@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import SubscribeBadge from '../../components/SubscribeBadge.astro';
 import v26meta from '../../data/changelog_v2.6_meta.json';
 import v251meta from '../../data/changelog_v2.5.1_meta.json';
 import v25meta from '../../data/changelog_v2.5_meta.json';
@@ -188,6 +189,9 @@ function formatDate(iso: string): string {
       who want to see exactly what moved. For the "what's new" summary
       of each release, head to <a href={`${base}/patches/`}>Patches</a>.
     </p>
+    <p class="header-subscribe">
+      <SubscribeBadge />
+    </p>
   </section>
 
   <section class="releases">
@@ -267,6 +271,10 @@ function formatDate(iso: string): string {
     border-radius: 6px;
     font-family: ui-monospace, monospace;
     font-size: 0.88em;
+  }
+
+  .header-subscribe {
+    margin: 16px 0 0;
   }
 
   .releases {

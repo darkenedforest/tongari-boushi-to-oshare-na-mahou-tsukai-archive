@@ -14,6 +14,11 @@ pnpm-debug.log*
 # environment
 .env
 .env.production
+.env.announce
+
+# python bytecode
+__pycache__/
+*.pyc
 
 # macOS
 .DS_Store

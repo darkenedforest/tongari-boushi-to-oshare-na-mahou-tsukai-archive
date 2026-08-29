@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import SubscribeBadge from '../components/SubscribeBadge.astro';
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -13,6 +14,9 @@ const base = import.meta.env.BASE_URL;
         inside — files, art, dialog, characters. This is where the pieces I
         uncover end up, so I can come back to them and so anyone else who's
         curious can poke around.
+      </p>
+      <p class="hero-subscribe">
+        <SubscribeBadge />
       </p>
     </div>
     <div class="hero-decoration" aria-hidden="true">
@@ -106,6 +110,10 @@ const base = import.meta.env.BASE_URL;
     line-height: 1.6;
     color: var(--color-ink);
     max-width: 56ch;
+  }
+
+  .hero-subscribe {
+    margin: 18px 0 0;
   }
 
   .hero-decoration {

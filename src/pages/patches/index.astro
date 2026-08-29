@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import SubscribeCard from '../../components/SubscribeCard.astro';
 import patchData from '../../../public/data/patches.json';
 
 const base = import.meta.env.BASE_URL;
@@ -377,6 +378,8 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       </li>
     </ol>
   </section>
+
+  <SubscribeCard />
 
   <section class="releases">
     <h2>Release history</h2>

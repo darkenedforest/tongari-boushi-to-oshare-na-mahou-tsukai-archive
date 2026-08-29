@@ -46,6 +46,13 @@ Push to `main` → `.github/workflows/deploy.yml` runs `npm install` +
 Commit messages use `step-NNN: <description>` — increment N from the latest
 commit.
 
+When a new **patch release** ships (new entry in `public/data/patches.json`),
+email the subscriber list after pushing:
+`python scripts/send_patch_announcement.py send --dry-run` to preview, then
+without `--dry-run`. Needs env vars — see SUPABASE_SETUP.md § "Patch release
+email subscriptions". The RSS feed (`/feed.xml`) updates automatically from
+patches.json at build time.
+
 ## Committing
 
 The ~69k unstaged working-tree deletions that used to live here were restored
