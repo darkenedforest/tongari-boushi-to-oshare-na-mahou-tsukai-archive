@@ -1,8 +1,14 @@
 ---
-// Homepage badge row: the pink "Sign the guest book!" sticker plus an
-// official-style Discord badge (blurple pill, white Discord mark) with
-// the tagline underneath. The mailing-list seal intentionally stays off
-// the homepage — it lives on Patches and Changelog via SubscribeSeal.
+// Homepage badges, placed independently: part="sticker" renders the pink
+// "Sign the guest book!" sticker (sits beside the hero title); part
+// ="discord" renders the official Discord badge (blurple pill, official
+// white logo) with the tagline underneath (sits below the hero lede).
+// The mailing-list seal intentionally stays off the homepage — it lives
+// on Patches and Changelog via SubscribeSeal.
+interface Props {
+  part: 'sticker' | 'discord';
+}
+const { part } = Astro.props;
 const base = import.meta.env.BASE_URL;
 
 // Starburst sticker outline: 24 spikes on a 200x200 viewBox (same shape
@@ -15,7 +21,7 @@ const points = Array.from({ length: 48 }, (_, i) => {
 
 ---
 
-<div class="home-badges">
+{part === 'sticker' && (
   <a
     class="hb-sticker"
     href={`${base}/guest-book/`}
@@ -39,7 +45,9 @@ const points = Array.from({ length: 48 }, (_, i) => {
     </svg>
     <span class="hb-twinkle" aria-hidden="true">✧</span>
   </a>
+)}
 
+{part === 'discord' && (
   <a
     class="hb-discord"
     href="https://discord.gg/rpyMtBqep"
@@ -58,17 +66,9 @@ const points = Array.from({ length: 48 }, (_, i) => {
     </span>
     <span class="hb-discord-tag">Geek out with like-minded fans! ✦</span>
   </a>
-</div>
+)}
 
 <style>
-  .home-badges {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 22px;
-    margin: 10px 0 20px;
-  }
-
   .hb-sticker {
     position: relative;
     display: inline-block;
@@ -146,10 +146,10 @@ const points = Array.from({ length: 48 }, (_, i) => {
   .hb-discord-pill {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 13px 24px;
+    gap: 8px;
+    padding: 9px 16px;
     background: #5865f2;
-    box-shadow: 0 8px 20px rgba(88, 101, 242, 0.45);
+    box-shadow: 0 6px 14px rgba(88, 101, 242, 0.45);
     transition: box-shadow 0.15s ease;
   }
 
@@ -159,14 +159,14 @@ const points = Array.from({ length: 48 }, (_, i) => {
 
   .hb-discord-pill img {
     display: block;
-    height: 26px;
+    height: 17px;
     width: auto;
   }
 
   .hb-discord-tag {
     color: var(--color-ink-soft);
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
   }
 
   @media (prefers-reduced-motion: reduce) {

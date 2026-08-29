@@ -7,8 +7,10 @@ const base = import.meta.env.BASE_URL;
 <Layout title="Home">
   <section class="hero">
     <div class="hero-text">
-      <h1>The Archives ✦</h1>
-      <HomeBadges />
+      <div class="hero-top">
+        <h1>The Archives ✦</h1>
+        <HomeBadges part="sticker" />
+      </div>
       <p class="lede">
         I'm working on an English fan translation of this Japan-only DS game.
         A lot of that work involves pulling the game open and finding what's
@@ -16,6 +18,9 @@ const base = import.meta.env.BASE_URL;
         uncover end up, so I can come back to them and so anyone else who's
         curious can poke around.
       </p>
+      <div class="hero-discord">
+        <HomeBadges part="discord" />
+      </div>
     </div>
     <div class="hero-decoration" aria-hidden="true">
       <img class="title-castle" src={`${base}/decorations/title_castle_day.png`} alt="" />
@@ -109,11 +114,30 @@ const base = import.meta.env.BASE_URL;
     }
   }
 
+  .hero-top {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+
+  .hero-top h1 {
+    margin: 0;
+  }
+
   .lede {
     font-size: 1.1rem;
     line-height: 1.6;
     color: var(--color-ink);
     max-width: 56ch;
+  }
+
+  .hero-discord {
+    margin: 18px 0 0;
+    max-width: 56ch;
+    display: flex;
+    justify-content: center;
   }
 
   .hero-decoration {
