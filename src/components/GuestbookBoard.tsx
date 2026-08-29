@@ -32,7 +32,7 @@ const TEXT_DEFAULT_SIZE = 26;
 const TEXT_MIN_SIZE = 10;
 const TEXT_MAX_SIZE = 120;
 
-type Tool = 'draw' | 'erase' | 'fill' | 'select';
+type Tool = 'draw' | 'erase' | 'fill' | 'line' | 'select';
 
 interface StampEl {
   kind: 'stamp';
@@ -112,6 +112,10 @@ function CardEditor({ base, onClose, onPosted }: {
   const holderRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const lastCell = useRef<{ x: number; y: number } | null>(null);
+  // Line tool: anchor cell + canvas snapshot so the preview can redraw
+  // from the anchor to the cursor on every move.
+  const lineStart = useRef<{ x: number; y: number } | null>(null);
+  const lineSnapshot = useRef<ImageData | null>(null);
   // Only one pointer drives the editor at a time — a second touch (thumb,
   // palm) must not corrupt the stroke or gesture in progress.
   const activePointer = useRef<number | null>(null);
@@ -172,6 +176,8 @@ function CardEditor({ base, onClose, onPosted }: {
       activePointer.current = null;
       lastCell.current = null;
       gesture.current = null;
+      lineStart.current = null;
+      lineSnapshot.current = null;
     };
     window.addEventListener('blur', clear);
     document.addEventListener('visibilitychange', clear);
@@ -336,6 +342,17 @@ function CardEditor({ base, onClose, onPosted }: {
       floodFill(Math.floor(p.x / CELL), Math.floor(p.y / CELL));
       return;
     }
+    if (tool === 'line') {
+      const ctx = pixCtx();
+      if (!ctx) return;
+      activePointer.current = e.pointerId;
+      pushUndo();
+      lineSnapshot.current = ctx.getImageData(0, 0, PIX_W, PIX_H);
+      const cell = { x: Math.floor(p.x / CELL), y: Math.floor(p.y / CELL) };
+      lineStart.current = cell;
+      paintCell(cell.x, cell.y);
+      return;
+    }
     if (tool === 'draw' || tool === 'erase') {
       activePointer.current = e.pointerId;
       pushUndo();
@@ -392,6 +409,26 @@ function CardEditor({ base, onClose, onPosted }: {
   function onPointerMove(e: React.PointerEvent) {
     if (saveOpen) return;
     if (activePointer.current !== null && e.pointerId !== activePointer.current) return;
+    if (tool === 'line') {
+      const ctx = pixCtx();
+      if (!ctx || !lineStart.current || !lineSnapshot.current) return;
+      if (e.buttons === 0) {
+        // Lost release mid-line — abort the preview.
+        ctx.putImageData(lineSnapshot.current, 0, 0);
+        lineStart.current = null;
+        lineSnapshot.current = null;
+        activePointer.current = null;
+        return;
+      }
+      const p = cardPoint(e);
+      const cell = {
+        x: Math.max(0, Math.min(PIX_W - 1, Math.floor(p.x / CELL))),
+        y: Math.max(0, Math.min(PIX_H - 1, Math.floor(p.y / CELL))),
+      };
+      ctx.putImageData(lineSnapshot.current, 0, 0);
+      paintLine(lineStart.current, cell);
+      return;
+    }
     if (tool === 'draw' || tool === 'erase') {
       if (!lastCell.current) return;
       if (e.buttons === 0) {
@@ -446,6 +483,8 @@ function CardEditor({ base, onClose, onPosted }: {
     activePointer.current = null;
     lastCell.current = null;
     gesture.current = null;
+    lineStart.current = null;
+    lineSnapshot.current = null;
   }
 
   function addStamp(src: string) {
@@ -636,10 +675,11 @@ function CardEditor({ base, onClose, onPosted }: {
               <button className={`gb-tool ${tool === 'draw' ? 'on' : ''}`} onClick={() => setTool('draw')}>✏️ Draw</button>
               <button className={`gb-tool ${tool === 'erase' ? 'on' : ''}`} onClick={() => setTool('erase')}>🧽 Erase</button>
               <button className={`gb-tool ${tool === 'fill' ? 'on' : ''}`} onClick={() => setTool('fill')}>🪣 Fill</button>
+              <button className={`gb-tool ${tool === 'line' ? 'on' : ''}`} onClick={() => setTool('line')}>📏 Line</button>
               <button className={`gb-tool ${tool === 'select' ? 'on' : ''}`} onClick={() => setTool('select')}>👆 Move</button>
             </div>
             <div className="gb-tool-row">
-              <button className="gb-tool" onClick={addText}>🔤 Add text</button>
+              <button className="gb-tool" onClick={addText}>🔤 Text</button>
               <button className={`gb-tool ${drawer === 'stamps' ? 'on' : ''}`} onClick={() => setDrawer(drawer === 'stamps' ? null : 'stamps')}>🍄 Stamps</button>
               <button className={`gb-tool ${drawer === 'bg' ? 'on' : ''}`} onClick={() => setDrawer(drawer === 'bg' ? null : 'bg')}>🏰 Background</button>
             </div>
