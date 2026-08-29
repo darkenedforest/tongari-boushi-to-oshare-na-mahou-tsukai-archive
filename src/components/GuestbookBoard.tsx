@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase, supabaseConfigured, GUESTBOOK_BUCKET, getOrCreateSession } from '../lib/supabase';
 import assets from '../data/guestbook_assets.json';
 
@@ -606,7 +607,11 @@ function CardEditor({ base, onClose, onPosted }: {
 
   const stampSrc = (src: string) => `${base}${src}`;
 
-  return (
+  // Portal to <body>: the page wraps content in a `.container` with
+  // z-index:1, which traps any overlay in a stacking context BELOW the
+  // sticky site header (z-index:50) — the header would invisibly cover
+  // the editor's top toolbar and swallow clicks on Draw/Erase/Move.
+  return createPortal(
     <div className="gb-editor" role="dialog" aria-label="Card editor">
       <div className="gb-editor-frame">
         <header className="gb-editor-head">
@@ -917,7 +922,8 @@ function CardEditor({ base, onClose, onPosted }: {
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -1047,11 +1053,12 @@ export default function GuestbookBoard() {
         ))}
       </div>
 
-      {lightbox && (
+      {lightbox && createPortal(
         <div className="gb-lightbox" onClick={() => setLightbox(null)} role="dialog">
           <button className="gb-lightbox-close" aria-label="Close">×</button>
           <img src={lightbox.image_url} alt={`Guest book card by ${authorOrAnon(lightbox.author)}`} />
-        </div>
+        </div>,
+        document.body
       )}
 
       {editorOpen && (
