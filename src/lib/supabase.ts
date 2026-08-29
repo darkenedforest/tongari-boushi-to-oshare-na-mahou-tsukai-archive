@@ -11,6 +11,7 @@ export const supabase: SupabaseClient | null = supabaseConfigured
 
 export const BUG_BUCKET = 'bug-report-images';
 export const SAVE_FILES_BUCKET = 'save-files';
+export const GUESTBOOK_BUCKET = 'guestbook-cards';
 
 const SESSION_KEY = 'tongari-anon-session';
 

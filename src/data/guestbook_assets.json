@@ -1,0 +1,570 @@
+{
+ "stamps": [
+  {
+   "src": "/decorations/apple-red.png"
+  },
+  {
+   "src": "/decorations/apple-yellow.png"
+  },
+  {
+   "src": "/decorations/beetle.png"
+  },
+  {
+   "src": "/decorations/burger.png"
+  },
+  {
+   "src": "/decorations/butterfly-dark.png"
+  },
+  {
+   "src": "/decorations/butterfly-yellow.png"
+  },
+  {
+   "src": "/decorations/crown.png"
+  },
+  {
+   "src": "/decorations/donut.png"
+  },
+  {
+   "src": "/decorations/dragonfly.png"
+  },
+  {
+   "src": "/decorations/grapes.png"
+  },
+  {
+   "src": "/decorations/ham.png"
+  },
+  {
+   "src": "/decorations/ice-cream-cone.png"
+  },
+  {
+   "src": "/decorations/jelly.png"
+  },
+  {
+   "src": "/decorations/key.png"
+  },
+  {
+   "src": "/decorations/lemon.png"
+  },
+  {
+   "src": "/decorations/magic-lamp-crystal.png"
+  },
+  {
+   "src": "/decorations/magic-lamp-gold.png"
+  },
+  {
+   "src": "/decorations/magic-lamp-tall.png"
+  },
+  {
+   "src": "/decorations/parfait.png"
+  },
+  {
+   "src": "/decorations/peach.png"
+  },
+  {
+   "src": "/decorations/pie.png"
+  },
+  {
+   "src": "/decorations/pizza.png"
+  },
+  {
+   "src": "/decorations/quill-pen.png"
+  },
+  {
+   "src": "/decorations/turtle.png"
+  },
+  {
+   "src": "/images/2d/item_icon/1.png"
+  },
+  {
+   "src": "/images/2d/item_icon/3.png"
+  },
+  {
+   "src": "/images/2d/item_icon/5.png"
+  },
+  {
+   "src": "/images/2d/item_icon/6.png"
+  },
+  {
+   "src": "/images/2d/item_icon/8.png"
+  },
+  {
+   "src": "/images/2d/item_icon/9.png"
+  },
+  {
+   "src": "/images/2d/item_icon/13.png"
+  },
+  {
+   "src": "/images/2d/item_icon/16.png"
+  },
+  {
+   "src": "/images/2d/item_icon/17.png"
+  },
+  {
+   "src": "/images/2d/item_icon/19.png"
+  },
+  {
+   "src": "/images/2d/item_icon/20.png"
+  },
+  {
+   "src": "/images/2d/item_icon/21.png"
+  },
+  {
+   "src": "/images/2d/item_icon/23.png"
+  },
+  {
+   "src": "/images/2d/item_icon/27.png"
+  },
+  {
+   "src": "/images/2d/item_icon/28.png"
+  },
+  {
+   "src": "/images/2d/item_icon/30.png"
+  },
+  {
+   "src": "/images/2d/item_icon/31.png"
+  },
+  {
+   "src": "/images/2d/item_icon/34.png"
+  },
+  {
+   "src": "/images/2d/item_icon/36.png"
+  },
+  {
+   "src": "/images/2d/item_icon/53.png"
+  },
+  {
+   "src": "/images/2d/item_icon/55.png"
+  },
+  {
+   "src": "/images/2d/item_icon/62.png"
+  },
+  {
+   "src": "/images/2d/item_icon/65.png"
+  },
+  {
+   "src": "/images/2d/item_icon/66.png"
+  },
+  {
+   "src": "/images/2d/item_icon/67.png"
+  },
+  {
+   "src": "/images/2d/item_icon/68.png"
+  },
+  {
+   "src": "/images/2d/item_icon/69.png"
+  },
+  {
+   "src": "/images/2d/item_icon/70.png"
+  },
+  {
+   "src": "/images/2d/item_icon/73.png"
+  },
+  {
+   "src": "/images/2d/item_icon/76.png"
+  },
+  {
+   "src": "/images/2d/item_icon/80.png"
+  },
+  {
+   "src": "/images/2d/item_icon/83.png"
+  },
+  {
+   "src": "/images/2d/item_icon/85.png"
+  },
+  {
+   "src": "/images/2d/item_icon/86.png"
+  },
+  {
+   "src": "/images/2d/item_icon/87.png"
+  },
+  {
+   "src": "/images/2d/item_icon/88.png"
+  },
+  {
+   "src": "/images/2d/item_icon/92.png"
+  },
+  {
+   "src": "/images/2d/item_icon/96.png"
+  },
+  {
+   "src": "/images/2d/item_icon/97.png"
+  },
+  {
+   "src": "/images/2d/item_icon/98.png"
+  },
+  {
+   "src": "/images/2d/item_icon/103.png"
+  },
+  {
+   "src": "/images/2d/item_icon/110.png"
+  },
+  {
+   "src": "/images/2d/item_icon/132.png"
+  },
+  {
+   "src": "/images/2d/item_icon/140.png"
+  },
+  {
+   "src": "/images/2d/item_icon/157.png"
+  },
+  {
+   "src": "/images/2d/item_icon/159.png"
+  },
+  {
+   "src": "/images/2d/item_icon/161.png"
+  },
+  {
+   "src": "/images/2d/item_icon/170.png"
+  },
+  {
+   "src": "/images/2d/item_icon/172.png"
+  },
+  {
+   "src": "/images/2d/item_icon/180.png"
+  },
+  {
+   "src": "/images/2d/item_icon/184.png"
+  },
+  {
+   "src": "/images/2d/item_icon/186.png"
+  },
+  {
+   "src": "/images/2d/item_icon/188.png"
+  },
+  {
+   "src": "/images/2d/item_icon/203.png"
+  },
+  {
+   "src": "/images/2d/item_icon/215.png"
+  },
+  {
+   "src": "/images/2d/item_icon/230.png"
+  },
+  {
+   "src": "/images/2d/item_icon/234.png"
+  },
+  {
+   "src": "/images/2d/item_icon/245.png"
+  },
+  {
+   "src": "/images/2d/item_icon/252.png"
+  },
+  {
+   "src": "/images/2d/item_icon/255.png"
+  },
+  {
+   "src": "/images/2d/item_icon/259.png"
+  },
+  {
+   "src": "/images/2d/item_icon/260.png"
+  },
+  {
+   "src": "/images/2d/item_icon/262.png"
+  },
+  {
+   "src": "/images/2d/item_icon/274.png"
+  },
+  {
+   "src": "/images/2d/item_icon/276.png"
+  },
+  {
+   "src": "/images/2d/item_icon/281.png"
+  },
+  {
+   "src": "/images/2d/item_icon/285.png"
+  },
+  {
+   "src": "/images/2d/item_icon/286.png"
+  },
+  {
+   "src": "/images/2d/item_icon/290.png"
+  },
+  {
+   "src": "/images/2d/item_icon/292.png"
+  },
+  {
+   "src": "/images/2d/item_icon/293.png"
+  },
+  {
+   "src": "/images/2d/item_icon/298.png"
+  },
+  {
+   "src": "/images/2d/item_icon/300.png"
+  },
+  {
+   "src": "/images/2d/item_icon/302.png"
+  },
+  {
+   "src": "/images/2d/item_icon/303.png"
+  },
+  {
+   "src": "/images/2d/item_icon/305.png"
+  },
+  {
+   "src": "/images/2d/item_icon/306.png"
+  },
+  {
+   "src": "/images/2d/item_icon/313.png"
+  },
+  {
+   "src": "/images/2d/item_icon/315.png"
+  },
+  {
+   "src": "/images/2d/item_icon/340.png"
+  },
+  {
+   "src": "/images/2d/item_icon/344.png"
+  },
+  {
+   "src": "/images/2d/item_icon/351.png"
+  },
+  {
+   "src": "/images/2d/item_icon/353.png"
+  },
+  {
+   "src": "/images/2d/item_icon/359.png"
+  },
+  {
+   "src": "/images/2d/item_icon/365.png"
+  },
+  {
+   "src": "/images/2d/item_icon/368.png"
+  },
+  {
+   "src": "/images/2d/item_icon/371.png"
+  },
+  {
+   "src": "/images/2d/item_icon/375.png"
+  },
+  {
+   "src": "/images/2d/item_icon/384.png"
+  },
+  {
+   "src": "/images/2d/item_icon/385.png"
+  },
+  {
+   "src": "/images/2d/item_icon/397.png"
+  },
+  {
+   "src": "/images/2d/item_icon/399.png"
+  },
+  {
+   "src": "/images/2d/item_icon/405.png"
+  },
+  {
+   "src": "/images/2d/item_icon/407.png"
+  },
+  {
+   "src": "/images/2d/item_icon/410.png"
+  },
+  {
+   "src": "/images/2d/item_icon/423.png"
+  },
+  {
+   "src": "/images/2d/item_icon/424.png"
+  },
+  {
+   "src": "/images/2d/item_icon/425.png"
+  },
+  {
+   "src": "/images/2d/item_icon/430.png"
+  },
+  {
+   "src": "/images/2d/item_icon/433.png"
+  },
+  {
+   "src": "/images/2d/item_icon/434.png"
+  },
+  {
+   "src": "/images/2d/item_icon/436.png"
+  },
+  {
+   "src": "/images/2d/item_icon/438.png"
+  },
+  {
+   "src": "/images/2d/item_icon/441.png"
+  },
+  {
+   "src": "/images/2d/item_icon/442.png"
+  },
+  {
+   "src": "/images/2d/item_icon/452.png"
+  },
+  {
+   "src": "/images/2d/item_icon/456.png"
+  },
+  {
+   "src": "/images/2d/item_icon/462.png"
+  },
+  {
+   "src": "/images/2d/item_icon/466.png"
+  },
+  {
+   "src": "/images/2d/item_icon/467.png"
+  },
+  {
+   "src": "/images/2d/item_icon/468.png"
+  },
+  {
+   "src": "/images/2d/item_icon/490.png"
+  },
+  {
+   "src": "/images/2d/item_icon/492.png"
+  },
+  {
+   "src": "/images/2d/item_icon/495.png"
+  },
+  {
+   "src": "/images/2d/item_icon/497.png"
+  },
+  {
+   "src": "/images/2d/item_icon/505.png"
+  },
+  {
+   "src": "/images/2d/item_icon/541.png"
+  },
+  {
+   "src": "/images/2d/item_icon/544.png"
+  },
+  {
+   "src": "/images/2d/item_icon/551.png"
+  },
+  {
+   "src": "/images/2d/item_icon/553.png"
+  },
+  {
+   "src": "/images/2d/item_icon/555.png"
+  },
+  {
+   "src": "/images/2d/item_icon/556.png"
+  },
+  {
+   "src": "/images/2d/item_icon/557.png"
+  },
+  {
+   "src": "/images/2d/item_icon/565.png"
+  },
+  {
+   "src": "/images/2d/item_icon/567.png"
+  },
+  {
+   "src": "/images/2d/item_icon/575.png"
+  },
+  {
+   "src": "/images/2d/item_icon/590.png"
+  },
+  {
+   "src": "/images/2d/item_icon/651.png"
+  },
+  {
+   "src": "/images/2d/item_icon/655.png"
+  },
+  {
+   "src": "/images/2d/inventory_icon/Tequip_icon_rich06_0060.png"
+  },
+  {
+   "src": "/images/2d/inventory_icon/Troom_icon_ame_0858.png"
+  },
+  {
+   "src": "/images/2d/inventory_icon/Tsaibai_icon_kousyou_0098.png"
+  }
+ ],
+ "backgrounds": [
+  {
+   "src": "/images/2d/title_castle/dawn.png",
+   "label": "Castle - spring"
+  },
+  {
+   "src": "/images/2d/title_castle/day.png",
+   "label": "Castle - day"
+  },
+  {
+   "src": "/images/2d/title_castle/dusk.png",
+   "label": "Castle - dusk"
+  },
+  {
+   "src": "/images/2d/title_castle/night.png",
+   "label": "Castle - night"
+  },
+  {
+   "src": "/images/2d/title_castle/stylised.png",
+   "label": "Castle - pink"
+  },
+  {
+   "src": "/images/2d/classroom_card/0.png",
+   "label": "Chalkboard"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG02_page_00.png",
+   "label": "Magazine 5"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG02_page_04.png",
+   "label": "Magazine 9"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG03_page_03.png",
+   "label": "Magazine 13"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG04_page_03.png",
+   "label": "Magazine 18"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG06_page_03.png",
+   "label": "Magazine 28"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG09_page_00.png",
+   "label": "Magazine 40"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG10_page_03.png",
+   "label": "Magazine 48"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG12_page_01.png",
+   "label": "Magazine 56"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG12_page_03.png",
+   "label": "Magazine 58"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG13_page_03.png",
+   "label": "Magazine 63"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG17_page_00.png",
+   "label": "Magazine 80"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG18_page_03.png",
+   "label": "Magazine 88"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG22_page_01.png",
+   "label": "Magazine 106"
+  },
+  {
+   "src": "/images/2d/magazine_page/MG24_page_00.png",
+   "label": "Magazine 115"
+  },
+  {
+   "src": "/images/2d/classroom_card/6.png",
+   "label": "Chalk lesson 2"
+  },
+  {
+   "src": "/images/2d/classroom_card/231.png",
+   "label": "Chalk lesson 44"
+  },
+  {
+   "src": "/images/2d/classroom_card/411.png",
+   "label": "Chalk lesson 90"
+  },
+  {
+   "src": "/images/2d/classroom_card/492.png",
+   "label": "Chalk lesson 117"
+  }
+ ]
+}

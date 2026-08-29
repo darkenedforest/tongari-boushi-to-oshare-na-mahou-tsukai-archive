@@ -502,6 +502,103 @@ list ever outgrows that, swap Gmail for a real sender (e.g. Buttondown or
 Resend) — only `cmd_send`'s SMTP block needs to change; collection and
 the site stay as they are.
 
+## Guest book (cards wall)
+
+The `/guest-book/` page lets visitors compose a card (pixel drawing +
+text + game-asset stamps over a background) and pin it to a public wall.
+The card is flattened to a PNG in the browser, uploaded to a public
+`guestbook-cards` bucket, and referenced from a `guestbook_cards` row.
+Hearts work like the bug board's "Me too" (one per browser session).
+
+In the Supabase dashboard, open **SQL Editor → New query**, paste this,
+and click "Run":
+
+```sql
+create table guestbook_cards (
+  id bigint primary key generated always as identity,
+  author text check (author is null or char_length(author) <= 40),
+  -- Cards may only point at PNGs actually uploaded to this project's
+  -- guestbook bucket — swap YOUR-PROJECT-REF for your project ref.
+  image_url text not null check (
+    char_length(image_url) <= 500
+    and image_url like 'https://YOUR-PROJECT-REF.supabase.co/storage/v1/object/public/guestbook-cards/%'
+  ),
+  heart_count int not null default 0,
+  created_at timestamptz not null default now()
+);
+
+create table guestbook_hearts (
+  id bigint primary key generated always as identity,
+  card_id bigint not null references guestbook_cards(id) on delete cascade,
+  session_id text not null,
+  created_at timestamptz not null default now(),
+  unique (card_id, session_id)
+);
+
+-- Trigger: keep heart_count denormalized for sort/display speed.
+create or replace function bump_heart_count() returns trigger
+language plpgsql security definer as $$
+begin
+  if (tg_op = 'INSERT') then
+    update guestbook_cards set heart_count = heart_count + 1 where id = new.card_id;
+  elsif (tg_op = 'DELETE') then
+    update guestbook_cards set heart_count = greatest(0, heart_count - 1) where id = old.card_id;
+  end if;
+  return null;
+end $$;
+
+drop trigger if exists trg_heart_count on guestbook_hearts;
+create trigger trg_heart_count
+after insert or delete on guestbook_hearts
+for each row execute function bump_heart_count();
+
+-- Row-Level Security ----------------------------------------------
+alter table guestbook_cards  enable row level security;
+alter table guestbook_hearts enable row level security;
+
+-- The wall is public: anyone can read, anyone can post (no auth).
+create policy read_all_guestbook_cards  on guestbook_cards  for select using (true);
+create policy read_all_guestbook_hearts on guestbook_hearts for select using (true);
+create policy insert_guestbook_cards    on guestbook_cards  for insert with check (true);
+create policy insert_guestbook_hearts   on guestbook_hearts for insert with check (true);
+-- Updates / deletes only through the service role (dashboard moderation).
+
+-- Column-level grants: the public key may only write author + image_url.
+-- Without this, a visitor could forge heart_count (fake popularity) or
+-- created_at (pin their card to the top of the wall forever).
+revoke insert on public.guestbook_cards from anon, authenticated;
+grant insert (author, image_url) on public.guestbook_cards to anon, authenticated;
+revoke insert on public.guestbook_hearts from anon, authenticated;
+grant insert (card_id, session_id) on public.guestbook_hearts to anon, authenticated;
+```
+
+Then create the storage bucket: **Storage → New bucket**, name it
+exactly `guestbook-cards`, toggle **Public bucket** ON, create. Add its
+policies via **SQL Editor**:
+
+```sql
+create policy guestbook_public_read on storage.objects
+  for select using (bucket_id = 'guestbook-cards');
+
+create policy guestbook_public_upload on storage.objects
+  for insert with check (
+    bucket_id = 'guestbook-cards'
+    and storage.extension(name) = 'png'
+  );
+
+-- Cap uploads: anonymous uploads to a public bucket must not be able to
+-- host arbitrary large files. A composed card PNG is a few hundred KB.
+update storage.buckets
+  set file_size_limit = 2097152,           -- 2 MB
+      allowed_mime_types = array['image/png']
+  where id = 'guestbook-cards';
+```
+
+Moderation: delete the row in Table Editor → `guestbook_cards` (hearts
+cascade), and delete the PNG under Storage → `guestbook-cards` if you
+want the file gone too. The existing `PUBLIC_SUPABASE_URL` /
+`PUBLIC_SUPABASE_ANON_KEY` secrets cover all of this — nothing new.
+
 ## Cost
 
 Free tier limits are generous for a fan-site bug board:
