@@ -21,9 +21,9 @@ const points = Array.from({ length: 48 }, (_, i) => {
 }).join(' ');
 ---
 
-<div class={`seal-wrap seal-${size}`} id="subscribe">
+<div class={`seal-cluster seal-${size}`} id="subscribe">
   <button
-    class="seal-btn"
+    class="seal-btn seal-gold-btn"
     id="psub-open"
     type="button"
     aria-haspopup="dialog"
@@ -47,6 +47,56 @@ const points = Array.from({ length: 48 }, (_, i) => {
     </svg>
     <span class="seal-twinkle" aria-hidden="true">✦</span>
   </button>
+
+  <a
+    class="seal-btn seal-companion seal-pink-btn"
+    href={`${base}/guest-book/`}
+    aria-label="Sign the guest book"
+  >
+    <svg viewBox="0 0 200 200" role="presentation" aria-hidden="true">
+      <defs>
+        <linearGradient id="seal-pink" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ffd6e7" />
+          <stop offset="0.45" stop-color="#ff7eb6" />
+          <stop offset="1" stop-color="#e93f8e" />
+        </linearGradient>
+      </defs>
+      <polygon points={points} fill="url(#seal-pink)" stroke="#c2266f" stroke-width="2.5" />
+      <circle cx="100" cy="100" r="72" fill="none" stroke="#fff0f6" stroke-width="2.5" stroke-dasharray="5 4" />
+      <path d="M40,58 Q95,18 160,55 L150,70 Q95,38 50,72 Z" fill="rgba(255,255,255,0.4)" />
+      <text x="100" y="72" text-anchor="middle" font-size="25">💌</text>
+      <text class="seal-line pink" x="100" y="102" text-anchor="middle" font-size="18">SIGN THE</text>
+      <text class="seal-line pink" x="100" y="123" text-anchor="middle" font-size="17">GUEST BOOK!</text>
+      <text class="seal-sub pink" x="100" y="146" text-anchor="middle" font-size="10.5">✦ leave a card ✦</text>
+    </svg>
+    <span class="seal-twinkle t2" aria-hidden="true">✧</span>
+  </a>
+
+  <a
+    class="seal-btn seal-companion seal-blurple-btn"
+    href="https://discord.gg/rpyMtBqep"
+    target="_blank"
+    rel="noopener"
+    aria-label="Join the Discord — geek out with like-minded fans"
+  >
+    <svg viewBox="0 0 200 200" role="presentation" aria-hidden="true">
+      <defs>
+        <linearGradient id="seal-blurple" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#aab4ff" />
+          <stop offset="0.45" stop-color="#5865f2" />
+          <stop offset="1" stop-color="#3b45c4" />
+        </linearGradient>
+      </defs>
+      <polygon points={points} fill="url(#seal-blurple)" stroke="#2f38a8" stroke-width="2.5" />
+      <circle cx="100" cy="100" r="72" fill="none" stroke="#eef0ff" stroke-width="2.5" stroke-dasharray="5 4" />
+      <path d="M40,58 Q95,18 160,55 L150,70 Q95,38 50,72 Z" fill="rgba(255,255,255,0.35)" />
+      <text x="100" y="68" text-anchor="middle" font-size="24">💭</text>
+      <text class="seal-line white" x="100" y="96" text-anchor="middle" font-size="13.5">GEEK OUT WITH</text>
+      <text class="seal-line white" x="100" y="114" text-anchor="middle" font-size="13.5">LIKE-MINDED FANS!</text>
+      <text class="seal-sub white" x="100" y="140" text-anchor="middle" font-size="10.5">✦ join the Discord ✦</text>
+    </svg>
+    <span class="seal-twinkle t3" aria-hidden="true">✦</span>
+  </a>
 </div>
 
 <dialog class="sub-dialog" id="psub-dialog" aria-labelledby="psub-title">
@@ -248,11 +298,19 @@ const points = Array.from({ length: 48 }, (_, i) => {
 </script>
 
 <style>
-  /* ── The gold sticker ─────────────────────────────────────────── */
-  .seal-wrap {
-    display: inline-block;
+  /* ── The sticker cluster ──────────────────────────────────────── */
+  .seal-cluster {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
     line-height: 0;
   }
+
+  /* Keep the large cluster narrow enough to sit beside a page header:
+     gold on top, the two companions tucked underneath. */
+  .seal-cluster.seal-lg { max-width: 300px; }
 
   .seal-btn {
     padding: 0;
@@ -265,6 +323,7 @@ const points = Array.from({ length: 48 }, (_, i) => {
     transform: rotate(-8deg);
     filter: drop-shadow(0 6px 12px rgba(200, 135, 28, 0.35));
     transition: transform 0.15s ease, filter 0.15s ease;
+    text-decoration: none;
   }
 
   .seal-btn:hover,
@@ -278,8 +337,32 @@ const points = Array.from({ length: 48 }, (_, i) => {
     outline-offset: 4px;
   }
 
+  .seal-pink-btn {
+    transform: rotate(6deg);
+    filter: drop-shadow(0 6px 12px rgba(233, 63, 142, 0.35));
+  }
+
+  .seal-pink-btn:hover,
+  .seal-pink-btn:focus-visible {
+    transform: rotate(2deg) scale(1.06);
+    filter: drop-shadow(0 10px 18px rgba(233, 63, 142, 0.45));
+  }
+
+  .seal-blurple-btn {
+    transform: rotate(-5deg);
+    filter: drop-shadow(0 6px 12px rgba(88, 101, 242, 0.4));
+  }
+
+  .seal-blurple-btn:hover,
+  .seal-blurple-btn:focus-visible {
+    transform: rotate(-1deg) scale(1.06);
+    filter: drop-shadow(0 10px 18px rgba(88, 101, 242, 0.5));
+  }
+
   .seal-lg .seal-btn svg { width: 150px; height: 150px; }
+  .seal-lg .seal-companion svg { width: 128px; height: 128px; }
   .seal-md .seal-btn svg { width: 112px; height: 112px; }
+  .seal-md .seal-companion svg { width: 100px; height: 100px; }
 
   .seal-line {
     font-family: var(--font-display);
@@ -295,6 +378,11 @@ const points = Array.from({ length: 48 }, (_, i) => {
     letter-spacing: 0.03em;
   }
 
+  .seal-line.pink { fill: #8a1150; }
+  .seal-sub.pink  { fill: #a8266b; }
+  .seal-line.white { fill: #ffffff; }
+  .seal-sub.white  { fill: #dfe3ff; }
+
   .seal-twinkle {
     position: absolute;
     top: 4px;
@@ -304,6 +392,18 @@ const points = Array.from({ length: 48 }, (_, i) => {
     font-size: 1rem;
     animation: seal-twinkle 2.4s ease-in-out infinite;
     pointer-events: none;
+  }
+
+  .seal-twinkle.t2 {
+    color: #fff0f6;
+    text-shadow: 0 0 6px rgba(255, 126, 182, 0.9);
+    animation-delay: 0.8s;
+  }
+
+  .seal-twinkle.t3 {
+    color: #eef0ff;
+    text-shadow: 0 0 6px rgba(88, 101, 242, 0.9);
+    animation-delay: 1.5s;
   }
 
   @keyframes seal-twinkle {
