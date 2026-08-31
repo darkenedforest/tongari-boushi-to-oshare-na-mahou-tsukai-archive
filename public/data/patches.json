@@ -23,11 +23,42 @@
   },
   "releases": [
     {
+      "version": "2.6.1",
+      "date": "2026-08-30",
+      "headline": "The v2.6 name fix — the official NPC renames are actually in the game this time",
+      "summary": "v2.6 shipped with its NPC name files silently reverted to the pre-rename state (nameplates still said Prince Quartz, Chocolate, Purr Timer, and the village name table was back to Japanese) — a build-tree recovery had overwritten the three name files, and the release verification could not see names inside compressed files. Caught by a player report; thank you, Xabby. v2.6.1 is the identical release with the name files actually in it. If you already patched v2.6, re-patch a clean Japanese ROM with v2.6.1 — your save is unaffected.",
+      "changes": [
+        "All 101 official nameplate renames restored (Coco, Honoka, Rouge, Part-Time Cat, King, Hellhound, and the rest).",
+        "The village NPC name table is English again (v2.6 had silently reverted it to Japanese).",
+        "Release pipeline hardened: every one of the 644 NPC name records in the built ROM is now verified against a committed snapshot on every build."
+      ],
+      "changelogUrl": "/changelog/v2.6.1/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.6.1-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 18200235,
+          "patchSha256": "ba59da0dde4dfc31145a570f90e622acfa03db14d2a11a2508af8713898981cd"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.6.1-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 4946139,
+          "patchSha256": "49ace9d1f9de03a8fd872b64dd787ea9f47694358d6d73a3a0ffa3f98b4eaf39"
+        }
+      ]
+    },
+    {
       "version": "2.6",
       "date": "2026-08-29",
       "headline": "4,278 conversations restored to full length, 4,325 newly translated lines, official names for the whole cast",
       "summary": "A data-alignment bug had been shipping thousands of multi-screen conversations one screen short, dropping the final line — sometimes the choice prompt itself, leaving questions impossible to answer. v2.6 realigns all 4,278 affected conversations, translates the 4,325 dropped lines, restores the 20 lost choice boxes, and completes the official-name pass: 101 nameplates renamed and every dialogue mention brought in line with them.",
       "changes": [
+        "KNOWN ISSUE: this build shipped without the NPC nameplate renames described below — they arrive in v2.6.1. The realignment and translation fixes ARE in this build.",
         "Conversation realignment — 4,278 conversations no longer end one screen early; every line sits on the screen it translates.",
         "4,325 lines translated for the first time — the dropped final lines had never actually been translated.",
         "20 choice boxes restored — questions that never showed their Yes/No buttons (the study-session rune check among them) work again.",

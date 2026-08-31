@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import SubscribeSeal from '../../components/SubscribeSeal.astro';
+import v261meta from '../../data/changelog_v2.6.1_meta.json';
 import v26meta from '../../data/changelog_v2.6_meta.json';
 import v251meta from '../../data/changelog_v2.5.1_meta.json';
 import v25meta from '../../data/changelog_v2.5_meta.json';
@@ -27,6 +28,14 @@ type ReleaseCard = {
 
 const releases: ReleaseCard[] = [
   {
+    version: v261meta.version,
+    date: v261meta.date,
+    href: `${base}/changelog/v2.6.1/`,
+    headline: v261meta.headline,
+    totalChanges: v261meta.counts.nameplateRecordsRestored,
+    isLatest: true,
+  },
+  {
     version: v26meta.version,
     date: v26meta.date,
     href: `${base}/changelog/v2.6/`,
@@ -36,7 +45,6 @@ const releases: ReleaseCard[] = [
       v26meta.counts.newlyTranslatedLines +
       v26meta.counts.nameplateRenames +
       v26meta.counts.dialogNameAlignments,
-    isLatest: true,
   },
   {
     version: v251meta.version,

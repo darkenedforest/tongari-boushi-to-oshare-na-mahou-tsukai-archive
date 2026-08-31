@@ -1,0 +1,23 @@
+{
+  "version": "2.6.1",
+  "date": "2026-08-30",
+  "headline": "The v2.6 name fix — the official NPC renames are actually in the game this time",
+  "summary": "v2.6 shipped with its NPC name files silently reverted to the pre-rename state (nameplates still said Prince Quartz, Chocolate, Purr Timer, and the village name table was back to Japanese) — a build-tree recovery had overwritten the three name files, and the release verification could not see names inside compressed files. Caught by a player report; thank you, Xabby. v2.6.1 is the identical release with the name files actually in it. If you already patched v2.6, re-patch a clean Japanese ROM with v2.6.1 — your save is unaffected.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.6: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "If you already applied v2.6, re-patch a clean Japanese ROM with v2.6.1. Saves are unaffected.",
+  "otherChanges": [
+    {
+      "title": "The official names are actually in the game now",
+      "body": "v2.6's name files had been silently overwritten back to their old state by a build-tree recovery two days before release. All 264 name records are restored: the 101 official nameplate renames, the English village name table, and the two approved spelling decisions (Jack-o-Lantern, Dullahan's Body)."
+    },
+    {
+      "title": "Why the release checks missed it",
+      "body": "The verification gate searched the ROM for each name as raw text first, and names like King or Coco appear elsewhere in the game as ordinary words, so reverted nameplates passed. The gate now reads the actual name records out of the compressed files, and a second check compares all 644 records against a committed snapshot on every build."
+    }
+  ]
+}
