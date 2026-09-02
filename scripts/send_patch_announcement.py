@@ -69,22 +69,47 @@ PAGE_SIZE = 1000             # Supabase REST default max rows per request
 
 
 def load_env_file() -> None:
-    """Merge .env.announce (repo root, gitignored) into os.environ.
+    """Populate os.environ from the .env files that already exist, so the
+    ONLY thing a sender must supply is their Gmail login.
 
-    Real environment variables win over the file, so a one-off override
-    still works without editing it.
+    Sources, in order (first value for a name wins; real environment
+    variables always win over files):
+      1. archive repo   .env.announce   (optional overrides)
+      2. archive repo   .env            (if present)
+      3. translation    .env            (sibling repo — holds the
+                                         Supabase project URL + service key)
+
+    The Supabase keys in the translation repo are named SUPABASE_URL and
+    SUPABASE_SERVICE_ROLE_KEY; this script historically read
+    PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY. We alias the former to
+    the latter so the existing .env just works and the sender is never
+    asked for Supabase anything.
     """
-    path = REPO_ROOT / ".env.announce"
-    if not path.is_file():
-        return
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
-        if not line or line.startswith("#") or "=" not in line:
+    translation_repo = REPO_ROOT.parent / "Tongari boushi translation app claude"
+    candidates = [
+        REPO_ROOT / ".env.announce",
+        REPO_ROOT / ".env",
+        translation_repo / ".env",
+    ]
+    for path in candidates:
+        if not path.is_file():
             continue
-        name, _, value = line.partition("=")
-        name, value = name.strip(), value.strip().strip('"').strip("'")
-        if name and name not in os.environ:
-            os.environ[name] = value
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, _, value = line.partition("=")
+            name, value = name.strip(), value.strip().strip('"').strip("'")
+            if name and name not in os.environ:
+                os.environ[name] = value
+    # Alias the translation-repo credential names onto what this script uses.
+    aliases = {
+        "PUBLIC_SUPABASE_URL": "SUPABASE_URL",
+        "SUPABASE_SERVICE_KEY": "SUPABASE_SERVICE_ROLE_KEY",
+    }
+    for want, have in aliases.items():
+        if not os.environ.get(want) and os.environ.get(have):
+            os.environ[want] = os.environ[have]
 
 
 def env_or_die(*names: str) -> dict[str, str]:
