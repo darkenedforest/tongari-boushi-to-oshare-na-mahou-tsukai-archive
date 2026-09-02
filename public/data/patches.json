@@ -30,7 +30,8 @@
       "changes": [
         "All 101 official nameplate renames restored (Coco, Honoka, Rouge, Part-Time Cat, King, Hellhound, and the rest).",
         "The village NPC name table is English again (v2.6 had silently reverted it to Japanese).",
-        "Release pipeline hardened: every one of the 644 NPC name records in the built ROM is now verified against a committed snapshot on every build."
+        "Release pipeline hardened: every one of the 644 NPC name records in the built ROM is now verified against a committed snapshot on every build.",
+        "The study-session rune question and other choice prompts that never opened their Yes/No box now work — 80 dropped menu triggers restored game-wide."
       ],
       "changelogUrl": "/changelog/v2.6.1/",
       "downloads": [
@@ -39,16 +40,16 @@
           "url": "/patches/tongari-boushi-en-v2.6.1-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
-          "patchSizeBytes": 18200235,
-          "patchSha256": "ba59da0dde4dfc31145a570f90e622acfa03db14d2a11a2508af8713898981cd"
+          "patchSizeBytes": 18200428,
+          "patchSha256": "79c63a0ccc73742917df15ff26ab908274cf181a4d56edaa07a904f4132d2af8"
         },
         {
           "label": "Rev 1",
           "url": "/patches/tongari-boushi-en-v2.6.1-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
-          "patchSizeBytes": 4946139,
-          "patchSha256": "49ace9d1f9de03a8fd872b64dd787ea9f47694358d6d73a3a0ffa3f98b4eaf39"
+          "patchSizeBytes": 4946199,
+          "patchSha256": "e4a7de81bcd9bdf313f0235f773f1e6b64e823e866539c130b494104b859fd5e"
         }
       ]
     },

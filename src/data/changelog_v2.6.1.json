@@ -18,6 +18,10 @@
     {
       "title": "Why the release checks missed it",
       "body": "The verification gate searched the ROM for each name as raw text first, and names like King or Coco appear elsewhere in the game as ordinary words, so reverted nameplates passed. The gate now reads the actual name records out of the compressed files, and a second check compares all 644 records against a committed snapshot on every build."
+    },
+    {
+      "title": "Questions you couldn't answer now work",
+      "body": "A set of conversations asked a question — the study-session rune check, classroom lessons, the garage-sale trade — but the Yes/No or choice box never opened, leaving you stuck. The patch's text rebuilder had been dropping the 'open the menu' instruction. Fixed, with 80 such triggers restored across the game, and the build now refuses to ship if any choice trigger is missing."
     }
   ]
 }
