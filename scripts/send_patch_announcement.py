@@ -111,6 +111,23 @@ def load_env_file() -> None:
         if not os.environ.get(want) and os.environ.get(have):
             os.environ[want] = os.environ[have]
 
+    # Gmail credentials live in the OS keychain (Windows Credential
+    # Manager via keyring), stored under this service. Pull them in if
+    # they were not supplied by env/.env, so a sender never types them.
+    try:
+        import keyring
+        for name in ("GMAIL_ADDRESS", "GMAIL_APP_PASSWORD"):
+            if not os.environ.get(name):
+                v = keyring.get_password("tongari-boushi-notifier", name)
+                if v:
+                    os.environ[name] = v
+    except Exception:
+        pass  # keyring absent/locked -> fall through to prompting
+    # Gmail app passwords are shown in 4 space-separated groups; SMTP
+    # only accepts them with the spaces removed.
+    if os.environ.get("GMAIL_APP_PASSWORD"):
+        os.environ["GMAIL_APP_PASSWORD"] = os.environ["GMAIL_APP_PASSWORD"].replace(" ", "")
+
 
 def env_or_die(*names: str) -> dict[str, str]:
     """Return the requested credentials. Prefer environment variables
