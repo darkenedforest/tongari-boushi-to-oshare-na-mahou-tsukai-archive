@@ -26,7 +26,7 @@
       "version": "2.6.1",
       "date": "2026-08-30",
       "headline": "Two fixes: questions you couldn't answer now work, and every character uses their official name",
-      "summary": "v2.6.1 fixes two things. First, a set of conversations asked you a question — the study-session rune check, classroom lessons, the garage-sale trade — but the Yes/No or choice box never opened, so you got stuck. That's fixed: 80 broken choice prompts are restored across the game. Second, v2.6 had accidentally shipped with its NPC names reverted to the old placeholders (Prince Quartz, Chocolate, Purr Timer) and the village name list back in Japanese — the official names are now actually in the game. Thank you, Xabby, for reporting both. If you already patched v2.6, re-patch a clean Japanese ROM with v2.6.1; your save is unaffected.",
+      "summary": "v2.6.1 fixes two things. First, a set of conversations asked you a question — the study-session rune check, classroom lessons, the garage-sale trade — but the Yes/No or choice box never opened, so you got stuck. That's fixed: 80 broken choice prompts are restored across the game. Second, v2.6 had accidentally shipped with its NPC names reverted to the old placeholders (Prince Quartz, Chocolate, Purr Timer) and the village name list back in Japanese — the official names are now actually in the game.",
       "changes": [
         "Choice prompts that never opened their menu now work — the study-session rune question, classroom lessons, the garage-sale trade, and more. 80 dropped Yes/No and multiple-choice triggers restored game-wide.",
         "All 101 official NPC nameplate renames are actually in the game (Coco, Honoka, Rouge, Part-Time Cat, King, Hellhound, and the rest); v2.6 had silently reverted them.",
