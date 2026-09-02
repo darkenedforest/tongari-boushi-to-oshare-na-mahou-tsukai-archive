@@ -47,6 +47,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import getpass
 import smtplib
 import sys
 import time
@@ -87,6 +88,12 @@ def load_env_file() -> None:
 
 
 def env_or_die(*names: str) -> dict[str, str]:
+    """Return the requested credentials. Prefer environment variables
+    (and .env.announce loaded at startup); PROMPT interactively for
+    anything still missing rather than requiring a secret on disk. The
+    Gmail app password is read with getpass so it never echoes or lands
+    in shell history. Prompting needs a real TTY; if stdin is not
+    interactive we fail with a clear message instead of hanging."""
     values = {}
     missing = []
     for name in names:
@@ -95,12 +102,21 @@ def env_or_die(*names: str) -> dict[str, str]:
             values[name] = v
         else:
             missing.append(name)
-    if missing:
+    if not missing:
+        return values
+    if not sys.stdin.isatty():
         sys.exit(
-            "Missing environment variable(s): "
-            + ", ".join(missing)
-            + "\nSee the docstring at the top of this script."
+            "Missing credential(s): " + ", ".join(missing)
+            + "\nSet them as environment variables or run this in an "
+            "interactive terminal to be prompted."
         )
+    for name in missing:
+        if any(s in name for s in ("PASSWORD", "TOKEN", "KEY")):
+            values[name] = getpass.getpass(f"{name}: ").strip()
+        else:
+            values[name] = input(f"{name}: ").strip()
+        if not values[name]:
+            sys.exit(f"No value entered for {name}; aborting.")
     return values
 
 
