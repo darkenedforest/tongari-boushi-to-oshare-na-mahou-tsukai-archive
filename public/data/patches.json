@@ -25,13 +25,13 @@
     {
       "version": "2.6.1",
       "date": "2026-08-30",
-      "headline": "The v2.6 name fix — the official NPC renames are actually in the game this time",
-      "summary": "v2.6 shipped with its NPC name files silently reverted to the pre-rename state (nameplates still said Prince Quartz, Chocolate, Purr Timer, and the village name table was back to Japanese) — a build-tree recovery had overwritten the three name files, and the release verification could not see names inside compressed files. Caught by a player report; thank you, Xabby. v2.6.1 is the identical release with the name files actually in it. If you already patched v2.6, re-patch a clean Japanese ROM with v2.6.1 — your save is unaffected.",
+      "headline": "Two fixes: questions you couldn't answer now work, and every character uses their official name",
+      "summary": "v2.6.1 fixes two things. First, a set of conversations asked you a question — the study-session rune check, classroom lessons, the garage-sale trade — but the Yes/No or choice box never opened, so you got stuck. That's fixed: 80 broken choice prompts are restored across the game. Second, v2.6 had accidentally shipped with its NPC names reverted to the old placeholders (Prince Quartz, Chocolate, Purr Timer) and the village name list back in Japanese — the official names are now actually in the game. Thank you, Xabby, for reporting both. If you already patched v2.6, re-patch a clean Japanese ROM with v2.6.1; your save is unaffected.",
       "changes": [
-        "All 101 official nameplate renames restored (Coco, Honoka, Rouge, Part-Time Cat, King, Hellhound, and the rest).",
-        "The village NPC name table is English again (v2.6 had silently reverted it to Japanese).",
-        "Release pipeline hardened: every one of the 644 NPC name records in the built ROM is now verified against a committed snapshot on every build.",
-        "The study-session rune question and other choice prompts that never opened their Yes/No box now work — 80 dropped menu triggers restored game-wide."
+        "Choice prompts that never opened their menu now work — the study-session rune question, classroom lessons, the garage-sale trade, and more. 80 dropped Yes/No and multiple-choice triggers restored game-wide.",
+        "All 101 official NPC nameplate renames are actually in the game (Coco, Honoka, Rouge, Part-Time Cat, King, Hellhound, and the rest); v2.6 had silently reverted them.",
+        "The village NPC name list is English again (v2.6 had reverted it to Japanese).",
+        "Release pipeline hardened with two new safety checks: every NPC name record and every menu/choice trigger in the built ROM is now verified on every build, so neither problem can ship again."
       ],
       "changelogUrl": "/changelog/v2.6.1/",
       "downloads": [

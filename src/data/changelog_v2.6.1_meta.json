@@ -1,10 +1,11 @@
 {
   "version": "2.6.1",
   "date": "2026-08-30",
-  "headline": "The v2.6 name fix — the official NPC renames are actually in the game this time",
+  "headline": "Two fixes: questions you couldn't answer now work, and every character uses their official name",
   "summary": "v2.6 shipped with its NPC name files silently reverted to the pre-rename state (nameplates still said Prince Quartz, Chocolate, Purr Timer, and the village name table was back to Japanese) — a build-tree recovery had overwritten the three name files, and the release verification could not see names inside compressed files. Caught by a player report; thank you, Xabby. v2.6.1 is the identical release with the name files actually in it. If you already patched v2.6, re-patch a clean Japanese ROM with v2.6.1 — your save is unaffected.",
   "previousVersionLabel": "v2.6",
   "counts": {
+    "choiceTriggersRestored": 80,
     "nameplateRecordsRestored": 264
   }
 }
