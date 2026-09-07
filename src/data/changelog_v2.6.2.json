@@ -1,0 +1,27 @@
+{
+  "version": "2.6.2",
+  "date": "2026-09-07",
+  "headline": "The title-screen menu is English again, and three frozen conversations are fixed",
+  "summary": "v2.6.2 fixes two things. The title-screen menu — Enroll, Continue, and the rest — had reverted to Japanese in v2.6: those options are pictures with the English lettering drawn into the image, and a re-extract of the build's game data had overwritten the translated picture. It's restored, and a file-by-file audit of all 2,469 files in the ROM confirms it was the only file that had reverted. Also fixed: three conversations that froze mid-scene with the music still playing (bug reports #11, #13, #16) — the mineral-collecting chat with a classmate you're dating, on both story paths, and Principal Sol's Rainbow Snow Festival announcement.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.6.1: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "If you already applied v2.6 or v2.6.1, re-patch a clean Japanese ROM with v2.6.2. Saves are unaffected.",
+  "otherChanges": [
+    {
+      "title": "The title-screen menu is English again",
+      "body": "Enroll, Continue and the other title-screen options had reverted to Japanese in v2.6 and v2.6.1. They are not text the patch translates line by line — they are pictures, with the English lettering drawn into the image itself. The file holding them is dropped into the ROM as-is, and when the build's working copy of the game data was re-extracted from the original Japanese cartridge on 23 June, the translated picture was overwritten by the Japanese one; every build after that carried it. A file-by-file comparison of all 2,469 files in the ROM against both the Japanese original and the last known-good release confirms this was the only file that had reverted, with 1,328 translated files intact."
+    },
+    {
+      "title": "Three conversations no longer freeze mid-scene",
+      "body": "Bug reports #11, #13 and #16 all described the same thing: during a classmate's special dating dialogue, the picture and animation stop while the music keeps playing. Those conversations were ending without their last line — every line from partway through sat one screen too early, and the final screen was dropped entirely, along with the instruction that tells the game the conversation is over. A conversation that never says it has finished is one the game waits on forever. This is the same defect v2.6 fixed for 4,278 other conversations; these three had been missed because their misalignment ran off the end of the conversation instead of stopping inside it. The affected scenes are the mineral-collecting chat with a classmate you are dating (male and female player paths) and Principal Sol's Rainbow Snow Festival announcement, which had been repeating its opening line and never delivered its closing request to take part. The lines are back on the right screens and the missing final lines are newly translated."
+    },
+    {
+      "title": "The build now checks its pictures, not just its words",
+      "body": "The release verification could never have seen the reverted menu, because every check reads text and the menu is pixels. The build now confirms, before it starts, that no file it copies into the ROM wholesale is byte-for-byte identical to the Japanese original — which catches a reverted picture just as readily as reverted words."
+    }
+  ]
+}

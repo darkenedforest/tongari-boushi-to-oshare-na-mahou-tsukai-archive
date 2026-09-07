@@ -1,0 +1,11 @@
+{
+  "version": "2.6.2",
+  "date": "2026-09-07",
+  "headline": "The title-screen menu is English again, and three frozen conversations are fixed",
+  "summary": "The title-screen menu (Enroll, Continue, and the rest) had reverted to Japanese in v2.6 — those options are pictures with the English lettering drawn in, and a re-extract of the build's game data had overwritten the translated image. It's restored, and a file-by-file audit of all 2,469 ROM files confirms nothing else reverted. Also fixed: three conversations that froze mid-scene (bug reports #11, #13, #16) — the dating mineral-collecting chat on both story paths and Principal Sol's Rainbow Snow Festival announcement — which ended without their final line or the instruction that tells the game the scene is over.",
+  "previousVersionLabel": "v2.6.1",
+  "counts": {
+    "menuGraphicsRestored": 1,
+    "frozenConversationsFixed": 3
+  }
+}

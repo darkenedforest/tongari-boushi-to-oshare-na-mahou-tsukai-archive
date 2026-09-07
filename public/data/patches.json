@@ -23,6 +23,36 @@
   },
   "releases": [
     {
+      "version": "2.6.2",
+      "date": "2026-09-07",
+      "headline": "The title-screen menu is English again, and three frozen conversations are fixed",
+      "summary": "v2.6.2 fixes two things. The title-screen menu — Enroll, Continue, and the rest — had reverted to Japanese in v2.6: those options are pictures with the English lettering drawn into the image, and a re-extract of the build's game data had overwritten the translated picture. It's restored, and a file-by-file audit of all 2,469 files in the ROM confirms it was the only file that had reverted. Also fixed: three conversations that froze mid-scene with the music still playing (bug reports #11, #13, #16) — the mineral-collecting chat with a classmate you're dating, on both story paths, and Principal Sol's Rainbow Snow Festival announcement. Their lines had slipped one screen past the end of the conversation, so the game never received the instruction that the scene was over; the lines are back on the right screens and the dropped final lines are newly translated.",
+      "changes": [
+        "Title-screen menu restored to English — Enroll, Continue and the rest are image files with the English lettering drawn in, and a June re-extract of the build's working data had put the Japanese picture back. A comparison of all 2,469 ROM files against the Japanese original and the last known-good release confirms nothing else reverted (1,328 translated files verified intact).",
+        "Three frozen conversations fixed (bug reports #11, #13, #16) — the dating mineral-collecting chat (both the male and female player paths) and Principal Sol's Rainbow Snow Festival announcement ended without their final line or the end-of-conversation instruction, freezing the picture while the music kept playing. All three are realigned and their missing lines translated.",
+        "New build safety check — before every build, each file copied into the ROM wholesale is verified to differ from the Japanese original, so a reverted image can never ship again."
+      ],
+      "changelogUrl": "/changelog/v2.6.2/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.6.2-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 18233356,
+          "patchSha256": "e34ae1314b2082b070195ed6ecb56e44bb8515b9f17d5f8d39c09fce822ac574"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.6.2-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 4979219,
+          "patchSha256": "877bda643d78ba5a228c310d7306cbf6706fe0ed659d2cee236afce80b364457"
+        }
+      ]
+    },
+    {
       "version": "2.6.1",
       "date": "2026-08-30",
       "headline": "Two fixes: questions you couldn't answer now work, and every character uses their official name",
