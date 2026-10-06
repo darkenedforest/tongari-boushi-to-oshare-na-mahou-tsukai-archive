@@ -115,6 +115,26 @@ create policy allow_public_upload on storage.objects
   for insert with check (bucket_id = 'bug-report-images');
 ```
 
+## 3a. Screenshots on replies (`comment_images`)
+
+Added 2026-10-06. Replies (comments) can carry up to 4 screenshots. They
+go into the same public `bug-report-images` bucket as report screenshots,
+under `c<comment id>/`, and are listed in a `comment_images` table that
+mirrors `report_images`. The admin CLI's `reply --image <path>` uses the
+same table.
+
+```sql
+create table if not exists comment_images (
+  id bigint primary key generated always as identity,
+  comment_id bigint not null references comments(id) on delete cascade,
+  url text not null,
+  created_at timestamptz not null default now()
+);
+alter table comment_images enable row level security;
+create policy read_all_comment_images on comment_images for select using (true);
+create policy insert_comment_images on comment_images for insert with check (true);
+```
+
 ## 3b. File attachments on bug reports (private bucket + table)
 
 Added 2026-10-06 (step-408). Reporters can attach files — save files,
@@ -149,6 +169,25 @@ create policy read_report_attachments on report_attachments
   for select using (true);
 revoke select on report_attachments from anon, authenticated;
 grant select (id, report_id, created_at) on report_attachments to anon, authenticated;
+
+-- Replies take the same kind of attachment (c<comment id>/<uuid>/<name>
+-- in the same private bucket), listed in comment_attachments.
+create table if not exists comment_attachments (
+  id bigint primary key generated always as identity,
+  comment_id bigint not null references comments(id) on delete cascade,
+  filename text not null,
+  file_path text not null,
+  file_size_bytes int not null,
+  content_type text,
+  created_at timestamptz not null default now()
+);
+alter table comment_attachments enable row level security;
+create policy insert_comment_attachments on comment_attachments
+  for insert with check (true);
+create policy read_comment_attachments on comment_attachments
+  for select using (true);
+revoke select on comment_attachments from anon, authenticated;
+grant select (id, comment_id, created_at) on comment_attachments to anon, authenticated;
 
 -- Private bucket, 8 MB cap per object (a DS save is 512 KB).
 insert into storage.buckets (id, name, public, file_size_limit)

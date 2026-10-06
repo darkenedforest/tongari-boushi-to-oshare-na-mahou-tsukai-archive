@@ -23,6 +23,29 @@ interface Comment {
   body: string;
   author: string | null;
   created_at: string;
+  comment_images?: ReportImage[];
+  /** Private file attachments on the reply (same scheme as on reports). */
+  attachment_count?: number;
+}
+
+const MAX_COMMENT_IMAGES = 4;
+
+// Turn bare URLs in a body into links. Everything else stays plain text —
+// the boards accept anonymous input, so no HTML/markdown is interpreted.
+const URL_RE = /(https?:\/\/[^\s<>"')\]]+[^\s<>"')\].,;:!?])/g;
+function Linkified({ text }: { text: string }) {
+  const parts = text.split(URL_RE);
+  return (
+    <>
+      {parts.map((part, i) =>
+        i % 2 === 1 ? (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer nofollow">{part}</a>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
 }
 
 type SortMode = 'open-first' | 'newest' | 'most-metoos';
@@ -352,6 +375,7 @@ function NewReportForm({
   }
 
   return (
+    <div className="new-form-row">
     <form
       className="new-form"
       onSubmit={e => { e.preventDefault(); submit(); }}
@@ -582,6 +606,7 @@ function NewReportForm({
         </button>
       </div>
     </form>
+    </div>
   );
 }
 
@@ -589,9 +614,33 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
   const [open, setOpen] = useState(false);
   const [author, setAuthor] = useState('');
   const [body, setBody] = useState('');
+  const [images, setImages] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [posted, setPosted] = useState(false);
+  const imageInput = useRef<HTMLInputElement>(null);
+  const attachInput = useRef<HTMLInputElement>(null);
+
+  function pickImages(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files || []);
+    const kept = list.slice(0, MAX_COMMENT_IMAGES).filter(f => f.size <= MAX_IMAGE_MB * 1024 * 1024);
+    if (kept.length < list.length) {
+      setErr(`Some files were too big or you picked more than ${MAX_COMMENT_IMAGES}; ignored.`);
+    }
+    setImages(prev => [...prev, ...kept].slice(0, MAX_COMMENT_IMAGES));
+    e.target.value = '';
+  }
+
+  function pickAttachments(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files || []);
+    const kept = list.slice(0, MAX_ATTACHMENTS).filter(f => f.size <= MAX_ATTACHMENT_MB * 1024 * 1024);
+    if (kept.length < list.length) {
+      setErr(`Some files were over ${MAX_ATTACHMENT_MB} MB or you picked more than ${MAX_ATTACHMENTS}; ignored.`);
+    }
+    setAttachments(prev => [...prev, ...kept].slice(0, MAX_ATTACHMENTS));
+    e.target.value = '';
+  }
 
   async function submit() {
     setErr(null);
@@ -602,16 +651,67 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
     }
     setBusy(true);
     try {
-      const { error } = await supabase.from('comments').insert({
+      const { data: commentRow, error } = await supabase.from('comments').insert({
         report_id: reportId,
         body: body.trim().slice(0, MAX_COMMENT),
         author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
-      });
-      if (error) throw error;
+      }).select().single();
+      if (error || !commentRow) throw error || new Error('No comment returned');
+      // Screenshots on a reply go into the same public bucket as report
+      // screenshots, under c<comment id>/, and are listed in comment_images.
+      const commentId = commentRow.id as number;
+      const imageRecords: { comment_id: number; url: string }[] = [];
+      for (const f of images) {
+        const ext = f.name.split('.').pop()?.toLowerCase() || 'png';
+        const path = `c${commentId}/${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from(BUG_BUCKET).upload(path, f, {
+          contentType: f.type || 'image/png',
+          cacheControl: '31536000',
+        });
+        if (upErr) throw new Error(`Reply posted, but uploading ${f.name} failed: ${upErr.message}`);
+        const { data: pub } = supabase.storage.from(BUG_BUCKET).getPublicUrl(path);
+        if (pub?.publicUrl) imageRecords.push({ comment_id: commentId, url: pub.publicUrl });
+      }
+      if (imageRecords.length) {
+        const { error: imgErr } = await supabase.from('comment_images').insert(imageRecords);
+        if (imgErr) throw new Error(`Reply posted, but recording its images failed: ${imgErr.message}`);
+      }
+      // File attachments: private bucket, c<comment id>/<uuid>/<name>, same
+      // as report attachments — the board shows only a count.
+      const attachmentRows: {
+        comment_id: number;
+        filename: string;
+        file_path: string;
+        file_size_bytes: number;
+        content_type: string | null;
+      }[] = [];
+      for (const f of attachments) {
+        const cleaned = safeFilename(f.name);
+        const path = `c${commentId}/${crypto.randomUUID()}/${cleaned}`;
+        const { error: upErr } = await supabase.storage.from(BUG_FILES_BUCKET).upload(path, f, {
+          contentType: f.type || 'application/octet-stream',
+          cacheControl: '0',
+          upsert: false,
+        });
+        if (upErr) throw new Error(`Reply posted, but attaching ${f.name} failed: ${upErr.message}`);
+        attachmentRows.push({
+          comment_id: commentId,
+          filename: cleaned,
+          file_path: path,
+          file_size_bytes: f.size,
+          content_type: f.type || null,
+        });
+      }
+      if (attachmentRows.length) {
+        const { error: attErr } = await supabase.from('comment_attachments').insert(attachmentRows);
+        if (attErr) throw new Error(`Reply posted, but recording its attachments failed: ${attErr.message}`);
+      }
       // Clear the body but KEEP the form open so multiple replies in a row
       // are easy. Keep the typed name too (people usually post under the same
       // name in a thread). Show a brief 'Posted!' flash so the user knows.
       setBody('');
+      setImages([]);
+      setAttachments([]);
       setPosted(true);
       window.setTimeout(() => setPosted(false), 2500);
       onPosted();
@@ -647,6 +747,71 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
         maxLength={MAX_COMMENT}
         required
       />
+      <div className="file-row">
+        <button
+          type="button"
+          className="add-images-btn"
+          onClick={() => imageInput.current?.click()}
+          disabled={images.length >= MAX_COMMENT_IMAGES}
+        >
+          <span aria-hidden>📷</span> Add screenshots
+        </button>
+        <input
+          ref={imageInput}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={pickImages}
+          style={{ display: 'none' }}
+        />
+        <span className="file-hint">Up to {MAX_COMMENT_IMAGES} images, {MAX_IMAGE_MB}MB each.</span>
+      </div>
+      {images.length > 0 && (
+        <div className="file-previews">
+          {images.map((f, i) => (
+            <div key={i} className="file-preview">
+              <img src={URL.createObjectURL(f)} alt="" />
+              <button
+                type="button"
+                className="remove-file"
+                onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}
+                aria-label="Remove image"
+              >×</button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="file-row">
+        <button
+          type="button"
+          className="add-images-btn"
+          onClick={() => attachInput.current?.click()}
+          disabled={attachments.length >= MAX_ATTACHMENTS}
+        >
+          <span aria-hidden>📎</span> Attach files
+        </button>
+        <input ref={attachInput} type="file" multiple onChange={pickAttachments} style={{ display: 'none' }} />
+        <span className="file-hint">
+          Save files, logs, zips — up to {MAX_ATTACHMENTS}, {MAX_ATTACHMENT_MB} MB each. Private: only the maintainer can download them.
+        </span>
+      </div>
+      {attachments.length > 0 && (
+        <ul className="attach-list">
+          {attachments.map((f, i) => (
+            <li key={i} className="attach-item">
+              <span className="attach-icon" aria-hidden>📄</span>
+              <span className="attach-name">{f.name}</span>
+              <span className="attach-size">{bytesLabel(f.size)}</span>
+              <button
+                type="button"
+                className="attach-remove"
+                onClick={() => setAttachments(prev => prev.filter((_, j) => j !== i))}
+                aria-label={`Remove ${f.name}`}
+              >×</button>
+            </li>
+          ))}
+        </ul>
+      )}
       {err && <div className="form-error">{err}</div>}
       {posted && <div className="form-posted">✓ Posted. Type another reply or click Close.</div>}
       <div className="comment-form-actions">
@@ -728,7 +893,7 @@ function ReportCard({
         <span className="timestamp">{timeAgo(report.created_at)}</span>
       </div>
       <div className="bug-body">
-        {report.body.split(/\n+/).map((p, i) => <p key={i}>{p}</p>)}
+        {report.body.split(/\n+/).map((p, i) => <p key={i}><Linkified text={p} /></p>)}
       </div>
       {imageUrls.length > 0 && <ImageThumbs urls={imageUrls} onOpen={onOpenImage} />}
       {(report.attachment_count ?? 0) > 0 && (
@@ -753,8 +918,20 @@ function ReportCard({
                 <span className="timestamp">{timeAgo(c.created_at)}</span>
               </header>
               <div className="comment-body">
-                {c.body.split(/\n+/).map((p, i) => <p key={i}>{p}</p>)}
+                {c.body.split(/\n+/).map((p, i) => <p key={i}><Linkified text={p} /></p>)}
               </div>
+              {(c.comment_images?.length ?? 0) > 0 && (
+                <ImageThumbs urls={(c.comment_images ?? []).map(i => i.url)} onOpen={onOpenImage} />
+              )}
+              {(c.attachment_count ?? 0) > 0 && (
+                <div
+                  className="attach-chip"
+                  title="Attached files are stored privately for the maintainer and are not shown on the board."
+                >
+                  <span aria-hidden>📎</span>{' '}
+                  {c.attachment_count === 1 ? '1 file attached' : `${c.attachment_count} files attached`}
+                </div>
+              )}
             </article>
           ))}
         </section>
@@ -782,7 +959,7 @@ export default function BugReportsBoard() {
     setLoading(true);
     const { data, error } = await supabase
       .from('reports')
-      .select('*, report_images(*), comments(*)')
+      .select('*, report_images(*), comments(*, comment_images(*))')
       .order('created_at', { ascending: false });
     if (error) {
       setErr(error.message);
@@ -799,13 +976,22 @@ export default function BugReportsBoard() {
           counts[row.report_id] = (counts[row.report_id] ?? 0) + 1;
         }
       }
+      const commentCounts: Record<number, number> = {};
+      const { data: catt, error: cattErr } = await supabase
+        .from('comment_attachments')
+        .select('comment_id');
+      if (!cattErr && catt) {
+        for (const row of catt as { comment_id: number }[]) {
+          commentCounts[row.comment_id] = (commentCounts[row.comment_id] ?? 0) + 1;
+        }
+      }
       // Sort comments oldest-first within each report
       const normalized = (data as Report[] || []).map(r => ({
         ...r,
         attachment_count: counts[r.id] ?? 0,
-        comments: (r.comments || []).slice().sort(
-          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-        ),
+        comments: (r.comments || [])
+          .map(c => ({ ...c, attachment_count: commentCounts[c.id] ?? 0 }))
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
       }));
       setReports(normalized);
       setErr(null);
@@ -940,10 +1126,12 @@ export default function BugReportsBoard() {
         .board-counts { margin-left: auto; color: var(--color-ink-soft); font-size: 0.85rem; }
         .dot { margin: 0 6px; opacity: 0.5; }
 
+        /* The open form takes a whole row of .board-header's flex layout
+           (the wrapper is full-width; the form inside is width-capped), so
+           the sort pills and counts drop to their own row below it instead
+           of floating beside it. */
+        .new-form-row { flex: 1 0 100%; width: 100%; }
         .new-form {
-          /* Claim a full row inside .board-header's flex layout so the form
-             doesn't get squeezed into a narrow column next to the sort pills. */
-          flex: 1 0 100%;
           width: 100%;
           max-width: 720px;
           background: white; padding: 18px 20px;
@@ -1068,6 +1256,8 @@ export default function BugReportsBoard() {
         .bug-body { color: var(--color-ink); line-height: 1.55; font-size: 0.96rem; }
         .bug-body p { margin: 0 0 10px; }
         .bug-body p:last-child { margin-bottom: 0; }
+        .bug-body a, .comment-body a { color: var(--color-purple-600); font-weight: 600; text-decoration: underline; word-break: break-all; }
+        .bug-body a:hover, .comment-body a:hover { color: var(--color-pink-600); }
 
         .thumb-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
         .thumb-btn {
