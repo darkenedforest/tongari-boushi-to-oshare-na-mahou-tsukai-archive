@@ -124,6 +124,12 @@ def main() -> None:
     models = [m for m in index["models"] if not m.get("error")]
     print(f"source: {len(models)} models ({index.get('errors', 0)} export errors skipped), "
           f"{tex_index['texture_count']} textures ({tex_index['unique_png_count']} unique)")
+    # Ids name the files and are the React keys in the viewer; a duplicate
+    # would overwrite a file and corrupt the grid's reconciliation.
+    dup = collections.Counter(m["id"] for m in models)
+    dup = {k: v for k, v in dup.items() if v > 1}
+    if dup:
+        sys.exit(f"duplicate model ids in the export index ({len(dup)}), e.g. {list(dup)[:3]}")
 
     for d in (GLTF_DST, THUMB_DST, TEX_DST):
         if d.exists():
