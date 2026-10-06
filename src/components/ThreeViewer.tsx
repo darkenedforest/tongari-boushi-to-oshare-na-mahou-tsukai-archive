@@ -239,6 +239,8 @@ interface LoadedSlot extends Slot {
 type ThreeApi = {
   setSlotTexture: (material: string, url: string, w: number, h: number) => void;
   setAutoRotate: (on: boolean) => void;
+  setTextured: (on: boolean) => void;
+  setWireframe: (on: boolean) => void;
   loadAnimSet: (url: string) => Promise<string[]>;
   playClip: (index: number | null) => void;
   snapshot: () => string | null;
@@ -258,6 +260,8 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
   const [animSet, setAnimSet] = useState<string>('');
   const [animBusy, setAnimBusy] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
+  const [texturesOn, setTexturesOn] = useState(true);
+  const [wireframe, setWireframe] = useState(false);
   const [showAliases, setShowAliases] = useState(false);
   const animSets = model.anim ? manifest.anim_sets.filter(s => s.skeleton === model.anim) : [];
 
@@ -302,8 +306,11 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
 
       let mixer: any = null;
       let actions: any[] = [];
+      let showTextures = true;
+      const CLAY = 0xd9cdbf;
       const materialsByName = new Map<string, any[]>();
       const texLoader = new THREE.TextureLoader();
+      const allMaterials = () => Array.from(materialsByName.values()).flat();
 
       const loader = new GLTFLoader();
       loader.load(
@@ -319,6 +326,9 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
               if (!m) continue;
               m.side = THREE.DoubleSide;
               if (m.map) { m.map.magFilter = THREE.NearestFilter; m.map.minFilter = THREE.NearestFilter; m.map.needsUpdate = true; }
+              // Remember the shipped look so the texture toggle can restore it.
+              m.userData.origMap = m.map ?? null;
+              m.userData.origColor = m.color.clone();
               const list = materialsByName.get(m.name) || [];
               list.push(m);
               materialsByName.set(m.name, list);
@@ -383,13 +393,29 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
             tex.magFilter = THREE.NearestFilter;
             tex.minFilter = THREE.NearestFilter;
             for (const m of mats) {
-              if (m.map) { tex.wrapS = m.map.wrapS; tex.wrapT = m.map.wrapT; }
-              m.map = tex;
+              const prev = m.userData.origMap ?? m.map;
+              if (prev) { tex.wrapS = prev.wrapS; tex.wrapT = prev.wrapT; }
+              m.userData.origMap = tex;
+              if (showTextures) m.map = tex;
               m.needsUpdate = true;
             }
           });
         },
         setAutoRotate(on) { controls.autoRotate = on; },
+        setTextured(on) {
+          // Off: plain clay with the shading and vertex colours only, so the
+          // geometry itself can be read.
+          showTextures = on;
+          for (const m of allMaterials()) {
+            m.map = on ? (m.userData.origMap ?? null) : null;
+            if (on && m.userData.origColor) m.color.copy(m.userData.origColor);
+            else if (!on) m.color.set(CLAY);
+            m.needsUpdate = true;
+          }
+        },
+        setWireframe(on) {
+          for (const m of allMaterials()) { m.wireframe = on; m.needsUpdate = true; }
+        },
         async loadAnimSet(url) {
           // Skeleton-only GLB whose clips name the same bones as this model;
           // three.js binds tracks by node name, so they drive this scene.
@@ -440,6 +466,8 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
   }, [model.gltf]);
 
   useEffect(() => { apiRef.current?.setAutoRotate(autoRotate); }, [autoRotate]);
+  useEffect(() => { apiRef.current?.setTextured(texturesOn); }, [texturesOn]);
+  useEffect(() => { apiRef.current?.setWireframe(wireframe); }, [wireframe]);
 
   function applySwatch(slot: LoadedSlot, sw: Swatch) {
     apiRef.current?.setSlotTexture(slot.material, sw.png, sw.w, sw.h);
@@ -483,6 +511,8 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
           {loadErr && <div className="viewer-error">{loadErr}</div>}
           <div className="stage-tools">
             <label className="tool"><input type="checkbox" checked={autoRotate} onChange={e => setAutoRotate(e.target.checked)} /> spin</label>
+            <label className="tool" title="Off: the bare mesh in plain clay"><input type="checkbox" checked={texturesOn} onChange={e => setTexturesOn(e.target.checked)} /> textures</label>
+            <label className="tool"><input type="checkbox" checked={wireframe} onChange={e => setWireframe(e.target.checked)} /> wireframe</label>
             {animSets.length > 0 && (
               <select className="tool-select" value={animSet} disabled={animBusy} onChange={e => chooseAnimSet(e.target.value)} title="Animation set">
                 <option value="">no animation</option>
