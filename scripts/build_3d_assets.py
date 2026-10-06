@@ -76,6 +76,20 @@ CATEGORY_TITLES = {
 PLAYER_BONES = {"root", "chest", "l_shoulder", "l_elbow", "neck", "mouse",
                 "r_shoulder", "r_elbow", "r_hand", "hip", "l_knee", "r_knee"}
 
+# Containers whose entries are interchangeable for one model (a wardrobe):
+# any avatar can wear any top, any room can take any wallpaper, any shop
+# front any door or sign. Everywhere else a model's alternatives are the
+# textures of its OWN entry (an NPC's eight expressions, an item's LODs),
+# not the other models' textures that happen to share the name.
+WARDROBE_CONTAINERS = ("model__player__tex__", "Thome.ofs", "pc_kan_door", "pc_kanban_", "Tmanequin")
+
+
+def pool_key(container: str, name: str, entry) -> str:
+    stem = container_stem(container)
+    if any(w in stem for w in WARDROBE_CONTAINERS):
+        return f"{stem}|{name}"
+    return f"{stem}|{name}|{entry}"
+
 
 def container_stem(container: str) -> str:
     """Same stem the export uses for its textures/<stem>/ folders."""
@@ -130,7 +144,7 @@ def main() -> None:
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src, dst)
             copied[src_rel] = under
-        key = f"{container_stem(t['container'])}|{t['name']}"
+        key = pool_key(t["container"], t["name"], t["entry"])
         pools[key].append({"e": t["entry"], "l": t["lod"], "w": t["width"], "h": t["height"],
                            "f": copied[src_rel], "px": t["pixels"]})
     pool_list: list[dict] = []
@@ -168,7 +182,7 @@ def main() -> None:
         for s in m.get("material_slots", []):
             pool = None
             if s.get("source") and s["source"] != "embedded":
-                pool = pool_index.get(f"{container_stem(s['source'])}|{s['texture']}")
+                pool = pool_index.get(pool_key(s["source"], s["texture"], s.get("entry")))
             slots.append({"m": s["material"], "t": s["texture"], "w": s["width"], "h": s["height"],
                           "x": 1 if s.get("textured") else 0, "e": s.get("entry"), "l": s.get("lod"),
                           "p": pool})

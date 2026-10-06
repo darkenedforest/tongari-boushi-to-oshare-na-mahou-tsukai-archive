@@ -554,7 +554,9 @@ function ViewerModal({ model, manifest, loadTextures, onClose }: {
           {slots.length === 0 && !loadErr && <p className="side-note">Loading texture list…</p>}
           <ul className="slot-list">
             {slots.map(s => {
-              const pool = s.pool != null ? pools[s.pool] : undefined;
+              // A pool with a single image offers nothing to swap to.
+              const poolAll = s.pool != null ? pools[s.pool] : undefined;
+              const pool = poolAll && poolAll.length > 1 ? poolAll : undefined;
               const open = openSlot === s.material;
               return (
                 <li key={s.material} className={`slot ${open ? 'slot-open' : ''}`}>
