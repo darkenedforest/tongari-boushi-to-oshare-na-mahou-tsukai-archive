@@ -10,6 +10,10 @@ export const supabase: SupabaseClient | null = supabaseConfigured
   : null;
 
 export const BUG_BUCKET = 'bug-report-images';
+/** Private bucket for files attached to bug reports (save files, logs).
+ *  Like `save-files`, only the service role can read it; the board shows
+ *  a generic "file attached" chip and nothing else. */
+export const BUG_FILES_BUCKET = 'bug-report-files';
 export const SAVE_FILES_BUCKET = 'save-files';
 export const GUESTBOOK_BUCKET = 'guestbook-cards';
 

@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import SubscribeSeal from '../../components/SubscribeSeal.astro';
+import v263meta from '../../data/changelog_v2.6.3_meta.json';
 import v262meta from '../../data/changelog_v2.6.2_meta.json';
 import v261meta from '../../data/changelog_v2.6.1_meta.json';
 import v26meta from '../../data/changelog_v2.6_meta.json';
@@ -29,12 +30,27 @@ type ReleaseCard = {
 
 const releases: ReleaseCard[] = [
   {
+    version: v263meta.version,
+    date: v263meta.date,
+    href: `${base}/changelog/v2.6.3/`,
+    headline: v263meta.headline,
+    totalChanges:
+      v263meta.counts.arm9PackagingFix +
+      v263meta.counts.boardPostsRetranslated +
+      v263meta.counts.speechBubblesRewritten +
+      v263meta.counts.rumourPiecesRewritten +
+      v263meta.counts.rumourLinesRewrapped +
+      v263meta.counts.loversPointLines +
+      v263meta.counts.encyclopediaHeaderFix +
+      v263meta.counts.npcRecordBytesRestored,
+    isLatest: true,
+  },
+  {
     version: v262meta.version,
     date: v262meta.date,
     href: `${base}/changelog/v2.6.2/`,
     headline: v262meta.headline,
     totalChanges: v262meta.counts.menuGraphicsRestored + v262meta.counts.frozenConversationsFixed,
-    isLatest: true,
   },
   {
     version: v261meta.version,

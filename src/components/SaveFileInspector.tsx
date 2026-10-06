@@ -9,8 +9,7 @@ import {
   applyEdits,
   rewrapForDownload,
   suffixFilenameForEdit,
-  CATALOG_TEXT_MAX_CHARS,
-  MAIL_TEXT_MAX_CHARS,
+  LETTER_TEXT_MAX_CHARS,
   PLAYER_NAME_MAX_CHARS,
   SHOP_NAME_MAX_CHARS,
   TOWN_NAME_MAX_CHARS,
@@ -34,6 +33,22 @@ import {
   type NpcEncoding,
   type SavefileLookups,
 } from '../lib/savefile/lookups';
+import {
+  assessBoard,
+  buildBoardRecords,
+  formatBoardDate,
+  loadBoardPostIndex,
+  nameForId,
+  splitPost,
+  validatePostText,
+  TEXT_PACKED_MAX_BYTES,
+  TEXT_PLAIN_MAX,
+  type BoardAction,
+  type BoardAssessment,
+  type BoardPostIndex,
+  type BoardRecord,
+  type BoardStatus,
+} from '../lib/savefile/board';
 import type {
   Confidence,
   Game1Decode,
@@ -186,15 +201,12 @@ interface PendingEditMap {
   playerName?: { value: string };
   shopName?: { value: string };
   townName?: { value: string };
-  /** Keyed by entry's body offset within slot A. Holds the proposed new
-   *  text for the catalog announcement at that offset. */
-  catalog: Record<number, string>;
-  /** Keyed by entry's body offset within slot A. Present iff the entry
-   *  is staged for REMOVAL (zero-fill + sentinel). Mutually exclusive
-   *  with `catalog[offset]`: staging a remove drops any pending edit,
-   *  and staging an edit drops any pending remove. */
-  catalogClear: Record<number, true>;
-  mail: Record<number, string>;
+  /** Keyed by board record index 0..13. One staged action per post:
+   *  remove it, bring it up to the current translation, or give it new
+   *  text. The whole 14-record block is rebuilt on apply. */
+  board: Record<number, BoardAction>;
+  /** Keyed by letter record's body offset. New plain text (≤ 67 chars). */
+  letter: Record<number, string>;
   /** Keyed by garden record's body offset. */
   gardenTile: Record<number, { plantId: number; growTime: number }>;
   /** Keyed by inventory slot index (0..14). `storedValue===null` stages
@@ -206,9 +218,8 @@ interface PendingEditMap {
 
 function makeEmptyEdits(): PendingEditMap {
   return {
-    catalog: {},
-    catalogClear: {},
-    mail: {},
+    board: {},
+    letter: {},
     gardenTile: {},
     inventorySlot: {},
   };
@@ -225,15 +236,21 @@ function pendingEditCount(edits: PendingEditMap): number {
   if (edits.playerName !== undefined) n++;
   if (edits.shopName !== undefined) n++;
   if (edits.townName !== undefined) n++;
-  n += Object.keys(edits.catalog).length;
-  n += Object.keys(edits.catalogClear).length;
-  n += Object.keys(edits.mail).length;
+  n += Object.keys(edits.board).length;
+  n += Object.keys(edits.letter).length;
   n += Object.keys(edits.gardenTile).length;
   n += Object.keys(edits.inventorySlot).length;
   return n;
 }
 
-function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
+/** The board records + their assessments for the slot being edited; the
+ *  staged board actions are resolved against these on apply. */
+interface BoardEditContext {
+  records: BoardRecord[];
+  assessments: BoardAssessment[];
+}
+
+function editsToPendingList(edits: PendingEditMap, board: BoardEditContext | null): PendingEdit[] {
   const out: PendingEdit[] = [];
   if (edits.ritch !== undefined) {
     out.push({ kind: 'ritch', value: edits.ritch.value });
@@ -247,14 +264,17 @@ function editsToPendingList(edits: PendingEditMap): PendingEdit[] {
   if (edits.townName !== undefined) {
     out.push({ kind: 'town_name', value: edits.townName.value });
   }
-  for (const [k, v] of Object.entries(edits.catalog)) {
-    out.push({ kind: 'catalog', entryOffset: Number(k), text: v });
+  if (Object.keys(edits.board).length > 0) {
+    if (!board) {
+      throw new Error('Board edits are staged but the board could not be read from the active slot.');
+    }
+    out.push({
+      kind: 'board',
+      records: buildBoardRecords(board.records, board.assessments, edits.board),
+    });
   }
-  for (const k of Object.keys(edits.catalogClear)) {
-    out.push({ kind: 'catalog_clear', entryOffset: Number(k) });
-  }
-  for (const [k, v] of Object.entries(edits.mail)) {
-    out.push({ kind: 'mail', entryOffset: Number(k), text: v });
+  for (const [k, v] of Object.entries(edits.letter)) {
+    out.push({ kind: 'letter', recordOffset: Number(k), text: v });
   }
   for (const [k, v] of Object.entries(edits.gardenTile)) {
     out.push({
@@ -1214,6 +1234,404 @@ function FriendsMetSection({
 }
 
 // ---------------------------------------------------------------------------
+// Bulletin board — 14 post records at body 0x162BC (step-408)
+// ---------------------------------------------------------------------------
+//
+// The v2.6.3 patch stores a long post as 0xFFFF + UTF-8 inside the same
+// field the game used to overflow; this section reads both forms, shows
+// each post's title, text, author and date, and classifies it with the
+// same rules as the translation repo's _board_save_repair.py: posts whose
+// text overran the fields behind it are recognised from the text and can
+// be brought up to the current translation; posts whose author name
+// overran the message number hold another message's text and are flagged
+// for removal. Actions are staged per record and the whole block is
+// rebuilt on apply (removed posts drop out, the rest close up).
+
+const BOARD_STATUS_LABEL: Record<BoardStatus, string> = {
+  empty: 'Empty',
+  player: 'Player post',
+  unfilled: 'Waiting for text',
+  current: 'Current',
+  outdated: 'Older wording',
+  damaged: 'Damaged',
+  unrecoverable: 'Corrupt',
+  unknown: 'Not recognised',
+};
+
+function BoardStatusPill({ status }: { status: BoardStatus }) {
+  return <span className={`board-pill board-pill-${status}`}>{BOARD_STATUS_LABEL[status]}</span>;
+}
+
+function boardActionLabel(action: BoardAction, assessment: BoardAssessment | undefined): string {
+  if (action.kind === 'remove') return 'staged for removal';
+  if (action.kind === 'text') return 'staged: new text';
+  if (assessment?.fix?.kind === 'write') return 'staged: current text written in';
+  return 'staged: game rewrites it with the current text';
+}
+
+function authorLabel(
+  r: BoardRecord,
+  index: BoardPostIndex | null,
+  playerName: string,
+): string {
+  if (r.authorOverran) return `${r.author}… (name overran its field)`;
+  if (r.author) return r.author;
+  if (index) {
+    const n = nameForId(index, r.authorId, playerName);
+    if (n) return `${n} (from id)`;
+  }
+  if (r.authorId === 0xffff) return '—';
+  return `id ${r.authorId}`;
+}
+
+interface BulletinBoardSectionProps {
+  slot: SlotParse;
+  editable: boolean;
+  editCtx: EditCtx;
+  boardIndex: BoardPostIndex | null;
+  assessments: BoardAssessment[];
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function BulletinBoardSection({
+  slot,
+  editable,
+  editCtx,
+  boardIndex,
+  assessments,
+  notes,
+  setNotes,
+  fileLabel,
+  payloadSha,
+}: BulletinBoardSectionProps) {
+  const records = slot.boardRecords;
+  const actions = editCtx.edits.board;
+  const posts = records.filter(r => !r.empty).length;
+
+  const tally: Partial<Record<BoardStatus, number>> = {};
+  assessments.forEach(a => {
+    tally[a.status] = (tally[a.status] ?? 0) + 1;
+  });
+  const recommended = records
+    .map((_, i) => i)
+    .filter(i => assessments[i] && assessments[i].recommendation !== 'keep' && !actions[i]);
+  const outdated = records
+    .map((_, i) => i)
+    .filter(i => assessments[i]?.status === 'outdated' || assessments[i]?.status === 'damaged');
+
+  function stage(i: number, action: BoardAction) {
+    editCtx.setEdits(prev => ({ ...prev, board: { ...prev.board, [i]: action } }));
+  }
+  function unstage(i: number) {
+    editCtx.setEdits(prev => {
+      const next = { ...prev.board };
+      delete next[i];
+      return { ...prev, board: next };
+    });
+  }
+  function stageRecommended() {
+    editCtx.setEdits(prev => {
+      const next = { ...prev.board };
+      recommended.forEach(i => {
+        const a = assessments[i];
+        next[i] = a.recommendation === 'remove' ? { kind: 'remove' } : { kind: 'update' };
+      });
+      return { ...prev, board: next };
+    });
+  }
+
+  const snapshot =
+    `${posts}/${records.length} posts` +
+    (boardIndex
+      ? `; ${tally.damaged ?? 0} damaged, ${tally.unrecoverable ?? 0} corrupt, ${tally.outdated ?? 0} older wording, ${tally.unknown ?? 0} not recognised`
+      : '');
+
+  return (
+    <Section
+      regionId={`${slot.label}-board`}
+      title={REGION_DESCRIPTORS.board.title}
+      range={REGION_DESCRIPTORS.board.range}
+      confidence={REGION_DESCRIPTORS.board.confidence}
+      parsedSnapshot={snapshot}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p style={{ marginTop: 0 }}>
+        <strong>{posts}</strong> of {records.length} board slots hold a post. Before patch
+        v2.6.3 the game wrote every post into a field with room for {TEXT_PLAIN_MAX} characters,
+        and an English post that ran longer overwrote the author&apos;s name, the ids behind it
+        and finally the date — the garbled authors and blank posts people reported. v2.6.3
+        stores long posts compactly and retranslated all 233 of them. This section shows what
+        is on your board now, flags the posts the overflow damaged, and can bring every
+        system post up to the current translation.
+      </p>
+      {!boardIndex && (
+        <p className="muted small">Loading the post index (current and earlier texts)…</p>
+      )}
+      {boardIndex && posts > 0 && (
+        <div className="board-summary">
+          <div className="board-summary-counts">
+            {(['current', 'outdated', 'damaged', 'unrecoverable', 'unknown', 'unfilled', 'player'] as BoardStatus[])
+              .filter(s => tally[s])
+              .map(s => (
+                <span key={s} className="board-summary-item">
+                  <BoardStatusPill status={s} /> {tally[s]}
+                </span>
+              ))}
+          </div>
+          {editable && (
+            <div className="board-actions">
+              <button
+                type="button"
+                className="board-btn board-btn-primary"
+                disabled={recommended.length === 0}
+                onClick={stageRecommended}
+                title="Updates every damaged or older-wording post and removes the corrupt ones."
+              >
+                Stage all recommended fixes ({recommended.length})
+              </button>
+            </div>
+          )}
+          {editable && outdated.length > 0 && (
+            <p className="muted small" style={{ margin: 0 }}>
+              &quot;Update&quot; clears a post&apos;s text and leaves its ids and date in place, so the
+              game writes the current translation the next time you open the board. That needs
+              patch <strong>v2.6.3 or later</strong> — an older patch would rewrite the old text
+              and overflow again.
+            </p>
+          )}
+        </div>
+      )}
+      {posts === 0 ? (
+        <p className="muted">No posts on this board.</p>
+      ) : (
+        <ol className="entries-list board-list">
+          {records.map((r, i) => {
+            if (r.empty && !actions[i]) return null;
+            const a = assessments[i];
+            const action = actions[i];
+            const { title, rows } = splitPost(r.text);
+            const canUpdate = Boolean(a?.fix) && a.status !== 'current' && a.status !== 'unfilled';
+            return (
+              <li
+                key={r.bodyOffset}
+                className={`board-post status-${a?.status ?? 'unknown'} ${action ? 'is-staged' : ''} ${action?.kind === 'remove' ? 'is-pending-remove' : ''}`}
+              >
+                <div className="entry-meta">
+                  <span>Post #{i + 1}</span>
+                  {a && <BoardStatusPill status={a.status} />}
+                  <span>{formatBoardDate(r)}</span>
+                  <span>by {authorLabel(r, boardIndex, slot.playerName)}</span>
+                  {r.msg > 0 && r.msg < 10000 && <code className="muted small">msg {r.msg}</code>}
+                  {r.textPacked && <span className="muted small">v2.6.3 form</span>}
+                  {action && <span className="entry-remove-tag">{boardActionLabel(action, a)}</span>}
+                </div>
+                <div className={`board-title ${action?.kind === 'remove' ? 'entry-text-removed' : ''}`}>
+                  {title || <span className="muted">(no title)</span>}
+                </div>
+                {rows.length > 0 && (
+                  <div className={`entry-text ${action?.kind === 'remove' ? 'entry-text-removed' : ''}`}>
+                    {rows.join('\n')}
+                  </div>
+                )}
+                {a && a.status !== 'empty' && <p className="board-detail">{a.detail}</p>}
+                {a?.currentText && a.status !== 'current' && (
+                  <details className="tile-details">
+                    <summary>Current translation of this post</summary>
+                    <div className="entry-text board-current">{a.currentText}</div>
+                  </details>
+                )}
+                {editable && !r.empty && (
+                  <div className="entry-edit-row">
+                    {action ? (
+                      <button
+                        type="button"
+                        className="entry-remove-btn entry-remove-undo"
+                        onClick={() => unstage(i)}
+                      >
+                        Undo
+                      </button>
+                    ) : (
+                      <>
+                        {canUpdate && (
+                          <button
+                            type="button"
+                            className="board-btn"
+                            onClick={() => stage(i, { kind: 'update' })}
+                            title={
+                              a.fix?.kind === 'write'
+                                ? 'Writes the current text into the post; the author stays blank.'
+                                : 'Clears the text so the game (v2.6.3+) writes the current translation.'
+                            }
+                          >
+                            Update to current translation
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="entry-remove-btn"
+                          onClick={() => stage(i, { kind: 'remove' })}
+                          title="Takes the post off the board; the posts below move up."
+                        >
+                          Remove post
+                        </button>
+                        <InlineEdit
+                          label="text"
+                          beta
+                          multiline
+                          pendingValue={null}
+                          initialDraft={r.text}
+                          maxChars={TEXT_PACKED_MAX_BYTES}
+                          onCommit={draft => {
+                            const err = validatePostText(draft);
+                            if (err) return err;
+                            stage(i, { kind: 'text', text: draft });
+                            return null;
+                          }}
+                          onClear={() => unstage(i)}
+                        />
+                      </>
+                    )}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      <p className="note-text">
+        A post is title, line break, then up to three rows. Up to {TEXT_PLAIN_MAX} characters it
+        is stored as UTF-16, as every version of the game does; longer text is stored in the
+        v2.6.3 compact form (0xFFFF + UTF-8, {TEXT_PACKED_MAX_BYTES} bytes) that only v2.6.3 and
+        later can read. Removing a post closes the gap the way the game&apos;s own remove routine
+        does. Classification follows the translation repo&apos;s{' '}
+        <code>_board_save_repair.py</code>, checked in the emulator against bug report #17&apos;s
+        save on the v2.6.3 ROM.
+      </p>
+      {!editable && (
+        <p className="muted small">
+          Edit controls appear on the active-slot tab; edits are written to both slots.
+        </p>
+      )}
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Letter queues — 10 + 12 records after the board, same layout
+// ---------------------------------------------------------------------------
+
+interface LettersSectionProps {
+  slot: SlotParse;
+  editable: boolean;
+  editCtx: EditCtx;
+  boardIndex: BoardPostIndex | null;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function LettersSection({
+  slot,
+  editable,
+  editCtx,
+  boardIndex,
+  notes,
+  setNotes,
+  fileLabel,
+  payloadSha,
+}: LettersSectionProps) {
+  const records = slot.letterRecords;
+  const populated = records.filter(r => !r.empty);
+  return (
+    <Section
+      regionId={`${slot.label}-letters`}
+      title={REGION_DESCRIPTORS.letters.title}
+      range={REGION_DESCRIPTORS.letters.range}
+      confidence={REGION_DESCRIPTORS.letters.confidence}
+      parsedSnapshot={`${populated.length}/${records.length} records populated`}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p style={{ marginTop: 0 }}>
+        <strong>{populated.length}</strong> of {records.length} letter records are in use. The
+        two queues (10 then 12 records) use the board&apos;s record layout and are filled by a
+        separate routine the v2.6.3 board patch does not touch, so text here stays plain UTF-16
+        with the {LETTER_TEXT_MAX_CHARS}-character limit. Before step-408 this region was shown
+        as &quot;per-NPC mail&quot; from a misaligned offset.
+      </p>
+      {populated.length === 0 ? (
+        <p className="muted">No letters queued.</p>
+      ) : (
+        <ol className="entries-list">
+          {populated.map(r => {
+            const pending = editCtx.edits.letter[r.bodyOffset];
+            const { title, rows } = splitPost(r.text);
+            return (
+              <li key={r.bodyOffset}>
+                <div className="entry-meta">
+                  <span>Record #{r.index + 1}</span>
+                  <span>{formatBoardDate(r)}</span>
+                  <span>by {authorLabel(r, boardIndex, slot.playerName)}</span>
+                  {r.flag === 0 && <span className="muted small">not filled yet</span>}
+                  <code className="muted small">body {hex(r.bodyOffset, 5)}</code>
+                </div>
+                {r.text ? (
+                  <>
+                    <div className="board-title">{title}</div>
+                    {rows.length > 0 && <div className="entry-text">{rows.join('\n')}</div>}
+                  </>
+                ) : (
+                  <div className="entry-text muted">(no text)</div>
+                )}
+                {editable && (
+                  <div className="entry-edit-row">
+                    <InlineEdit
+                      label="letter text"
+                      beta
+                      multiline
+                      pendingValue={pending ?? null}
+                      initialDraft={r.text}
+                      maxChars={LETTER_TEXT_MAX_CHARS}
+                      onCommit={draft => {
+                        if (draft.length === 0) return 'Text cannot be empty.';
+                        if (draft.length > LETTER_TEXT_MAX_CHARS) {
+                          return `Max ${LETTER_TEXT_MAX_CHARS} characters.`;
+                        }
+                        editCtx.setEdits(prev => ({
+                          ...prev,
+                          letter: { ...prev.letter, [r.bodyOffset]: draft },
+                        }));
+                        return null;
+                      }}
+                      onClear={() =>
+                        editCtx.setEdits(prev => {
+                          const next = { ...prev.letter };
+                          delete next[r.bodyOffset];
+                          return { ...prev, letter: next };
+                        })
+                      }
+                    />
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Small UI primitives
 // ---------------------------------------------------------------------------
 
@@ -1679,6 +2097,11 @@ interface SlotViewProps {
    *  `null` until the fetch finishes; the Friends-Met section falls
    *  back to showing raw stored_value hex when this isn't yet loaded. */
   npcEncoding: NpcEncoding | null;
+  /** Current + historical bulletin-board post texts, fair names and NPC
+   *  names (public/data/board_posts.json). `null` until fetched. */
+  boardIndex: BoardPostIndex | null;
+  /** Per-record verdicts for this slot's board, computed by the parent. */
+  boardAssessments: BoardAssessment[];
 }
 
 function SlotView({
@@ -1692,6 +2115,8 @@ function SlotView({
   lookups,
   inventoryEncoding,
   npcEncoding,
+  boardIndex,
+  boardAssessments,
 }: SlotViewProps) {
   if (slot.uninitialised) {
     return (
@@ -2641,178 +3066,37 @@ function SlotView({
         )}
       </Section>
 
-      {/* Catalog */}
-      <Section
-        regionId={`${slot.label}-catalog`}
-        title={REGION_DESCRIPTORS.catalog.title}
-        range={REGION_DESCRIPTORS.catalog.range}
-        confidence={REGION_DESCRIPTORS.catalog.confidence}
-        parsedSnapshot={`${slot.catalogEntries.length} entries decoded`}
-        {...labelArgs}
-      >
-        {slot.catalogEntries.length === 0 ? (
-          <p className="muted">No catalog entries decoded.</p>
-        ) : (
-          <ol className="entries-list">
-            {slot.catalogEntries.map((e, i) => {
-              const pending = editCtx.edits.catalog[e.bodyOffset];
-              const pendingRemove = editCtx.edits.catalogClear[e.bodyOffset];
-              return (
-                <li
-                  key={e.bodyOffset}
-                  className={pendingRemove ? 'is-pending-remove' : ''}
-                >
-                  <div className="entry-meta">
-                    <span>Announcement #{i + 1}</span>
-                    {pendingRemove && (
-                      <span className="entry-remove-tag">staged for removal</span>
-                    )}
-                  </div>
-                  <div
-                    className={`entry-text ${pendingRemove ? 'entry-text-removed' : ''}`}
-                  >
-                    {e.text}
-                  </div>
-                  {editable && (
-                    <div className="entry-edit-row">
-                      <InlineEdit
-                        label="catalog text"
-                        beta
-                        multiline
-                        pendingValue={pending ?? null}
-                        initialDraft={e.text}
-                        maxChars={CATALOG_TEXT_MAX_CHARS}
-                        onCommit={draft => {
-                          if (draft.length > CATALOG_TEXT_MAX_CHARS) {
-                            return `Max ${CATALOG_TEXT_MAX_CHARS} characters.`;
-                          }
-                          editCtx.setEdits(prev => {
-                            // Editing implicitly cancels a pending
-                            // remove on the same slot — the user has
-                            // changed their mind from "delete" to
-                            // "rewrite".
-                            const nextClear = { ...prev.catalogClear };
-                            delete nextClear[e.bodyOffset];
-                            return {
-                              ...prev,
-                              catalog: { ...prev.catalog, [e.bodyOffset]: draft },
-                              catalogClear: nextClear,
-                            };
-                          });
-                          return null;
-                        }}
-                        onClear={() =>
-                          editCtx.setEdits(prev => {
-                            const next = { ...prev.catalog };
-                            delete next[e.bodyOffset];
-                            return { ...prev, catalog: next };
-                          })
-                        }
-                      />
-                      {pendingRemove ? (
-                        <button
-                          type="button"
-                          className="entry-remove-btn entry-remove-undo"
-                          onClick={() =>
-                            editCtx.setEdits(prev => {
-                              const next = { ...prev.catalogClear };
-                              delete next[e.bodyOffset];
-                              return { ...prev, catalogClear: next };
-                            })
-                          }
-                        >
-                          Undo remove
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="entry-remove-btn"
-                          onClick={() =>
-                            editCtx.setEdits(prev => {
-                              // Removing implicitly drops any pending
-                              // text edit for the same slot — the slot
-                              // is being wiped, so the new text would
-                              // be discarded anyway.
-                              const nextCatalog = { ...prev.catalog };
-                              delete nextCatalog[e.bodyOffset];
-                              return {
-                                ...prev,
-                                catalog: nextCatalog,
-                                catalogClear: {
-                                  ...prev.catalogClear,
-                                  [e.bodyOffset]: true,
-                                },
-                              };
-                            })
-                          }
-                          title="Zero-fill this announcement slot so the catalog screen treats it as empty."
-                        >
-                          Remove announcement
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </Section>
+      {/* Bulletin board — 14 records at body 0x162BC. step-408: the
+          region previously labelled "catalog announcements" (scanned from
+          0x162B6) is the board; the v2.6.3 patch changed how long posts
+          are stored, and the editor now understands both forms, flags
+          posts the pre-v2.6.3 overflow damaged, and can bring every
+          system post up to the current translation. */}
+      <BulletinBoardSection
+        slot={slot}
+        editable={editable}
+        editCtx={editCtx}
+        boardIndex={boardIndex}
+        assessments={boardAssessments}
+        notes={notes}
+        setNotes={setNotes}
+        fileLabel={fileLabel}
+        payloadSha={payloadSha}
+      />
 
-      {/* Mail */}
-      <Section
-        regionId={`${slot.label}-mail`}
-        title={REGION_DESCRIPTORS.mail.title}
-        range={REGION_DESCRIPTORS.mail.range}
-        confidence={REGION_DESCRIPTORS.mail.confidence}
-        parsedSnapshot={`${slot.mailEntries.length} mail bodies decoded`}
-        {...labelArgs}
-      >
-        {slot.mailEntries.length === 0 ? (
-          <p className="muted">No mail bodies decoded.</p>
-        ) : (
-          <ol className="entries-list">
-            {slot.mailEntries.map((e, i) => {
-              const pending = editCtx.edits.mail[e.bodyOffset];
-              return (
-                <li key={e.bodyOffset}>
-                  <div className="entry-meta">
-                    <span>Letter #{i + 1}</span>
-                  </div>
-                  <div className="entry-text">{e.text}</div>
-                  {editable && (
-                    <InlineEdit
-                      label="mail text"
-                      beta
-                      multiline
-                      pendingValue={pending ?? null}
-                      initialDraft={e.text}
-                      maxChars={MAIL_TEXT_MAX_CHARS}
-                      onCommit={draft => {
-                        if (draft.length > MAIL_TEXT_MAX_CHARS) {
-                          return `Max ${MAIL_TEXT_MAX_CHARS} characters.`;
-                        }
-                        editCtx.setEdits(prev => ({
-                          ...prev,
-                          mail: { ...prev.mail, [e.bodyOffset]: draft },
-                        }));
-                        return null;
-                      }}
-                      onClear={() =>
-                        editCtx.setEdits(prev => {
-                          const next = { ...prev.mail };
-                          delete next[e.bodyOffset];
-                          return { ...prev, mail: next };
-                        })
-                      }
-                    />
-                  )}
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </Section>
+      {/* Letter queues — 10 + 12 records right after the board, same
+          168-byte layout. Filled by a routine the board patch does not
+          touch, so text stays plain UTF-16 (67 chars). */}
+      <LettersSection
+        slot={slot}
+        editable={editable}
+        editCtx={editCtx}
+        boardIndex={boardIndex}
+        notes={notes}
+        setNotes={setNotes}
+        fileLabel={fileLabel}
+        payloadSha={payloadSha}
+      />
 
       {/* Bank log */}
       <Section
@@ -2907,6 +3191,11 @@ export default function SaveFileInspector() {
   // step-346. Loaded once on mount; the Friends-Met section falls back to
   // showing raw stored_value hex when this hasn't loaded yet.
   const [npcEncoding, setNpcEncoding] = useState<NpcEncoding | null>(null);
+  // step-408: bulletin-board post index (current + historical texts) so
+  // the board section can recognise damaged posts and offer the current
+  // translation. null until fetched; the section degrades to read-only.
+  const [boardIndex, setBoardIndex] = useState<BoardPostIndex | null>(null);
+  const [boardIndexFailed, setBoardIndexFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -2919,6 +3208,11 @@ export default function SaveFileInspector() {
     loadNpcEncoding().then(result => {
       if (!cancelled) setNpcEncoding(result);
     });
+    loadBoardPostIndex().then(result => {
+      if (cancelled) return;
+      if (result) setBoardIndex(result);
+      else setBoardIndexFailed(true);
+    });
     return () => {
       cancelled = true;
     };
@@ -2926,6 +3220,24 @@ export default function SaveFileInspector() {
 
   const editCtx = useMemo<EditCtx>(() => ({ edits, setEdits }), [edits]);
   const editCount = pendingEditCount(edits);
+
+  // Board verdicts for whichever slot is on screen, and separately for
+  // the editable (active) slot — the latter is what staged board actions
+  // are resolved against when the file is written.
+  const slotForTab = activeSlotTab === 'A' ? parse?.slotA : parse?.slotB;
+  const activeSlotParse =
+    parse?.activeSlot === 'A' ? parse?.slotA : parse?.activeSlot === 'B' ? parse?.slotB : undefined;
+  const boardAssessments = useMemo<BoardAssessment[]>(
+    () => (slotForTab ? assessBoard(slotForTab.boardRecords, boardIndex, slotForTab.playerName) : []),
+    [slotForTab, boardIndex],
+  );
+  const boardEditContext = useMemo<BoardEditContext | null>(() => {
+    if (!activeSlotParse || activeSlotParse.uninitialised) return null;
+    return {
+      records: activeSlotParse.boardRecords,
+      assessments: assessBoard(activeSlotParse.boardRecords, boardIndex, activeSlotParse.playerName),
+    };
+  }, [activeSlotParse, boardIndex]);
 
   // Reload notes whenever the parsed payload SHA changes.
   useEffect(() => {
@@ -3022,7 +3334,7 @@ export default function SaveFileInspector() {
     setDownloadState('downloading');
     setDownloadMsg(null);
     try {
-      const editList = editsToPendingList(edits);
+      const editList = editsToPendingList(edits, boardEditContext);
       const result = applyEdits(parse.wrapper.payload, editList);
       const wrapperKind: 'dsv' | 'raw' =
         parse.wrapper.kind === 'dsv' ? 'dsv' : 'raw';
@@ -3053,7 +3365,6 @@ export default function SaveFileInspector() {
     }
   }
 
-  const slotForTab = activeSlotTab === 'A' ? parse?.slotA : parse?.slotB;
   const noteCount = Object.keys(notes).length;
   const payloadSha = parse?.payloadSha256 ?? '';
   const fileLabel = fileMeta?.name ?? 'unknown';
@@ -3252,17 +3563,26 @@ export default function SaveFileInspector() {
                 lookups={lookups}
                 inventoryEncoding={inventoryEncoding}
                 npcEncoding={npcEncoding}
+                boardIndex={boardIndex}
+                boardAssessments={boardAssessments}
               />
+            )}
+            {boardIndexFailed && (
+              <p className="csum-warn">
+                The bulletin-board post index (<code>data/board_posts.json</code>) failed to load, so
+                posts cannot be checked against the current translation this visit. Reload to retry.
+              </p>
             )}
 
             <section className="editor-footer">
               <div className="editor-banner">
-                <strong>BETA — back up your original save first.</strong>{' '}
-                Editing fields beyond Ritch and player name has not been
-                tested in-game yet. If the modified save breaks something,
-                you&apos;ll want the original to fall back to. Edits are
-                applied to both slot A and slot B, with the 20-byte header
-                checksum recomputed.
+                <strong>Back up your original save first.</strong>{' '}
+                Ritch, player name and the bulletin-board repairs have been
+                checked in the game; the other fields have not. If the
+                modified save breaks something, you&apos;ll want the
+                original to fall back to. Edits are applied to both slot A
+                and slot B, and all three checksums the game verifies are
+                recomputed.
               </div>
               <label className="backup-check">
                 <input
@@ -3635,6 +3955,52 @@ export default function SaveFileInspector() {
         .entry-remove-btn.entry-remove-undo {
           background: #fef3f3;
           color: #6e1a14;
+        }
+
+        /* Bulletin board */
+        .board-list { max-height: 640px; }
+        .board-summary {
+          display: flex; flex-direction: column; gap: 8px;
+          padding: 10px 12px; margin: 6px 0 8px;
+          background: var(--color-purple-50);
+          border: 1px solid var(--color-purple-100);
+          border-radius: var(--radius-md);
+        }
+        .board-summary-counts { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; }
+        .board-summary-item { display: inline-flex; align-items: center; gap: 4px; }
+        .board-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .board-btn {
+          padding: 3px 10px; border-radius: var(--radius-pill);
+          background: white; border: 1px solid var(--color-purple-100);
+          color: var(--color-purple-600);
+          font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+        }
+        .board-btn:hover { background: var(--color-purple-50); }
+        .board-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+        .board-btn-primary {
+          background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+          color: white; border: none; padding: 6px 14px; font-size: 0.82rem;
+        }
+        .board-btn-primary:hover { transform: translateY(-1px); background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400)); }
+        .board-pill {
+          display: inline-block; padding: 1px 8px; border-radius: var(--radius-pill);
+          font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+          border: 1px solid transparent;
+        }
+        .board-pill-current, .board-pill-unfilled { background: #d9f3df; color: #2c8a4a; border-color: #b9e2c4; }
+        .board-pill-player { background: var(--color-purple-100); color: var(--color-purple-600); }
+        .board-pill-outdated { background: #fff1c4; color: #b07f00; border-color: #f3d774; }
+        .board-pill-damaged { background: #fde4d2; color: #a64a1a; border-color: #f5c69e; }
+        .board-pill-unrecoverable, .board-pill-unknown { background: #fde2e0; color: #a3261e; border-color: #f3b9b6; }
+        .board-pill-empty { background: var(--color-purple-50); color: var(--color-ink-soft); }
+        .board-post.status-damaged, .board-post.status-outdated { border-left: 3px solid #f3d774; }
+        .board-post.status-unrecoverable, .board-post.status-unknown { border-left: 3px solid #f3b9b6; }
+        .board-post.is-staged { background: #fffbe6; border-color: #f3d774; }
+        .board-title { font-weight: 700; color: var(--color-purple-600); font-size: 0.9rem; white-space: pre-wrap; }
+        .board-detail { margin: 4px 0 0; font-size: 0.78rem; color: var(--color-ink-soft); }
+        .board-current {
+          margin-top: 4px; padding: 6px 8px;
+          background: white; border: 1px dashed var(--color-purple-100); border-radius: var(--radius-md);
         }
 
         /* Inventory bag editor */

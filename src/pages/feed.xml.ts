@@ -35,9 +35,19 @@ export const GET: APIRoute = () => {
       const changesHtml = (r.changes || [])
         .map((c: string) => `<li>${escapeXml(c)}</li>`)
         .join('');
+      // A release's `callout` is the one thing players must act on; it
+      // sits between the summary and the change list, as on the site.
+      const callout = r.callout
+        ? `<p><strong>${escapeXml(r.callout.title)}</strong> ${escapeXml(r.callout.body)}` +
+          (r.callout.href
+            ? ` <a href="${escapeXml(`${ROOT}${r.callout.href}`)}">${escapeXml(r.callout.label || 'More')}</a>`
+            : '') +
+          '</p>'
+        : '';
       const description = [
         r.headline ? `<p><strong>${escapeXml(r.headline)}</strong></p>` : '',
         r.summary ? `<p>${escapeXml(r.summary)}</p>` : '',
+        callout,
         changesHtml ? `<ul>${changesHtml}</ul>` : '',
       ].join('');
       return [

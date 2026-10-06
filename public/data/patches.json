@@ -23,6 +23,49 @@
   },
   "releases": [
     {
+      "version": "2.6.3",
+      "date": "2026-10-06",
+      "headline": "Starts on a 3DS again, bulletin-board posts are full sentences, and the save-file editor can repair your board",
+      "summary": "v2.6.3 fixes the red screen at launch on a 3DS (TWiLight Menu++ / nds-bootstrap) that every release since v2.31 could hit — the patch stored the game's main program uncompressed with one header field the 3DS loader rejects; it is stored compressed again, as the cartridge does. The bulletin board gets the biggest change: a post used to have room for 67 characters, so English posts were clipped fragments and the longer ones overwrote the author's name and date behind them, which is where the garbled authors and blank posts came from. The board now stores long posts compactly (132 characters) and all 233 posts were retranslated from the Japanese, titles included. Also: 57 speech bubbles that lost their last line are rewritten to fit, rumours read as sentences and fit the text box, Lovers' Point has one name across 44 lines, and the encyclopedia page headers have their missing space.",
+      "callout": {
+        "title": "Message board: check your save in the save-file editor",
+        "body": "The board overflow damaged posts already on your board, and the posts you have were written in the old wording. The save-file editor now reads your bulletin board and lets you remove the posts that are corrupt (it flags them for you) and update every post to the current translation — NPC names, item names and all. Drop your save in, open the Bulletin board section, and use \"Stage all recommended fixes\". Do this with v2.6.3 applied: the updated posts are written by the new game code the next time you open the board.",
+        "href": "/save-files/",
+        "label": "Open the save-file editor"
+      },
+      "changes": [
+        "The game starts on a 3DS again — every release from v2.31 to v2.6.2 could stop at a red screen under TWiLight Menu++ (nds-bootstrap v0.65.1 tested), with or without a save. The main program is stored compressed, the way the cartridge stores it. Confirmed on a 3DS; saves were never affected.",
+        "Bulletin-board posts hold full sentences — a post can be 132 characters (23-character title + three full lines) instead of 67, title included, and an author with a long name such as Principal Sol no longer damages the post they sign. All 233 posts retranslated from the Japanese; 216 titles are new (\"REMINDER-BE GOOD\" is \"CHRISTMAS FOR GOOD KIDS\", \"PRESENTS CHANGE\" is \"I COULD BUY A PRESENT\").",
+        "Save-file editor: bulletin board section — see every post on your board with its author and date, remove the ones an older patch corrupted (flagged with the reason), and update every system post to the current translation in one click. Repairs were checked in the emulator against a damaged save from bug report #17.",
+        "Speech bubbles finish their sentence — 57 remarks that ran past the 95-character space had their last line cut off; each is rewritten to fit, and one that mistranslated \"clothes make the person\" is corrected.",
+        "Rumours read as sentences and fit the text box — the place and action pieces are rewritten to fit their sentences (four places now use the name the rest of the game uses; \"Actions\" is the Auditorium and \"Antiquity\" the lonely island), 14 over-long pieces are shortened, and all 2,680 rumour lines have new line breaks for the 175-pixel box.",
+        "Lovers' Point has one name — 44 dialogue lines that said Lovers' Cape, Sweethearts' Point, Romance cape and other variants now say Lovers' Point, and one line that said you \"got called lovebirds\" says you were called to Lovers' Point.",
+        "Encyclopedia page headers have their space (\"Ocean 3 Creatures\", not \"Ocean 3Living Things\"), and one byte of Martha's character record that had been zero since v2.32 matches the cartridge again.",
+        "Build gates added for all of it: the main program's packaging, every board post against the panel's measured limits, every character record against the cartridge, and every speech bubble and rumour piece against the buffer the game reads it into."
+      ],
+      "notes": "Patches for both ROM revisions are included. Both produce the same patched ROM (sha256 95738e75…fb9dd21f). **A save made with v2.6.3 should not be taken back to an older patch** — the older game shows the long board posts as garbage. Nothing else in the save is affected, and a save from v2.2 or later loads in v2.6.3. The new board storage was tested in an emulator with every post and not yet on every console and flashcart; if a post looks cut off, shows the wrong author or date, or opens blank, please file a bug report with the post's title.",
+      "patchedRomSha256": "95738e75320d49a1af2d4e28cb737fb81841548b396838fe68ceb074fb9dd21f",
+      "changelogUrl": "/changelog/v2.6.3/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.6.3-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 18195233,
+          "patchSha256": "6990c6ffc256b5c98c74bba6e5dd44190f7bb1645e9c5ef4818cdc76e4947a84"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.6.3-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 5106201,
+          "patchSha256": "9d2f0c48c6654fa1417a48dce693a8ba2e0e2d08044600288162ed8b1d63ea83"
+        }
+      ]
+    },
+    {
       "version": "2.6.2",
       "date": "2026-09-07",
       "headline": "The title-screen menu is English again, and three frozen conversations are fixed",

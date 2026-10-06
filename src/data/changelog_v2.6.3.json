@@ -1,0 +1,55 @@
+{
+  "version": "2.6.3",
+  "date": "2026-10-06",
+  "headline": "Starts on a 3DS again, bulletin-board posts are full sentences, and the save-file editor can repair your board",
+  "summary": "v2.6.3 fixes the red screen at launch on a 3DS running TWiLight Menu++ that every release since v2.31 could hit: the patch stored the game's main program uncompressed, with one header field left in a state the 3DS loader (nds-bootstrap v0.65.1 tested) rejects and every emulator accepts. It is stored compressed again, the way the cartridge stores it. The bulletin board gets the biggest change. A post had room for 67 characters, title included — enough for Japanese, far too little for English — so every post was a clipped fragment, and the ones that ran over overwrote the author's name, the post's date and its place on the board. The board now stores long posts compactly (a 23-character title and three full lines, 132 characters), and all 233 posts were retranslated from the Japanese. On the site, the save-file editor reads your board, flags the posts an older patch corrupted, and updates every post to the current translation. Also in this release: 57 speech bubbles rewritten to fit, rumours rewritten to read as sentences and re-wrapped for the text box, Lovers' Point given one name across 44 lines, the encyclopedia page headers given their space, and one byte of Martha's character record restored.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.6.2: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "Apply v2.6.3 to a clean Japanese ROM. Saves from v2.2 or later load. Do not take a save made with v2.6.3 back to an older patch: the older game shows the long board posts as garbage. Then open your save in the site's save-file editor and bring the bulletin board up to date.",
+  "otherChanges": [
+    {
+      "title": "The game starts on a 3DS again",
+      "body": "Every release from v2.31 through v2.6.2 could fail to start on a 3DS running TWiLight Menu++: a red screen at launch, before the title appears, with or without a save file — so a save from an older version looked like it had become unreadable when the game itself was not starting. The cartridge stores the game's main program compressed. The patch had been storing it uncompressed, with one header field left in a state that every emulator accepts and that nds-bootstrap (v0.65.1 tested) does not. The patch now stores the program compressed, the same way the cartridge does. Confirmed on a 3DS: v2.5.1 and v2.6.2 as released stop at the red screen, and the same v2.6.2 with only this change starts. Saves are not affected and never were."
+    },
+    {
+      "title": "The bulletin board holds full sentences",
+      "body": "A post on the bulletin board had room for 67 characters, title included. That is enough for Japanese and far too little for English, so every post was written to fit and many were clipped fragments. Posts that ran even slightly over were worse: the game wrote them anyway, and the extra characters overwrote the author's name, the post's date and its place on the board; some posts opened to a blank page. The board now stores long posts compactly — a post can be 132 characters: a title of up to 23 characters and three full lines of text. Authors with long names, such as Principal Sol, are stored the same way and no longer damage the post they sign. A save made with v2.6.3 should not be taken back to an older version of the patch: the older version shows the long posts as garbage. Nothing else in the save is affected."
+    },
+    {
+      "title": "All 233 board posts retranslated, titles included",
+      "body": "With the room to do it, every post was retranslated from the Japanese. The text of every post is written as complete sentences that use the space, in place of fragments cut to fit. 216 titles are new: the old ones had 16 characters to work with, which produced titles such as \"REMINDER-BE GOOD\" and \"PHANTASM IDLES\"; those are now \"CHRISTMAS FOR GOOD KIDS\" and \"PHANTASM KILLING TIME\". The monthly castle notices are proclamations again, and each one names that month's fair. One title was simply wrong: \"PRESENTS CHANGE\" is \"I COULD BUY A PRESENT\". Names follow the nameplate canon from v2.6.1."
+    },
+    {
+      "title": "Save-file editor: view, repair and update your bulletin board",
+      "body": "Posts already on your board were written by the old game code — in the old wording, and the longer ones damaged. The save-file editor on this site now reads the 14 board records and shows each post's title, text, author and date. It classifies every post the way the translation repo's repair tool does: a post whose text ran past its field is recognised from the text against every wording that post has ever shipped with, and can be brought up to the current translation (its text is cleared so the v2.6.3 game writes the current post the next time the board opens; where the author id was destroyed it is taken from a short table of posts with a fixed author, or the current text is written in directly with the author left blank). A post whose author's name overran the message number before the game fetched the text holds some other message's text and is flagged corrupt for removal. \"Stage all recommended fixes\" does all of it in one click; removed posts drop off and the rest close up as the game's own remove routine does. Checked against the damaged save from bug report #17: the editor's output matches the reference tool byte for byte, and the game refilled every restored post in the emulator. The letter queues that follow the board are shown in the same layout; the region this editor used to call \"catalog announcements\" was the board read from six bytes early."
+    },
+    {
+      "title": "Speech bubbles finish their sentence",
+      "body": "The little remarks characters make over their heads come in three lines, and the game has room for 95 characters across the three. 57 remarks were longer than that, so their last line was cut off part-way. Each has been rewritten to fit. One of them also said the wrong thing: a compliment on your outfit turned an old saying, \"clothes make the person\", into a remark about a grandchild."
+    },
+    {
+      "title": "Rumours read as sentences",
+      "body": "A rumour is a sentence with a place and one or two actions dropped into it. The pieces were a mix of full sentences and single words, so the game produced lines such as \"...were together at In Front of School, I was studying.\" The 175 places and actions are rewritten to fit the sentences (\"...were together at the front of the school, studying.\"), 14 that were too long for their slot and were being cut are now short enough, and several that did not match the Japanese at all are corrected. Four places have the name the rest of the game uses (the Haunted House, Vivian's Boutique, Daisy's Flowers, Fungi Forest) and two were wrong outright: \"Actions\" is the Auditorium and \"Antiquity\" is the lonely island."
+    },
+    {
+      "title": "Rumours fit the text box",
+      "body": "The text box holds 175 pixels a line. A longer line is continued on the next one from the middle of a word, and anything past three lines is not shown. Rumour sentences put a place and an action on one line and regularly went past that. All 2,680 of them have new line breaks; the wording is the same. A rumour's sentence is chosen separately from the pieces that fill it, and not every combination could be checked — if you see a rumour that reads wrongly or runs off the edge of the text box, please report it with the full line."
+    },
+    {
+      "title": "Lovers' Point has one name",
+      "body": "The place where sweethearts meet is \"Lovers' Point\" on the map and in the menus, and 44 lines of dialogue called it something else: \"Lovers' Cape\", \"Sweethearts' Point\", \"Sweetheart Cape\", \"Romance cape\", \"Lovers Point\" without the apostrophe and, in one line, its untranslated Japanese name. In one more line a classmate said the two of you \"got called lovebirds\" where the Japanese says you were called to Lovers' Point. Every one of them now says Lovers' Point."
+    },
+    {
+      "title": "Encyclopedia headers and Martha's record",
+      "body": "The encyclopedia page for the creatures of one place was headed \"Ocean 3Living Things\". It now reads \"Ocean 3 Creatures\", and the same for every other place. Separately, one byte of Martha's character record had been zero since v2.32; it picks which animation an item plays while she holds it, and it matches the cartridge again."
+    },
+    {
+      "title": "The build checks the things that went wrong",
+      "body": "The build now refuses to finish unless the main program is stored the way the cartridge stores it, unless every board post fits the page it is shown on (measured in pixels with the game's own font), unless every character record matches the cartridge outside its translated text, and unless every speech bubble and rumour piece fits the space the game reads it into."
+    }
+  ]
+}

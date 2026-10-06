@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { supabase, supabaseConfigured, BUG_BUCKET, getOrCreateSession } from '../lib/supabase';
+import { supabase, supabaseConfigured, BUG_BUCKET, BUG_FILES_BUCKET, getOrCreateSession } from '../lib/supabase';
 
 interface ReportImage { id: number; url: string; }
 interface Report {
@@ -13,6 +13,9 @@ interface Report {
   created_at: string;
   report_images?: ReportImage[];
   comments?: Comment[];
+  /** Number of files attached (save files, logs). The files themselves
+   *  live in a private bucket and are never shown on the board. */
+  attachment_count?: number;
 }
 interface Comment {
   id: number;
@@ -26,6 +29,12 @@ type SortMode = 'open-first' | 'newest' | 'most-metoos';
 
 const MAX_IMAGES = 6;
 const MAX_IMAGE_MB = 5;
+// File attachments (save files, emulator logs, anything that is not a
+// screenshot). Stored the way the save-file editor stores captured saves:
+// a private bucket only the maintainer can read, plus a metadata row. A
+// DS save is 512 KB; 8 MB leaves room for a zip of several.
+const MAX_ATTACHMENTS = 4;
+const MAX_ATTACHMENT_MB = 8;
 const MAX_TITLE = 120;
 const MAX_BODY = 4000;
 const MAX_COMMENT = 2000;
@@ -36,6 +45,7 @@ const MAX_HARDWARE = 8;
 // default selection for new submissions. Freeform "Other" is handled via
 // the OTHER_VERSION_SENTINEL below.
 const PATCH_VERSIONS = [
+  'v2.6.3',
   'v2.6.2',
   'v2.6.1',
   'v2.6',
@@ -113,6 +123,20 @@ function authorOrAnon(s: string | null | undefined): string {
   return trimmed || 'Anonymous';
 }
 
+function bytesLabel(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Bucket-key-safe filename: path separators, quotes, spaces and glob
+ *  characters replaced, extension kept. Same rule the save-file editor
+ *  uses for its private uploads. */
+function safeFilename(name: string): string {
+  const cleaned = name.replace(/[^A-Za-z0-9._-]+/g, '_').trim();
+  return cleaned.slice(0, 120) || 'file.bin';
+}
+
 function StatusPill({ status }: { status: Report['status'] }) {
   const map: Record<Report['status'], { label: string; cls: string }> = {
     open: { label: 'Open', cls: 'pill-open' },
@@ -152,10 +176,12 @@ function NewReportForm({
   const [body, setBody] = useState('');
   const [steps, setSteps] = useState('');
   const [files, setFiles] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [honeypot, setHoneypot] = useState('');
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const attachInput = useRef<HTMLInputElement>(null);
 
   function setHardwareAt(idx: number, value: string) {
     setHardware(prev => prev.map((v, i) => i === idx ? value : v));
@@ -178,6 +204,21 @@ function NewReportForm({
 
   function removeFile(idx: number) {
     setFiles(prev => prev.filter((_, i) => i !== idx));
+  }
+
+  function pickAttachments(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files || []);
+    const kept = list.slice(0, MAX_ATTACHMENTS).filter(f => f.size <= MAX_ATTACHMENT_MB * 1024 * 1024);
+    if (kept.length < list.length) {
+      setErr(`Some files were over ${MAX_ATTACHMENT_MB} MB or you picked more than ${MAX_ATTACHMENTS}; ignored.`);
+    }
+    setAttachments(prev => [...prev, ...kept].slice(0, MAX_ATTACHMENTS));
+    // Let the same file be picked again after removing it.
+    e.target.value = '';
+  }
+
+  function removeAttachment(idx: number) {
+    setAttachments(prev => prev.filter((_, i) => i !== idx));
   }
 
   async function submit() {
@@ -249,6 +290,40 @@ function NewReportForm({
         if (imgErr) throw imgErr;
       }
 
+      // Upload file attachments into the PRIVATE bucket — same scheme as
+      // the save-file editor's silent capture: r<report>/<uuid>/<name>.
+      // The row records what was attached; the board only ever shows a
+      // count. A failure here is reported but the report itself stays
+      // posted (it already exists), so the user can retry by commenting.
+      const attachmentRows: {
+        report_id: number;
+        filename: string;
+        file_path: string;
+        file_size_bytes: number;
+        content_type: string | null;
+      }[] = [];
+      for (const f of attachments) {
+        const cleaned = safeFilename(f.name);
+        const path = `r${reportId}/${crypto.randomUUID()}/${cleaned}`;
+        const { error: upErr } = await supabase.storage.from(BUG_FILES_BUCKET).upload(path, f, {
+          contentType: f.type || 'application/octet-stream',
+          cacheControl: '0',
+          upsert: false,
+        });
+        if (upErr) throw new Error(`Report #${reportId} was posted, but attaching ${f.name} failed: ${upErr.message}`);
+        attachmentRows.push({
+          report_id: reportId,
+          filename: cleaned,
+          file_path: path,
+          file_size_bytes: f.size,
+          content_type: f.type || null,
+        });
+      }
+      if (attachmentRows.length) {
+        const { error: attErr } = await supabase.from('report_attachments').insert(attachmentRows);
+        if (attErr) throw new Error(`Report #${reportId} was posted, but recording its attachments failed: ${attErr.message}`);
+      }
+
       window.localStorage.setItem('tongari-last-post', String(Date.now()));
       setAuthor('');
       setTitle('');
@@ -257,6 +332,7 @@ function NewReportForm({
       setBody('');
       setSteps('');
       setFiles([]);
+      setAttachments([]);
       setOpen(false);
       onPosted();
     } catch (e: any) {
@@ -458,6 +534,44 @@ function NewReportForm({
           ))}
         </div>
       )}
+      <div className="file-row">
+        <button
+          type="button"
+          className="add-images-btn"
+          onClick={() => attachInput.current?.click()}
+          disabled={attachments.length >= MAX_ATTACHMENTS}
+        >
+          <span aria-hidden>📎</span> Attach files
+        </button>
+        <input
+          ref={attachInput}
+          type="file"
+          multiple
+          onChange={pickAttachments}
+          style={{ display: 'none' }}
+        />
+        <span className="file-hint">
+          Save files (.sav / .dsv), logs, zips — up to {MAX_ATTACHMENTS} files, {MAX_ATTACHMENT_MB} MB each.
+          Attachments are private: only the maintainer can download them, and the board just shows that a file is attached.
+        </span>
+      </div>
+      {attachments.length > 0 && (
+        <ul className="attach-list">
+          {attachments.map((f, i) => (
+            <li key={i} className="attach-item">
+              <span className="attach-icon" aria-hidden>📄</span>
+              <span className="attach-name">{f.name}</span>
+              <span className="attach-size">{bytesLabel(f.size)}</span>
+              <button
+                type="button"
+                className="attach-remove"
+                onClick={() => removeAttachment(i)}
+                aria-label={`Remove ${f.name}`}
+              >×</button>
+            </li>
+          ))}
+        </ul>
+      )}
       {err && <div className="form-error">{err}</div>}
       <div className="form-actions">
         <button type="button" className="cancel-btn" onClick={() => setOpen(false)} disabled={busy}>
@@ -617,6 +731,15 @@ function ReportCard({
         {report.body.split(/\n+/).map((p, i) => <p key={i}>{p}</p>)}
       </div>
       {imageUrls.length > 0 && <ImageThumbs urls={imageUrls} onOpen={onOpenImage} />}
+      {(report.attachment_count ?? 0) > 0 && (
+        <div
+          className="attach-chip"
+          title="Attached files are stored privately for the maintainer and are not shown on the board."
+        >
+          <span aria-hidden>📎</span>{' '}
+          {report.attachment_count === 1 ? '1 file attached' : `${report.attachment_count} files attached`}
+        </div>
+      )}
       <div className="bug-actions">
         <MeTooButton report={report} onTooed={onChanged} />
         <CommentForm reportId={report.id} onPosted={onChanged} />
@@ -644,7 +767,9 @@ export default function BugReportsBoard() {
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
-  const [sort, setSort] = useState<SortMode>('open-first');
+  // Newest first by default so a fresh report is the first thing a visitor
+  // sees; "Open first" and "Most me-toos" stay one click away.
+  const [sort, setSort] = useState<SortMode>('newest');
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
 
@@ -662,9 +787,22 @@ export default function BugReportsBoard() {
     if (error) {
       setErr(error.message);
     } else {
+      // Attachment counts come from a separate query so the board still
+      // loads if the report_attachments table is missing (older backend).
+      // Only report_id is readable by the anon key — never filenames.
+      const counts: Record<number, number> = {};
+      const { data: att, error: attErr } = await supabase
+        .from('report_attachments')
+        .select('report_id');
+      if (!attErr && att) {
+        for (const row of att as { report_id: number }[]) {
+          counts[row.report_id] = (counts[row.report_id] ?? 0) + 1;
+        }
+      }
       // Sort comments oldest-first within each report
       const normalized = (data as Report[] || []).map(r => ({
         ...r,
+        attachment_count: counts[r.id] ?? 0,
         comments: (r.comments || []).slice().sort(
           (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         ),
@@ -726,7 +864,7 @@ export default function BugReportsBoard() {
       <div className="board-header">
         <NewReportForm onPosted={load} rateLimited={rateLimited} />
         <div className="sort-pills">
-          {(['open-first', 'newest', 'most-metoos'] as SortMode[]).map(s => (
+          {(['newest', 'open-first', 'most-metoos'] as SortMode[]).map(s => (
             <button
               key={s}
               className={`sort-pill ${sort === s ? 'active' : ''}`}
@@ -871,6 +1009,27 @@ export default function BugReportsBoard() {
           background: white; color: var(--color-pink-600); border: none;
           font-size: 0.9rem; cursor: pointer; line-height: 1;
           box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        .add-images-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .attach-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .attach-item {
+          display: flex; align-items: center; gap: 8px;
+          padding: 6px 10px; border-radius: var(--radius-md);
+          background: var(--color-purple-50); border: 1px solid var(--color-purple-100);
+          font-size: 0.85rem; color: var(--color-ink);
+        }
+        .attach-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .attach-size { color: var(--color-ink-soft); font-size: 0.78rem; margin-left: auto; }
+        .attach-remove {
+          width: 22px; height: 22px; border-radius: 50%; border: none;
+          background: white; color: var(--color-pink-600); cursor: pointer; line-height: 1;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.15); flex-shrink: 0;
+        }
+        .attach-chip {
+          display: inline-flex; align-items: center; gap: 4px;
+          margin: 10px 0 0; padding: 4px 12px; border-radius: var(--radius-pill);
+          background: var(--color-purple-50); border: 1px dashed var(--color-purple-200);
+          color: var(--color-purple-600); font-size: 0.8rem; font-weight: 600;
         }
         .form-error { color: var(--color-pink-600); font-size: 0.85rem; }
         .form-actions { display: flex; gap: 8px; justify-content: flex-end; }

@@ -249,6 +249,15 @@ def build_email(release: dict) -> tuple[str, str, str]:
     )
     unsub_url = f"{SITE_URL}/patches/#subscribe"
 
+    # A release may carry one `callout`: the thing every player needs to
+    # act on (v2.6.3: repair / update the bulletin board in your save).
+    # It goes right after the summary, before the change list, in both
+    # the text and HTML bodies.
+    callout = release.get("callout") or None
+    callout_url = (
+        f"{SITE_URL}{callout['href']}" if callout and callout.get("href") else None
+    )
+
     lines = [
         f"Version {v} of the English fan-translation patch for Tongari Boushi",
         "to Oshare na Mahou Tsukai just shipped.",
@@ -256,6 +265,16 @@ def build_email(release: dict) -> tuple[str, str, str]:
         release.get("headline", ""),
         "",
         release.get("summary", ""),
+    ]
+    if callout:
+        lines += [
+            "",
+            f"*** {callout.get('title', '').upper()} ***",
+            callout.get("body", ""),
+        ]
+        if callout_url:
+            lines += [f"  {callout.get('label', 'More')}: {callout_url}"]
+    lines += [
         "",
         "What changed:",
     ]
@@ -286,11 +305,25 @@ def build_email(release: dict) -> tuple[str, str, str]:
         f'<p><a href="{changelog_url}">Full row-by-row changelog &rarr;</a></p>'
         if changelog_url else ""
     )
+    callout_html = ""
+    if callout:
+        link = (
+            f'<p style="margin: 10px 0 0;"><a href="{callout_url}" style="color: #9b7bd9; font-weight: bold;">'
+            f'{esc(callout.get("label", "More"))} &rarr;</a></p>'
+            if callout_url else ""
+        )
+        callout_html = (
+            '<div style="margin: 18px 0; padding: 14px 18px; background: #fff7d6; '
+            'border: 2px solid #f3d774; border-left: 6px solid #d99e1f; border-radius: 8px;">'
+            f'<p style="margin: 0 0 6px; font-weight: bold; color: #8a5a00;">&#10022; {esc(callout.get("title", ""))}</p>'
+            f'<p style="margin: 0;">{esc(callout.get("body", ""))}</p>{link}</div>'
+        )
     html = f"""\
 <html><body style="font-family: sans-serif; color: #3a2c4e; line-height: 1.55;">
 <h2 style="color: #9b7bd9;">English patch v{esc(v)} is out &#10022;</h2>
 <p><strong>{esc(release.get('headline', ''))}</strong></p>
 <p>{esc(release.get('summary', ''))}</p>
+{callout_html}
 <p><strong>What changed:</strong></p>
 <ul>{changes_html}</ul>
 <p><a href="{patches_url}">Patch your ROM in the browser, or grab the .xdelta files &rarr;</a></p>

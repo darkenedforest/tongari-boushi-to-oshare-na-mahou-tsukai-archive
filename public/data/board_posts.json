@@ -1,0 +1,2138 @@
+{
+ "about": "Bulletin-board (msg98070..072) post texts for the save-file editor. Key = message number (file number * 100 + entry id). `text` is the current English post: title, then body rows, separated by the line-break mark; `history` is every earlier English text the post shipped with. `fairs` expands [FAIR_MONTH:n]; `names` maps npc_data_ofs_id to the English NPC name.",
+ "generated_at": "2026-10-06T00:22:02.796171+00:00",
+ "source_db_mtime": "2026-10-05T21:19:41.322026+00:00",
+ "marks": {
+  "quote": "§",
+  "line_break": "▼"
+ },
+ "fairs": {
+  "1": "New Year Sale",
+  "2": "Valentine's Day",
+  "3": "White Day",
+  "4": "Spring",
+  "5": "Mother's Day",
+  "6": "Father's Day",
+  "7": "Summer",
+  "8": "Festival",
+  "9": "Autumn",
+  "10": "Halloween",
+  "11": "Arts Festival",
+  "12": "Christmas"
+ },
+ "names": {
+  "0": "Ben",
+  "1": "Richard",
+  "2": "Rudolph",
+  "3": "Cocoa",
+  "4": "Fifi",
+  "5": "Zoe",
+  "6": "Chloe",
+  "7": "Silvia",
+  "8": "Suzy",
+  "9": "Anson",
+  "10": "Wuss",
+  "11": "Chester",
+  "12": "Theo",
+  "13": "Damian",
+  "14": "Bernard",
+  "15": "Ellis",
+  "16": "Pamela",
+  "17": "Naomi",
+  "18": "Billy",
+  "19": "Molly",
+  "20": "Libby",
+  "21": "Havana",
+  "22": "Abasi",
+  "23": "Ralph",
+  "24": "Derrick",
+  "25": "Whitney",
+  "26": "Django",
+  "27": "Stuart",
+  "28": "Tina",
+  "29": "Barkley",
+  "30": "Shawn",
+  "31": "Hannah",
+  "32": "Felicia",
+  "33": "Rodney",
+  "34": "Neville",
+  "35": "Sparkles",
+  "36": "Napoleon",
+  "37": "Sammy",
+  "38": "Moony",
+  "39": "Aurora",
+  "40": "Humphrey",
+  "41": "Thor",
+  "42": "Starla",
+  "43": "Wyatt",
+  "44": "Troy",
+  "45": "Holly",
+  "46": "Geraldine",
+  "47": "Sergey",
+  "48": "Foggy",
+  "49": "Lucille",
+  "50": "Mikey",
+  "51": "Becky",
+  "52": "Madison",
+  "53": "Johnson",
+  "54": "Grimble",
+  "55": "Olivia",
+  "56": "Brett",
+  "57": "Chelsea",
+  "58": "Shelly",
+  "59": "Tot",
+  "60": "Frank",
+  "61": "Sanderson",
+  "62": "Freya",
+  "63": "Nigel",
+  "64": "Matthew",
+  "65": "Jessica",
+  "66": "Cherie",
+  "67": "Tony",
+  "68": "Janet",
+  "69": "Meg",
+  "70": "Alexander",
+  "71": "Eric",
+  "72": "Petra",
+  "73": "Sonya",
+  "74": "Laurel",
+  "75": "Barbara",
+  "76": "Petal",
+  "77": "Victoria",
+  "78": "Brandy",
+  "79": "Marty",
+  "80": "Marsha",
+  "81": "Kelsey",
+  "82": "Gary",
+  "83": "Lydia",
+  "84": "Grace",
+  "85": "James",
+  "86": "Delcy",
+  "87": "Blossom",
+  "88": "TV-20C",
+  "89": "Sarge",
+  "90": "Christine",
+  "91": "Seth",
+  "92": "Duke",
+  "93": "Amber",
+  "94": "Brownie",
+  "95": "Patsy",
+  "96": "Cherry",
+  "97": "Kevin",
+  "98": "Phoebe",
+  "99": "Abigail",
+  "100": "Honoka",
+  "101": "Catherine",
+  "102": "Otake",
+  "103": "Coco",
+  "104": "Sandy",
+  "105": "Mint",
+  "106": "Pakira",
+  "107": "Lycopene",
+  "108": "Merorin",
+  "109": "Rouge",
+  "110": "Sorbet",
+  "111": "Fugoppe",
+  "112": "Hyouta",
+  "113": "Delhi",
+  "114": "Gonta",
+  "115": "Julie",
+  "116": "Jose",
+  "117": "Crispy",
+  "118": "Korota",
+  "119": "Bitter",
+  "120": "Doubt",
+  "121": "Luminous",
+  "122": "William",
+  "123": "Apollo",
+  "124": "Antonio",
+  "125": "Flora",
+  "126": "Comet",
+  "127": "Cider",
+  "128": "Liz",
+  "129": "Julienne",
+  "130": "Kokoron",
+  "131": "Hotaru",
+  "132": "Lopez",
+  "133": "Hyouga",
+  "134": "Kuwacchi",
+  "135": "Wao",
+  "136": "Baobab",
+  "137": "Shammy",
+  "138": "Moko",
+  "139": "Martha",
+  "140": "Principal Sol",
+  "141": "Mr. Vlad",
+  "142": "Mr. Oakley",
+  "143": "Miss Strawe",
+  "144": "Mr. Graves",
+  "145": "Piquard",
+  "146": "Daisy",
+  "147": "Vivian",
+  "148": "Roley",
+  "149": "Malila",
+  "150": "Marcy",
+  "151": "George",
+  "152": "Thom",
+  "153": "Reginald",
+  "154": "Charlie",
+  "155": "Mah",
+  "156": "Principal Sol",
+  "157": "Mail Cat",
+  "158": "Part-Time Cat",
+  "159": "Part-Time Cat",
+  "160": "Part-Time Cat",
+  "161": "King",
+  "162": "Minister",
+  "163": "Miss Melissa",
+  "164": "Retake",
+  "165": "Genzou",
+  "166": "Hassan",
+  "167": "Part-Time Cat",
+  "168": "Jacqueline",
+  "169": "Miss Vicky",
+  "170": "Princess",
+  "171": "Shutter",
+  "172": "Part-Time Cat",
+  "173": "Gremlin",
+  "174": "Gremlin",
+  "175": "Ghost",
+  "176": "Dot",
+  "177": "Cat Sith",
+  "178": "Phantasm",
+  "179": "Zashiki-warashi",
+  "180": "World Tree",
+  "181": "Ghost",
+  "182": "Spirit",
+  "183": "Ghost",
+  "184": "Spirit 2",
+  "185": "Spirit 3",
+  "186": "Nessie",
+  "187": "Mokele-mbembe",
+  "188": "Candyman",
+  "189": "Third Principal",
+  "190": "Poltergeist",
+  "191": "Unicorn",
+  "192": "Sphinx",
+  "193": "Mimic",
+  "194": "Dragon",
+  "195": "Martian",
+  "196": "Doppleganger",
+  "197": "Werewolf",
+  "198": "Death",
+  "199": "Gargoyle",
+  "200": "Krampus",
+  "201": "Minotaur",
+  "202": "Gremlin",
+  "203": "Quicksilver",
+  "204": "Ogre",
+  "205": "Dryad",
+  "206": "Jack Frost",
+  "207": "Homunculus",
+  "208": "Familiar",
+  "209": "Mermaid",
+  "210": "Siren",
+  "211": "Yeti",
+  "212": "Cerberus",
+  "213": "Tom",
+  "214": "Subterranean",
+  "215": "Forbidden Tome",
+  "216": "Jack-o-Lantern",
+  "217": "？？？",
+  "218": "Spirited Away",
+  "219": "Nightmare",
+  "220": "Tapir",
+  "221": "Hellhound",
+  "222": "Ghost",
+  "223": "Satyr",
+  "224": "Fairy",
+  "225": "Santa Claus",
+  "226": "UFO",
+  "227": "Wind Weasel",
+  "228": "Mystery Circle",
+  "229": "Dullahan",
+  "230": "Manticore",
+  "231": "Griffon",
+  "232": "Harpy",
+  "233": "Matchstick Girl",
+  "234": "Kraken",
+  "235": "Golem",
+  "236": "Kappa",
+  "237": "Leprechaun",
+  "238": "Manticore",
+  "239": "UFO",
+  "240": "Dullahan's Body",
+  "241": "Leprechaun",
+  "242": "Leprechaun",
+  "243": "Leprechaun",
+  "244": "Werewolf",
+  "245": "Treehouse",
+  "246": "Mokele-mbembe",
+  "247": "Death",
+  "248": "Sphinx Jr.",
+  "249": "Little Dragon",
+  "250": "Werewolf",
+  "251": "Homunculus"
+ },
+ "posts": {
+  "7000": {
+   "text": "§STUDY ABROAD NOTICE▼[LETTER_ADDRESSEE] will be going▼abroad to study. Things will be▼lonely around here for a while.§",
+   "history": [
+    "Study Abroad Notice▼[LETTER_ADDRESSEE] has chosen▼to study abroad.▼We'll miss you!",
+    "§★NOTIFICATION★▼[LETTER_ADDRESSEE]'s gonna▼study overseas. We'll surely▼feel their absence.§"
+   ]
+  },
+  "7001": {
+   "text": "§STUDY ABROAD NOTICE▼[LETTER_ADDRESSEE] has returned▼safely from studying abroad.▼Welcome back!§",
+   "history": [
+    "Study Abroad Notice▼[LETTER_ADDRESSEE] has returned▼safely from studying abroad.▼Welcome home!",
+    "§★NOTIFICATION★▼[LETTER_ADDRESSEE] has returned safely▼from studying overseas. Welcome▼home!§",
+    "§★NOTIFICATION★▼[LETTER_ADDRESSEE] has come▼back safely from studying abroad.▼Welcome home!§"
+   ]
+  },
+  "7002": {
+   "text": "§A NEW FRIEND▼We have a new friend joining us.▼Their name is [LETTER_ADDRESSEE].▼Let's all get along, everyone.§",
+   "history": [
+    "New Friend▼We have a new friend!▼Their name is [LETTER_ADDRESSEE].▼Everyone be nice!",
+    "§A NEW ARRIVAL▼[LETTER_ADDRESSEE] has joined▼our school. I hope you all▼become good friends.§"
+   ]
+  },
+  "7003": {
+   "text": "§GOOD EFFORT AWARD▼[LETTER_ADDRESSEE], you worked▼very hard in class last month.▼Congratulations!§",
+   "history": [
+    "Good Work!▼[LETTER_ADDRESSEE],▼you worked hard in class▼last month. Congratulations!",
+    "§★NOTIFICATION★▼[LETTER_ADDRESSEE] has been selected▼as last month's top student.▼Congrats!§"
+   ]
+  },
+  "7004": {
+   "text": "§TEA PARTY NOTICE▼Next month is the spring tea▼party. By hosting our friends,▼we learn to be kind to others.§",
+   "history": [
+    "Tea Party Notice▼Next month: spring tea party!▼Host your friends with care▼and kindness.",
+    "§TEA PARTY UPDATE▼Spring tea party is next▼month. Host friends▼and learn etiquette.§"
+   ]
+  },
+  "7005": {
+   "text": "§TEA PARTY NOTICE▼Starting this week, judging▼will be held at the venue.▼Do your best, everyone!§",
+   "history": [
+    "Tea Party Notice▼Starting this week, judging▼will be held at the venue.▼Do your best, everyone!",
+    "§TEA PARTY UPDATE▼Judging begins at the▼plaza this week.▼Please do your best!§"
+   ]
+  },
+  "7006": {
+   "text": "§TEA PARTY NOTICE▼Thanks to all of you, the tea▼party was a wonderful success.▼Don't ever forget that kindness!§",
+   "history": [
+    "Tea Party Thanks▼Thanks to everyone, it was▼a huge success! Never▼forget your kindness~",
+    "§TEA PARTY UPDATE▼Thanks to all for such a▼fun time. Now don't forget▼those manners.§"
+   ]
+  },
+  "7007": {
+   "text": "§TEA PARTY NOTICE▼The tea party was a big success!▼But next time, I would love it▼if everyone could take part.§",
+   "history": [
+    "Tea Party Success!▼The tea party was a big hit!▼Hope everyone can join us▼next time, hee hee!",
+    "§TEA PARTY UPDATE▼It was a big success. ▼Hoping everyone can▼join next year, though.§",
+    "§TEA PARTY UPDATE▼It was a big success.▼Hoping everyone can▼join next year, though.§"
+   ]
+  },
+  "7008": {
+   "text": "§TEST OF COURAGE NOTICE▼Next month, we hold our annual▼Test of Courage.▼Gather, all you brave souls!§",
+   "history": [
+    "Test of Courage▼Next month, our traditional▼test of courage will be held.▼Brave souls, gather round!",
+    "§TEST OF COURAGE▼Next month will be our▼test of courage.▼Brave souls, gather round!§"
+   ]
+  },
+  "7009": {
+   "text": "§TEST OF COURAGE NOTICE▼The Test of Courage is this week.▼I shall be at the venue to▼witness your bravery for myself.§",
+   "history": [
+    "Courage Test Event▼This week's the courage test!▼I shall witness everyone's▼bravery at the venue.",
+    "§CONTEST NEWS▼Test of courage competition▼this week. Excited to see▼your brave acts.§"
+   ]
+  },
+  "7010": {
+   "text": "§TEST OF COURAGE NOTICE▼Through the Test of Courage,▼you all showed me your bravery.▼It was truly splendid.§",
+   "history": [
+    "Courage Test Results▼Everyone showed great bravery▼during the test of courage.▼You were all wonderful!",
+    "§COURAGE CONTEST▼Thanks to the contest, I got▼to see everyone's bravery.▼Wonderful!§"
+   ]
+  },
+  "7011": {
+   "text": "§TEST OF COURAGE NOTICE▼It was a splendid Test of Courage.▼It is a shame, however, that some▼of you did not take part.§",
+   "history": [
+    "Courage Test Results▼The test was a great success!▼Shame some folks didn't show.▼Better luck next time!",
+    "§COURAGE CONTEST▼Had an excellent contest▼this year. Though some▼didn't participate.§"
+   ]
+  },
+  "7012": {
+   "text": "§MUSHROOM HOTPOT NOTICE▼Next month is the autumn mushroom▼hunt. Let's all gather the tastes▼of autumn and have a hotpot party!§",
+   "history": [
+    "Mushroom Stew Cook-Off!▼Next month: autumn foraging!▼Gather mushrooms together,▼then hot-pot party time!",
+    "§HOTPOT COOKOFF▼Let's pick mushrooms next▼month, enjoy fall tastes▼and have a party!§"
+   ]
+  },
+  "7013": {
+   "text": "§MUSHROOM HOTPOT NOTICE▼Starting this week, a venue has▼been set up in Fungi Forest.▼Go and pick some mushrooms!§",
+   "history": [
+    "Mushroom Stew Contest▼The forest venue is open now!▼Go pick some mushrooms▼and bring them back!",
+    "§HOTPOT COOKOFF▼This week's event is set▼up in Fungi Forest. Pick▼those mushrooms!§"
+   ]
+  },
+  "7014": {
+   "text": "§MUSHROOM HOTPOT NOTICE▼Thanks to all of you, the mushroom▼hotpot was a great success!▼I am looking forward to next year.§",
+   "history": [
+    "Mushroom Stew Contest▼Thanks to everyone, the stew▼contest was a great success!▼Can't wait for next year!",
+    "§COOKOFF UPDATE▼Thanks all! The mushroom▼hotpot was a huge hit!▼See you next year!§"
+   ]
+  },
+  "7015": {
+   "text": "§MUSHROOM HOTPOT NOTICE▼The mushroom hunt ended without▼a hitch. It is a pity, though, that▼some students could not join us.§",
+   "history": [
+    "Mushroom Stew Event▼The mushroom hunt ended well,▼but some students could not▼join. Most unfortunate!",
+    "§COOKOFF UPDATE▼The cookoff came and went▼smoothly. But it's sad▼some didn't attend.§"
+   ]
+  },
+  "7016": {
+   "text": "§RAINBOW SNOW FESTIVAL▼Next month, we will hold a ritual▼that uses Snowflakes.▼Let's all collect Snowflakes!§",
+   "history": [
+    "Rainbow Snow Festival▼Next month we'll hold a▼ceremony using Snowflakes.▼Start collecting them now!",
+    "§RAINBOW SNOWFEST▼Next month will be a ritual▼using snowflakes.▼Gather lots of them.§"
+   ]
+  },
+  "7017": {
+   "text": "§RAINBOW SNOW FESTIVAL▼Have you collected your▼Snowflakes? We will take the ones▼you gathered at the venue.§",
+   "history": [
+    "Rainbow Snow Festival▼Got your crystals ready?▼Bring your Snowflakes to▼the festival grounds!",
+    "§RAINBOW SNOWFEST▼Have you gathered snowflakes?▼Bring them to the festival!§"
+   ]
+  },
+  "7018": {
+   "text": "§RAINBOW SNOW FESTIVAL▼Thanks to all of you, it was a▼wonderful event. Let's do our▼best again next year!§",
+   "history": [
+    "Rainbow Snow Festival▼Thanks to everyone, it was▼a wonderful event!▼Let's do it again next year!",
+    "§RAINBOW SNOWFEST▼Thanks to all for a great event.▼Let's do our best next year too!§"
+   ]
+  },
+  "7019": {
+   "text": "§RAINBOW SNOW FESTIVAL▼You all worked very hard. I hope▼that next year, every student▼will be able to collect some.§",
+   "history": [
+    "Rainbow Snow Festival▼Everyone did a great job!▼Hope all students can gather▼the items next year!",
+    "§RAINBOW SNOWFEST▼Great work, all! I hope▼everyone can collect▼snowflakes next year.§"
+   ]
+  },
+  "7020": {
+   "text": "§COUNTDOWN NOTICE▼On the last day of the year,▼let's all celebrate together▼at the countdown event!§",
+   "history": [
+    "Countdown Celebration▼Join us for a countdown event▼on the year's final day!▼Let's celebrate together!",
+    "§COUNTDOWN NOTICE▼Let's all celebrate on▼New Year's Eve by ringing▼in the New Year.§"
+   ]
+  },
+  "7021": {
+   "text": "§NEW YEAR'S GREETINGS▼Happy New Year, everyone!▼May this year be another good▼one for each and every one of you.§",
+   "history": [
+    "New Year's Greeting▼Happy New Year, everyone!▼May this year bring you all▼joy and good fortune.",
+    "§NEW YEARS WISHES▼Happy New Year!▼May this year be▼a good one for all.§",
+    "§NEW YEAR'S WISHES▼Happy New Year!▼May this year be▼a good one for all.§"
+   ]
+  },
+  "7022": {
+   "text": "§CHRISTMAS FOR GOOD KIDS▼The Christmas you have all been▼waiting for is finally here!▼I hope you all get presents.§",
+   "history": [
+    "A Very Merry Christmas▼The day everyone's been▼waiting for is here!▼Hope you get great presents!",
+    "§[Be Good for Christmas!]▼Everyone's favorite time▼of the year has arrived!▼I hope you get a present!§",
+    "§REMINDER-BE GOOD▼Christmas is here at last!▼Hope you get a nice present.§"
+   ]
+  },
+  "7023": {
+   "text": "§HOW WAS IT?▼How was your Christmas?▼Did you get any presents?▼I can hardly wait for next year.§",
+   "history": [
+    "How Was Christmas?▼Did you have a good Christmas?▼Did you get any presents?▼Can't wait until next year!",
+    "§HOW WAS X-MAS?▼How was Christmas? Get a▼present? Next year can't▼come soon enough!§"
+   ]
+  },
+  "7024": {
+   "text": "§BAD KIDS ARE GROUNDED▼Everyone who has been behaving▼badly is not allowed to go out.▼Stay quietly in your rooms.§",
+   "history": [
+    "Bad Kids Stay Inside▼Everyone who's been naughty▼must stay in their room.▼No going out today!",
+    "§★BEHAVIOR NOTICE▼Children who behaved badly▼may not go outside.▼Stay in your room.§"
+   ]
+  },
+  "7025": {
+   "text": "§GOODBYE, WINTER▼Winter is ending, and spring is▼drawing near. It is finally▼going to get warmer, isn't it?§",
+   "history": [
+    "Farewell, Winter▼Winter has ended.▼Spring is drawing near.▼It'll be warm soon!",
+    "§GOODBYE WINTER▼Winter ends and spring nears.▼At last, it's getting warm!§"
+   ]
+  },
+  "7026": {
+   "text": "§FAMILIAR CLASS▼As a special lesson, we will be▼holding a class on Familiars.§",
+   "history": [
+    "Familiar Class▼A special class on▼Familiars will be held.▼Don't miss it!",
+    "§[Familiar Class]▼There will be a special▼class about familiars held.▼Be there!§",
+    "§FAMILIAR CLASS▼There will be a special▼class about familiars held.▼Be there!§",
+    "§FAMILIAR CLASS▼As a special class, we will be▼holding a lesson on Familiars.§"
+   ]
+  },
+  "7027": {
+   "text": "§GOLEM CONTEST IS ON!▼A contest to decide the number▼one Golem: the Golem Contest!▼Let's all work together!§",
+   "history": [
+    "Golem Contest Announced▼Who has the No. 1 Golem?▼Find out at the contest!▼Let's all work together!",
+    "§GOLEM CONTEST▼Pick the #1 golem!▼It's the Golem Contest!▼Let's all team up!§",
+    "§GOLEM CONTEST▼Which Golem is number one? We'll▼decide it at the Golem Contest!▼Let's all work together!§"
+   ]
+  },
+  "7028": {
+   "text": "§HOMUNCULUS CLASS▼As a special lesson, we will be▼holding a class on the Homunculus.§",
+   "history": [
+    "Homunculus Class▼Special lesson:▼Learn to make your very own▼homunculus!",
+    "§[Homunculus Class]▼There will be a special▼class about homunculi▼held. Be there!§",
+    "§HOMUNCULUS CLASS▼There will be a special▼class about homunculi▼held. Be there!§",
+    "§HOMUNCULUS CLASS▼As a special class, we will be▼holding a lesson on Homunculi.§"
+   ]
+  },
+  "7029": {
+   "text": "§WATCH OUT FOR RAIN▼The weather is poor this time▼of year, and the rainy days look▼set to continue. Don't get sick!§",
+   "history": [
+    "Rainy Season Alert▼The weather's been rough lately▼with lots of rainy days ahead.▼Don't catch a cold, everyone!",
+    "§RAIN WARNING▼The weather turns bad now.▼Expect days of rain.▼Don't catch a cold!§"
+   ]
+  },
+  "7030": {
+   "text": "§BE KIND TO THE PLANTS▼The flowers don't seem to be▼doing very well. Let's all make▼a real effort to water them!§",
+   "history": [
+    "Be Kind to Plants▼The flowers look a bit sad.▼Please water them often!▼Thank you!",
+    "§CARE FOR PLANTS▼The flowers don't look so▼healthy. We really▼need to water them!  §",
+    "§CARE FOR PLANTS▼The flowers don't look so▼healthy. We really▼need to water them!§"
+   ]
+  },
+  "7031": {
+   "text": "§A TRAVELER ARRIVES▼Everyone, let's get to know one▼another better through music!§",
+   "history": [
+    "Travelers Arrive▼Everyone, let's deepen our▼bonds through the power▼of music!",
+    "§TRAVELER ARRIVED▼Let's become better friends▼with him through music!§",
+    "§TRAVELER ARRIVED▼Everyone, let's get to know one▼another better through music!§"
+   ]
+  },
+  "7032": {
+   "text": "§HALLOWEEN IS HERE▼Today is Halloween!▼Let's all have fun together.▼Trick or treat!§",
+   "history": [
+    "Halloween Festival▼It's Halloween!▼Let's all have fun together.▼Trick or treat!",
+    "§[Halloween is Here!]▼The Halloween season has▼arrived! Trick or Treat!§",
+    "§HALLOWEEN TIME!▼The Halloween season has▼arrived! Trick or Treat!§",
+    "§HALLOWEEN TIME!▼Today is Halloween!▼Let's all have fun together.▼Trick or treat!§"
+   ]
+  },
+  "7033": {
+   "text": "§BELIEVE IN FAIRIES?▼Only those who believe in fairies▼are able to see them, you know.▼Those who believe shall be saved!§",
+   "history": [
+    "Do You Believe in Fairies?▼Only those who believe can▼see them, you know.▼Believers shall be saved!",
+    "§BELIEVE IN FEY?▼Only those who believe▼in fairies can see them. ▼It requires faith.§",
+    "§BELIEVE IN FEY?▼Only those who believe▼in fairies can see them.▼It requires faith.§"
+   ]
+  },
+  "7034": {
+   "text": "§BEWARE OF BIGFOOT!▼Large footprints are sometimes▼found left in the ground.▼Please be careful.§",
+   "history": [
+    "Watch Your Step!▼Large footprints have been▼spotted around town.▼Please be careful!",
+    "§BEWARE OF YETI!▼Large footprints have been▼found on the grounds.▼Careful everyone!§"
+   ]
+  },
+  "7059": {
+   "text": "§GARAGE SALE NOTICE▼A garage sale will be held in▼the auditorium today.▼Do come along and take part!§",
+   "history": [
+    "Garage Sale Today▼There's a garage sale happening▼in the schoolyard today.▼Come check it out!",
+    "§GARAGE SALE!▼We're hold a garage sale▼today in the auditorium.▼Please join the fun.§",
+    "§GARAGE SALE!▼We're holding a garage sale▼today in the auditorium.▼Please join the fun.§"
+   ]
+  },
+  "7060": {
+   "text": "§A WIDE SELECTION▼Harrows department store carries▼all kinds of goods.▼We look forward to your visit.§",
+   "history": [
+    "Wide Selection!▼Halogen Dept. Store carries▼all kinds of products.▼We look forward to your visit!",
+    "§[Great Selection!]▼Harrows department store has▼a wide variety of products!▼Stop in and see for yourself!§",
+    "§GREAT SELECTION!▼Harrows department store has▼a wide range of goods!▼Come on by!§"
+   ]
+  },
+  "7061": {
+   "text": "§SECRET STORE▼Today, I am opening a store▼at the Haunted House.▼Come by, if you are interested.§",
+   "history": [
+    "Secret Shop▼Opening today at the▼haunted mansion.▼Come if you dare!",
+    "§SECRET STORE▼My new store at the Haunted▼House opens today. Intrigued?▼Drop on by.§"
+   ]
+  },
+  "7065": {
+   "text": "§TASTY CHARLIES NOODLES▼Fast! Cheap! Delicious!▼That's the Charlie triple promise.▼Eat up and feel full of energy!§",
+   "history": [
+    "Higemaru Ramen Noodles▼Fast! Cheap! Tasty!▼Higemaru's three promises:▼Eat up and feel great!",
+    "§[Charlie's Delicious Noodles]▼Fast! Cheap! Delicious!▼Charlie's Noodles will▼keep you satisfied!§",
+    "§CHARLIES NOODLES▼Fast! Cheap! Delicious!▼Charlies Noodles will▼keep you satisfied!§",
+    "§CHARLIES NOODLES▼Fast! Cheap! Delicious!▼That's the Charlie promise.▼Eat up and feel full of energy!§"
+   ]
+  },
+  "7066": {
+   "text": "§FOR MAGIC AND CHARMS▼We make your wishes come true.▼If you want something mysterious,▼come on down to The Emporium.§",
+   "history": [
+    "Magic & Charms▼Your wishes granted here!▼For something mysterious,▼visit Kameya's shop!",
+    "§[Magic and Incantations!]▼Want a taste of mystery?▼Your every wish fulfilled?▼Come to The Emporium!§",
+    "§MAGIC & CHARMS!▼Want a taste of mystery?▼Every wish granted?▼Come to The Emporium!§"
+   ]
+  },
+  "7067": {
+   "text": "§LOVELY FLOWERS IN STOCK▼From gardening supplies to lovely▼flowers, Daisy's Flowers has all▼your garden needs covered.§",
+   "history": [
+    "Lovely Flowers in Stock▼From gardening supplies to▼beautiful blooms, visit▼Flower Shop Daisy!",
+    "§[A Variety of Beautiful Flowers]▼Come to Daisy's Flowers for▼all your flower and gardening▼tool needs.§",
+    "§LOVELY BLOOMS!▼Come to Daisy's Flowers for▼all your flower and garden▼tool needs.§"
+   ]
+  },
+  "7068": {
+   "text": "§THIS WEEK'S CATALOG▼Mon Paris has an announcement!▼Our catalog is all new this week.▼Come on in and see us, everyone!§",
+   "history": [
+    "This Week's Catalog▼News from Mon Paris!▼Our new catalog is in.▼Come check it out!",
+    "§[This Month's Styles]▼Breaking news from Mon Paris!▼There's now a new selection▼of hairstyles! Drop on by now!§",
+    "§WEEKLY CATALOG▼Breaking news from Mon Paris!▼New selections of hairstyles now!§"
+   ]
+  },
+  "7069": {
+   "text": "§FOR CLOTHES, VIVIAN'S▼Super-stylish fashion!▼If you want to be cute and cool,▼come to Vivian's Boutique♪§",
+   "history": [
+    "Smile Bibi Fashion▼Super stylish clothes!▼Wanna be cute? Wanna be cool?▼Come to Smile Bibi! ♪",
+    "§[Vivian's Boutique]▼If you're looking for stylish▼fashions for that cute 'n' cool▼look, come to Vivian's Boutique!§",
+    "§SALE AT VIVAN'S▼If you're looking for▼stylish fashions come▼to Vivian's Boutique!§",
+    "§SALE AT VIVIAN'S▼If you're looking for▼stylish fashions come▼to Vivian's Boutique!§"
+   ]
+  },
+  "7072": {
+   "text": "§PHANTASM KILLING TIME▼There haven't been many fun▼stories lately, so I'm a little▼bored… Isn't there anything?§",
+   "history": [
+    "Hanako's Boredom▼Haven't heard any good▼stories lately… I'm kinda▼bored. Got anything fun?",
+    "§[Phantasm Wasting Time]▼No interesting news lately.▼Doesn't anyone have any ▼interesting stories?§",
+    "§PHANTASM IDLES▼No interesting news lately.▼Anyone have any interesting▼stories?§"
+   ]
+  },
+  "7073": {
+   "text": "§PHANTASM KILLING TIME▼Just so you know, over on the▼other side I have some amazing▼friends. Really, I do! Heehee…§",
+   "history": [
+    "Hanako's Pastime▼Just so you know, I have tons▼of friends back home!▼Really! It's true! Hee hee…",
+    "§[Phantasm Wasting Time]▼I've got lots of friends over▼there on the other side, you▼know. I really do! Hahaha!§",
+    "§PHANTASM IDLES▼I've got lots of friends over▼on the other side.▼I really do! Haha!§"
+   ]
+  },
+  "7074": {
+   "text": "§PHANTASM KILLING TIME▼There's no story as fun as▼someone else's misfortune. Heehee…▼I wonder if there are any.§",
+   "history": [
+    "Hanako's Pastime▼Nothing's funnier than▼someone else's misfortune,▼right? Hee hee…",
+    "§[Phantasm Wasting Time]▼There's nothing more▼interesting than the▼misery of others. Hahaha...!§",
+    "§PHANTASM IDLES▼There's nothing more▼interesting than the▼misery of others. Hahaha!§"
+   ]
+  },
+  "7075": {
+   "text": "§PHANTASM KILLING TIME▼A request from Phantasm.▼If you can, I'd like you to summon▼me in the girls' bathroom… maybe.§",
+   "history": [
+    "Hanako's Pastime▼A request from Hanako:▼If you could call for me▼in the girls' restroom…",
+    "§[Phantasm Wasting Time]▼Request from Phantasm...▼Summon me in the girls'▼toilet, please.§",
+    "§PHANTASM IDLES▼Request from Phantasm...▼Summon me in the girls'▼toilet, please.§",
+    "§PHANTASM IDLES▼A little request from Phantasm.▼If possible, please summon me▼in the girls' bathroom… maybe.§"
+   ]
+  },
+  "7076": {
+   "text": "§PHANTASM KILLING TIME▼The one I'm destined to be with…▼Who in the world could it be?▼Oh well, whatever.§",
+   "history": [
+    "Hanako's Musings▼I wonder who my one true▼love could be…▼Eh, whatever!",
+    "§[Phantasm Wasting Time]▼I wonder who my soulmate is...▼Oh well. Doesn't matter.§",
+    "§PHANTASM IDLES▼I wonder who my soulmate is...▼Oh well. Doesn't matter.§",
+    "§PHANTASM IDLES▼My one true love… Who in the▼world could it be, I wonder?▼Oh well, who even cares.§"
+   ]
+  },
+  "7077": {
+   "text": "§PHANTASM KILLING TIME▼Huh? Why do I know so much?▼Heehee… You want to know that▼badly? Hmm… I'm not telling!§",
+   "history": [
+    "Hanako's Pastime▼Huh? Why do I know so much?▼Hee hee… You really wanna▼know? Too bad--not telling!",
+    "§[Phantasm Wasting Time]▼Huh? Why do I know so much?!▼Hahaha...! Are you sure you want ▼to know? Too bad! I won't tell!§",
+    "§PHANTASM IDLES▼Why do I know so much?▼Sure you want to know?▼Too bad! I won't tell!§"
+   ]
+  },
+  "7078": {
+   "text": "§PHANTASM KILLING TIME▼Ugh, what a pain. I got summoned▼by a spell again today…▼Sigh. I'm worn out.§",
+   "history": [
+    "Hanako's Boredom Buster▼Ugh, what a pain…▼Got summoned by a spell again▼today. So tiring…",
+    "§[Phantasm Wasting Time]▼Oh, come on! Enough already!▼Summoned again today. I'm so▼sick of it...§",
+    "§PHANTASM IDLES▼Oh come on! Enough already!▼Summoned again today. I'm so▼sick of it…§"
+   ]
+  },
+  "7079": {
+   "text": "§PHANTASM KILLING TIME▼I'm a very honest girl, you know.▼I've never told a single lie.▼It's true, okay? Heehee…§",
+   "history": [
+    "Hanako's Time Killer▼I'm super honest, you know?▼Never told a lie in my life.▼Really! Hee hee hee...",
+    "§[Phantasm Wasting Time]▼I'm an extremely honest person.▼Really! I swear! I've never told▼a lie in my life! Hahaha...!§",
+    "§PHANTASM IDLES▼I'm such an honest girl.▼Never told one lie!▼Really... heehee...§",
+    "§PHANTASM IDLES▼I'm a very honest girl, you know.▼I have never told a single lie.▼It's true! Heehee…§"
+   ]
+  },
+  "7080": {
+   "text": "§PHANTASM KILLING TIME▼It's no good relying on me. In the▼end, you have to sort things out▼with your own strength.§",
+   "history": [
+    "Hanako's Musings▼You can't rely on me forever,▼you know. In the end, you▼gotta handle things yourself!",
+    "§[Phantasm Wasting Time]▼You can't depend on me▼all the time. You have▼to rely on yourself alone.§",
+    "§PHANTASM IDLES▼Don't lean on me.▼In the end, you must▼rely on your own power.§",
+    "§PHANTASM IDLES▼It's no good relying on me. In the▼end, you have to work things out▼with your own strength.§"
+   ]
+  },
+  "7081": {
+   "text": "§PHANTASM KILLING TIME▼Once things turn sour, it's hard▼to make up, isn't it?▼It's fun to watch, though.§",
+   "history": [
+    "Hanako's Pastime▼When folks fight, they can't▼make up easily, can they?▼Fun to watch, though!",
+    "§[Phantasm Wasting Time]▼It's hard for people to make up▼once things turn ugly, isn't it?▼Although...it is fun to watch!§",
+    "§PHANTASM IDLES▼Once it turns ugly,▼it's hard to make up.▼Fun to watch, though!§",
+    "§PHANTASM IDLES▼Once things turn nasty, it's not▼easy to make up, is it?▼It's fun to watch, though!§"
+   ]
+  },
+  "7082": {
+   "text": "§PHANTASM KILLING TIME▼I feel so sorry for anyone who▼hears bad news from me.▼It must really hurt. Heehee…§",
+   "history": [
+    "Hanako-chan's Pastime▼Anyone who hears my sad news▼is pretty pitiful, right?▼It's heartbreaking… hee hee!",
+    "§[Phantasm Wasting Time]▼People who get bad news from▼me are really unfortunate,▼aren't they? Hahaha...!§",
+    "§PHANTASM IDLES▼Those who hear my bad▼news are so pitiful.▼Hearts ache... heehee...§",
+    "§PHANTASM IDLES▼I feel so sorry for anyone who▼hears bad news from me. It must▼make your heart ache. Heehee…§"
+   ]
+  },
+  "7083": {
+   "text": "§PHANTASM KILLING TIME▼\"Your crush is on a date with▼someone else.\" They hear that and▼go pale. Heehee… It's priceless.§",
+   "history": [
+    "Hanako's Gossip Corner▼Her crush went on a date with▼someone else! When she heard,▼her face went pale. Hee hee!",
+    "§[Phantasm Wasting Time]▼Telling someone that their▼darling likes someone else is ▼one of my favorites. Hahaha...!§",
+    "§PHANTASM IDLES▼Tell them their crush▼is on a date... they go▼pale! Heehee, classic!§",
+    "§PHANTASM IDLES▼\"Your crush is on a date with▼someone else.\" They hear that and▼turn pale. Heehee… Priceless!§"
+   ]
+  },
+  "7084": {
+   "text": "§ZASHIKI-WARASHI DIARY▼Today, for the very first time,▼I made a friend…▼I'm so, so happy!§",
+   "history": [
+    "Zashikiwarashi Diary▼Today I made my very first▼friend ever…▼I'm so happy!",
+    "§[Warashi Child's Diary]▼Today I made my first▼friend! I'm so happy!§",
+    "§WARASHI DIARY▼Today I made my first▼friend! I'm so happy!§",
+    "§WARASHI DIARY▼Today, for the very first time,▼I made a friend…▼I'm so, so happy!§"
+   ]
+  },
+  "7085": {
+   "text": "§ZASHIKI-WARASHI DIARY▼I want to see that kid again…▼I want us to play together.§",
+   "history": [
+    "Zashiki-warashi Diary▼I want to see that child▼again…▼I want to play together!",
+    "§WARASHI DIARY▼I miss that kid... I wish▼I could play with them again.§",
+    "§WARASHI DIARY▼I want to see that kid again…▼I want us to play together.§"
+   ]
+  },
+  "7086": {
+   "text": "§ZASHIKI-WARASHI DIARY▼That kid and I are best friends.▼They always come to see me.▼Let's play together… again.§",
+   "history": [
+    "Zashikiwarashi Diary▼That person is my best friend!▼Always comes to visit me.▼Let's play together again soon!",
+    "§[Warashi Child's Diary]▼I've got a best friend now▼who always comes and visits! I▼really enjoy our time together!§",
+    "§WARASHI'S DIARY▼That kid's my best pal!▼Comes to visit always!▼Let's play again!§",
+    "§WARASHI'S DIARY▼That kid and I are best friends.▼They always come to see me.▼Let's play together… again.§"
+   ]
+  },
+  "7087": {
+   "text": "§I GOT IN TROUBLE…▼The other day I passed a note in▼class, and the teacher caught me.▼I got scolded…§",
+   "history": [
+    "I Got in Trouble…▼I passed a note in class▼and the teacher caught me.▼I got scolded so bad…",
+    "§[I got in trouble...]▼I got in trouble when the ▼teacher caught me passing ▼notes in class the other day.§",
+    "§GOT IN TROUBLE…▼…when the ▼teacher caught me passing ▼notes in class the other day.§",
+    "§GOT IN TROUBLE…▼…when the▼teacher caught me passing▼notes in class the other day.§"
+   ]
+  },
+  "7088": {
+   "text": "§A FOODIE'S HAIKU▼I am so hungry.▼My stomach is so empty▼I might just collapse.§",
+   "history": [
+    "Glutton's Haiku▼I'm so hungry now▼My stomach is growling▼I might just collapse",
+    "§[A Glutton's Haiku]▼My stomach does growl.▼I am so very hungry▼I might just pass out.§",
+    "§A FOODIE'S HAIKU▼My stomach does growl.▼I am so very hungry▼I might just pass out.§"
+   ]
+  },
+  "7089": {
+   "text": "§A BIG HAUL FISHING▼I went fishing the other day▼and caught a huge haul!▼…Of garbage, that is.§",
+   "history": [
+    "Big Catch!▼I went fishing the other day▼and caught a TON of stuff!▼…Trash, that is.",
+    "§[A Big Catch!]▼Boy, did I catch a lot on my▼recent fishing adventure!▼A lot of garbage, that is...§",
+    "§A BIG CATCH!▼Went fishing the other▼day and caught loads!▼...Of garbage, that is.§",
+    "§A BIG CATCH!▼I went fishing the other day and▼landed a huge haul!▼…Of garbage, that is.§"
+   ]
+  },
+  "7090": {
+   "text": "§FIGHTING ISN'T GOOD▼I had a fight with a friend, and▼it was awkward. But I apologized,▼and they forgave me. What a relief!§",
+   "history": [
+    "Fighting Is No Good▼Had a fight with a friend.▼It was awkward, but I said▼sorry and was forgiven. Phew!",
+    "§[Fighting is Bad]▼I recently argued with a friend,▼and things got pretty bad, but▼I apologized and was forgiven.§",
+    "§FIGHTING IS BAD▼Fought with a pal.▼Felt awful, but I said▼sorry and was forgiven!§",
+    "§FIGHTING IS BAD▼I had a fight with a friend, and▼things were awkward. But I said▼sorry and was forgiven. Phew!§"
+   ]
+  },
+  "7091": {
+   "text": "§MY STOMACH… OWW▼Overeating really is a bad idea…▼I got greedy and ate too much,▼and now my stomach hurts…§",
+   "history": [
+    "Tummy Trouble▼I shouldn't have eaten so much.▼I got greedy and now my▼stomach really hurts…",
+    "§[My Stomach Hurts]▼I guess you really shouldn't ▼overeat. My stomach hurts▼from it, and I'm gaining weight.§",
+    "§MY STOMACH HURTS▼Overeating is bad...▼Got greedy, ate too much,▼now my tummy aches.§",
+    "§MY STOMACH HURTS▼I guess overeating really is bad…▼I got greedy and ate too much,▼and now my stomach hurts…§"
+   ]
+  },
+  "7092": {
+   "text": "§FOR MY FUTURE▼I'm studying so that someday▼I can become a truly amazing▼wizard. I'm going to do my best!§",
+   "history": [
+    "For My Future▼I'm studying hard to become▼an amazing wizard someday.▼I'll do my best!",
+    "§[For the Future]▼I'm studying as much as possible ▼in order to become the best▼wizard that I can possibly be.§",
+    "§FOR THE FUTURE▼I study hard so I can▼grow up to be a super▼great wizard! Go me!§",
+    "§FOR THE FUTURE▼I'm studying hard so that one▼day I can become a really great▼wizard. I'll do my best!§"
+   ]
+  },
+  "7093": {
+   "text": "§WHEN I LOOK IN A MIRROR▼Man, I really am cool… Even in▼the bathroom, I can't help staring▼at the mirror and staying too long.§",
+   "history": [
+    "When I Look in the Mirror▼Man, I'm so cool…▼Even in the bathroom, I can't▼help staring at myself!",
+    "§[When I look in the mirror...]▼I am so cool! When I go to the▼bathroom, I end up staring at▼myself in the mirror for ages!§",
+    "§MIRROR MIRROR...▼I'm really cool...▼Even in the loo, I gaze▼in the mirror for ages!§",
+    "§MIRROR MIRROR...▼Man, I really am cool… Even in▼the bathroom, I end up staring▼at the mirror and staying too long.§"
+   ]
+  },
+  "7094": {
+   "text": "§MY SECRET▼I have a secret.▼I can't ride a broom very well!▼Waaah! It's so embarrassing!§",
+   "history": [
+    "My Secret▼I have a secret to share.▼I can't ride a broom well!▼Waaah! So embarrassing!",
+    "§[My Secret]▼I have a secret. I can't ride▼a broom very well! Ahhh! It's▼so embarrassing...!§",
+    "§MY SECRET▼I have a secret. I can't▼ride a broom well at all!▼Aah, so embarrassing!§",
+    "§MY SECRET▼I have a secret.▼I can't ride a broom very well!▼Aaah! It's so embarrassing!§"
+   ]
+  },
+  "7095": {
+   "text": "§NO RUNNING, GOT IT?▼Running in the hallways is▼dangerous!▼You'll fall over, just like I did!§",
+   "history": [
+    "No Running!▼Don't run in the hallways--▼it's dangerous!▼You'll trip like I did!",
+    "§[No running?!]▼Running in the hallways is ▼dangerous! You could trip▼and fall like I did!§",
+    "§NO RUNNING?!▼Running in the hallway is▼dangerous, you know!▼You'll trip like I did!§",
+    "§NO RUNNING?!▼Running in the hallways is▼dangerous! You'll end up falling▼flat on your face like I did!§"
+   ]
+  },
+  "7096": {
+   "text": "§MUSHROOMS IN MY HOUSE…▼I was away from home for a bit,▼and mushrooms had sprouted all▼over my room! What a shock! Sigh…§",
+   "history": [
+    "Mushrooms in My House…▼I left for a bit and came home▼to find mushrooms everywhere!▼What a shock! Sigh…",
+    "§[Mushrooms in My House]▼After being out of the house for▼a while, mushrooms grew all over ▼the place! I was so surprised!§",
+    "§THEY'RE ALL OVER▼Was away briefly, and▼mushrooms grew in my▼room! What a shock!§",
+    "§THEY'RE ALL OVER▼I was away from home for a bit,▼and mushrooms sprouted all over▼my room! What a shock! Sigh…§"
+   ]
+  },
+  "7097": {
+   "text": "§GAZING AT THE NIGHT SKY▼A beautiful shooting star went▼by, and I just stared, entranced.▼I should have made a wish.§",
+   "history": [
+    "Gazing at the Night Sky▼I saw a beautiful shooting star▼and couldn't look away.▼Should've made a wish!",
+    "§[Looking Up in the Sky]▼I saw a beautiful shooting▼star flying across the sky.▼I wish I'd made a wish...§",
+    "§LOOKING SKYWARD▼A pretty shooting star▼streaked by. I just▼stared. Wish I'd wished!§",
+    "§LOOKING SKYWARD▼A beautiful shooting star went▼by, and I just stared in awe.▼I should have made a wish.§"
+   ]
+  },
+  "7098": {
+   "text": "§ADVICE WANTED▼I love being the center of▼attention, so my spells never▼succeed. What should I do?§",
+   "history": [
+    "Advice Needed▼I'm such a show-off that I▼can't cast spells right.▼What should I do?",
+    "§[Advice for Worries]▼I'm an attention seeker, so▼I make sure I always fail at▼magic. What should I do?§",
+    "§ADVICE REQUEST▼I love attention, so my▼spells never work out.▼What should I do?§",
+    "§ADVICE REQUEST▼I love being the center of▼attention, so my spells just▼never work. What should I do?§"
+   ]
+  },
+  "7099": {
+   "text": "§A FATEFUL ENCOUNTER▼The moment I saw them, it was▼like electricity ran through me…▼There's no mistake. This is love…§",
+   "history": [
+    "Destined Meeting▼The moment I saw them,▼sparks flew through me…▼This must be love…",
+    "§[A Fated Meeting]▼Every time I see my dearest,▼I get goose bumps. There's no▼doubt about it... I'm in love.§",
+    "§A FATED MEETING▼Moment I saw them, a▼spark shot through me.▼No doubt, this is love.§",
+    "§A FATED MEETING▼The moment I saw them, I felt▼a jolt of electricity…▼No doubt about it. This is love…§"
+   ]
+  },
+  "7100": {
+   "text": "§BATHROOM CLEANING▼The teacher got mad at me the▼other day, so I cleaned the▼bathrooms. Now they're sparkling!§",
+   "history": [
+    "Bathroom Cleaning▼Got in trouble with teacher,▼so I scrubbed the bathroom.▼It's sparkling clean now!",
+    "§[Toilet Cleaning]▼Recently, the teacher got angry ▼and made me clean the toilets. ▼And now they're squeaky clean!§",
+    "§TOILET CLEANING▼Teacher made me clean▼the toilets. Now they're▼squeaky clean!§",
+    "§TOILET CLEANING▼The teacher got mad at me, so I▼had to clean the bathrooms.▼That's why they're sparkling!§"
+   ]
+  },
+  "7101": {
+   "text": "§MY FIRST BEST FRIEND▼I made my first ever best friend!▼With them, anything we do is▼fun. Having a best friend is great.§",
+   "history": [
+    "My First Best Friend▼I made my first best friend!▼Everything's fun with them.▼Best friends are the best!",
+    "§[My First Best Friend]▼I've got a best friend now!▼Everything we do together is▼fun! Best friends are great!§",
+    "§MY FIRST BFF▼Got my first BFF!▼Everything we do is fun!▼Best friends rule!§",
+    "§MY FIRST BFF▼I made my very first best friend!▼Anything is fun when we do it▼together. Best friends are great!§"
+   ]
+  },
+  "7102": {
+   "text": "§I CAN'T STAND BUGS▼I was walking through town the▼other day when I saw a bug with▼tons of legs, and I screamed…§",
+   "history": [
+    "Bugs Are Scary▼I was walking through town▼when I saw a bug with tons▼of legs. I screamed…",
+    "§BUGS! YUCK!▼Walking in town today, I▼saw a bug with so many▼legs. I screamed!§",
+    "§BUGS! YUCK!▼I was walking through town the▼other day and saw a bug with▼tons of legs. I screamed…§"
+   ]
+  },
+  "7103": {
+   "text": "§MY DIET▼On days when I'm about to be▼late, I dash from home to school.▼I've lost four pounds this way♪§",
+   "history": [
+    "My Diet Tips▼On days I'm running late,▼I dash from home to school!▼Lost 2 kilos doing this♪",
+    "§MY DIET PLAN▼When late for school, I▼run the whole way there.▼Lost 5 pounds!§",
+    "§MY DIET PLAN▼On days when I'm about to be▼late, I dash all the way to▼school. I've lost 5 pounds♪§"
+   ]
+  },
+  "7104": {
+   "text": "§A SWEET TRAP▼I really, really want sweets…▼But if I eat them, I'll get fat.▼Ohh, what am I supposed to do?§",
+   "history": [
+    "Sweet Temptation▼I really want some sweets…▼but I'll gain weight!▼What should I do?!",
+    "§HOOKED ON SWEETS▼I really want candy...▼But I'll get fat.▼What do I do?!§",
+    "§HOOKED ON SWEETS▼I want to eat sweets so badly…▼But if I do, I'll get fat.▼Ohh, what am I supposed to do?!§"
+   ]
+  },
+  "7105": {
+   "text": "§CLUMSY ME▼I bought some new clothes the▼other day, but then I tripped,▼and now they're ruined…§",
+   "history": [
+    "Oops, I Did It Again▼I bought a new outfit the▼other day, but I tripped▼and ruined it…",
+    "§CLUMSY OLD ME▼Bought a cute new outfit▼the other day, but I fell▼and ruined it.§",
+    "§CLUMSY OLD ME▼I bought some new clothes the▼other day, but then I tripped▼and completely ruined them…§"
+   ]
+  },
+  "7106": {
+   "text": "§ANYONE WANT THESE?▼I have a whole bunch of love▼letters I don't need. Anyone▼want them? They're yours.§",
+   "history": [
+    "Anyone want these?▼I've got a ton of love letters▼I don't need. Want 'em?▼Free to whoever asks!",
+    "§ANY TAKERS?▼Got tons of love notes I▼don't need. Want any?▼They're yours!§",
+    "§ANY TAKERS?▼I've got a whole pile of love▼letters I don't need. Anyone want▼them? They're yours if you do.§"
+   ]
+  },
+  "7107": {
+   "text": "§MY DREAM FOR THE FUTURE▼My dream is to be a bride.▼So maybe I don't need to become▼a great wizard after all.§",
+   "history": [
+    "My Dream▼My dream is to be a bride,▼so maybe I don't need to be▼a great witch after all.",
+    "§MY FUTURE DREAM▼I want to get married.▼No big deal if I'm not▼a great wizard.§",
+    "§MY FUTURE DREAM▼My dream is to be a bride. So▼maybe it's okay if I never turn▼into a great wizard.§"
+   ]
+  },
+  "7108": {
+   "text": "§WHAT A HUSBAND NEEDS▼1… Lots of Ritch▼2… The same values as me▼3… A cooperative attitude§",
+   "history": [
+    "What I Need in a Partner▼1. Plenty of money▼2. Shared values▼3. A team player",
+    "§HUSBAND WISHLIST▼1) Has lots of money▼2) Shares my values▼3) Is very helpful§",
+    "§HUSBAND WISHLIST▼1… To have plenty of Ritch▼2… To share my values▼3… To be cooperative§"
+   ]
+  },
+  "7109": {
+   "text": "§TO MY PRINCE CHARMING▼I wonder when my prince is▼going to come for me.▼I'm right over heeere!§",
+   "history": [
+    "To My Prince Charming▼When will you come for me?▼I'm waiting right here,▼you know!",
+    "§DEAR PRINCE…▼When will my prince come▼for me, I wonder.▼I'm right here waiting!§",
+    "§DEAR PRINCE…▼I wonder when my prince will▼finally come for me.▼I'm right heeere!§"
+   ]
+  },
+  "7110": {
+   "text": "§FRIENDSHIP IS HARD▼Friendship between boys and girls▼is hard, isn't it? You just end up▼falling for them…§",
+   "history": [
+    "Friendship Is Hard▼Being friends with a boy is▼so tricky, you know?▼I always end up falling...",
+    "§FRIENDSHIP 101▼Boys and girls being▼friends is hard. You▼start to like each other.§",
+    "§FRIENDSHIP 101▼Friendship between boys and girls▼is hard, isn't it? You just can't▼help falling for them…§"
+   ]
+  },
+  "7111": {
+   "text": "§MY IDEAL DATE▼The two of us chase each other▼down a summer beach. And then,▼our eyes meet, and… Eek♪§",
+   "history": [
+    "My Dream Date▼Running on the beach together▼in summer, and then…▼we gaze into each other's eyes♪",
+    "§THE PERFECT DATE▼We chase each other on▼the summer beach, then▼gaze into our eyes.§",
+    "§THE PERFECT DATE▼The two of us chase each other▼along a summer beach. And then,▼we gaze into each other's… Eek♪§"
+   ]
+  },
+  "7112": {
+   "text": "§RIVALS IN LOVE▼He's so wrapped up in catching▼bugs that he won't even look at▼me… Sigh. I have so many rivals.§",
+   "history": [
+    "My Rival in Love▼He's obsessed with bug catching▼and won't even look at me…▼Sigh. So many rivals for love!",
+    "§MY LOVE'S RIVALS▼He only cares for bugs▼and ignores me. Many▼girls like him. Sigh.§",
+    "§MY LOVE'S RIVALS▼He's wrapped up in catching bugs▼and won't even glance at me…▼Sigh. I have so many rivals.§"
+   ]
+  },
+  "7113": {
+   "text": "§WHAT IS \"MOCHI SKIN\"?▼Someone told me I have mochi▼skin. Does that mean I look tasty,▼like mochi…? What does it mean?§",
+   "history": [
+    "What's \"mochihada\"?▼Someone said I have it.▼Does it mean I look like▼a mochi? What's that mean??",
+    "§CREAMY SKIN?▼Someone said my skin's▼creamy. Does it go▼well with mochi?§",
+    "§CREAMY SKIN?▼Someone told me I have creamy▼skin. Does that mean I look tasty,▼like mochi…? What did they mean?§"
+   ]
+  },
+  "7114": {
+   "text": "§I CHANGED MY HAIR▼I chopped off the hair I'd been▼growing out! It feels great, but▼people keep asking if I got dumped.§",
+   "history": [
+    "New Haircut!▼I cut my long hair super short!▼I feel refreshed, but everyone▼keeps asking if I got dumped!",
+    "§NEW 'DO!▼Chopped my long hair off!▼Feels great, but people▼may think I got dumped.§",
+    "§NEW 'DO!▼I chopped off my long hair! It▼feels great, but now people keep▼asking if I got my heart broken.§"
+   ]
+  },
+  "7115": {
+   "text": "§PEOPLE ARE TALKING▼All I did was walk with a boy,▼and people started weird rumors.▼It was such a hassle… Sigh…§",
+   "history": [
+    "Gossip Gone Wild▼Just walking with a boy and▼everyone started rumors.▼What a hassle… *sigh*",
+    "§RUMOR ABOUT ME▼Just for walking with a▼boy, someone started a▼weird rumor. Ugh.§",
+    "§RUMOR ABOUT ME▼All I did was walk with a boy,▼and weird rumors started going▼around. What a mess… Sigh…§"
+   ]
+  },
+  "7116": {
+   "text": "§A GIFT OF FLOWERS▼Give a girl flowers as a present▼and she'll fall for you instantly♪▼Sigh… Won't someone give me some?§",
+   "history": [
+    "Flower Presents▼Girls love getting flowers as▼gifts, you know? ♪▼Sigh… wish someone'd give me some",
+    "§GETTING FLOWERS▼Girls are pushovers for▼flowers. Sigh, won't▼anyone give me some?§",
+    "§GETTING FLOWERS▼Give a girl a gift of flowers▼and she'll fall for you at once♪▼Sigh… Won't someone give me some?§"
+   ]
+  },
+  "7117": {
+   "text": "SEE YOU, NESSIE!▼Your tummy's full now, so you▼can finally go home. Let's meet▼again someday. Bye-bye!§",
+   "history": [
+    "See You Later, Nessie▼I'm full now, so I can go▼home. Let's meet again▼sometime. Bye-bye!",
+    "BYE, NESSIE!▼I'm full now, so I can go▼home. Let's meet again▼sometime. Bye-bye!§",
+    "BYE, NESSIE!▼Your tummy is full now, so you▼can finally go home.▼Let's meet again someday. Bye-bye!§"
+   ]
+  },
+  "7118": {
+   "text": "KEEP THE RIVER CLEAN▼We have to keep the river clean!▼Littering is absolutely forbidden!▼I've had enough of the stink.",
+   "history": [
+    "KEEP RIVER CLEAN▼Don't litter in the river!▼No trash dumping!▼It stinks enough!",
+    "KEEP RIVER CLEAN▼We have to keep the river clean!▼Absolutely no littering!▼I'm sick of it being stinky."
+   ]
+  },
+  "7119": {
+   "text": "§WHAT DID IT TASTE LIKE?▼I'm dying to know what the▼Candyflowers tasted like…▼I want to try one, even just once.§",
+   "history": [
+    "What Did It Taste Like?▼I wonder what flavor the candy▼flowers were… Just once,▼I'd love to try one!",
+    "§[What did it taste like?]▼I wanna know what candyflowers▼taste like. I hope I get a▼chance to taste one someday.§",
+    "§HOW'D IT TASTE?▼I want to know how▼candyflowers taste.▼Even once would be enough.§",
+    "§HOW'D IT TASTE?▼I'm dying to know what those▼Candyflowers tasted like…▼I'd love to try one, just once.§"
+   ]
+  },
+  "7120": {
+   "text": "§OUR TEACHERS WORRY▼The teachers are always watching▼over us. We have to try not to▼cause them any worry at all.§",
+   "history": [
+    "Teachers Worry Too Much▼Our teachers always watch over▼us. Let's try not to worry▼them, okay?",
+    "§[Teacher is a Worrywart]▼We need to try harder to▼make sure the teachers don't▼worry so much about us!§",
+    "§WORRIED TEACHER▼We need to try harder so▼the teachers don't worry▼about us so much!§",
+    "§WORRIED TEACHER▼Our teachers are always watching▼over us. We should try not to▼worry them, even a little.§"
+   ]
+  },
+  "7121": {
+   "text": "SOMETHING PRECIOUS▼If something precious to you went▼missing, of course you'd be mad.▼So who took my snack?§",
+   "history": [
+    "Important Things▼If something important goes▼missing, anyone would be mad.▼Who took my snack?!",
+    "WHAT MATTERS▼If your prized thing is▼gone, anyone'd be mad.▼Who took my snack?!§",
+    "WHAT MATTERS▼If something precious to you▼went missing, anyone would be▼mad. So who took my snack?§"
+   ]
+  },
+  "7122": {
+   "text": "LOVE IS HARD▼Ever since I met Unicorn, I've▼been thinking about love…▼Love sure is difficult.",
+   "history": [
+    "LOVE IS HARD▼Since meeting Unicorn▼I've thought about love.▼It's just so hard!",
+    "LOVE IS HARD▼Ever since I met Unicorn, I've▼been thinking about love…▼Love sure is complicated."
+   ]
+  },
+  "7123": {
+   "text": "WHEN I WANT TO GO HOME…▼Get the Sphinx's riddle wrong on▼purpose, and it's one quick hop▼home! Heh heh, I'm so smart.§",
+   "history": [
+    "Wanna go home fast?▼Just get the Sphinx's riddle▼wrong on purpose! Hee hee,▼I'm so smart!",
+    "WANT TO GO HOME?▼Just flub the Sphinx's▼riddle on purpose and▼zip home! So clever!§",
+    "WANT TO GO HOME?▼Get the Sphinx's riddle wrong on▼purpose, and you fly straight▼home! Heh heh, I'm so smart.§"
+   ]
+  },
+  "7124": {
+   "text": "WAS THE TREASURE FOUND?▼That time when all of us were▼searching so hard for treasure…▼That memory is my treasure.§",
+   "history": [
+    "Did You Find Treasure?▼We all searched so hard▼together back then.▼Those memories are my treasure.",
+    "FOUND TREASURE?▼We all searched so hard▼back then. Those memories▼are my treasure.§",
+    "FOUND TREASURE?▼That time we all searched so▼desperately for the treasure…▼That memory is my treasure.§"
+   ]
+  },
+  "7125": {
+   "text": "§TAKE CARE, OKAY?▼It looked like a terrible injury,▼but I'm glad you're better now♪▼Try not to get hurt again!§",
+   "history": [
+    "Take Care!▼That injury looked pretty bad!▼Glad you're feeling better♪▼Try not to get hurt again!",
+    "§[Take care of yourself!]▼Seems you got hurt real bad,▼but I'm glad you're better.▼Try not to get hurt again!§",
+    "§TAKE CARE!▼Sounds like you got hurt▼bad, but glad you're▼better. Don't get hurt!§",
+    "§TAKE CARE!▼That looked like a nasty injury,▼but I'm so glad you're better♪▼Try not to get hurt again!§"
+   ]
+  },
+  "7126": {
+   "text": "§WHAT'S MARS LIKE?▼What kind of place could it be?▼I bet it's a planet full of▼people like that Martian.§",
+   "history": [
+    "What's Mars Like?▼I wonder what it's like there?▼Probably full of people▼like Martian, huh?",
+    "§[What is Mars like?]▼I wonder what it's like. Are▼there more of those creatures▼like that Martian who visited?§",
+    "§WHATS MARS LIKE?▼What's it like there?▼Many more beings up▼there like the Martian?§",
+    "§WHAT'S MARS LIKE?▼What kind of place is it, really?▼I bet it's a planet full of▼folks just like that Martian.§"
+   ]
+  },
+  "7127": {
+   "text": "§DON'T BLAME OTHERS!▼Doing something bad, and then▼pinning the blame on someone else?▼That's really awful! What a bad kid.§",
+   "history": [
+    "Don't Blame Others!▼Doing something bad is one▼thing, but blaming someone▼else? That's really terrible!",
+    "§[Don't blame others!]▼Doing something bad and then▼blaming it on someone else is▼really rotten!§",
+    "§NO EXCUSES!▼Doing something bad and▼then blaming someone else▼is just rotten!§",
+    "§NO EXCUSES!▼Doing something bad and then▼pinning it on someone else?▼That's just awful! What a bad kid.§"
+   ]
+  },
+  "7128": {
+   "text": "§MORE NOISY THAN SCARY▼The howling night after night was▼so loud I couldn't sleep properly…▼But now I can finally sleep soundly.§",
+   "history": [
+    "More annoying than scary▼That nightly howling was so▼loud I couldn't sleep…▼Finally, some peace and quiet!",
+    "§[More Irritating than Scary]▼The noise every night was so▼bothersome I couldn't sleep!▼I'll sleep soundly now though.§",
+    "§NOISEY NIGHTS▼Howling kept me up at▼night, I couldn't sleep.▼I'll sleep well now!§",
+    "§NOISY NIGHTS▼The howling every night was so▼loud I could barely sleep…▼But now I can sleep soundly.§"
+   ]
+  },
+  "7129": {
+   "text": "§GOOD FOR YOU, THOM▼With Death haunting him, I did▼wonder for a while how it would▼end. I'm so glad Thom is safe.§",
+   "history": [
+    "Thom's Safe!▼Possessed by a Reaper, we▼thought the worst, but Thom▼came through just fine!",
+    "§[Good for Thom!]▼Death was stalking Thom,▼so I was worried for a while,▼but I'm glad he's safe now.§",
+    "§GOOD FOR THOM!▼Death was stalking him,▼I was worried, but Thom▼is safe now.§",
+    "§GOOD FOR THOM!▼With Death haunting him, I was▼worried how it would turn out.▼I'm so glad Thom is safe.§"
+   ]
+  },
+  "7130": {
+   "text": "NO MORE NODDING OFF▼I will never give in to▼drowsiness again.▼I am not some pathetic person.",
+   "history": [
+    "BEAT THE SLEEP!▼I refuse to give in to▼drowsiness anymore.▼I'm stronger than that!",
+    "BEAT THE SLEEP!▼I won't lose to sleepiness ever▼again. I'm not some pathetic▼weakling!"
+   ]
+  },
+  "7131": {
+   "text": "EVEN A BAD KID…▼They went and changed my▼hairstyle… But personally,▼I really like this hairstyle!§",
+   "history": [
+    "Even Bad Hair Days…▼My hair got changed on me…▼But honestly? I kinda like▼this new style!",
+    "EVEN BAD KIDS…▼My hair got changed on me…▼But honestly? I▼kinda like this style!§",
+    "EVEN BAD KIDS…▼Someone went and changed my▼hairstyle on me… But honestly,▼I really like this new look!§"
+   ]
+  },
+  "7132": {
+   "text": "VICTORYYYYY!!▼I joined the boot camp too,▼and I worked up a really▼good sweat!",
+   "history": [
+    "VICTORYYY!▼I joined boot camp too and▼worked up a great sweat!",
+    "VICTORYYY!▼I joined the boot camp too, and▼I worked up a really good sweat!"
+   ]
+  },
+  "7133": {
+   "text": "THAT WEIRD CHIME▼I didn't like it at first, but▼now I think it was great.▼I wonder if Gremlin will come again…§",
+   "history": [
+    "Weird Chime▼I hated it at first, but now▼I kinda miss it. Wonder if▼Gremlin will come back…",
+    "WEIRD CHIME▼Hated it at first, but▼now I miss it. Hope▼Gremlin comes back again…§",
+    "WEIRD CHIME▼I hated it at first, but now I▼kind of miss it. I wonder if▼Gremlin will come by again…§"
+   ]
+  },
+  "7134": {
+   "text": "CAUGHT IN THE CROSSFIRE▼I do understand how you feel,▼but I wish you hadn't made a▼mess of other people's houses.",
+   "history": [
+    "SPLASH DAMAGE▼I get why you're upset,▼but trashing someone's▼house? Not cool.",
+    "SPLASH DAMAGE▼I do understand how you feel,▼but I wish you hadn't gone and▼messed up other people's houses."
+   ]
+  },
+  "7135": {
+   "text": "HE REALLY IS STRONG▼Playing tag was a lot of fun!▼But that's the Ogre for you!▼He was really strong at tag!§",
+   "history": [
+    "Strong as Expected!▼Tag was so much fun!▼But wow, the Ogre was good!▼They're really strong at tag!",
+    "STRONG, AS EVER▼Tag was so much fun!▼But wow, the Ogre is good!▼So strong at tag!§",
+    "STRONG, AS EVER▼Playing tag was so much fun!▼But that's the Ogre for you!▼He was really good at tag!§"
+   ]
+  },
+  "7136": {
+   "text": "CARING FOR PLANTS▼Plants are alive, you know.▼If you raise them properly,▼your hearts can connect.",
+   "history": [
+    "PLANT CARE▼Plants are living things.▼Care for them right▼and your hearts will link.",
+    "PLANT CARE▼Plants are living things too.▼If you raise them with care,▼your hearts can connect."
+   ]
+  },
+  "7137": {
+   "text": "JACK FROST'S PARTY▼I wonder what the party Jack▼Frost talks about is like.▼Are there all kinds of snowmen?§",
+   "history": [
+    "Jack Frost Party▼What kind of party does▼Jack Frost throw?▼Lots of snowmen maybe?",
+    "JACK FROST PARTY▼What kind of party does▼Jack Frost throw?▼Lots of snowmen maybe?§",
+    "JACK FROST PARTY▼I wonder what the party Jack▼Frost talks about is like.▼Are there all kinds of snowmen?§"
+   ]
+  },
+  "7138": {
+   "text": "§LET'S MEET AGAIN▼Homunculus has gone off on a▼journey. We'll meet again someday,▼right? I'm a bit sad, but I'll wait!§",
+   "history": [
+    "See You Again▼Homunculus left on a journey.▼We'll meet again someday,▼right? A bit sad, but waiting!",
+    "§[Let's meet again!]▼The homunculus went on▼a trip. I wonder if I'll ever▼see him again. I hope so!§",
+    "§GONE FOR GOOD?▼Homunculus went off on▼a trip. Will I see him▼again? I hope so!§",
+    "§GONE FOR GOOD?▼So Homunculus has gone off on a▼journey. We'll meet again someday,▼right? I'm a bit sad, but I'll wait!§"
+   ]
+  },
+  "7139": {
+   "text": "SUMMONING A FAMILIAR▼A really lively Familiar came▼out, and it gave me a surprise.▼I wanted to be its friend.",
+   "history": [
+    "FAMILIAR SUMMON▼A super energetic▼Familiar popped out!▼I wanted to be friends!",
+    "FAMILIAR SUMMON▼A really lively Familiar popped▼out, and it startled me!▼I wanted us to be friends."
+   ]
+  },
+  "7140": {
+   "text": "§MERMAID'S PERSONALITY▼She had such a beautiful voice.▼But… her personality is a bit…▼The prince must have been shocked.§",
+   "history": [
+    "Mermaid's Personality▼She had such a beautiful voice,▼but her personality was…▼Even the prince was shocked!",
+    "§[The Mermaid's Personality]▼She had such a beautiful voice,▼but her personality... I bet▼the prince was shocked, too.§",
+    "§THE MERMAID▼Such a beautiful voice,▼but her personality...▼The prince was shocked!§",
+    "§THE MERMAID▼She had such a beautiful voice.▼But her personality was a bit…▼The prince must've been shocked.§"
+   ]
+  },
+  "7141": {
+   "text": "§SIREN'S BEAUTY▼You are the moon! You are the sun!▼Ahh, what incredible beauty…▼Though I only saw you from behind.§",
+   "history": [
+    "Siren's Beauty▼You are the moon! The sun!▼Oh, such beauty it is…▼Though I see only your back.",
+    "§[The Siren's Beauty]▼You are my moon and my sun, too▼beautiful for words, even though▼I only saw you from behind.§",
+    "§SIREN'S BEAUTY▼You're my moon and sun!▼So beautiful... I only▼saw her from behind.§"
+   ]
+  },
+  "7142": {
+   "text": "YETI'S SPELL▼What would happen if Yeti cast▼the flower spell, I wonder?▼Would giant flowers rain down?§",
+   "history": [
+    "Yeti's Spell▼What happens when Yeti casts▼a flower spell? Do giant▼blossoms rain down?",
+    "YETI'S SPELL▼What if Yeti cast▼a flower spell? Would▼giant blooms rain down?§"
+   ]
+  },
+  "7143": {
+   "text": "§HELLHOUND: THE TRUTH▼Rumor had it he was really▼terrifying… but is that true?▼Maybe he's actually a sweetie…§",
+   "history": [
+    "The Truth About Hellhound▼Everyone says he's super scary,▼but is that really true?▼Maybe he's actually sweet?",
+    "§[The Truth about the Wild Hound]▼Everyone thought he was so▼scary, but he was actually▼pretty cute.§",
+    "§HELLHOUNDーTRUTH▼Everyone thought he was so▼scary, but he was actually▼pretty cute.§",
+    "§HELLHOUNDーTRUTH▼The rumors said he was really▼terrifying… but is that true?▼Maybe he's actually a cutie…§"
+   ]
+  },
+  "7144": {
+   "text": "§A NEW HOME▼I hope your travels lead you▼to a lovely new home♪▼The sewers are a bit, well…§",
+   "history": [
+    "New Home▼Hope your travels lead you▼to a wonderful new place!▼The sewers, though… yikes.",
+    "§[New Home]▼I hope you find a new home▼on your travels! The sewers▼were just a bit lacking.§",
+    "§NEW HOME▼Hope you find a great new▼home on your travels!▼The sewers were a bit...§",
+    "§NEW HOME▼I hope you find a lovely new▼home on your travels♪▼The sewers are a bit, well…§"
+   ]
+  },
+  "7145": {
+   "text": "SUBTERRANEAN'S HOME▼What kind of life does▼Subterranean lead, I wonder?▼His clothes… must get so dirty…§",
+   "history": [
+    "Where Subterranean Lives▼What's life like down there?▼His clothes must get▼so dirty…",
+    "UNDERGROUND HOME▼What's life like down there?▼His clothes must get▼so dirty…§",
+    "UNDERGROUND HOME▼What kind of life does▼Subterranean lead, I wonder?▼His clothes… must get so dirty…§"
+   ]
+  },
+  "7146": {
+   "text": "§WHAT'S WRITTEN IN IT?▼I'm so curious about what was▼written in that book…▼What if it's a teacher's diary?!§",
+   "history": [
+    "What's Written In There?▼I wonder what was in that▼book… So curious!▼Maybe it's a teacher's diary!",
+    "§[I wonder what it says...]▼I wonder what's written in that ▼book. It could be the teachers'▼diaries or something!§",
+    "§WHAT'S INSIDE?▼I really want to know▼what that book said.▼Maybe a teacher's diary?!§",
+    "§WHAT'S INSIDE?▼I'm so curious about what was▼written in that book…▼What if it's a teacher's diary?!§"
+   ]
+  },
+  "7147": {
+   "text": "STRANGE JACK-O-LANTERN?▼Jack-o-Lantern didn't want any▼sweets. And after I worked so▼hard to get them ready…§",
+   "history": [
+    "Weird Jack-o-Lantern?▼Jack-o-Lantern didn't want▼any candy.▼I worked so hard on it…",
+    "WEIRD JACK-O?▼Jack-o-Lantern didn't want▼any candy.▼I worked so hard on it…§",
+    "WEIRD JACK-O?▼Jack-o-Lantern didn't want any▼sweets. And after I worked so▼hard to get them ready…§"
+   ]
+  },
+  "7148": {
+   "text": "A STRANGE TRIP IN TIME▼I'd like to go to the past too.▼If I did, the first thing I'd▼want is to meet my past self.§",
+   "history": [
+    "A Mysterious Journey in Time▼I'd love to visit the past!▼If I went back in time,▼I'd meet my younger self.",
+    "TIME JOURNEY▼I'd love to visit the▼past! If I went back, I'd▼meet my younger self.§",
+    "TIME JOURNEY▼I'd like to visit the past too.▼If I went, first of all I'd▼want to meet my younger self.§"
+   ]
+  },
+  "7149": {
+   "text": "SPIRITED AWAY▼Suddenly finding yourself in a▼place you don't know… Just▼imagining it is scary.",
+   "history": [
+    "SPIRITED AWAY▼Imagine suddenly appearing▼somewhere you don't know.▼How scary!"
+   ]
+  },
+  "7150": {
+   "text": "NIGHTMARE'S BAD DREAM▼Nightmare made me have a truly▼terrifying nightmare.▼Just remembering it scares me.",
+   "history": [
+    "NIGHTMARE DREAM▼Nightmare showed me a▼most awful dream.▼The memory still scares me.",
+    "NIGHTMARE DREAM▼Nightmare showed me a truly▼terrifying nightmare.▼Just remembering it scares me."
+   ]
+  },
+  "7151": {
+   "text": "§ARE DREAMS TASTY?▼I wonder what dreams taste like.▼Are sweet dreams sweet? And a▼sour dream… what kind is that?§",
+   "history": [
+    "Do Dreams Taste Good?▼What do dreams taste like?▼Are sweet dreams sweet?▼What are sour dreams like?",
+    "§[Do dreams taste good?]▼What do dreams taste like?▼Are sweet dreams sweet?▼Are bitter dreams bitter?§",
+    "§DREAM FLAVOR?▼How do dreams taste?▼Are sweet dreams sweet?▼Are sour dreams sour?§",
+    "§DREAM FLAVOR?▼What do dreams taste like?▼Are sweet dreams sweet? And a▼sour dream… what would that be?§"
+   ]
+  },
+  "7152": {
+   "text": "§DOES IT REALLY EXIST?▼I heard a rumor about it, but…▼does the \"Netherworld\" really▼exist? Is it a scary place?§",
+   "history": [
+    "Does It Really Exist?▼I heard a rumor that there's▼a \"Netherworld\" somewhere.▼Does it exist? Is it scary?",
+    "§[Does it really exist?]▼I've heard rumors about it,▼but does the other world really▼exist? Is it a scary place?§",
+    "§IS IT REAL?▼I heard a rumor, but does▼the netherworld really▼exist? Is it scary?§",
+    "§IS IT REAL?▼I heard a rumor about it, but…▼does the Netherworld really▼exist? Is it a scary place?§"
+   ]
+  },
+  "7154": {
+   "text": "THANK YOU, SATYR!▼Getting to perform with everyone▼was really so much fun.▼Let's all play together again!§",
+   "history": [
+    "Thanks, Satyr!▼Playing with everyone was▼so much fun!▼Let's jam together again!",
+    "THANKS, SATYR!▼Playing with everyone was▼so much fun!▼Let's jam together again!§",
+    "THANKS, SATYR!▼Getting to play music with▼everyone was so much fun.▼Let's all play together again!§"
+   ]
+  },
+  "7155": {
+   "text": "THE FAIRY'S PARTY▼I wish I could have joined the▼Fairy's party too…▼Next time, I won't be scared.",
+   "history": [
+    "FAIRY'S PARTY▼I wish I'd gone too,▼to Fairy's party!▼Next time I won't be scared.",
+    "FAIRY'S PARTY▼I wish I could've gone to the▼Fairy's party too…▼Next time I won't get scared."
+   ]
+  },
+  "7156": {
+   "text": "DEAR SANTA▼Thank you for the presents▼every year. Next time, I'll be▼the one giving you a present!",
+   "history": [
+    "TO SANTA▼Thanks for the presents!▼This year, I'll give▼YOU a present instead!",
+    "TO SANTA▼Thank you for the presents▼every year. Next time, I'll be▼the one giving you a present!"
+   ]
+  },
+  "7157": {
+   "text": "§MYSTERY FLYING OBJECT▼You know, UFOs… look tasty♪▼They're like donuts. Grrrowl…▼Now I'm getting hungry.§",
+   "history": [
+    "Mystery Flying Objects▼UFOs look… kinda tasty♪▼Like donuts, y'know? Grr~▼Now I'm getting hungry!",
+    "§[Unidentified Flying Object]▼UFOs look...delicious! They▼look like giant donuts! Whoa...!▼Now I'm hungry!§",
+    "§UFO▼UFOs look...delicious! They▼look like giant donuts! Whoa...!▼Now I'm hungry!§",
+    "§UFO▼You know, UFOs… look delicious♪▼They're just like donuts. Grrrowl…▼Now I'm getting hungry.§"
+   ]
+  },
+  "7158": {
+   "text": "§THE PRINCIPAL'S REQUEST▼Good children must never, ever▼play dangerous pranks like▼the ones Wind Weasel plays.§",
+   "history": [
+    "Notice from the Principal▼Good students must never pull▼dangerous pranks like the▼Wind Weasel incident!",
+    "§[Request from the Principal]▼Good children shouldn't play▼dangerous tricks like the wind▼weasel does! Not ever!§",
+    "§PRINCIPAL NOTICE▼Good kids never play▼risky pranks like the▼sickle weasel does!§",
+    "§PRINCIPAL NOTICE▼Good children must never, ever▼play dangerous pranks like▼the ones Wind Weasel plays.§"
+   ]
+  },
+  "7159": {
+   "text": "§THE MYSTERY CIRCLE▼Strange letters were written in▼it, but what on earth was it?▼How could anyone even do that?§",
+   "history": [
+    "Crop Circle▼Strange symbols appeared,▼but what were they?▼How'd that even happen?",
+    "§[Mystery Circle]▼There was some strange writing,▼but what did it mean? How could▼it have got there?§",
+    "§MYSTERY CIRCLE▼There was strange writing.▼What did it mean?▼How did it get there?§",
+    "§MYSTERY CIRCLE▼It had strange letters written▼in it. What on earth was it?▼How do you even do that?§"
+   ]
+  },
+  "7160": {
+   "text": "TWO AS ONE▼Friends whose hearts are in sync,▼just like the Dullahans…▼Ohh, I'd love to have that!",
+   "history": [
+    "TWO AS ONE▼Friends like the Dullahans▼who get each other...▼Aww, I'm so jealous!",
+    "TWO AS ONE▼Friends whose hearts are truly▼in sync, like the Dullahans…▼Ohh, I'd love to have that!"
+   ]
+  },
+  "7161": {
+   "text": "HOGGING THEM IS UNFAIR!▼To think you were keeping my▼favorite mushrooms all to▼yourself… I'm so jealous!!§",
+   "history": [
+    "No Fair!▼You've been hoarding my▼favorite mushrooms all to▼yourself! I'm so jealous!!",
+    "NO FAIR!▼You've been hoarding my▼favorite mushrooms all▼to yourself! So jealous!!§",
+    "NO FAIR!▼To think you kept my favorite▼mushrooms all to yourself…▼I'm so jealous!!§"
+   ]
+  },
+  "7162": {
+   "text": "WHAT A NASTY GUY!▼Why does Dot do nothing but▼bad things all the time? I wish▼he'd stop bothering everyone.",
+   "history": [
+    "WHAT A JERK!▼Why does Dot always cause▼so much trouble?▼I wish he'd just stop!",
+    "WHAT A JERK!▼Why does Dot do nothing but bad▼things all the time? I wish he'd▼stop causing trouble for us."
+   ]
+  },
+  "7163": {
+   "text": "THE VALUE OF EFFORT▼She used to be so bad at it, but▼Harpy is truly amazing.▼I need to follow her example!§",
+   "history": [
+    "The Power of Hard Work▼Harpy used to be so bad, but▼now she's amazing! I gotta▼follow her example!",
+    "EFFORT MATTERS▼Harpy was so bad before,▼but now she's great!▼Gotta follow her lead!§",
+    "EFFORT MATTERS▼She used to be so bad at it, but▼Harpy is truly amazing now.▼I need to follow her example!§"
+   ]
+  },
+  "7164": {
+   "text": "§THANKS FOR THE MATCHES▼Um…▼For buying my matches…▼Thank you very much, everyone.§",
+   "history": [
+    "Thank You▼Um… thank you, everyone,▼for buying my matches.▼I really appreciate it!",
+    "§♥ THANK YOU ♥▼Um...▼Thank you, everybody, for▼buying all those matches.§",
+    "§★ THANK YOU ★▼Um…▼For buying my matches…▼Thank you so much, everyone.§"
+   ]
+  },
+  "7165": {
+   "text": "§KRAKEN'S RING▼I wonder if Kraken got married.▼But where would the ring go?▼Ring finger… or is it a ring leg?§",
+   "history": [
+    "Kraken's Ring▼Did Kraken get married?▼But where does the ring go?▼Ring finger? Ring tentacle?",
+    "§[The Kraken's Ring]▼Did the kraken get married? But ▼where would he wear the ring? ▼Does he have a ring tentacle?§",
+    "§THE KRAKENS RING▼Did Kraken get married?▼Where'd he wear the ring?▼On a tentacle?§",
+    "§THE KRAKEN'S RING▼I wonder if Kraken got married.▼But where would the ring go?▼A ring finger… a ring tentacle?§"
+   ]
+  },
+  "7166": {
+   "text": "§GOLEM CONTEST RESULTS▼The Golem you all helped with▼won first place in the contest!▼This is all thanks to you.§",
+   "history": [
+    "Golem Contest Results▼The Golem you helped me with▼won the contest!▼Thanks to all of you!",
+    "§CONTEST RESULTS▼The golem we helped make▼won first prize! Thank▼you all so much!§",
+    "§CONTEST RESULTS▼The Golem you all helped with▼won first place in the contest!▼It is all thanks to you, everyone.§"
+   ]
+  },
+  "7167": {
+   "text": "THE CLASSROOM'S SOAKED!▼Who on earth did this?!▼The classroom is soaking wet.▼Whoever did it had better clean up!§",
+   "history": [
+    "Classroom Flooded!▼Who did this!?▼The classroom is soaking wet!▼Culprit must clean it up!",
+    "SOAKED CLASS!▼Who did this!?▼The classroom is soaked!▼The culprit must clean it!§",
+    "SOAKED CLASS!▼Who on earth did this?!▼The classroom is sopping wet!▼Whoever did it must clean it up!§"
+   ]
+  },
+  "7168": {
+   "text": "LEPRECHAUN'S TREASURE▼We never found the treasure, but▼the losing slips are my treasure.▼After all, it was so much fun!",
+   "history": [
+    "LEPRECHAUN GOLD▼Didn't find the treasure,▼but the dud slips were▼fun enough for me!",
+    "LEPRECHAUN GOLD▼We never found the treasure, but▼those \"try again\" slips are my▼treasure. It was just so much fun!"
+   ]
+  },
+  "7174": {
+   "text": "§HOT, SO HOT▼It's no good. It really is hot.▼This much sunshine wears me out.▼Can't something be done about it?§",
+   "history": [
+    "Hot! Hot! Hot!▼It's way too hot out there!▼This heat is killing me.▼Can't something be done?",
+    "§[Hot, hot, hot!]▼It's too hot when it's this▼sunny out! Can't we do▼anything about it?§",
+    "§HOT, HOT, HOT!▼It's way too hot when▼it's this sunny out!▼Can't we do something?§",
+    "§HOT, HOT, HOT!▼It's no use, it's just too hot.▼This much sunshine wears me out.▼Can't somebody do something?§"
+   ]
+  },
+  "7175": {
+   "text": "§A DAY OF NICE WEATHER▼The weather is nice, and I'm in▼a sunny mood. …Could it be that▼weather affects our moods too?§",
+   "history": [
+    "Nice Weather▼The weather's so nice today!▼Maybe weather affects▼your mood after all?",
+    "§[Fair Weather Days]▼Nice weather puts me in a good▼mood. Do you think the weather ▼is connected to our feelings?§",
+    "§SUNNY DAYS▼Nice weather puts me in▼a great mood. Is weather▼tied to our feelings?§",
+    "§SUNNY DAYS▼The weather is lovely, and so is▼my mood. …Could it be that the▼weather affects how we feel?§"
+   ]
+  },
+  "7176": {
+   "text": "§MAYBE I CAN DO IT?!▼All right! The sun's out today,▼so… I'm going to do my best…▼and take… a… nap… Zzz…§",
+   "history": [
+    "I Can Do This!?▼All right! The sun's out▼today, so I'll work hard▼till lunch… zzz…",
+    "§[Giving it my all?!]▼The sun is out today, so I'm▼ready to give it my all and work▼hard on my...napping. Zzz...§",
+    "§GIVING IT MY ALL▼Sun's out, so today▼I'll give my all and▼work hard at... Zzz...§",
+    "§GIVING IT MY ALL▼All right! The sun is out today,▼so… I'm going to do my best…▼at taking… a… nap… Zzz…§"
+   ]
+  },
+  "7177": {
+   "text": "§IT MIGHT RAIN SOON▼So I'm going to use a spell▼and make it sunny. Hang on…▼What were the magic words again?§",
+   "history": [
+    "Rain's Coming Soon▼So I'll cast a spell▼to make it sunny instead!▼Wait… what was the spell?",
+    "§[It might rain soon...]▼So I'll use magic to make it ▼sunny. But wait... What were▼those words again...?!§",
+    "§MIGHT RAIN SOON▼I'll cast a spell to▼make it sunny. Wait...▼what was that spell?§",
+    "§MIGHT RAIN SOON▼So I'm going to cast a spell and▼make it sunny. Hold on…▼what were the magic words again?§"
+   ]
+  },
+  "7178": {
+   "text": "§THE COLOR OF THE SKY▼The sky is black!▼Is this a sign of things to come?▼Or is it somebody's spell??§",
+   "history": [
+    "The Sky's Color▼The sky has turned black!▼Is this a sign of things▼to come? Or a spell…?",
+    "§[The Color of the Sky]▼The sky is black! Is this a sign▼of something to come? Or is▼someone messing with magic?§",
+    "§THE SKY'S COLOR▼The sky is black! Sign of▼something coming? Or▼magic gone awry?§",
+    "§THE SKY'S COLOR▼The sky is black!▼Is it a sign something is coming?▼Or is it somebody's spell??§"
+   ]
+  },
+  "7179": {
+   "text": "§NOT IN THE MOOD▼Somehow today is just no good.▼Come to think of it, it's cloudy▼too… I'll stay home today.§",
+   "history": [
+    "Not Feeling It▼Today's just not my day.▼The weather's cloudy too…▼Think I'll stay home.",
+    "§[I can't get in the mood...]▼Today is just a bad day. It's▼cloudy out, too. I think I'll▼just stay in bed...§",
+    "§NOT FEELING IT▼Today is just a bad day.▼It's cloudy out, too.▼I'll just stay in.§",
+    "§NOT FEELING IT▼Somehow today just isn't my day.▼Come to think of it, it's cloudy▼too… I'm staying home today.§"
+   ]
+  },
+  "7180": {
+   "text": "§NOT YET, IT SEEMS▼When is this rain going to stop?▼Do I have to wait until tomorrow?▼Rain is so fickle!§",
+   "history": [
+    "Still Raining▼When will this rain stop?▼Not till tomorrow?▼Rain's so fickle!",
+    "§[Still Not Done]▼When is the rain going to stop?▼Do I really have to wait until ▼tomorrow? §",
+    "§STILL NOT DONE▼When will the rain stop?▼Do I have to wait until▼tomorrow? Sigh.§",
+    "§STILL NOT DONE▼When is this rain going to stop?▼Do I really have to wait until▼tomorrow? Rain is so fickle!§"
+   ]
+  },
+  "7181": {
+   "text": "§I LOVE RAINY DAYS▼Puddles are so much fun♪▼Splish, splash, stomp, stomp!▼But my clothes get all dirty.§",
+   "history": [
+    "I Love Rainy Days!▼Puddles are so much fun! ♪▼Splish-splash with my feet!▼But my clothes get dirty.",
+    "§[I love rainy days]▼Puddles are so much fun! Splish ▼splash my feet in the puddles! ▼But now my clothes are dirty...§",
+    "§RAINY DAY LOVE▼Puddles are so fun!▼Splish-splash my feet!▼But my clothes get dirty.§",
+    "§RAINY DAY LOVE▼Puddles are so much fun♪▼Splish, splash, stomp, stomp!▼But my clothes get all dirty.§"
+   ]
+  },
+  "7182": {
+   "text": "§ON RAINY DAYS…▼When it rains, my room gets damp.▼My clothes get wet and feel gross▼too. I want it to stop soon!§",
+   "history": [
+    "Rainy Days…▼Rain makes my room all damp.▼My clothes get wet and icky.▼I wish it would stop!",
+    "§[Rainy Days]▼The rain makes my room damp,▼my clothes wet, and me feel▼awful. Rain, rain, go away...!§",
+    "§RAINY DAYS▼Rain makes the room damp,▼clothes wet, and me feel▼awful. Rain, go away!§",
+    "§RAINY DAYS▼When it rains, my room gets all▼damp. My clothes get wet and feel▼gross too. I wish it would stop!§"
+   ]
+  },
+  "7183": {
+   "text": "§NO WONDER IT'S COLD▼It's snowing!▼The rain has turned into snow.▼Is it going to get even colder?§",
+   "history": [
+    "Snow Alert!▼It's snowing! The rain turned▼to snow. Wonder if it'll▼get even colder?",
+    "§[I thought it was cold!]▼And now it's snowing! The rain▼has turned to snow! I wonder▼if it's going to get any colder.§",
+    "§AH… SNOW▼And now it's snowing!▼The rain turned to snow!▼Will it get even colder?§",
+    "§AH… SNOW▼It's snowing!▼The rain has turned into snow.▼Is it going to get even colder?§"
+   ]
+  },
+  "7184": {
+   "text": "§A SNOWY DAY▼Watching the snow fall▼calms my heart.▼How do the rest of you see it?§",
+   "history": [
+    "Snowy Days▼Falling snow always calms me.▼How does everyone else▼feel when they watch it?",
+    "§[Snowy Days]▼Watching the falling snow▼calms me, but how does it▼affect others?§",
+    "§SNOWY DAYS▼Watching the falling snow▼calms me, but how does it▼affect others?§",
+    "§SNOWY DAYS▼Watching the snow come down▼calms my heart. How do the▼rest of you feel, watching it?§"
+   ]
+  },
+  "7185": {
+   "text": "§WHITE TREATS FROM SNOW▼Shaved ice made from snow…▼I wonder how much I could make.▼…But it's cold, so never mind.§",
+   "history": [
+    "Snowy White Treats▼I could make shaved ice▼with all this snow…▼Nah, too cold for that!",
+    "§[White Sweets from Snow]▼I wonder how many snow cones▼you could make from all the ▼snow. It's too cold to think...!§",
+    "§SNOW CONES?▼How many snow cones could▼I make from all this▼snow? Too cold though...§",
+    "§SNOW CONES?▼Snow cones made out of snow…▼I wonder how many I could make.▼…But it's cold, so never mind.§"
+   ]
+  },
+  "7200": {
+   "text": "JANUARY PROCLAMATION▼The \"[FAIR_MONTH:1]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Notice▼The [FAIR_MONTH:1] is starting!▼Everyone, gather at the▼castle!",
+    "JANUARY NOTICE▼The [FAIR_MONTH:1] is on!▼All to the castle!§",
+    "JANUARY NOTICE▼The \"[FAIR_MONTH:1]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7201": {
+   "text": "FEBRUARY PROCLAMATION▼The \"[FAIR_MONTH:2]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Notice▼The [FAIR_MONTH:2] is starting!▼Everyone, please gather▼at the castle.",
+    "FEBRUARY NOTICE▼The [FAIR_MONTH:2] is on!▼All to the castle!§",
+    "FEBRUARY NOTICE▼The \"[FAIR_MONTH:2]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7202": {
+   "text": "MARCH PROCLAMATION▼The \"[FAIR_MONTH:3]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Notice for [FAIR_MONTH:3]▼The fair begins soon!▼All students report▼to the castle.",
+    "MARCH NOTICE▼The fair begins soon!▼All students report▼to the castle.§",
+    "MARCH NOTICE▼The \"[FAIR_MONTH:3]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7203": {
+   "text": "APRIL PROCLAMATION▼The \"[FAIR_MONTH:4]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Notice for [FAIR_MONTH:4]▼The festival begins soon.▼Everyone is to gather▼at the castle.",
+    "APRIL NOTICE▼The festival begins soon.▼Everyone is to gather▼at the castle.§",
+    "APRIL NOTICE▼The \"[FAIR_MONTH:4]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7204": {
+   "text": "MAY PROCLAMATION▼The \"[FAIR_MONTH:5]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Proclamation▼The [FAIR_MONTH:5] begins.▼All are summoned▼to the castle.",
+    "MAY NOTICE▼The [FAIR_MONTH:5] begins.▼All are summoned▼to the castle.§",
+    "MAY NOTICE▼The \"[FAIR_MONTH:5]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7205": {
+   "text": "JUNE PROCLAMATION▼The \"[FAIR_MONTH:6]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Decree for [FAIR_MONTH:6]▼The fair shall begin soon.▼All are summoned▼to the castle!",
+    "JUNE NOTICE▼The fair shall begin soon.▼All are summoned▼to the castle!§",
+    "JUNE NOTICE▼The \"[FAIR_MONTH:6]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7206": {
+   "text": "JULY PROCLAMATION▼The \"[FAIR_MONTH:7]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Decree for [FAIR_MONTH:7]▼The fair shall begin soon.▼All are summoned▼to the castle.",
+    "JULY NOTICE▼The fair shall begin soon.▼All are summoned▼to the castle.§",
+    "JULY NOTICE▼The \"[FAIR_MONTH:7]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7207": {
+   "text": "AUGUST PROCLAMATION▼The \"[FAIR_MONTH:8]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "Notice▼The [FAIR_MONTH:8] begins!▼All are summoned▼to the castle.",
+    "AUGUST NOTICE▼The [FAIR_MONTH:8] begins!▼All are summoned▼to the castle.§",
+    "AUGUST NOTICE▼The \"[FAIR_MONTH:8]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7208": {
+   "text": "SEPTEMBER PROCLAMATION▼The \"[FAIR_MONTH:9]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "September Decree▼The [FAIR_MONTH:9] shall begin.▼All townspeople are to▼gather at the castle.",
+    "SEPTEMBER NOTICE▼The [FAIR_MONTH:9] begins.▼All to the castle!§",
+    "SEPTEMBER NOTICE▼The \"[FAIR_MONTH:9]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7209": {
+   "text": "OCTOBER PROCLAMATION▼The \"[FAIR_MONTH:10]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "October Proclamation▼The [FAIR_MONTH:10] begins soon.▼All citizens are summoned▼to the castle at once.",
+    "OCTOBER NOTICE▼The [FAIR_MONTH:10] begins.▼All to the castle!§",
+    "OCTOBER NOTICE▼The \"[FAIR_MONTH:10]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7210": {
+   "text": "NOVEMBER PROCLAMATION▼The \"[FAIR_MONTH:11]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "November Decree▼The [FAIR_MONTH:11] begins!▼All are summoned▼to the castle.",
+    "NOVEMBER NOTICE▼The [FAIR_MONTH:11] begins!▼All are summoned▼to the castle.§",
+    "NOVEMBER NOTICE▼The \"[FAIR_MONTH:11]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7211": {
+   "text": "DECEMBER PROCLAMATION▼The \"[FAIR_MONTH:12]\" fair▼is about to begin. All of you▼are to gather at the castle.§",
+   "history": [
+    "December Proclamation▼The [FAIR_MONTH:12] begins!▼All are summoned▼to the castle at once.",
+    "DECEMBER NOTICE▼The [FAIR_MONTH:12] begins!▼All to the castle!§",
+    "DECEMBER NOTICE▼The \"[FAIR_MONTH:12]\" fair▼is about to begin. All of you are▼to gather at the castle.§"
+   ]
+  },
+  "7212": {
+   "text": "JANUARY FAIR RESULTS▼The \"[FAIR_MONTH:1]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Fair Results▼The results for▼[FAIR_MONTH:1] are in!▼Come to the castle to hear!",
+    "JANUARY RESULTS▼[FAIR_MONTH:1] results▼are in! Come to the castle.§",
+    "JANUARY RESULTS▼The \"[FAIR_MONTH:1]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7213": {
+   "text": "FEBRUARY FAIR RESULTS▼The \"[FAIR_MONTH:2]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Results Announced▼The [FAIR_MONTH:2] fair▼results are in! Come to▼the castle to hear them.",
+    "FEBRUARY RESULT▼[FAIR_MONTH:2] results▼are in! Come to the castle.§",
+    "FEBRUARY RESULTS▼The \"[FAIR_MONTH:2]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7214": {
+   "text": "MARCH FAIR RESULTS▼The \"[FAIR_MONTH:3]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Contest Results▼The results for▼[FAIR_MONTH:3] are in!▼Come to the castle!",
+    "MARCH RESULTS▼The results for▼[FAIR_MONTH:3] are in!▼Come to the castle!§",
+    "MARCH RESULTS▼The \"[FAIR_MONTH:3]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7215": {
+   "text": "APRIL FAIR RESULTS▼The \"[FAIR_MONTH:4]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "April Fair Results▼Starting today, [FAIR_MONTH:4]▼results are posted at▼the castle. Come see!",
+    "APRIL RESULTS▼[FAIR_MONTH:4] results▼are in! Come to the castle.§",
+    "APRIL RESULTS▼The \"[FAIR_MONTH:4]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7216": {
+   "text": "MAY FAIR RESULTS▼The \"[FAIR_MONTH:5]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Results Announced▼The [FAIR_MONTH:5] fair▼results are in! Visit the▼castle to hear them.",
+    "MAY RESULTS▼[FAIR_MONTH:5] results▼are in! Come to the castle.§",
+    "MAY RESULTS▼The \"[FAIR_MONTH:5]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7217": {
+   "text": "JUNE FAIR RESULTS▼The \"[FAIR_MONTH:6]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Fair Results▼The [FAIR_MONTH:6] fair results▼are in! Come to the castle▼to hear the announcement!",
+    "JUNE RESULTS▼[FAIR_MONTH:6] results▼are in! Come to the castle.§",
+    "JUNE RESULTS▼The \"[FAIR_MONTH:6]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7218": {
+   "text": "JULY FAIR RESULTS▼The \"[FAIR_MONTH:7]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Fair Results▼The results for▼[FAIR_MONTH:7] are in!▼Come to the castle!",
+    "JULY RESULTS▼The results for▼[FAIR_MONTH:7] are in!▼Come to the castle!§",
+    "JULY RESULTS▼The \"[FAIR_MONTH:7]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7219": {
+   "text": "AUGUST FAIR RESULTS▼The \"[FAIR_MONTH:8]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Fair Results▼The [FAIR_MONTH:8] fair results▼are ready! Come to the castle▼to hear them announced!",
+    "AUGUST RESULTS▼[FAIR_MONTH:8] results▼are in! Come to the castle.§",
+    "AUGUST RESULTS▼The \"[FAIR_MONTH:8]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7220": {
+   "text": "SEPTEMBER FAIR RESULTS▼The \"[FAIR_MONTH:9]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Fair Results▼Results for [FAIR_MONTH:9]▼are in! Come to the castle▼to hear the announcement!",
+    "SEPTEMBER RESULT▼[FAIR_MONTH:9] results▼are in!§",
+    "SEPTEMBER RESULTS▼The \"[FAIR_MONTH:9]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7221": {
+   "text": "OCTOBER FAIR RESULTS▼The \"[FAIR_MONTH:10]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "October Fair Results▼The results for▼[FAIR_MONTH:10] are in!▼Visit the castle to see!",
+    "OCTOBER RESULTS▼[FAIR_MONTH:10] results▼are in! Visit the castle.§",
+    "OCTOBER RESULTS▼The \"[FAIR_MONTH:10]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7222": {
+   "text": "NOVEMBER FAIR RESULTS▼The \"[FAIR_MONTH:11]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "November Fair Results▼The results for▼[FAIR_MONTH:11] are in!▼Come to the castle to hear!",
+    "NOVEMBER RESULT▼[FAIR_MONTH:11] results▼are in! Visit the castle.§",
+    "NOVEMBER RESULTS▼The \"[FAIR_MONTH:11]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7223": {
+   "text": "DECEMBER FAIR RESULTS▼The \"[FAIR_MONTH:12]\" fair results▼will be announced from today.▼Come to the castle to hear them.§",
+   "history": [
+    "Fair Results▼The results for▼[FAIR_MONTH:12] are in!▼Come to the castle!",
+    "DECEMBER RESULT▼The results for▼[FAIR_MONTH:12] are in!▼Come to the castle!§",
+    "DECEMBER RESULTS▼The \"[FAIR_MONTH:12]\" fair results▼will be announced starting today.▼Come to the castle to hear them.§"
+   ]
+  },
+  "7225": {
+   "text": "CONCERT NOTICE▼When: Today▼Where: [COLOR:5]Auditorium[COLOR:1]▼Everyone, please do come!§",
+   "history": [
+    "Concert Today!▼Time: Today▼Place: [COLOR:5]Auditorium[COLOR:1]▼Everyone come on down!",
+    "CONCERT TODAY!▼Time: Today▼Place: [COLOR:5]Auditorium[COLOR:1]▼Everyone come on down!§",
+    "CONCERT TODAY!▼When: Today▼Where: [COLOR:5]Auditorium[COLOR:1]▼Everyone, please do come along!§"
+   ]
+  },
+  "7230": {
+   "text": "FEELINGS ARE WHAT COUNT▼Even if words don't get through,▼put your heart into it, and your▼feelings will reach them.",
+   "history": [
+    "FEELINGS MATTER▼Words may fail,▼but real feelings▼always get through.",
+    "FEELINGS MATTER▼Even if your words don't get▼through, put your heart into it▼and your feelings will reach them."
+   ]
+  },
+  "7231": {
+   "text": "LET'S BE CAREFUL▼Fish are tasty, but if we catch▼too many, the river might get▼dirty. I'm going to be careful.",
+   "history": [
+    "BE CAREFUL!▼Over-fishing dirties▼the river. Take care!",
+    "BE CAREFUL!▼Just because fish are tasty… if▼we catch too many, the river▼might get dirty. I'll be careful."
+   ]
+  },
+  "7232": {
+   "text": "LOTS OF SWEETS▼I said I like sweets, and I was▼given a whole bunch!▼I wonder if they'll come again.§",
+   "history": [
+    "Lots of Candy▼I said I like candy and got▼a TON of it!▼Hope they come back soon!",
+    "LOTS OF SWEETS▼I said I like candy and got▼a TON of it!▼Hope they come back soon!§",
+    "LOTS OF SWEETS▼I said I like sweets, and they▼gave me a whole bunch!▼I hope they come by again.§"
+   ]
+  },
+  "7233": {
+   "text": "DID SOMETHING HAPPEN?▼The Principal seems to be▼looking a little pale.▼Did something happen?§",
+   "history": [
+    "Something Wrong?▼The headmaster doesn't look▼so good today.▼Did something happen?",
+    "WHAT HAPPENED?▼The headmaster doesn't look▼so good today.▼Did something happen?§",
+    "WHAT HAPPENED?▼The Principal seems to be▼looking rather pale.▼Did something happen?§"
+   ]
+  },
+  "7234": {
+   "text": "HOW ARE THEY CONNECTED?▼It was Poltergeist, and yet the▼letter Q was written in the room…▼Don't tell me Quicksilver is…§",
+   "history": [
+    "What's Their Deal?▼Poltergeist's room had a big▼Q written in it… Could it▼be Quicksilver wrote it?!",
+    "THEIR RELATION?▼A Q in Poltergeist's room --▼could Quicksilver have▼written it?!§",
+    "THEIR RELATION?▼It was Poltergeist, and yet the▼letter Q was written in the room…▼Don't tell me Quicksilver is…§"
+   ]
+  },
+  "7235": {
+   "text": "LOVE REALLY IS HARD▼Just because you like someone▼doesn't mean you understand▼them. Hmm, it's so hard…§",
+   "history": [
+    "Love Is Hard▼Just 'cause you like someone▼doesn't mean you get them.▼Ugh, it's so hard...",
+    "LOVE IS HARD▼Liking someone doesn't mean▼they're yours. Ugh, love▼is so hard...§",
+    "LOVE IS HARD▼Just because you like someone▼doesn't mean you understand▼them. Hmm, it's so difficult…§"
+   ]
+  },
+  "7236": {
+   "text": "DID EVERYONE GET IT?▼How did you all do on that quiz?▼For me, it was really hard…§",
+   "history": [
+    "Did You Get It Right?▼How was that quiz?▼It was way too hard▼for me…",
+    "DID YOU DO IT?▼How was that quiz?▼It was way too hard▼for me…§",
+    "DID YOU DO IT?▼How did that quiz go for you?▼For me, it was really hard…§"
+   ]
+  },
+  "7237": {
+   "text": "LOTS OF MONEY▼I dug a hole, and there was a▼whole lot of money buried in it!▼Is this what's called buried gold?§",
+   "history": [
+    "Buried Treasure▼I dug a hole and found a ton▼of money buried there!▼Is this what they call loot?",
+    "LOTS OF MONEY▼Dug a hole, found heaps of▼buried coins! Is this what▼they call loot?§",
+    "LOTS OF MONEY▼I dug a hole, and there was a▼whole lot of money buried in it!▼Is this that \"buried treasure\"?§"
+   ]
+  },
+  "7238": {
+   "text": "DON'T BE MAD AT THEM▼It sounds like it was a lot of▼trouble, but they're trying their▼best, so please go easy on them.",
+   "history": [
+    "DON'T BE MAD▼They tried their best.▼Things got messy, sure --▼cut them some slack!",
+    "DON'T BE MAD▼It sounds like it was rough, but▼they're trying their very best,▼so please go easy on them."
+   ]
+  },
+  "7239": {
+   "text": "SKULLFLOWER GARDEN▼I wonder if Mars is full of▼Skullflowers right now.▼I'd love to see it, just once.",
+   "history": [
+    "SKULL GARDEN▼Is Mars all skull flowers▼right now? I'd love to▼see it someday!",
+    "SKULL GARDEN▼I wonder if Mars is covered in▼Skullflowers right now.▼I'd love to see it just once."
+   ]
+  },
+  "7240": {
+   "text": "ARE YOU SATISFIED NOW?▼Doppleganger, if this has▼satisfied you, then please don't▼do any more bad things.",
+   "history": [
+    "SATISFIED?▼If this satisfied you,▼Doppelganger, then please▼stop causing trouble.",
+    "SATISFIED?▼If this has gotten it out of▼your system, Doppleganger,▼please don't do bad things again."
+   ]
+  },
+  "7241": {
+   "text": "THAT'S JUST NORMAL▼They call him the Werewolf, but▼if he was a wolf to begin with,▼isn't that just normal?",
+   "history": [
+    "JUST NORMAL▼If Wolfman was a wolf▼from the start, that's just▼normal, right?",
+    "JUST NORMAL▼If Werewolf was a wolf▼from the start, that's just▼normal, right?",
+    "JUST NORMAL▼You call him the Werewolf, but▼if he was a wolf to begin with,▼isn't that just… normal?"
+   ]
+  },
+  "7242": {
+   "text": "WHAT ABOUT YOUR JOB?▼It's nice that you love music,▼but aren't you doing your job as▼Death? It's more peaceful, though.§",
+   "history": [
+    "What About Your Job?▼I know you love music, but▼aren't you working as a▼Reaper? Well, peace is good!",
+    "YOUR JOB?▼You love music, but▼aren't you a Reaper by trade?▼Well, peace is good!§",
+    "YOUR JOB?▼You love music, but▼what about your job as Death?▼Well, peace is good!§",
+    "YOUR JOB?▼It's nice that you love music,▼but aren't you doing your job as▼Death? Not that I mind the peace.§"
+   ]
+  },
+  "7243": {
+   "text": "FROM THE PRINCIPAL▼Lately, all of you have been so▼eager in class.▼It makes me very happy.§",
+   "history": [
+    "From the Headmaster▼Everyone's been so engaged▼in class lately!▼It makes me very happy.",
+    "FROM HEADMASTER▼Everyone's been so engaged▼in class lately!▼It makes me very happy.§",
+    "FROM HEADMASTER▼You have all been so eager in▼class lately.▼It makes me very happy.§"
+   ]
+  },
+  "7245": {
+   "text": "VICTORYYYYY!!▼Just walking counts as exercise?▼What a surprise!▼I'm going to keep it up.",
+   "history": [
+    "VICTORYYY!▼Walking alone counts as▼exercise? What a surprise!▼I'll keep it up!",
+    "VICTORYYY!▼Who knew that just walking▼counts as exercise? What a▼surprise! I'm going to keep it up."
+   ]
+  },
+  "7246": {
+   "text": "A TALENT FOR MUSIC▼So Gremlin had a talent for▼writing songs?▼I wonder if I have a talent too.§",
+   "history": [
+    "Musical Talent▼Gremlin can compose songs!▼I wonder if I have that▼kind of talent too?",
+    "MUSICAL TALENT▼Gremlin composes songs!▼Wonder if I have▼that kind of talent too?§",
+    "MUSICAL TALENT▼So Gremlin has a talent for▼writing songs? I wonder if I▼have some talent in me too.§"
+   ]
+  },
+  "7247": {
+   "text": "WHAT NERVE!▼Stealing from the same person▼twice?▼What a bad kid!§",
+   "history": [
+    "How Rude!▼Stealing from the same person▼TWICE? What a bad kid!",
+    "HOW RUDE!▼Stealing from the same person▼TWICE? What a bad kid!§",
+    "HOW RUDE!▼Stealing from the same person▼not once but twice?▼What a rotten kid!§"
+   ]
+  },
+  "7248": {
+   "text": "WHAT GAME WAS THAT?▼The Ogre was playing a game▼that wasn't tag. I should have▼asked to join in.",
+   "history": [
+    "WHAT GAME?▼I saw the oni playing a game▼that wasn't tag.▼Should've asked to join!",
+    "WHAT GAME?▼The Ogre was playing a game▼other than tag. I should have▼asked if I could join in."
+   ]
+  },
+  "7249": {
+   "text": "WHO WAS THAT KID?▼I was pulling up overgrown weeds▼when a kid I'd never seen before▼smiled at me. Who was that?§",
+   "history": [
+    "Who Was That?▼I was pulling weeds when▼someone I'd never seen▼smiled at me. Who were they?",
+    "WHO WAS THAT?▼Pulling weeds when a stranger▼smiled at me. Who were they?§",
+    "WHO WAS THAT?▼I was pulling up overgrown▼weeds when a kid I'd never seen▼smiled at me. Who was that?§"
+   ]
+  },
+  "7250": {
+   "text": "I'M SO JEALOUS!▼I got told all about someone▼eating piles of delicious food▼at a party. I'm so jealous.§",
+   "history": [
+    "So Jealous!▼Someone told me all about the▼feast they ate at a party.▼I'm so jealous!",
+    "SO JEALOUS!▼Heard about a party feast▼someone else got to enjoy.▼So jealous!§",
+    "SO JEALOUS!▼I had to listen to a story about▼eating piles of delicious food▼at a party. I'm so jealous.§"
+   ]
+  },
+  "7251": {
+   "text": "HOMUNCULUS IS BACK!▼You've come back so grown-up,▼and it makes me really happy.▼…Is this how a parent feels?§",
+   "history": [
+    "Welcome Back, Homunculus!▼You've grown so much while▼you were away! We missed you.▼Is this what parents feel?",
+    "WELCOME BACK!▼You've grown so much! We▼missed you. Is this how▼parents feel?§",
+    "WELCOME BACK!▼You've come back so grown-up,▼and it makes me so happy.▼…Is this how a parent feels?§"
+   ]
+  },
+  "7252": {
+   "text": "AN ADMIRABLE ATTITUDE▼They try a little too hard, but▼wanting to help people is▼really admirable.",
+   "history": [
+    "A NOBLE HEART▼A bit too eager, maybe,▼but wanting to help others▼is admirable!",
+    "A NOBLE HEART▼They overdo it a little, but▼wanting to help other people▼is a truly admirable thing."
+   ]
+  },
+  "7253": {
+   "text": "THIS IS OUR CHANCE▼Let's start a trend in this town▼that's big enough to reach▼even the mermaids!§",
+   "history": [
+    "Big Chance!▼Let's start a trend so huge▼even mermaids will hear▼about it!",
+    "BIG CHANCE!▼Let's start a trend so huge▼even mermaids will hear▼about it!§",
+    "BIG CHANCE!▼Let's start a trend right here▼in this town that's big enough▼to reach even the mermaids!§"
+   ]
+  },
+  "7254": {
+   "text": "SIREN'S SINGING VOICE▼I hear she's a very good singer,▼but she won't let us hear a single▼song. Ahh, I'm so curious.",
+   "history": [
+    "SIREN'S SONG▼They say she sings divinely,▼yet she never performs!▼Such a mystery...",
+    "SIREN'S SONG▼I hear she's a wonderful singer,▼but she won't sing for us at all.▼Ahh, I'm dying to hear it."
+   ]
+  },
+  "7255": {
+   "text": "SO EAGER TO LEARN▼Coming all this way to learn▼spells? Now that's dedication.▼I should learn from that.",
+   "history": [
+    "STUDYING HARD!▼Studying spells here?▼So dedicated!▼We should follow suit!",
+    "STUDYING HARD!▼Coming all this way to learn▼spells? Now that's dedication.▼I should follow that example."
+   ]
+  },
+  "7256": {
+   "text": "SURPRISINGLY CUTE▼The rumors said they were scary,▼but now that we're friends,▼they're cute.",
+   "history": [
+    "CUTE SURPRISE▼Heard they were scary,▼but befriended them and▼they're actually cute!",
+    "CUTE SURPRISE▼The rumors said they were scary,▼but once you make friends,▼they're actually cute."
+   ]
+  },
+  "7257": {
+   "text": "DID HE LIKE IT?▼I wonder if Tom was happy with▼the bouquet.▼I'm sure he was.",
+   "history": [
+    "DID HE LIKE IT?▼Did Tom like the bouquet▼I gave him?▼I bet he did!",
+    "DID HE LIKE IT?▼I wonder if Tom was happy with▼the bouquet. I'm sure he was▼delighted."
+   ]
+  },
+  "7258": {
+   "text": "AN UNDERGROUND FEAST?▼What's a full-course meal like▼for Subterranean?▼Is it all made of rocks?§",
+   "history": [
+    "Underground Full Course?▼What does Subterranean eat▼for a full-course meal?▼Is it all made of rocks?",
+    "UNDERGROUND MEAL▼Subterranean's full course --▼all rocks?§",
+    "UNDERGROUND MEAL▼What's a full-course meal like▼for Subterranean, I wonder?▼Is the whole thing made of rocks?§"
+   ]
+  },
+  "7259": {
+   "text": "DESTINY?▼It's a lie that destiny is▼decided in advance.▼You decide it for yourself!",
+   "history": [
+    "DESTINY?▼Destiny isn't predetermined.▼That's nonsense!▼You decide it yourself!",
+    "DESTINY?▼It's a lie that destiny is set▼in advance. It's something▼you decide for yourself!"
+   ]
+  },
+  "7261": {
+   "text": "ALL ALONE▼I hear the person from another▼world lives all alone.▼Don't they get lonely?§",
+   "history": [
+    "Living Alone▼People from another world▼live all by themselves.▼Isn't that lonely?",
+    "ALL ALONE▼People from another world▼live all by themselves.▼Isn't that lonely?§",
+    "ALL ALONE▼I hear the person from another▼world lives all on their own.▼Don't they get lonely?§"
+   ]
+  },
+  "7262": {
+   "text": "FRIENDSHIP IS STRONG▼Of course friends know all▼about each other.▼Trying to fool them won't work!",
+   "history": [
+    "FRIENDSHIP WINS▼Real friends know each other▼inside and out -- you can't▼fool 'em!",
+    "FRIENDSHIP WINS▼Real friends know everything▼about each other. Try to trick▼them, and it just won't work!"
+   ]
+  },
+  "7263": {
+   "text": "SURPRISINGLY DILIGENT?▼Powering up to overcome a▼weakness… They must have▼put in a lot of hard work.§",
+   "history": [
+    "Surprisingly Hardworking?▼They must've worked really▼hard to power up and▼overcome their weakness!",
+    "HARD WORKER?▼Must've worked really hard▼to power up and overcome▼their weakness!§",
+    "HARD WORKER?▼Powering up just to overcome▼a weakness… They must have▼put in a whole lot of effort.§"
+   ]
+  },
+  "7264": {
+   "text": "HAPPY DREAMS▼Lately, I have nothing but▼happy dreams every night.▼I hope it goes on forever.",
+   "history": [
+    "HAPPY DREAMS▼Lately I dream happy dreams▼every night. May they▼never end!",
+    "HAPPY DREAMS▼Lately I've been having nothing▼but happy dreams every night.▼I hope it goes on forever."
+   ]
+  },
+  "7265": {
+   "text": "I'D HATE TO BE LOST▼Even a soul must feel helpless▼when it has lost its way.▼That's what I think.",
+   "history": [
+    "LOST KID▼Even a soul gets lonely▼when it's lost.▼At least, I think so.",
+    "LOST KID▼Even a soul must feel helpless▼when it has lost its way.▼That's what I think, anyway."
+   ]
+  },
+  "7267": {
+   "text": "A SESSION TOGETHER▼Any musician would want▼someone to sing along to▼their playing, after all.",
+   "history": [
+    "JAM SESSION▼As a musician, I'd love for▼someone to sing along with▼my performance!",
+    "JAM SESSION▼When you play an instrument,▼you really do want someone to▼sing along with you."
+   ]
+  },
+  "7268": {
+   "text": "DID YOU SEE THE FAIRY?▼Could everyone see the Fairy?▼As for me… it's a secret!§",
+   "history": [
+    "Did You See the Fairy?▼Did everyone see the fairy?▼As for me…▼That's a secret!",
+    "SAW A FAIRY?▼Did everyone see the fairy?▼As for me…▼That's a secret!§",
+    "SAW A FAIRY?▼Could everybody see the Fairy?▼As for me… that's a secret!§"
+   ]
+  },
+  "7270": {
+   "text": "ARE CHIMES POPULAR NOW?▼It seems chimes are being▼changed a lot lately.▼Does everyone love music?",
+   "history": [
+    "CHIMES POPULAR?▼Folks keep changing their▼door chimes lately.▼Everyone loves music!",
+    "CHIMES POPULAR?▼It seems chimes keep getting▼changed a lot lately.▼Does everybody love music?"
+   ]
+  },
+  "7271": {
+   "text": "MY REVENGE FAILED!▼I used the metal tub spell for▼revenge, but he dodged every one.▼That's Wind Weasel for you!",
+   "history": [
+    "REVENGE FAILED!▼My washtub revenge spell▼dodged every time!▼Classic Kamaitachi.",
+    "REVENGE FAILED!▼I cast the metal tub spell for▼revenge, but he dodged them all.▼That's Wind Weasel for you!"
+   ]
+  },
+  "7272": {
+   "text": "SOMEBODY TELL ME▼Those letters were written▼there again… Somebody tell me▼how they're written!§",
+   "history": [
+    "Help Wanted▼I saw that weird writing again…▼How do you even make those?▼Anyone know? Please tell me!",
+    "HELP WANTED▼That odd writing again...▼How do you make it?▼Someone tell me, please!§",
+    "HELP WANTED▼Those letters were written▼there again… How do you write▼them? Somebody, please tell me!§"
+   ]
+  },
+  "7273": {
+   "text": "STOMACH OR HEAD FIRST?▼Do you get hungry because your▼stomach growls, or does it growl▼because you're hungry? Tough one.",
+   "history": [
+    "BODY OR BRAIN?▼Tummy rumbles, so you eat --▼or you want to eat, so it▼rumbles?",
+    "BODY OR BRAIN?▼Do you want to eat because your▼stomach growls? Or does it growl▼because you want to eat? Tricky."
+   ]
+  },
+  "7274": {
+   "text": "LIKES AND DISLIKES▼Eating a food you hate and▼coming to like it?▼I can't even imagine that.§",
+   "history": [
+    "Likes and Dislikes▼I can't imagine eating food▼I hate and suddenly liking▼it. That's impossible!",
+    "LIKES/DISLIKES▼Eating food I hate▼and suddenly liking it?▼Impossible!§",
+    "LIKES/DISLIKES▼Eating a food you hate and▼ending up liking it?▼I can't even imagine that.§"
+   ]
+  },
+  "7275": {
+   "text": "I HAD THEM WRONG▼They looked scary, but putting▼flowers on display like that…▼They have a delicate side too.",
+   "history": [
+    "MISJUDGED!▼Looked tough, yet he▼decorates with flowers --▼such a sensitive side!",
+    "MISJUDGED!▼They looked scary, but putting▼out flowers like that… They▼have a delicate side too."
+   ]
+  },
+  "7276": {
+   "text": "JAM SESSIONS ARE FUN▼The more people there are▼playing in a jam session,▼the more fun it is.",
+   "history": [
+    "SESSIONS ARE FUN▼The more people who join in,▼the more fun▼sessions become!",
+    "SESSIONS ARE FUN▼With a jam session, the more▼people who play, the more▼fun it gets."
+   ]
+  },
+  "7277": {
+   "text": "I COULD BUY A PRESENT▼This, too… is thanks to all▼of you.▼Thank you very much.§",
+   "history": [
+    "Presents Changed▼This is all thanks to▼everyone!▼Thank you so much!",
+    "PRESENTS CHANGE▼This is all thanks to▼everyone!▼Thank you so much!§",
+    "I BOUGHT A PRESENT▼This is… all thanks to every▼one of you.▼Thank you so very much.§"
+   ]
+  },
+  "7278": {
+   "text": "SECRETLY RICH?▼Wearing rings on all ten of▼his legs… Could he actually▼be rich?§",
+   "history": [
+    "Rich Kid?▼You had rings on ALL ten▼fingers? Are you secretly▼loaded or something?",
+    "RICH KID?▼You had rings on ALL ten▼fingers? Are you secretly▼loaded or something?§",
+    "RICH KID?▼Wearing a ring on every one of▼those ten legs… Could it be▼that he's actually rich?§"
+   ]
+  },
+  "7279": {
+   "text": "GOLEM ACCESSORIES DONE!▼The accessories to beautifully▼adorn the Golem are finished.▼Thank you all for your help.§",
+   "history": [
+    "Golem Accessories Complete▼Beautiful Golem accessories▼are now finished!▼Thanks for your help!",
+    "GOLEM SET DONE▼Beautiful Golem accessories▼are now finished!▼Thanks for your help!§",
+    "GOLEM SET DONE▼The accessories to beautifully▼adorn the Golem are finished.▼Thank you all for your help.§"
+   ]
+  },
+  "7280": {
+   "text": "TALK FIRST, THEN JUDGE▼Kappa is really easy to▼talk to. I had him all wrong▼this whole time.",
+   "history": [
+    "TRY TALKING▼Kappa's so easy to talk to!▼I had them all wrong this▼whole time.",
+    "TRY TALKING▼Kappa turns out to be really▼easy to talk to. I had him▼all wrong this whole time."
+   ]
+  },
+  "7281": {
+   "text": "MY HEAD IS SMOKING▼I thought about it all day long▼and still didn't get it at all…▼Even though I got it before…§",
+   "history": [
+    "Brain Overload▼Thought about it all day long▼but still don't get it…▼I used to understand this…",
+    "BRAIN SMOKE!▼Pondered all day,▼still don't get it...▼I used to understand this!§",
+    "BRAIN SMOKE!▼I thought about it all day long▼and still couldn't get it…▼Even though I could before…§"
+   ]
+  },
+  "7284": {
+   "text": "AS WINTER ENDS…▼It seems someone has come to▼ask a favor. Please hear them▼out before spring comes.§",
+   "history": [
+    "Winter's End▼Someone has come with a favor▼to ask. Please lend an ear▼before spring arrives!",
+    "WINTER'S END…▼Someone needs a favor.▼Please hear them out▼before spring arrives!§",
+    "WINTER'S END…▼It seems someone has come to▼ask a favor. Please hear them▼out before spring arrives.§"
+   ]
+  },
+  "7285": {
+   "text": "THE FAMILIAR SPELL▼Do you all remember it?▼It seems that now, you could▼meet him once again.§",
+   "history": [
+    "Familiar Spell▼Do you remember yours?▼Now might be your chance▼to meet them again!",
+    "FAMILIAR SPELL▼Do you remember yours?▼Now might be your chance▼to meet them again!§",
+    "FAMILIAR SPELL▼Do you all remember it?▼Right now, it seems you could▼meet him once again.§"
+   ]
+  },
+  "7286": {
+   "text": "GOLEM ACCESSORY CONTEST▼A contest of beauty between▼Golems dressed up in jewels.▼Everyone, please lend a hand!§",
+   "history": [
+    "Golem Accessory Contest▼A contest to see whose golem▼looks best with gem jewelry!▼Everyone, please participate!",
+    "GOLEM CONTEST▼Whose golem wears gem jewelry▼best? Everyone, please▼take part!§",
+    "GOLEM CONTEST▼A contest to see whose Golem,▼dressed up in jewels, is the most▼beautiful. Please help, everyone!§"
+   ]
+  },
+  "7287": {
+   "text": "ABOUT THAT TIME▼It is the season when we held▼the Homunculus class.▼I wonder if they are doing well.§",
+   "history": [
+    "Season's Notice▼It's about time for▼Homunculus classes again.▼How are they doing?",
+    "ALMOST TIME▼It's about time for▼Homunculus classes again.▼How are they doing?§",
+    "ALMOST TIME▼It is the season when we held▼the Homunculus class.▼I wonder if they are doing well.§"
+   ]
+  },
+  "7288": {
+   "text": "THE RAIN-LOVING CHILD▼It seems he would like to make▼more friends. Would you be so▼kind as to hear him out?§",
+   "history": [
+    "Rain-Loving Kid▼He wants to make more friends.▼Would you talk with him?",
+    "RAIN-LOVING KID▼He wants to make more friends.▼Would you talk with him?§",
+    "RAIN-LOVING KID▼It seems he would like to make▼more friends. Would you be so▼kind as to hear him out?§"
+   ]
+  },
+  "7289": {
+   "text": "KEEP THE TOWN CLEAN▼Let's pull up the weeds and▼make the town beautiful. It is▼sure to make someone happy.§",
+   "history": [
+    "Keep Our Town Clean▼Pull weeds to help make our▼town beautiful! Someone▼will surely appreciate it.",
+    "KEEP TOWN CLEAN▼Pull weeds to keep▼our town beautiful!▼Someone will thank you.§",
+    "KEEP TOWN CLEAN▼Let's pull up the weeds and▼make our town beautiful. It is▼sure to make someone happy.§"
+   ]
+  },
+  "7290": {
+   "text": "THE TRAVELER RETURNS▼He has come to town.▼This is your chance to learn▼how enjoyable music can be.§",
+   "history": [
+    "Traveler Returns▼He's back in town!▼A chance to learn about▼the joy of music!",
+    "TRAVELER RETURNS▼He's back in town!▼A chance to learn about▼the joy of music!§",
+    "TRAVELER RETURNS▼He has come to town again.▼This is your chance to learn▼how much fun music can be.§"
+   ]
+  },
+  "7291": {
+   "text": "EVER SEEN A FAIRY?▼If you have seen one, then this▼time, do your best to become▼friends with it, all right?§",
+   "history": [
+    "Have you seen a Fairy?▼If you have, try your best▼to become friends with one▼next time, okay?",
+    "SEEN A FAIRY?▼If so, try to befriend▼one next time, okay?§",
+    "SEEN A FAIRY?▼If you have, then this time,▼do your best to become friends▼with one, all right?§"
+   ]
+  },
+  "7292": {
+   "text": "BIGFOOT RETURNS▼It seems large footprints have▼been left around town again.▼He may have come back.§",
+   "history": [
+    "Big Footprints Again▼Giant footprints spotted▼around town once more.▼Could HE be back?",
+    "BIG FOOT RETURNS▼Giant footprints spotted▼around town once more.▼Could HE be back?§",
+    "BIG FOOT RETURNS▼It seems huge footprints have▼been left around town again.▼He may well be here.§"
+   ]
+  }
+ }
+}

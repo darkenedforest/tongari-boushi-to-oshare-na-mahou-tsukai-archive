@@ -108,6 +108,58 @@ create policy allow_public_upload on storage.objects
   for insert with check (bucket_id = 'bug-report-images');
 ```
 
+## 3b. File attachments on bug reports (private bucket + table)
+
+Added 2026-10-06 (step-408). Reporters can attach files — save files,
+emulator logs, zips — alongside screenshots. Unlike screenshots these are
+**private**: they go into a bucket only the service role can read, the
+same way the save-file editor stores captured saves, and the board shows
+only a generic "📎 N files attached" chip. The anon key can read just
+`report_id` from the metadata table, so filenames never leave the server.
+
+**SQL Editor → New query**, paste, Run:
+
+```sql
+create table if not exists report_attachments (
+  id bigint primary key generated always as identity,
+  report_id bigint not null references reports(id) on delete cascade,
+  filename text not null,          -- cleaned original name
+  file_path text not null,         -- path inside the 'bug-report-files' bucket: r<report>/<uuid>/<filename>
+  file_size_bytes int not null,
+  content_type text,
+  created_at timestamptz not null default now()
+);
+
+alter table report_attachments enable row level security;
+
+-- Anyone can attach a file to a report (no auth), and anyone can COUNT
+-- attachments — but only the id / report_id / created_at columns are
+-- readable by the anon and authenticated roles. filename, file_path,
+-- content_type and size are service-role only.
+create policy insert_report_attachments on report_attachments
+  for insert with check (true);
+create policy read_report_attachments on report_attachments
+  for select using (true);
+revoke select on report_attachments from anon, authenticated;
+grant select (id, report_id, created_at) on report_attachments to anon, authenticated;
+
+-- Private bucket, 8 MB cap per object (a DS save is 512 KB).
+insert into storage.buckets (id, name, public, file_size_limit)
+  values ('bug-report-files', 'bug-report-files', false, 8388608)
+  on conflict (id) do update set public = false, file_size_limit = 8388608;
+
+-- Anyone may upload INTO it; nobody reads via anon (no select policy —
+-- service_role bypasses RLS, so the dashboard's Storage browser and the
+-- admin CLI can download).
+create policy bug_files_insert on storage.objects
+  for insert with check (bucket_id = 'bug-report-files');
+```
+
+To fetch an attachment: Supabase dashboard → Storage → `bug-report-files`
+→ `r<report id>/…`, or query `report_attachments` with the service key to
+get `file_path` and download it with
+`supabase.storage.from('bug-report-files').download(path)`.
+
 ## 4. Grab the two keys
 
 Supabase recently reorganized this page, so the URL and the key live in

@@ -6,8 +6,8 @@
 //    - shop_name (renamed from school_name in step-258)
 //    - town_name (new in step-258)
 //    - player_name (5 chars, the §22 cap)
-//    - catalog (text edit at one slot)
-//    - catalog_clear (remove at another slot)
+//    - board (step-408: whole-block rewrite — one post retexted, one removed)
+//    - letter (step-408: text edit on one letter-queue record)
 //    - ritch (to confirm we didn't break the previously-working path)
 //    - inventory_slot (step-264) — add to empty, change occupied, clear
 // 4. Re-wrap as .dsv and reparse.
@@ -53,6 +53,7 @@ const FIXTURE =
 
 const editor = await import('../src/lib/savefile/editor.ts');
 const parser = await import('../src/lib/savefile/parser.ts');
+const board = await import('../src/lib/savefile/board.ts');
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
@@ -117,8 +118,8 @@ console.log(`  player name: ${JSON.stringify(slotABefore.playerName)}`);
 console.log(`  shop name:   ${JSON.stringify(slotABefore.shopName)}`);
 console.log(`  town name:   ${JSON.stringify(slotABefore.townName)}`);
 console.log(`  ritch: ${slotABefore.ritch}`);
-console.log(`  catalog entries: ${slotABefore.catalogEntries.length}`);
-slotABefore.catalogEntries.slice(0, 5).forEach((e, i) => {
+console.log(`  board posts: ${slotABefore.boardRecords.filter(r => !r.empty).length}`);
+slotABefore.boardRecords.filter(r => !r.empty).slice(0, 5).forEach((e, i) => {
   console.log(`    #${i+1} @body 0x${e.bodyOffset.toString(16)}: ${JSON.stringify(e.text.slice(0,60))}`);
 });
 console.log(`  header csum ok: ${slotABefore.checksum.ok}`);
@@ -238,8 +239,22 @@ for (const idx of [8, 9, 10, 11, 12, 13, 14]) {
 // Plan + apply the edits
 // ---------------------------------------------------------------------------
 
-const targetCatalogEdit = slotABefore.catalogEntries[1];  // entry #2
-const targetCatalogRemove = slotABefore.catalogEntries[3]; // entry #4
+// Board edits are resolved against the ACTIVE slot's records (that is
+// what the component does); the whole 14-record block is rebuilt.
+const activeBefore = parseBefore.activeSlot === 'A' ? slotABefore : slotBBefore;
+const boardIndex = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'public/data/board_posts.json'), 'utf8'));
+const boardBefore = activeBefore.boardRecords;
+const boardAssess = board.assessBoard(boardBefore, boardIndex, activeBefore.playerName);
+const populatedIdx = boardBefore.map((r, i) => (r.empty ? -1 : i)).filter(i => i >= 0);
+const BOARD_EDIT_IDX = populatedIdx[1];   // second post: new text
+const BOARD_REMOVE_IDX = populatedIdx[3]; // fourth post: removed
+const BOARD_NEW_TEXT = 'STAGE-2-EDITED\nHello world!\nThis is a round-trip test.';
+const boardActions = {
+  [BOARD_EDIT_IDX]: { kind: 'text', text: BOARD_NEW_TEXT },
+  [BOARD_REMOVE_IDX]: { kind: 'remove' },
+};
+const boardPlan = board.buildBoardRecords(boardBefore, boardAssess, boardActions);
+const targetLetter = activeBefore.letterRecords.find(r => !r.empty) ?? null;
 
 // Inventory edits — exercise empty→occupied, occupied→occupied, occupied→empty.
 //   - Slot 8 (currently empty in BOTH slot A and slot B): add Cranberry x5
@@ -259,8 +274,8 @@ const edits = [
   { kind: 'shop_name', value: 'Magus' },          // 5 chars, within 6-char cap (renamed from school_name in step-258)
   { kind: 'town_name', value: 'Town2' },          // 5 chars, within 5-char cap (new in step-258)
   { kind: 'ritch', value: 42424 },
-  { kind: 'catalog', entryOffset: targetCatalogEdit.bodyOffset, text: 'STAGE-2-EDITED\nHello world!\nThis is a round-trip test.' },
-  { kind: 'catalog_clear', entryOffset: targetCatalogRemove.bodyOffset },
+  { kind: 'board', records: boardPlan },
+  ...(targetLetter ? [{ kind: 'letter', recordOffset: targetLetter.bodyOffset, text: 'LETTER-EDIT\nround trip' }] : []),
   // Inventory bag edits — slotIndex is 0-based (slot 1 = index 0).
   { kind: 'inventory_slot', slotIndex: 7, storedValue: NEW_SLOT8_STORED, quantity: 5 },   // slot 8 ← Cranberry x5
   { kind: 'inventory_slot', slotIndex: 0, storedValue: NEW_SLOT1_STORED, quantity: 3 },   // slot 1 ← White May Lily x3
@@ -292,8 +307,8 @@ console.log(`  player name: ${JSON.stringify(slotAAfter.playerName)}`);
 console.log(`  shop name:   ${JSON.stringify(slotAAfter.shopName)}`);
 console.log(`  town name:   ${JSON.stringify(slotAAfter.townName)}`);
 console.log(`  ritch: ${slotAAfter.ritch}`);
-console.log(`  catalog entries: ${slotAAfter.catalogEntries.length}`);
-slotAAfter.catalogEntries.slice(0, 5).forEach((e, i) => {
+console.log(`  board posts: ${slotAAfter.boardRecords.filter(r => !r.empty).length}`);
+slotAAfter.boardRecords.filter(r => !r.empty).slice(0, 5).forEach((e, i) => {
   console.log(`    #${i+1} @body 0x${e.bodyOffset.toString(16)}: ${JSON.stringify(e.text.slice(0,60))}`);
 });
 console.log(`  header csum ok: ${slotAAfter.checksum.ok}`);
@@ -344,40 +359,32 @@ assertTrue('slot B header csum still passes', slotBAfter.checksum.ok);
 assertTrue('slot B body csum still passes', slotBAfter.bodyChecksum.ok);
 assertTrue('slot B extra0 csum still passes', slotBAfter.extra0Checksum.ok);
 
-// Catalog edit round-trip
-const editedEntryAfter = slotAAfter.catalogEntries.find(
-  e => e.bodyOffset === targetCatalogEdit.bodyOffset,
-);
-assertTrue('edited catalog entry still present after round-trip',
-  editedEntryAfter !== undefined);
-if (editedEntryAfter) {
-  assertEq(
-    'edited catalog entry text round-trips',
-    editedEntryAfter.text,
-    'STAGE-2-EDITED\nHello world!\nThis is a round-trip test.',
-  );
+// Board round-trip (step-408). Removed posts drop out and the rest close
+// up, so compare by content rather than by offset: the edited text is
+// present once, the removed post's text is gone, and every other post's
+// text survived. Both slots receive the same block.
+for (const [label, slotAfter] of [['A', slotAAfter], ['B', slotBAfter]]) {
+  const textsAfter = slotAfter.boardRecords.filter(r => !r.empty).map(r => r.text);
+  assertTrue(`slot ${label}: edited board post text round-trips`,
+    textsAfter.filter(t => t === BOARD_NEW_TEXT).length === 1);
+  assertTrue(`slot ${label}: removed board post is gone`,
+    !textsAfter.includes(boardBefore[BOARD_REMOVE_IDX].text));
+  const expectedKept = populatedIdx
+    .filter(i => i !== BOARD_EDIT_IDX && i !== BOARD_REMOVE_IDX)
+    .map(i => boardBefore[i].text);
+  for (const t of expectedKept) {
+    assertTrue(`slot ${label}: untouched board post preserved ${JSON.stringify(t.slice(0, 30))}`,
+      textsAfter.includes(t));
+  }
+  assertEq(`slot ${label}: board post count after edit`,
+    textsAfter.length, populatedIdx.length - 1);
 }
-
-const clearedEntryAfter = slotAAfter.catalogEntries.find(
-  e => e.bodyOffset === targetCatalogRemove.bodyOffset,
-);
-assertTrue('removed catalog entry no longer surfaces in the parsed list',
-  clearedEntryAfter === undefined);
-
-// Other catalog entries should be preserved intact.
-const otherOriginals = slotABefore.catalogEntries
-  .filter(e => e.bodyOffset !== targetCatalogEdit.bodyOffset
-            && e.bodyOffset !== targetCatalogRemove.bodyOffset);
-for (const orig of otherOriginals) {
-  const after = slotAAfter.catalogEntries.find(e => e.bodyOffset === orig.bodyOffset);
-  if (!after) {
-    console.error(`FAIL: other catalog entry @0x${orig.bodyOffset.toString(16)} disappeared after edit`);
-    failures++;
-  } else if (after.text !== orig.text) {
-    console.error(`FAIL: other catalog entry @0x${orig.bodyOffset.toString(16)} text changed:\n  before: ${JSON.stringify(orig.text)}\n  after:  ${JSON.stringify(after.text)}`);
-    failures++;
-  } else {
-    console.log(`PASS: untouched catalog entry @0x${orig.bodyOffset.toString(16)} preserved`);
+if (targetLetter) {
+  const letterAfter = slotAAfter.letterRecords.find(r => r.bodyOffset === targetLetter.bodyOffset);
+  assertTrue('edited letter record still present', letterAfter !== undefined);
+  if (letterAfter) {
+    assertEq('edited letter text round-trips', letterAfter.text, 'LETTER-EDIT\nround trip');
+    assertEq('edited letter marked filled', letterAfter.flag, 1);
   }
 }
 

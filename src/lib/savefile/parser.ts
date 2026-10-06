@@ -10,10 +10,10 @@
 // in the translation repo. See `notes/savefile_format.md` for the field
 // map this code is based on (step-173 / 176 / 177 reverse-engineering).
 
+import { parseBoardRecords, parseLetterRecords, BOARD_BASE, LETTERS_BASE } from './board';
 import type {
   ActivityRecord,
   BankRecord,
-  CatalogEntry,
   ChecksumInfo,
   CollectionBitmap,
   CollectionStatRecord,
@@ -30,7 +30,6 @@ import type {
   GardenSummary,
   InventoryBagSlot,
   InventorySlot,
-  MailEntry,
   PreambleInfo,
   SaveParse,
   SlotLabel,
@@ -194,21 +193,16 @@ export const OFFSETS = {
   gardenEnd: 0x16000,
   gardenRecordSize: 12,
 
-  // Catalog announcements. Predecessor said 0x163F2; phase 7 corrected to
-  // 0x162BC. step-223 confirmed neither is exactly right: a stride-0xA8
-  // scan that anchors on the "こんしゅう" catalog template proves the true
-  // entry-0 start is 0x162B6. The 0x162BC the brief mentioned points 6
-  // bytes into entry 0 (between the entry's 8-byte metadata header and
-  // its text body). We use 0x162B6 so the 8-byte header decoded by the
-  // entry-text scanner lines up with the on-disk record layout.
-  catalogStart: 0x162b6,
-  catalogEnd: 0x17400,
-  catalogStride: 0xa8,
-
-  // Per-NPC mail bodies
-  mailStart: 0x17400,
-  mailEnd: 0x1cfd0,
-  mailStride: 0xa8,
+  // Bulletin board + letter queues. The block the game's record routines
+  // address starts at body 0x162BC (slot-body start + 0x14 + 0x162A8, see
+  // translation-repo notes/board_post_engine_map.md): 14 post records of
+  // 0xA8, then letter queues of 10 and 12 records in the same layout.
+  // Before step-408 this parser scanned from 0x162B6 and read the last 6
+  // bytes of each record (addressee id, flag, month, day, weekday) as a
+  // "header" of the next one. Decoding lives in ./board.ts.
+  boardStart: BOARD_BASE,
+  lettersStart: LETTERS_BASE,
+  boardStride: 0xa8,
 
   // Player inventory bag — 15 slots × 6-byte records at body 0x1D9B6.
   // Encoding cracked in translation-repo step-260: ARM9 lookup function
@@ -792,125 +786,6 @@ function parseInventoryBag(body: Uint8Array): InventoryBagSlot[] {
 }
 
 // ---------------------------------------------------------------------------
-// Catalog announcements
-// ---------------------------------------------------------------------------
-
-/** Heuristic: does this UTF-16 LE decoded string contain enough plausible
- *  text to be worth surfacing? Used to filter the strided text scanners
- *  (catalog announcements, mail bodies) so we don't show pages of
- *  mojibake from empty regions where the underlying bytes happen to be
- *  non-null but aren't real text. */
-function looksLikePlausibleText(s: string): boolean {
-  if (s.length < 3) return false;
-  let plausible = 0;
-  for (let i = 0; i < s.length; i++) {
-    const cp = s.codePointAt(i) ?? 0;
-    // ASCII printable
-    if (cp >= 0x20 && cp <= 0x7e) {
-      plausible++;
-      continue;
-    }
-    // Hiragana / Katakana / CJK Unified Ideographs / Halfwidth-Fullwidth /
-    // Ideographic space, common Japanese punctuation
-    if (
-      (cp >= 0x3000 && cp <= 0x303f) ||
-      (cp >= 0x3040 && cp <= 0x309f) ||
-      (cp >= 0x30a0 && cp <= 0x30ff) ||
-      (cp >= 0x4e00 && cp <= 0x9fff) ||
-      (cp >= 0xff00 && cp <= 0xffef) ||
-      cp === 0x2026 || // …
-      cp === 0x2605 || // ★
-      cp === 0x266a || // ♪
-      cp === 0x266b
-    ) {
-      plausible++;
-    }
-  }
-  // Demand >=60% plausible, and at least 3 plausible chars total.
-  return plausible >= 3 && plausible * 5 >= s.length * 3;
-}
-
-function parseStridedTextEntries(
-  body: Uint8Array,
-  start: number,
-  end: number,
-  stride: number,
-  headerLen: number,
-): { index: number; bodyOffset: number; text: string; headerHex: string }[] {
-  const out: { index: number; bodyOffset: number; text: string; headerHex: string }[] = [];
-  let idx = 0;
-  for (let off = start; off + stride <= end && off + stride <= body.length; off += stride) {
-    const entry = body.subarray(off, off + stride);
-    // Skip purely-empty entries (all 0xFF or all 0x00 or all 0x77 padding).
-    if (allBytesEqual(entry, 0xff) || allBytesEqual(entry, 0x00)) {
-      idx++;
-      continue;
-    }
-    // Quick reject: if the post-header region has fewer than 4 non-zero,
-    // non-0xFF bytes, treat this entry as empty.
-    const textSpace = entry.subarray(headerLen);
-    let nontrivialBytes = 0;
-    for (let i = 0; i < textSpace.length; i++) {
-      const b = textSpace[i];
-      if (b !== 0x00 && b !== 0xff) nontrivialBytes++;
-    }
-    if (nontrivialBytes < 4) {
-      idx++;
-      continue;
-    }
-    const header = entry.subarray(0, headerLen);
-    const text = decodeUtf16Le(textSpace, Math.floor(textSpace.length / 2));
-    if (!looksLikePlausibleText(text)) {
-      idx++;
-      continue;
-    }
-    out.push({
-      index: idx,
-      bodyOffset: off,
-      text,
-      headerHex: bytesToHex(header),
-    });
-    idx++;
-  }
-  return out;
-}
-
-function parseCatalog(body: Uint8Array): CatalogEntry[] {
-  // step-249: catalog records use a 6-byte header (status + date),
-  // not 8. Empirical verification against save14_v2.31_11772ritch:
-  // with headerLen=8 the parser truncated "Sorry I left without..."
-  // to "orry I left without..." (lost the leading "S"). The on-disk
-  // layout, per per-record dump, is:
-  //   +0x00..+0x05: 6-byte header (00 00 status-byte 04 month day)
-  //   +0x06..+0x86: main UTF-16 LE body text (max ~64 chars)
-  //   +0x88..+0xA7: trailing sender / addressee NPC name (UTF-16 LE)
-  return parseStridedTextEntries(
-    body,
-    OFFSETS.catalogStart,
-    OFFSETS.catalogEnd,
-    OFFSETS.catalogStride,
-    6,
-  );
-}
-
-function parseMail(body: Uint8Array): MailEntry[] {
-  // step-249: mail bodies use the same 6-byte header structure as catalog
-  // entries. With headerLen=8 the inspector rendered the last 10 bytes
-  // of a record (e.g. "iva" — tail of "Aint no diva" in save14). Going
-  // to 6 surfaces the full text body. Note that the mail-region bytes in
-  // our corpus look more like shop/NPC metadata than free-form letters
-  // for many records — the inspector will still show few populated rows
-  // even after the fix because most slots are genuinely empty.
-  return parseStridedTextEntries(
-    body,
-    OFFSETS.mailStart,
-    OFFSETS.mailEnd,
-    OFFSETS.mailStride,
-    6,
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Garden
 // ---------------------------------------------------------------------------
 
@@ -1229,8 +1104,8 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       ritch: null,
       activeInventory: [],
       inventoryBag: [],
-      catalogEntries: [],
-      mailEntries: [],
+      boardRecords: [],
+      letterRecords: [],
       garden: { totalTiles: 0, populatedTiles: 0, tiles: [] },
       eventFlags: { totalBytes: 0, setBits: 0, previewHex: '' },
       activityLog: [],
@@ -1300,8 +1175,8 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     ritch,
     activeInventory: parseActiveInventory(body, view),
     inventoryBag: parseInventoryBag(body),
-    catalogEntries: parseCatalog(body),
-    mailEntries: parseMail(body),
+    boardRecords: parseBoardRecords(body),
+    letterRecords: parseLetterRecords(body),
     garden: parseGarden(body),
     eventFlags: parseEventFlags(body),
     activityLog: parseActivityLog(body, view),
@@ -1841,8 +1716,8 @@ export const REGION_DESCRIPTORS = {
   activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
   collectionStats: { id: 'collectionStats', title: 'Collection statistics', range: 'body[0x11550:0x115F4], 14-byte records', confidence: 'candidate' as const },
   garden: { id: 'garden', title: 'Garden plant tile state', range: 'body[0x12400:0x16000], 12-byte records', confidence: 'confirmed' as const },
-  catalog: { id: 'catalog', title: 'Shop catalog announcement board (editable + removable)', range: 'body[0x162B6+], 168-byte stride (6-byte header + 162-byte UTF-16 text body)', confidence: 'confirmed' as const },
-  mail: { id: 'mail', title: 'Per-NPC mail bodies', range: 'body[0x17400+], 168-byte stride', confidence: 'confirmed' as const },
+  board: { id: 'board', title: 'Bulletin board — 14 posts (view, update to the current translation, remove, edit)', range: 'body[0x162BC:0x16BEC], 168-byte records: 136-byte text, 22-byte author, message no., author id, addressee id, flag, date', confidence: 'confirmed' as const },
+  letters: { id: 'letters', title: 'Letter queues — 10 + 12 records (same layout as board posts)', range: 'body[0x16BEC:0x1765C], 168-byte records', confidence: 'candidate' as const },
   ritch: { id: 'ritch', title: 'Ritch (wallet)', range: 'body[0x1CFD0], u32 LE', confidence: 'confirmed' as const },
   bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },
   townResidents: { id: 'townResidents', title: 'Town residents (8 slots × 0x22F8)', range: 'body[0x1E0E0:0x2F8A0], 0x22F8-byte stride, max 8 residents; first 16 B per slot = UTF-16 LE NPC name', confidence: 'confirmed' as const },

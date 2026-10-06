@@ -27,13 +27,25 @@ const base = import.meta.env.BASE_URL;
       <strong>JP-version saves work too</strong> — any ROM revision, any
       region. Patched-ROM and unpatched JP saves both parse.
     </p>
+    <p class="board-note">
+      <strong>New with patch v2.6.3 — repair and update your bulletin
+      board.</strong> Older patches wrote board posts into a field too
+      small for English, which garbled authors and dates and left some
+      posts blank; v2.6.3 stores posts differently and retranslated all
+      233 of them. The <em>Bulletin board</em> section below shows every
+      post on your board, flags the corrupt ones for removal, and updates
+      every post to the current translation (NPC names, item names and
+      wording) in one click. Apply v2.6.3 first: the updated posts are
+      written by the new game code the next time you open the board.
+    </p>
     <p class="features">
-      <strong>What you can edit:</strong> Ritch (currency), player name,
-      school name, mail announcements (edit text or remove the entry), and
-      the 15-slot inventory bag. Active-slot detection routes edits to the
-      most recently written save slot, with mirrors kept in sync. Header
-      and body checksums are recomputed on download so the modified save
-      loads cleanly in-game.
+      <strong>What you can edit:</strong> Ritch (currency), player, shop
+      and town names, the bulletin board (update posts to the current
+      translation, remove corrupt posts, or rewrite a post), letter-queue
+      text, and the 15-slot inventory bag. Active-slot detection routes
+      edits to the most recently written save slot, with mirrors kept in
+      sync. All three checksums the game verifies are recomputed on
+      download so the modified save loads cleanly in-game.
     </p>
     <p class="how-to">
       <strong>How to use it:</strong> drop your .sav (or .dsv / .duc /
@@ -99,6 +111,25 @@ const base = import.meta.env.BASE_URL;
   }
   .jp-note strong {
     color: var(--color-purple-600);
+  }
+  .board-note {
+    max-width: 64ch;
+    line-height: 1.6;
+    color: var(--color-ink);
+    background: linear-gradient(135deg, #fff7d6, var(--color-pink-50));
+    border: 2px solid #f3d774;
+    border-left: 6px solid #d99e1f;
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 0.92rem;
+    margin: 8px 0 12px;
+  }
+  .board-note strong {
+    color: #8a5a00;
+  }
+  .board-note em {
+    color: var(--color-pink-600);
+    font-style: italic;
   }
   .features {
     max-width: 64ch;

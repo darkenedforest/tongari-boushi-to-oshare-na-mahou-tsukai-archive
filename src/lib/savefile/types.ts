@@ -101,21 +101,10 @@ export interface InventoryBagSlot {
   rawHex: string;
 }
 
-export interface CatalogEntry {
-  index: number;
-  bodyOffset: number;
-  /** UTF-16 LE decode of the body text. */
-  text: string;
-  /** First 8 bytes (header) as hex. */
-  headerHex: string;
-}
-
-export interface MailEntry {
-  index: number;
-  bodyOffset: number;
-  text: string;
-  headerHex: string;
-}
+/** Bulletin-board and letter-queue records share one 168-byte layout;
+ *  see ./board.ts for the field map and decoding. */
+import type { BoardRecord } from './board';
+export type { BoardRecord };
 
 export interface GardenTile {
   index: number;
@@ -358,11 +347,11 @@ export interface SlotParse {
    *  quantity. Encoding cracked in translation-repo step-260. */
   inventoryBag: InventoryBagSlot[];
 
-  // Catalog announcements (0x163F2 stride 0xA8)
-  catalogEntries: CatalogEntry[];
+  // Bulletin board — 14 post records at body 0x162BC, stride 0xA8
+  boardRecords: BoardRecord[];
 
-  // Per-NPC mail (0x17400+ stride 0xA8)
-  mailEntries: MailEntry[];
+  // Letter queues — 10 + 12 records right after the board, same layout
+  letterRecords: BoardRecord[];
 
   // Garden plant tiles (0x12400..0x16000, 12-byte records)
   garden: GardenSummary;

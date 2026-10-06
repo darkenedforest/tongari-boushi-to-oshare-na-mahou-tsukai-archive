@@ -10,9 +10,11 @@
 //     (+ slot B mirror). 12-byte field width per §5.
 //   - Town name (UTF-16 LE) — written to body 0x47E ONLY
 //     (+ slot B mirror). 10-byte field width / 5 chars per §22 layout.
-//   - Catalog announcement body text (body 0x162B6, stride 0xA8) — beta
-//   - Catalog announcement REMOVAL (zero-fill 168 bytes + trailing 0xFFFF sentinel)
-//   - Per-NPC mail body text (body 0x17400+, stride 0xA8) — beta
+//   - Bulletin board (14 records at body 0x162BC, stride 0xA8): written as
+//     a whole block built by ./board.ts — posts removed, brought up to the
+//     current translation (marked unfilled so the v2.6.3 game rewrites
+//     them), or retexted. step-408.
+//   - Letter-queue record text (body 0x16BEC+, stride 0xA8) — beta
 //   - Garden plant tile (plant_id byte + grow_time byte) — beta
 //
 // step-252 fixes:
@@ -125,6 +127,13 @@ import {
   EXTRA0_LEN,
   inetCsum16,
 } from './parser';
+import {
+  BOARD_BASE,
+  BOARD_COUNT,
+  BOARD_RECORD_SIZE,
+  TEXT_FIELD,
+  TEXT_PLAIN_MAX,
+} from './board';
 
 const SLOT_A_BASE = 0x100;
 const SLOT_B_BASE = 0x40000;
@@ -162,9 +171,13 @@ export type PendingEdit =
   | { kind: 'player_name'; value: string }
   | { kind: 'shop_name'; value: string }
   | { kind: 'town_name'; value: string }
-  | { kind: 'catalog'; entryOffset: number; text: string }
-  | { kind: 'catalog_clear'; entryOffset: number }
-  | { kind: 'mail'; entryOffset: number; text: string }
+  /** The whole 14-record bulletin board, already materialised by
+   *  board.ts buildBoardRecords (removed posts dropped, the rest closed
+   *  up, empty records padding the block). Written to both slots. */
+  | { kind: 'board'; records: Uint8Array[] }
+  /** One letter-queue record's text (plain UTF-16, ≤ 67 chars); the
+   *  record is also marked filled so the game does not overwrite it. */
+  | { kind: 'letter'; recordOffset: number; text: string }
   | { kind: 'garden_tile'; recordOffset: number; plantId: number; growTime: number }
   /** Player inventory bag slot (one of the 15 records at body 0x1D9B6,
    *  stride 6). slotIndex 0..14. `storedValue=null + quantity=0` writes
@@ -364,22 +377,14 @@ export const TOWN_NAME_MAX_CHARS = 5;
 export const TOWN_NAME_OFFSET = 0x47e;
 export const TOWN_NAME_WIDTH = 22;
 
-/** Each catalog / mail entry is 0xA8 = 168 bytes. The on-disk layout
- *  is a 6-byte header (00 00 status month-marker month day) followed by
- *  162 bytes of UTF-16 LE body text. Confirmed empirically: in
- *  tongari_en.dsv entry 0 the string "WEEKLY CATALOG\nBreaking news…"
- *  starts at +6 inside its 168-byte slot.
- *
- *  step-252 fix: this constant was 8 prior to step-252, causing the
- *  catalog / mail text writers to skip the first character of the new
- *  text AND leave 2 stale bytes of the original header at +6..+7.
- *  Re-loading then decoded those stale bytes as the leading UTF-16
- *  codepoint of the entry. */
-export const STRIDED_ENTRY_HEADER_LEN = 6;
-export const CATALOG_TEXT_MAX_CHARS =
-  Math.floor((OFFSETS.catalogStride - STRIDED_ENTRY_HEADER_LEN) / 2);
-export const MAIL_TEXT_MAX_CHARS =
-  Math.floor((OFFSETS.mailStride - STRIDED_ENTRY_HEADER_LEN) / 2);
+/** Bulletin-board and letter records (168 bytes; layout in ./board.ts).
+ *  The pre-step-408 editor addressed these as "catalog announcements"
+ *  starting 6 bytes early, so its "remove" zero-filled the previous
+ *  record's addressee id, flag and date. The board is now written as a
+ *  whole block built by board.ts; a letter edit rewrites one record's
+ *  text field in place. Letters are not covered by the v2.6.3 board
+ *  patch, so they keep the plain 67-character limit. */
+export const LETTER_TEXT_MAX_CHARS = TEXT_PLAIN_MAX;
 
 // RESIDENT_NAME_MAX_CHARS / RESIDENT_NAME_BYTE_WIDTH intentionally not
 // re-introduced. step-255/256 restored the residents region as a
@@ -544,57 +549,42 @@ export function applyEdits(
         );
         break;
       }
-      case 'catalog': {
-        // Write into the body of each catalog entry — text region only,
-        // header bytes (the 6-byte status+date prefix) are preserved.
-        const textStart = edit.entryOffset + STRIDED_ENTRY_HEADER_LEN;
-        const byteWidth = OFFSETS.catalogStride - STRIDED_ENTRY_HEADER_LEN;
+      case 'board': {
+        // The 14 board records, in order, as board.ts built them. Every
+        // record is exactly 168 bytes; the block is written verbatim to
+        // both slots.
+        if (edit.records.length !== BOARD_COUNT) {
+          throw new Error(`Board edit needs ${BOARD_COUNT} records, got ${edit.records.length}.`);
+        }
+        for (const slot of ['A', 'B'] as const) {
+          const base = bodyOffsetToFile(slot, BOARD_BASE);
+          edit.records.forEach((rec, i) => {
+            if (rec.length !== BOARD_RECORD_SIZE) {
+              throw new Error(`Board record ${i} is ${rec.length} bytes, expected ${BOARD_RECORD_SIZE}.`);
+            }
+            payload.set(rec, base + i * BOARD_RECORD_SIZE);
+          });
+        }
+        break;
+      }
+      case 'letter': {
+        // Plain UTF-16 only: the letter queues are filled by a routine the
+        // v2.6.3 board patch does not touch, so a packed text would show
+        // as garbage there.
+        if (edit.text.length > LETTER_TEXT_MAX_CHARS) {
+          throw new Error(`Letter text too long: ${edit.text.length} chars, max ${LETTER_TEXT_MAX_CHARS}.`);
+        }
         for (const slot of ['A', 'B'] as const) {
           writeUtf16LeFixedWidth(
             payload,
             slot,
-            textStart,
-            byteWidth,
+            edit.recordOffset,
+            TEXT_FIELD,
             edit.text,
-            CATALOG_TEXT_MAX_CHARS,
+            LETTER_TEXT_MAX_CHARS,
           );
-        }
-        break;
-      }
-      case 'catalog_clear': {
-        // Zero-fill the entire 168-byte entry then write the empty-slot
-        // sentinel 0xFF 0xFF at the LAST 2 bytes (+0xA6..+0xA7). This
-        // mimics the byte pattern of unused catalog slots in fresh-save
-        // / partially-populated saves (verified against entries 4..6 of
-        // tongari_en.dsv: all-zero body with trailing `ff ff`). The
-        // parser's plausible-text heuristic skips entries with fewer
-        // than 4 non-(0x00|0xFF) bytes in the post-header region, so
-        // cleared slots disappear from the UI list and the in-game
-        // catalog screen treats the slot as empty.
-        const entry = edit.entryOffset;
-        for (const slot of ['A', 'B'] as const) {
-          const base = slot === 'A' ? SLOT_A_BASE : SLOT_B_BASE;
-          for (let i = 0; i < OFFSETS.catalogStride; i++) {
-            payload[base + entry + i] = 0;
-          }
-          // Trailing 0xFF 0xFF empty-slot sentinel.
-          payload[base + entry + OFFSETS.catalogStride - 2] = 0xff;
-          payload[base + entry + OFFSETS.catalogStride - 1] = 0xff;
-        }
-        break;
-      }
-      case 'mail': {
-        const textStart = edit.entryOffset + STRIDED_ENTRY_HEADER_LEN;
-        const byteWidth = OFFSETS.mailStride - STRIDED_ENTRY_HEADER_LEN;
-        for (const slot of ['A', 'B'] as const) {
-          writeUtf16LeFixedWidth(
-            payload,
-            slot,
-            textStart,
-            byteWidth,
-            edit.text,
-            MAIL_TEXT_MAX_CHARS,
-          );
+          // +0xA4 flag: filled.
+          writeByte(payload, slot, edit.recordOffset + 0xa4, 1);
         }
         break;
       }

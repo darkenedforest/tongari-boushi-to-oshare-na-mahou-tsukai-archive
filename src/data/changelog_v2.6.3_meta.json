@@ -1,0 +1,17 @@
+{
+  "version": "2.6.3",
+  "date": "2026-10-06",
+  "headline": "Starts on a 3DS again, bulletin-board posts are full sentences, and the save-file editor can repair your board",
+  "summary": "The red screen at launch on a 3DS (TWiLight Menu++) is fixed — the main program is stored compressed again, as the cartridge does. The bulletin board stores long posts compactly (132 characters instead of 67) and all 233 posts were retranslated from the Japanese, titles included; the site's save-file editor now reads your board, flags the posts an older patch corrupted, and updates every post to the current translation. Also: 57 speech bubbles rewritten to fit, rumours rewritten and re-wrapped, Lovers' Point given one name across 44 lines, encyclopedia headers spaced, and one byte of Martha's record restored.",
+  "previousVersionLabel": "v2.6.2",
+  "counts": {
+    "arm9PackagingFix": 1,
+    "boardPostsRetranslated": 233,
+    "speechBubblesRewritten": 57,
+    "rumourPiecesRewritten": 175,
+    "rumourLinesRewrapped": 2680,
+    "loversPointLines": 45,
+    "encyclopediaHeaderFix": 1,
+    "npcRecordBytesRestored": 1
+  }
+}

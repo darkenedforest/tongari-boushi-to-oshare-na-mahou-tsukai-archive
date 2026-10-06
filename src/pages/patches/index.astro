@@ -397,6 +397,20 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       <h3 class="release-headline">{latest.headline}</h3>
       <p class="release-summary">{latest.summary}</p>
 
+      {latest.callout && (
+        <aside class="release-callout" role="note">
+          <p class="callout-title">
+            <span class="callout-mark" aria-hidden="true">✦</span> {latest.callout.title}
+          </p>
+          <p class="callout-body">{latest.callout.body}</p>
+          {latest.callout.href && (
+            <a class="callout-link" href={resolveLocalUrl(latest.callout.href)}>
+              {latest.callout.label ?? 'Learn more'} <span aria-hidden="true">→</span>
+            </a>
+          )}
+        </aside>
+      )}
+
       <ul class="changes">
         {latest.changes.map((c) => <li>{c}</li>)}
       </ul>
@@ -813,6 +827,45 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     margin: 0 0 14px;
     line-height: 1.55;
     color: var(--color-ink);
+  }
+
+  /* The one thing in a release everyone needs to act on. */
+  .release-callout {
+    margin: 0 0 18px;
+    padding: 16px 20px;
+    background: linear-gradient(135deg, #fff7d6, var(--color-pink-50));
+    border: 2px solid #f3d774;
+    border-left: 6px solid #d99e1f;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+  }
+  .release-callout .callout-title {
+    margin: 0 0 6px;
+    font-weight: 800;
+    font-size: 1.02rem;
+    color: #8a5a00;
+  }
+  .release-callout .callout-mark {
+    color: var(--color-pink-600);
+  }
+  .release-callout .callout-body {
+    margin: 0 0 10px;
+    line-height: 1.55;
+    color: var(--color-ink);
+  }
+  .release-callout .callout-link {
+    display: inline-block;
+    padding: 7px 16px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    font-weight: 700;
+    text-decoration: none;
+    font-size: 0.92rem;
+  }
+  .release-callout .callout-link:hover {
+    transform: translateY(-1px);
+    color: white;
   }
 
   .changes {

@@ -46,6 +46,12 @@ Push to `main` → `.github/workflows/deploy.yml` runs `npm install` +
 Commit messages use `step-NNN: <description>` — increment N from the latest
 commit.
 
+Whenever bulletin-board text changed in the translation DB (any release
+that touches `message/msg98/07/`), regenerate the save-file editor's post
+index: `python scripts/export_board_posts.py` → `public/data/board_posts.json`
+(current + historical post texts, fair names, NPC names). The editor uses
+it to recognise damaged posts and offer the current translation.
+
 When a new **patch release** ships (new entry in `public/data/patches.json`),
 email the subscriber list after pushing:
 `python scripts/send_patch_announcement.py send --dry-run` to preview, then
