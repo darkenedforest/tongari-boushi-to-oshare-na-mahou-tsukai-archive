@@ -158,6 +158,22 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
           runs locally in your browser, and your ROM never leaves your device.
         </p>
       </div>
+      <aside class="wp-save-badge" aria-labelledby="wp-save-badge-title">
+        <span class="wp-save-badge-chip">
+          <span aria-hidden="true">✦</span> After you patch
+        </span>
+        <p class="wp-save-badge-title" id="wp-save-badge-title">
+          Repair your message board
+        </p>
+        <p class="wp-save-badge-body">
+          Older patches damaged the posts on your bulletin board and left them in
+          the old wording. Run your save through the save-file editor: it flags the
+          corrupt posts, removes them, and updates the rest to the v2.6.3 translation.
+        </p>
+        <a class="wp-save-badge-link" href={resolveLocalUrl('/save-files/')}>
+          Open the save-file editor <span aria-hidden="true">→</span>
+        </a>
+      </aside>
     </div>
 
     <div class="wp-controls">
@@ -301,12 +317,24 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
         };
       }
 
+      // The "repair your message board" badge applies to v2.6.3 and later
+      // (the board storage change); it hides when an older version is
+      // selected. The list is newest-first, so "later" = a smaller index.
+      const saveBadge = document.querySelector('.wp-save-badge');
+      const badgeMinIndex = versions.findIndex(function (v) { return v.version === '2.6.3'; });
+      function updateSaveBadge(index) {
+        if (!saveBadge) return;
+        saveBadge.hidden = badgeMinIndex < 0 || index > badgeMinIndex;
+      }
+
       function applyVersion(index) {
         currentVersionIndex = index;
         const version = versions[index];
         const rev = pickRev(version);
         RomPatcherWeb.setEmbededPatches(patchDescriptor(version, rev));
+        updateSaveBadge(index);
       }
+      updateSaveBadge(0);
 
       sel.addEventListener('change', function () {
         applyVersion(parseInt(this.value, 10) || 0);
@@ -1142,8 +1170,14 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
   }
 
   /* ── Banner band behind the header ──────────────────────────────── */
+  /* Two-column band: the intro on the left, the save-repair badge on the
+     right (under the floating sprite); stacks on narrow screens. */
   .wp-banner {
     position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 22px 28px;
+    align-items: flex-start;
     padding: 30px 32px 26px;
     background:
       radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.55) 0 2px, transparent 3px),
@@ -1159,6 +1193,81 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
   .wp-header {
     position: relative;
     z-index: 2;
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+
+  .wp-save-badge {
+    position: relative;
+    z-index: 2;
+    flex: 0 1 340px;
+    margin-top: 34px;
+    padding: 14px 18px 16px;
+    background: linear-gradient(135deg, #fff7d6, rgba(255, 255, 255, 0.92));
+    border: 2px solid #f3d774;
+    border-left: 6px solid #d99e1f;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-soft);
+    transform: rotate(-1.2deg);
+  }
+
+  .wp-save-badge[hidden] {
+    display: none;
+  }
+
+  .wp-save-badge-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+    background: #d99e1f;
+    color: white;
+    border-radius: var(--radius-pill);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .wp-save-badge-title {
+    margin: 0 0 6px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: #8a5a00;
+  }
+
+  .wp-save-badge-body {
+    margin: 0 0 10px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--color-ink);
+  }
+
+  .wp-save-badge-link {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg, var(--color-pink-400), var(--color-purple-400));
+    color: white;
+    font-weight: 700;
+    font-size: 0.88rem;
+    text-decoration: none;
+  }
+
+  .wp-save-badge-link:hover {
+    transform: translateY(-1px);
+    color: white;
+  }
+
+  @media (max-width: 760px) {
+    .wp-save-badge {
+      flex-basis: 100%;
+      margin-top: 4px;
+      transform: none;
+    }
   }
 
   .wp-recommend-chip {
