@@ -19,15 +19,17 @@ const base = import.meta.env.BASE_URL;
     </div>
     <h1>3D Models ✦</h1>
     <p class="lede">
-      Every 3D model in the ROM — clothing the player can wear, NPCs, items
-      and furniture, caught bugs, environment pieces, magic effects, shop
-      interiors. Click any tile to spin it in a 3D viewer with orbit / zoom
-      controls; models that have animations play them on open. About 300
-      models total, ~9,000 textures.
+      Every 3D model in the ROM — the player's avatars, the townsfolk, items
+      and furniture, fish and insects, map pieces, shops and magic effects —
+      with the textures the game actually pairs them with. Files that are the
+      same model are shown once. Click a tile to orbit it; the panel beside
+      the viewer lists each texture slot, lets you try every alternative the
+      game has for that slot (all the tops, bottoms, hats, faces…), and
+      downloads the model or any texture.
     </p>
   </section>
 
-  <ThreeViewer client:load manifestUrl={`${base}/data/3d-manifest.json`} />
+  <ThreeViewer client:load manifestUrl={`${base}/data/3d-manifest.json`} texturesUrl={`${base}/data/3d-textures.json`} />
 </Layout>
 
 <style>
