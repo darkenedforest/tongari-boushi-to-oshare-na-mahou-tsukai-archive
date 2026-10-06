@@ -1,14 +1,21 @@
-# Bug Reports backend setup (one-time)
+# Supabase backend — setup record
+
+**The backend already exists:** Supabase project "Tongari Boushi"
+(ref `mzgbgrinpkqfgpkxzypb`, org "Translation Team"), created 2026-05 and
+used by the bug-report board, the save-file capture, the guest book and
+the patch-update subscriptions. Sections 1 and 4 below are the original
+from-scratch steps, kept so the setup can be reproduced on a new project;
+they do not need running again. When a feature adds a table or bucket,
+its section is appended here (most recently §3b, 2026-10-06) and only
+that section's SQL needs to be run in the dashboard's SQL editor.
 
 The bug reports page uses Supabase (free tier) for anonymous posting,
-image upload, "Me too" reactions, and comments. **No user accounts — no
-GitHub login required.** Visitors just type and post.
+image upload, file attachments, "Me too" reactions, and comments. **No
+user accounts — no GitHub login required.** Visitors just type and post.
 
-Setup takes ~5 minutes.
+## 1. Create a Supabase project (done — original steps)
 
-## 1. Create a Supabase project
-
-1. Go to <https://supabase.com> and sign up (Google/GitHub/email is fine).
+1. Go to <https://supabase.com> and sign in.
 2. Click "New project". Pick any name (e.g. `tongari-bug-reports`),
    pick the closest region, generate a strong DB password (save it).
 3. Wait ~2 minutes for the project to provision.
