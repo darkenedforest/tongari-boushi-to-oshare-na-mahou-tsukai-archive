@@ -39,13 +39,17 @@ const base = import.meta.env.BASE_URL;
       written by the new game code the next time you open the board.
     </p>
     <p class="features">
-      <strong>What you can edit:</strong> Ritch (currency), player, shop
-      and town names, the bulletin board (update posts to the current
-      translation, remove corrupt posts, or rewrite a post), letter-queue
-      text, and the 15-slot inventory bag. Active-slot detection routes
-      edits to the most recently written save slot, with mirrors kept in
-      sync. All three checksums the game verifies are recomputed on
-      download so the modified save loads cleanly in-game.
+      <strong>What you can edit:</strong> Ritch in the wallet and in the
+      bank, wizard level and rank, player, shop and town names, the
+      bulletin board (update posts to the current translation, remove
+      corrupt posts, or rewrite a post), letter-queue text, the 15-slot
+      inventory bag, and each NPC&apos;s affinity value. You can also see the
+      four player-character records, your shop&apos;s shelves and sales ledger,
+      custom-named items, and the world object grid. Active-slot detection
+      routes edits to the most recently written save slot, with mirrors
+      kept in sync. Every checksum the game verifies — header, body and the
+      player record&apos;s own — is recomputed on download so the modified
+      save loads cleanly in-game.
     </p>
     <p class="how-to">
       <strong>How to use it:</strong> drop your .sav (or .dsv / .duc /

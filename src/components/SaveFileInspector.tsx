@@ -19,16 +19,21 @@ import {
   type PendingEdit,
 } from '../lib/savefile/editor';
 import {
+  BANK_MAX,
+  NPC_AFFINITY_MAX,
+  WALLET_MAX,
+  WIZARD_LEVEL_MAX,
+  WIZARD_RANK_MAX,
+  WIZARD_RANK_NAMES,
+} from '../lib/savefile/regions';
+import {
   loadInventoryEncoding,
   loadNpcEncoding,
   loadSavefileLookups,
   lookupIidFromStored,
   lookupItemName,
   lookupNpcByStored,
-  lookupPlantName,
   lookupStoredFromIid,
-  resolveInventoryItem,
-  NPC_CATEGORY_LABELS,
   type InventoryEncoding,
   type NpcEncoding,
   type SavefileLookups,
@@ -207,8 +212,11 @@ interface PendingEditMap {
   board: Record<number, BoardAction>;
   /** Keyed by letter record's body offset. New plain text (≤ 67 chars). */
   letter: Record<number, string>;
-  /** Keyed by garden record's body offset. */
-  gardenTile: Record<number, { plantId: number; growTime: number }>;
+  bank?: { value: number };
+  wizardLevel?: { value: number };
+  wizardRank?: { value: number };
+  /** Keyed by NPC record index 0..139: new affinity 0..100. */
+  npcAffinity: Record<number, number>;
   /** Keyed by inventory slot index (0..14). `storedValue===null` stages
    *  the empty sentinel; a number stages an occupied record at that
    *  stored_value (the u16 game-internal item-ID written to +0..2) with
@@ -220,7 +228,7 @@ function makeEmptyEdits(): PendingEditMap {
   return {
     board: {},
     letter: {},
-    gardenTile: {},
+    npcAffinity: {},
     inventorySlot: {},
   };
 }
@@ -238,7 +246,10 @@ function pendingEditCount(edits: PendingEditMap): number {
   if (edits.townName !== undefined) n++;
   n += Object.keys(edits.board).length;
   n += Object.keys(edits.letter).length;
-  n += Object.keys(edits.gardenTile).length;
+  if (edits.bank !== undefined) n++;
+  if (edits.wizardLevel !== undefined) n++;
+  if (edits.wizardRank !== undefined) n++;
+  n += Object.keys(edits.npcAffinity).length;
   n += Object.keys(edits.inventorySlot).length;
   return n;
 }
@@ -250,10 +261,26 @@ interface BoardEditContext {
   assessments: BoardAssessment[];
 }
 
-function editsToPendingList(edits: PendingEditMap, board: BoardEditContext | null): PendingEdit[] {
+function editsToPendingList(
+  edits: PendingEditMap,
+  board: BoardEditContext | null,
+  playerIndex: number,
+): PendingEdit[] {
   const out: PendingEdit[] = [];
   if (edits.ritch !== undefined) {
-    out.push({ kind: 'ritch', value: edits.ritch.value });
+    out.push({ kind: 'ritch', value: edits.ritch.value, playerIndex });
+  }
+  if (edits.bank !== undefined) {
+    out.push({ kind: 'bank', value: edits.bank.value, playerIndex });
+  }
+  if (edits.wizardLevel !== undefined) {
+    out.push({ kind: 'wizard_level', value: edits.wizardLevel.value, playerIndex });
+  }
+  if (edits.wizardRank !== undefined) {
+    out.push({ kind: 'wizard_rank', value: edits.wizardRank.value, playerIndex });
+  }
+  for (const [k, v] of Object.entries(edits.npcAffinity)) {
+    out.push({ kind: 'npc_affinity', npcIndex: Number(k), value: v });
   }
   if (edits.playerName !== undefined) {
     out.push({ kind: 'player_name', value: edits.playerName.value });
@@ -276,20 +303,13 @@ function editsToPendingList(edits: PendingEditMap, board: BoardEditContext | nul
   for (const [k, v] of Object.entries(edits.letter)) {
     out.push({ kind: 'letter', recordOffset: Number(k), text: v });
   }
-  for (const [k, v] of Object.entries(edits.gardenTile)) {
-    out.push({
-      kind: 'garden_tile',
-      recordOffset: Number(k),
-      plantId: v.plantId,
-      growTime: v.growTime,
-    });
-  }
   for (const [k, v] of Object.entries(edits.inventorySlot)) {
     out.push({
       kind: 'inventory_slot',
       slotIndex: Number(k),
       storedValue: v.storedValue,
       quantity: v.quantity,
+      playerIndex,
     });
   }
   return out;
@@ -415,122 +435,6 @@ function InlineEdit({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Garden tile editor — slightly different layout (two numeric fields)
-// ---------------------------------------------------------------------------
-
-interface GardenTileEditorProps {
-  currentPlantId: number;
-  currentGrowTime: number;
-  hasPending: boolean;
-  onCommit: (plantId: number, growTime: number) => void;
-  onClear: () => void;
-}
-
-function GardenTileEditor({
-  currentPlantId,
-  currentGrowTime,
-  hasPending,
-  onCommit,
-  onClear,
-}: GardenTileEditorProps) {
-  const [open, setOpen] = useState(false);
-  const [plantDraft, setPlantDraft] = useState(currentPlantId.toString());
-  const [growDraft, setGrowDraft] = useState(currentGrowTime.toString());
-  const [err, setErr] = useState<string | null>(null);
-
-  useEffect(() => {
-    setPlantDraft(currentPlantId.toString());
-    setGrowDraft(currentGrowTime.toString());
-  }, [currentPlantId, currentGrowTime]);
-
-  if (!open) {
-    return (
-      <button
-        type="button"
-        className="inline-edit-trigger"
-        onClick={() => setOpen(true)}
-      >
-        {hasPending ? 'Edit (pending)' : 'Edit'}
-        <span className="beta-pill">BETA</span>
-      </button>
-    );
-  }
-
-  function commit() {
-    const p = Number.parseInt(plantDraft, 10);
-    const g = Number.parseInt(growDraft, 10);
-    if (!Number.isFinite(p) || p < 0 || p > 255) {
-      setErr('plant_id must be 0..255.');
-      return;
-    }
-    if (!Number.isFinite(g) || g < 0 || g > 255) {
-      setErr('grow_time must be 0..255.');
-      return;
-    }
-    setErr(null);
-    onCommit(p, g);
-    setOpen(false);
-  }
-
-  return (
-    <div className="inline-edit-body">
-      <label className="inline-edit-label">
-        plant_id
-        <input
-          className="inline-edit-input narrow"
-          type="number"
-          min={0}
-          max={255}
-          step={1}
-          value={plantDraft}
-          onChange={e => setPlantDraft(e.target.value)}
-        />
-      </label>
-      <label className="inline-edit-label">
-        grow_time
-        <input
-          className="inline-edit-input narrow"
-          type="number"
-          min={0}
-          max={255}
-          step={1}
-          value={growDraft}
-          onChange={e => setGrowDraft(e.target.value)}
-        />
-      </label>
-      {err && <span className="inline-edit-error">{err}</span>}
-      <div className="inline-edit-actions">
-        <button type="button" className="inline-edit-save" onClick={commit}>
-          Stage edit
-        </button>
-        <button
-          type="button"
-          className="inline-edit-cancel"
-          onClick={() => {
-            setOpen(false);
-            setErr(null);
-          }}
-        >
-          Cancel
-        </button>
-        {hasPending && (
-          <button
-            type="button"
-            className="inline-edit-clear"
-            onClick={() => {
-              onClear();
-              setOpen(false);
-            }}
-          >
-            Drop pending
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -1093,142 +997,486 @@ function InventoryBagSection({
 }
 
 // ---------------------------------------------------------------------------
-// Friends-Met section — read-only roster of NPCs the player has met /
-// befriended. Encoding cracked in translation-repo step-346: every u16
-// LE value in body 0x500..0x4300 within the range 500..751 is an
-// `npc_data_ofs_id + 500` reference, and the 0x500..0x4300 region holds
-// several sub-tables (encounter log, friend list, gift log, etc.) that
-// each store the same NPC ID at a different offset — so we dedupe and
-// sort by stored_value.
-//
-// Sub-region boundaries within this 15 KB block aren't decoded yet
-// (open question per translation-repo notes/savefile_format.md §55), so
-// editing affordances are deliberately not exposed yet — adding /
-// removing a friend would require knowing which sub-table to modify
-// and how to keep the others consistent. The section displays the
-// roster only.
+// Player characters — the four extra records (§58.3)
 // ---------------------------------------------------------------------------
 
-interface FriendsMetSectionProps {
+interface PlayerRecordsSectionProps {
   slot: SlotParse;
-  npcEncoding: NpcEncoding | null;
   notes: NotesByRegion;
   setNotes: (n: NotesByRegion) => void;
   fileLabel: string;
   payloadSha: string;
 }
 
-function FriendsMetSection({
-  slot,
-  npcEncoding,
-  notes,
-  setNotes,
-  fileLabel,
-  payloadSha,
-}: FriendsMetSectionProps) {
-  const friends = slot.friendsMet;
-  const total = friends.length;
-  const totalOffsets = friends.reduce((n, f) => n + f.bodyOffsets.length, 0);
+function PlayerRecordsSection({ slot, notes, setNotes, fileLabel, payloadSha }: PlayerRecordsSectionProps) {
+  const recs = slot.playerRecords;
+  const present = recs.filter(r => r.exists && !r.blank);
   return (
     <Section
-      regionId={`${slot.label}-friendsMet`}
-      title={REGION_DESCRIPTORS.friendsMet.title}
-      range={REGION_DESCRIPTORS.friendsMet.range}
-      confidence={REGION_DESCRIPTORS.friendsMet.confidence}
-      parsedSnapshot={`${total} unique NPC${total === 1 ? '' : 's'} (${totalOffsets} stored_value reference${totalOffsets === 1 ? '' : 's'} across the 15 KB region)`}
+      regionId={`${slot.label}-playerRecords`}
+      title={REGION_DESCRIPTORS.playerRecords.title}
+      range={REGION_DESCRIPTORS.playerRecords.range}
+      confidence={REGION_DESCRIPTORS.playerRecords.confidence}
+      parsedSnapshot={`${present.length} of 4 player slots used; editing record ${slot.activePlayer}`}
       notes={notes}
       setNotes={setNotes}
       fileLabel={fileLabel}
       payloadSha={payloadSha}
     >
-      <p>
-        <strong>{total}</strong> unique NPC{total === 1 ? '' : 's'} that
-        this save has recorded an encounter / friendship / gift log entry
-        for. The scan walks <code>body[0x500..0x4300]</code> at even-aligned
-        u16 LE offsets and collects every value in the range{' '}
-        <code>500..751</code>, which is the NPC <code>stored_value</code>{' '}
-        space (= <code>npc_data_ofs_id + 500</code>, cracked in
-        translation-repo step-346).
+      <p style={{ marginTop: 0 }}>
+        A cartridge holds up to four characters. Each has a 0x22F8-byte record
+        after the body (what earlier versions of this page called &quot;town
+        residents&quot;), with its own checksum, wallet, bank, inventory bag,
+        room tiles and Wi-Fi profile. The header says which slots exist and
+        which character was played last — the wallet, bank and bag shown on
+        this page belong to <strong>record {slot.activePlayer}</strong>.
       </p>
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Record</th>
+            <th>Status</th>
+            <th>Name</th>
+            <th className="col-right">Ritch</th>
+            <th className="col-right">Bank</th>
+            <th>Last save</th>
+            <th>Created</th>
+            <th>Body</th>
+            <th>Bag</th>
+            <th>Checksum</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recs.map(r => (
+            <tr key={r.index} className={r.index === slot.activePlayer ? 'resident-active' : r.blank ? 'resident-uninit' : ''}>
+              <td>{r.index}{r.index === slot.activePlayer && <span className="primary-tag" style={{ marginLeft: 6 }}>current</span>}</td>
+              <td>{r.blank ? <span className="muted">never used</span> : r.exists ? 'in use' : <span className="muted">not flagged</span>}</td>
+              <td>{r.blank ? '—' : r.name || <span className="muted">(name not stored here)</span>}</td>
+              <td className="col-right">{r.blank ? '—' : r.wallet.toLocaleString()}</td>
+              <td className="col-right">{r.blank ? '—' : r.bank.toLocaleString()}</td>
+              <td>{r.blank ? '—' : r.lastSaveDate.text}</td>
+              <td>{r.blank ? '—' : r.creationDate.text}</td>
+              <td>{r.blank ? '—' : r.bodyType === 0 ? 'type 0' : `type ${r.bodyType}`}</td>
+              <td>{r.blank ? '—' : `${r.bagUsed}/15`}</td>
+              <td>
+                {r.blank ? <span className="muted">—</span> : (
+                  <code className={r.checksumOk ? 'ok' : 'bad'}>
+                    {r.checksumOk ? 'PASS' : `FAIL ${hex(r.checksumStored)}≠${hex(r.checksumComputed)}`}
+                  </code>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <p className="note-text">
-        Read-only: the 15 KB region holds several sub-tables (encounter
-        log, friend list, gift log, ...) that all reference the same NPC
-        by storing the same u16 at different offsets, but the
-        sub-table boundaries aren&apos;t decoded yet — so we can&apos;t
-        safely add / remove individual entries without risking a desync.
-        See translation-repo <code>notes/savefile_format.md</code> §55
-        for the open question. This list is <em>distinct</em> from the
-        Town Residents table above: residents are the up-to-8 NPCs who
-        physically moved into your town and got a 0x22F8-byte house slot;
-        Friends Met is the broader roster of every NPC you&apos;ve
-        interacted with.
+        Checksum = RFC1071 over the whole record with its first two bytes zeroed
+        (translation repo notes/savefile_format.md §58.3). Every edit this page
+        makes inside a record recomputes that record&apos;s checksum. The name
+        column is the record&apos;s own 16-byte name field, which the Japanese
+        3DS build fills and the English builds leave empty — the player name
+        shown above comes from the body.
       </p>
-      {npcEncoding && !npcEncoding.ok && (
-        <p className="csum-warn">
-          NPC encoding JSON failed to load — names will fall back to
-          their <code>stored_value</code> only.
-        </p>
-      )}
-      {total === 0 ? (
-        <p className="muted">
-          No friend / encounter records found in this slot&apos;s
-          0x500..0x4300 region. This is the normal state for a fresh save
-          before the player has talked to any NPC, or for a slot that
-          hasn&apos;t been written to recently.
-        </p>
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// NPC affinity — 140 per-NPC records at 0x1257C (§58.2)
+// ---------------------------------------------------------------------------
+
+interface NpcAffinitySectionProps {
+  slot: SlotParse;
+  editable: boolean;
+  editCtx: EditCtx;
+  npcEncoding: NpcEncoding | null;
+  lookups: SavefileLookups | null;
+  inventoryEncoding: InventoryEncoding | null;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function itemNameFor(
+  stored: number,
+  lookups: SavefileLookups | null,
+  inventoryEncoding: InventoryEncoding | null,
+): string | null {
+  if (stored === 0xffff || stored === 0) return null;
+  if (!lookups || !inventoryEncoding) return `item ${stored}`;
+  const iid = lookupIidFromStored(inventoryEncoding, stored);
+  if (iid === null) return `item ${stored}`;
+  return lookupItemName(lookups, iid) ?? `item ${stored}`;
+}
+
+function NpcAffinitySection({
+  slot,
+  editable,
+  editCtx,
+  npcEncoding,
+  lookups,
+  inventoryEncoding,
+  notes,
+  setNotes,
+  fileLabel,
+  payloadSha,
+}: NpcAffinitySectionProps) {
+  const [showAll, setShowAll] = useState(false);
+  const recs = slot.npcRecords;
+  const touched = recs.filter(r => !r.untouched);
+  const rows = showAll ? recs : touched;
+  const pending = editCtx.edits.npcAffinity;
+
+  function stage(i: number, v: number) {
+    editCtx.setEdits(prev => ({ ...prev, npcAffinity: { ...prev.npcAffinity, [i]: v } }));
+  }
+  function unstage(i: number) {
+    editCtx.setEdits(prev => {
+      const next = { ...prev.npcAffinity };
+      delete next[i];
+      return { ...prev, npcAffinity: next };
+    });
+  }
+
+  return (
+    <Section
+      regionId={`${slot.label}-npcRecords`}
+      title={REGION_DESCRIPTORS.npcRecords.title}
+      range={REGION_DESCRIPTORS.npcRecords.range}
+      confidence={REGION_DESCRIPTORS.npcRecords.confidence}
+      parsedSnapshot={`${touched.length}/140 NPC records in use`}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p style={{ marginTop: 0 }}>
+        One 112-byte record per main character (speaker ids 1000–1139). Byte +7
+        is a 0–100 value the game moves with a fixed table (−10, −10, +15, +100,
+        +30, +20) and tests as a probability (random 1–100 ≤ value) — the closest
+        thing to a friendship meter in the file. Byte +0 is the item the character
+        last took from your shop. This replaces the earlier &quot;friends met&quot;
+        list, which was reading mushroom ids out of the map grid.
+      </p>
+      <div className="board-actions" style={{ marginBottom: 6 }}>
+        <button type="button" className="board-btn" onClick={() => setShowAll(v => !v)}>
+          {showAll ? 'Show only records in use' : `Show all 140 (${recs.length - touched.length} untouched)`}
+        </button>
+      </div>
+      {rows.length === 0 ? (
+        <p className="muted">No NPC records are in use.</p>
       ) : (
         <table className="data-table">
           <thead>
             <tr>
-              <th>stored_value</th>
-              <th>EN name</th>
-              <th>JP name</th>
-              <th>Category</th>
-              <th>References</th>
+              <th>#</th>
+              <th>NPC</th>
+              <th className="col-right">Affinity</th>
+              <th>Raised</th>
+              <th>Item from shop</th>
+              <th>Counters</th>
             </tr>
           </thead>
           <tbody>
-            {friends.map(f => {
-              const info = npcEncoding
-                ? lookupNpcByStored(npcEncoding, f.storedValue)
-                : null;
-              const catLabel = info
-                ? (NPC_CATEGORY_LABELS[info.category] ?? `cat ${info.category}`)
-                : '—';
+            {rows.map(r => {
+              const info = npcEncoding ? lookupNpcByStored(npcEncoding, 500 + r.index) : null;
+              const pendingVal = pending[r.index];
               return (
-                <tr key={f.storedValue}>
-                  <td>
-                    <code>{hex(f.storedValue, 4)}</code>{' '}
-                    <span className="muted">({f.storedValue})</span>
-                  </td>
-                  <td>
-                    {info ? (
-                      <strong>{info.enName || '(no EN name)'}</strong>
-                    ) : npcEncoding === null ? (
-                      <span className="muted">loading…</span>
+                <tr key={r.index} className={pendingVal !== undefined ? 'is-pending' : r.untouched ? 'resident-uninit' : ''}>
+                  <td><code className="muted">{1000 + r.index}</code></td>
+                  <td>{info ? <strong>{info.enName || '(no EN name)'}</strong> : <span className="muted">loading…</span>}</td>
+                  <td className="col-right">
+                    {editable ? (
+                      <input
+                        type="number"
+                        className="inventory-qty-input"
+                        min={0}
+                        max={NPC_AFFINITY_MAX}
+                        step={1}
+                        value={pendingVal ?? r.affinity}
+                        onChange={e => {
+                          const v = Number.parseInt(e.target.value, 10);
+                          if (!Number.isFinite(v)) return;
+                          const clamped = Math.max(0, Math.min(NPC_AFFINITY_MAX, v));
+                          if (clamped === r.affinity) unstage(r.index);
+                          else stage(r.index, clamped);
+                        }}
+                      />
                     ) : (
-                      <span className="muted">(unmapped)</span>
+                      r.affinity
                     )}
+                    {pendingVal !== undefined && <div className="muted small">was {r.affinity}</div>}
                   </td>
-                  <td>
-                    {info ? (
-                      <span lang="ja">{info.jpName || '—'}</span>
-                    ) : (
-                      <span className="muted">—</span>
-                    )}
-                  </td>
-                  <td>{catLabel}</td>
-                  <td>
-                    <span title={f.bodyOffsets.map(o => hex(o, 4)).join(', ')}>
-                      {f.bodyOffsets.length}
-                    </span>
-                  </td>
+                  <td>{r.raised ? 'yes' : <span className="muted">—</span>}</td>
+                  <td>{itemNameFor(r.itemStored, lookups, inventoryEncoding) ?? <span className="muted">—</span>}</td>
+                  <td><code className="muted small">{r.counters.join(' ')}</code></td>
                 </tr>
               );
             })}
           </tbody>
         </table>
       )}
+      {editable && Object.keys(pending).length > 0 && (
+        <div className="inventory-bag-actions">
+          <button
+            type="button"
+            className="inline-edit-clear"
+            onClick={() => editCtx.setEdits(prev => ({ ...prev, npcAffinity: {} }))}
+          >
+            Drop all pending affinity edits
+          </button>
+        </div>
+      )}
+      <p className="note-text">
+        The 0–100 mechanics are read from the code (clamp, delta table, probability
+        test); calling it &quot;affinity&quot; is the reading of that code, not a label
+        the game exposes. Edits write byte +7 of the record in both slots and
+        recompute the body checksum. BETA.
+      </p>
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Player's shop + sales ledger (§58.2, region notes B/C)
+// ---------------------------------------------------------------------------
+
+interface ShopSectionProps {
+  slot: SlotParse;
+  lookups: SavefileLookups | null;
+  inventoryEncoding: InventoryEncoding | null;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function ShopSection({ slot, lookups, inventoryEncoding, notes, setNotes, fileLabel, payloadSha }: ShopSectionProps) {
+  const shop = slot.playerShop;
+  const ledger = slot.shopLedger;
+  const stocked = shop.shelves.filter(sh => sh.itemStored !== 0xffff && sh.itemStored !== 0);
+  const sold = ledger.entries.filter(e => e.itemRef !== 0xff && (e.unitsSold > 0 || e.moneyTaken > 0 || e.stock > 0));
+  const rankLabel = shop.rankRaw < 2 ? 'tier 0' : shop.rankRaw < 5 ? 'tier 1' : 'tier 2';
+  return (
+    <Section
+      regionId={`${slot.label}-shop`}
+      title={REGION_DESCRIPTORS.playerShop.title}
+      range={REGION_DESCRIPTORS.playerShop.range}
+      confidence={REGION_DESCRIPTORS.playerShop.confidence}
+      parsedSnapshot={`${stocked.length}/16 shelves stocked; rank byte ${shop.rankRaw} (${rankLabel}); lifetime sales ${ledger.lifetimeTotal.toLocaleString()}`}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p style={{ marginTop: 0 }}>
+        <strong>{stocked.length}</strong> of 16 shelf records hold an item. The
+        shop rank byte is <code>{shop.rankRaw}</code> (the game buckets it at 2 and
+        5 → {rankLabel}). Lifetime sales total{' '}
+        <strong>{ledger.lifetimeTotal.toLocaleString()}</strong> Ritch (an
+        achievement flag is set at 1,000,000).
+      </p>
+      {stocked.length > 0 && (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Shelf</th>
+              <th>Item</th>
+              <th className="col-right">Price</th>
+              <th className="col-right">Price 2</th>
+              <th className="col-right">Discount %</th>
+              <th>Slot</th>
+            </tr>
+          </thead>
+          <tbody>
+            {stocked.map(sh => (
+              <tr key={sh.index}>
+                <td>{sh.index + 1}</td>
+                <td>{itemNameFor(sh.itemStored, lookups, inventoryEncoding)}</td>
+                <td className="col-right">{sh.price1}</td>
+                <td className="col-right">{sh.price2}</td>
+                <td className="col-right">{sh.discountPct}</td>
+                <td>{sh.slot}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <h5 className="subsection-head">Display ledger ({sold.length} slots with sales)</h5>
+      {sold.length === 0 ? (
+        <p className="muted">No sales recorded in either display set.</p>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Set</th>
+              <th>Slot</th>
+              <th>Item</th>
+              <th className="col-right">Money taken</th>
+              <th className="col-right">Units sold</th>
+              <th className="col-right">Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sold.map(e => (
+              <tr key={`${e.set}-${e.slot}`}>
+                <td>{e.set}</td>
+                <td>{e.slot}{e.fixed ? ' (fixed)' : ''}</td>
+                <td>
+                  {e.itemStored !== null
+                    ? itemNameFor(e.itemStored, lookups, inventoryEncoding)
+                    : <span className="muted">ref {e.itemRef}</span>}
+                </td>
+                <td className="col-right">{e.moneyTaken.toLocaleString()}</td>
+                <td className="col-right">{e.unitsSold}</td>
+                <td className="col-right">{e.stock}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="note-text">
+        Shelf records: item, discount % (clamped 10–100), slot index, two prices
+        (the sale price is price × discount / 100). Ledger entries: money taken
+        (cap 9,999,999), units sold (cap 999), stock left, item reference (free
+        slots 0–14 point at the shop&apos;s display list, fixed slots 15–21 at the
+        record&apos;s own 7-item set). Read-only.
+      </p>
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Custom-named items (0x1AECA) and world objects (0x4AC / 0x9AB0)
+// ---------------------------------------------------------------------------
+
+interface ReadOnlySectionProps {
+  slot: SlotParse;
+  lookups: SavefileLookups | null;
+  inventoryEncoding: InventoryEncoding | null;
+  notes: NotesByRegion;
+  setNotes: (n: NotesByRegion) => void;
+  fileLabel: string;
+  payloadSha: string;
+}
+
+function CustomItemsSection({ slot, lookups, inventoryEncoding, notes, setNotes, fileLabel, payloadSha }: ReadOnlySectionProps) {
+  const items = slot.customItems.filter(c => c.name || (c.itemStored !== 0xffff && c.itemStored !== 0));
+  return (
+    <Section
+      regionId={`${slot.label}-customItems`}
+      title={REGION_DESCRIPTORS.customItems.title}
+      range={REGION_DESCRIPTORS.customItems.range}
+      confidence={REGION_DESCRIPTORS.customItems.confidence}
+      parsedSnapshot={`${items.length}/8 named`}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      {items.length === 0 ? (
+        <p className="muted" style={{ marginTop: 0 }}>No custom-named items.</p>
+      ) : (
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Base item</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map(c => (
+              <tr key={c.index}>
+                <td>{c.index + 1}</td>
+                <td><strong>{c.name || <span className="muted">(no name)</span>}</strong></td>
+                <td>{itemNameFor(c.itemStored, lookups, inventoryEncoding) ?? <span className="muted">—</span>}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      <p className="note-text">
+        Sweets, accessories and clothes the player named (44-character UTF-16 name
+        + the item it was made from). Read-only.
+      </p>
+    </Section>
+  );
+}
+
+function WorldObjectsSection({ slot, lookups, inventoryEncoding, notes, setNotes, fileLabel, payloadSha }: ReadOnlySectionProps) {
+  const w = slot.worldObjects;
+  const top = Array.from(w.outdoorCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const lists = w.lists.filter(l => l.used > 0);
+  return (
+    <Section
+      regionId={`${slot.label}-worldObjects`}
+      title={REGION_DESCRIPTORS.worldObjects.title}
+      range={REGION_DESCRIPTORS.worldObjects.range}
+      confidence={REGION_DESCRIPTORS.worldObjects.confidence}
+      parsedSnapshot={`${w.outdoorCellsUsed} outdoor cells occupied; ${lists.length} placed-object lists in use`}
+      notes={notes}
+      setNotes={setNotes}
+      fileLabel={fileLabel}
+      payloadSha={payloadSha}
+    >
+      <p style={{ marginTop: 0 }}>
+        Most of the save body is the game world: a 6-area × 16 × 80 grid of
+        5-byte cells for everything standing outdoors (trees, flowers,
+        mushrooms, weeds, buried bones, snow, scenery), then one placed-object
+        list per room and shop. <strong>{w.outdoorCellsUsed.toLocaleString()}</strong>{' '}
+        outdoor cells are occupied.
+      </p>
+      <details className="tile-details">
+        <summary>Most common outdoor objects</summary>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th className="col-right">Cells</th>
+            </tr>
+          </thead>
+          <tbody>
+            {top.map(([stored, n]) => (
+              <tr key={stored}>
+                <td>{itemNameFor(stored, lookups, inventoryEncoding)}</td>
+                <td className="col-right">{n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
+      <details className="tile-details">
+        <summary>Placed-object lists ({lists.length} in use)</summary>
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>List</th>
+              <th>Owner</th>
+              <th className="col-right">Objects</th>
+              <th>Examples</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lists.map(l => (
+              <tr key={l.index}>
+                <td>{l.index}</td>
+                <td>{l.owner}</td>
+                <td className="col-right">{l.used}/32</td>
+                <td className="muted small">
+                  {l.sample.map(v => itemNameFor(v, lookups, inventoryEncoding)).filter(Boolean).join(', ')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </details>
+      <p className="note-text">
+        Layout from translation repo notes/save_analysis/_trace_region_A_middle_body.md.
+        Read-only: moving objects needs the per-area grids and the game&apos;s
+        occupancy rules.
+      </p>
     </Section>
   );
 }
@@ -2477,44 +2725,21 @@ function SlotView({
         </dl>
       </Section>
 
-      {/* Wizard-level candidate — read-only, please test */}
-      <Section
-        regionId={`${slot.label}-wizardLevelCandidate`}
-        title={REGION_DESCRIPTORS.wizardLevelCandidate.title}
-        range={REGION_DESCRIPTORS.wizardLevelCandidate.range}
-        confidence={REGION_DESCRIPTORS.wizardLevelCandidate.confidence}
-        parsedSnapshot={`byte=0x${slot.wizardLevelCandidate.rawByte.toString(16).padStart(2, '0')} (${slot.wizardLevelCandidate.rawByte})`}
-        {...labelArgs}
-      >
-        <dl className="kv">
-          <dt>Raw byte value</dt>
-          <dd>
-            <code>0x{slot.wizardLevelCandidate.rawByte.toString(16).padStart(2, '0')}</code>{' '}
-            ({slot.wizardLevelCandidate.rawByte})
-          </dd>
-        </dl>
-        <p className="note-text">{slot.wizardLevelCandidate.note}</p>
-        <p className="note-text">
-          <strong>Read-only.</strong> No edit affordance until semantics are
-          confirmed. If you can produce two saves at known different wizard
-          ranks, that will pin this offset for the editor.
-        </p>
-      </Section>
-
       {/* Ritch */}
       <Section
         regionId={`${slot.label}-ritch`}
         title={REGION_DESCRIPTORS.ritch.title}
         range={REGION_DESCRIPTORS.ritch.range}
         confidence={REGION_DESCRIPTORS.ritch.confidence}
-        parsedSnapshot={slot.ritch === null ? 'null (0xFFFFFFFF)' : `${slot.ritch} Ritch`}
+        parsedSnapshot={`wallet=${slot.ritch ?? 'null'} bank=${slot.bank ?? 'null'} (player record ${slot.activePlayer})`}
         {...labelArgs}
       >
         {slot.ritch === null ? (
           <p className="muted">Wallet field is 0xFFFFFFFF — never written.</p>
         ) : (
           <p className="ritch-value">
-            <strong>{slot.ritch.toLocaleString()}</strong> Ritch
+            <strong>{slot.ritch.toLocaleString()}</strong> Ritch in the wallet
+            <span className="muted small"> (cap {WALLET_MAX.toLocaleString()})</span>
           </p>
         )}
         {editable && (
@@ -2533,8 +2758,8 @@ function SlotView({
             initialDraft={slot.ritch?.toString() ?? '0'}
             onCommit={draft => {
               const v = Number.parseInt(draft, 10);
-              if (!Number.isFinite(v) || v < 0 || v > 0xffffffff) {
-                return 'Must be a whole number 0..4294967295.';
+              if (!Number.isFinite(v) || v < 0 || v > WALLET_MAX) {
+                return `Must be a whole number 0..${WALLET_MAX.toLocaleString()} (the game caps the wallet there).`;
               }
               editCtx.setEdits(e => ({ ...e, ritch: { value: v } }));
               return null;
@@ -2548,96 +2773,39 @@ function SlotView({
             }
           />
         )}
-      </Section>
-
-      {/* step-262 (LaytonLoztew port) — REMOVED: "Inventory bitmap"
-          section that decoded 173 bits at slot_rel 0x1CDF2 into items
-          1000..1139 + 2000..2032. The bitmap section produced items
-          the player did NOT actually own (Tyler's empirical check on
-          save14). Without a second independent anchor we cannot trust
-          the ARM9 trace alone, so this is now treated as
-          pattern-matched noise. Game 1's mqreader.js documents no
-          analogous bitmap — inventory in Game 1 is 15 fixed u16 slots
-          per player. */}
-
-      {/* Region at body 0x4300 — semantics unconfirmed.
-          Previously mis-labelled "Active inventory". Step-232 rejected
-          that framework: no ARM9 accessor reads or writes body+0x4300,
-          and the only previously-"confirmed" (cat,sub)->item mapping
-          was an artifact of misreading a u16 LE item ID. We keep
-          surfacing the raw bytes here READ-ONLY for ongoing research
-          but no longer pretend they decode to inventory items. */}
-      <Section
-        regionId={`${slot.label}-inventory`}
-        title={REGION_DESCRIPTORS.inventory.title}
-        range={REGION_DESCRIPTORS.inventory.range}
-        confidence={REGION_DESCRIPTORS.inventory.confidence}
-        parsedSnapshot={`${slot.activeInventory.length} non-empty 8-byte records (raw — semantics unconfirmed)`}
-        {...labelArgs}
-      >
-        <p className="note-text" style={{ marginTop: 0 }}>
-          <strong>Previously misidentified as inventory slots.</strong> ARM9
-          disassembly found no accessor touching this offset. The bytes
-          shown below are real but their meaning is unknown — the
-          (category, sub-index) &rarr; item_id decoding shipped through
-          step-231 was an artifact of misreading a u16 LE item ID as a
-          packed (cat&nbsp;&lt;&lt;&nbsp;8)|sub tuple, and the only save
-          supposedly containing the &quot;confirmed&quot; Transmitter
-          mapping does not contain that item ID anywhere in its payload.
-          Inventory location is still being researched. Surfaced
-          read-only as a research region; do not interpret the byte
-          values as items.
+        <p className="ritch-value" style={{ marginTop: 10 }}>
+          <strong>{(slot.bank ?? 0).toLocaleString()}</strong> Ritch in the bank
+          <span className="muted small"> (cap {BANK_MAX.toLocaleString()}; player record +0x1E4)</span>
         </p>
-        {slot.activeInventory.length === 0 ? (
-          <p className="muted">No non-empty 8-byte records at body[0x4300:0x4480].</p>
-        ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Body offset</th>
-                <th className="col-right">First u16 LE</th>
-                <th className="col-right">Trailing 6 bytes</th>
-                <th>Corpus recurrence</th>
-              </tr>
-            </thead>
-            <tbody>
-              {slot.activeInventory.map(slotRow => {
-                const u16 = ((slotRow.category << 8) | slotRow.subIndex) & 0xffff;
-                const seenInSaves = lookups
-                  ? resolveInventoryItem(lookups, slotRow.category, slotRow.subIndex).seenInSaves
-                  : 0;
-                return (
-                  <tr key={slotRow.bodyOffset}>
-                    <td>
-                      <code>{hex(slotRow.bodyOffset, 4)}</code>
-                    </td>
-                    <td className="col-right">
-                      <code>
-                        {hex(u16, 4)}
-                      </code>{' '}
-                      <span className="muted small">({u16})</span>
-                    </td>
-                    <td className="col-right">
-                      <code className="muted">{slotRow.trailingHex}</code>
-                    </td>
-                    <td>
-                      {seenInSaves > 0 ? (
-                        <span className="muted small">
-                          first u16 byte-pattern recurs in {seenInSaves}{' '}
-                          {seenInSaves === 1 ? 'save' : 'saves'} in our
-                          corpus (byte-pattern stat only, not an item
-                          decoding)
-                        </span>
-                      ) : (
-                        <span className="muted small">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        {editable && (
+          <InlineEdit
+            label="bank balance"
+            pendingValue={editCtx.edits.bank !== undefined ? editCtx.edits.bank.value.toString() : null}
+            pendingLabel={editCtx.edits.bank !== undefined ? editCtx.edits.bank.value.toLocaleString() : undefined}
+            initialDraft={slot.bank?.toString() ?? '0'}
+            onCommit={draft => {
+              const v = Number.parseInt(draft, 10);
+              if (!Number.isFinite(v) || v < 0 || v > BANK_MAX) {
+                return `Must be a whole number 0..${BANK_MAX.toLocaleString()} (the game caps the bank there).`;
+              }
+              editCtx.setEdits(e => ({ ...e, bank: { value: v } }));
+              return null;
+            }}
+            onClear={() =>
+              editCtx.setEdits(e => {
+                const next = { ...e };
+                delete next.bank;
+                return next;
+              })
+            }
+          />
         )}
+        <p className="note-text">
+          Both live in player record {slot.activePlayer} (the one the header says
+          was played last); the record&apos;s own checksum is recomputed on download.
+          The bank balance was identified in the 2026-10-06 trace (translation
+          repo notes/savefile_format.md §58.3).
+        </p>
       </Section>
 
       {/* Inventory bag — 15-slot player inventory @ body 0x1D9B6 (step-260
@@ -2659,198 +2827,105 @@ function SlotView({
         payloadSha={payloadSha}
       />
 
-      {/* Activity log */}
-      <Section
-        regionId={`${slot.label}-activityLog`}
-        title={REGION_DESCRIPTORS.activityLog.title}
-        range={REGION_DESCRIPTORS.activityLog.range}
-        confidence={REGION_DESCRIPTORS.activityLog.confidence}
-        parsedSnapshot={`${slot.activityLog.filter(r => !r.sentinel).length} non-sentinel records / ${slot.activityLog.length} total slots`}
-        {...labelArgs}
-      >
-        <p>
-          <strong>{slot.activityLog.filter(r => !r.sentinel).length}</strong>{' '}
-          populated records out of {slot.activityLog.length} total slots.
-          Field semantics (date / sequence / count) aren&apos;t pinned yet, so
-          the underlying bytes are surfaced as labelled integers rather than
-          named events.
-        </p>
-        {(() => {
-          const rows = slot.activityLog.filter(r => !r.sentinel).slice(0, 16);
-          if (rows.length === 0) return <p className="muted">No populated records.</p>;
-          return (
-            <details className="tile-details">
-              <summary>Show first {rows.length} populated record{rows.length === 1 ? '' : 's'} (raw fields)</summary>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Date or sequence</th>
-                    <th>Count or state</th>
-                    <th>Header bytes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => (
-                    <tr key={r.bodyOffset}>
-                      <td>{i + 1}</td>
-                      <td>{r.dateOrSequence.toLocaleString()}</td>
-                      <td>{r.countOrState.toLocaleString()}</td>
-                      <td><code className="muted hex-cell">{r.headerHex}</code></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </details>
-          );
-        })()}
-      </Section>
 
-      {/* Collection stats */}
-      <Section
-        regionId={`${slot.label}-collectionStats`}
-        title={REGION_DESCRIPTORS.collectionStats.title}
-        range={REGION_DESCRIPTORS.collectionStats.range}
-        confidence={REGION_DESCRIPTORS.collectionStats.confidence}
-        parsedSnapshot={`${slot.collectionStats.length} records`}
-        {...labelArgs}
-      >
-        {slot.collectionStats.length === 0 ? (
-          <p className="muted">No records in this region.</p>
-        ) : (
-          <>
-            <p>
-              <strong>{slot.collectionStats.length}</strong> fixed-size
-              collection-stat slots tracked. Per-field semantics
-              (creature counts, set bits, etc.) haven&apos;t been pinned
-              down yet — raw bytes are kept behind a toggle for debugging.
-            </p>
-            <details className="tile-details">
-              <summary>Show raw bytes (14 per slot)</summary>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Slot</th>
-                    <th>Raw bytes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {slot.collectionStats.map(r => (
-                    <tr key={r.bodyOffset}>
-                      <td>{r.index + 1}</td>
-                      <td><code className="hex-cell muted">{r.rawHex}</code></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </details>
-          </>
-        )}
-      </Section>
-
-      {/* Town residents — 8 slots × 0x22F8 at body 0x1E0E0. Restored after
-          step-262's removal note conflated Game 3 with Game 1 (Magician's
-          Quest); the §30 hypothesis is empirically confirmed by the 3DS
-          dump upload_12 which has モコるん at slot 0 and ラビーな at slot 1
-          right at the documented offsets. Read-only — editing residents
-          in/out would require copying ROM templates whose location we
-          haven't pinned. */}
-      <Section
-        regionId={`${slot.label}-townResidents`}
-        title={REGION_DESCRIPTORS.townResidents.title}
-        range={REGION_DESCRIPTORS.townResidents.range}
-        confidence={REGION_DESCRIPTORS.townResidents.confidence}
-        parsedSnapshot={`${slot.townResidents.filter(r => r.state === 'populated').length}/${slot.townResidents.length} populated, ${slot.townResidents.filter(r => r.state === 'vacant').length} vacant, ${slot.townResidents.filter(r => r.state === 'uninitialised').length} never used`}
-        {...labelArgs}
-      >
-        {(() => {
-          const populated = slot.townResidents.filter(r => r.state === 'populated');
-          const vacant = slot.townResidents.filter(r => r.state === 'vacant');
-          return (
-            <>
-              <p>
-                <strong>{populated.length}</strong> of {slot.townResidents.length}{' '}
-                slots currently hold an in-town resident.{' '}
-                {vacant.length > 0 && (
-                  <>
-                    <strong>{vacant.length}</strong> slot{vacant.length === 1 ? '' : 's'} {vacant.length === 1 ? 'is' : 'are'} vacant
-                    (a resident moved out — slot zeroed and reusable).{' '}
-                  </>
+      {/* Wizard level + rank — script variables 0x1002 / 0x1003 in the
+          player record (translation repo notes/savefile_format.md §58.4;
+          license overlay ov091). */}
+      {(() => {
+        const rec = slot.playerRecords[slot.activePlayer];
+        if (!rec || rec.blank) return null;
+        const lvl = editCtx.edits.wizardLevel?.value ?? rec.wizardLevel;
+        const rank = editCtx.edits.wizardRank?.value ?? rec.rankIndex;
+        const badge = Math.min(5, Math.floor(lvl / 10));
+        const stars = lvl >= 50 ? 9 : Math.max(0, (lvl % 10) - 1);
+        const titleName = itemNameFor(rec.titleItem, lookups, inventoryEncoding);
+        return (
+          <Section
+            regionId={`${slot.label}-wizard`}
+            title={REGION_DESCRIPTORS.wizard.title}
+            range={REGION_DESCRIPTORS.wizard.range}
+            confidence={REGION_DESCRIPTORS.wizard.confidence}
+            parsedSnapshot={`level=${rec.wizardLevel} rank=${rec.rankIndex} (${WIZARD_RANK_NAMES[rec.rankIndex] ?? '?'}) title item=${rec.titleItem} wand token=0x${rec.wandToken.toString(16)}`}
+            {...labelArgs}
+          >
+            <dl className="kv">
+              <dt>Wizard level <span className="muted small">(1..50)</span></dt>
+              <dd>
+                <strong>{lvl}</strong>{' '}
+                <span className="muted small">
+                  → the license card shows {stars} star{stars === 1 ? '' : 's'}{badge > 0 ? ` and badge tier ${badge}` : ''}
+                </span>
+                {editable && (
+                  <InlineEdit
+                    label="wizard level"
+                    beta
+                    pendingValue={editCtx.edits.wizardLevel !== undefined ? String(editCtx.edits.wizardLevel.value) : null}
+                    initialDraft={String(rec.wizardLevel)}
+                    onCommit={draft => {
+                      const v = Number.parseInt(draft, 10);
+                      if (!Number.isInteger(v) || v < 1 || v > WIZARD_LEVEL_MAX) return `Must be 1..${WIZARD_LEVEL_MAX}.`;
+                      editCtx.setEdits(e => ({ ...e, wizardLevel: { value: v } }));
+                      return null;
+                    }}
+                    onClear={() => editCtx.setEdits(e => { const n = { ...e }; delete n.wizardLevel; return n; })}
+                  />
                 )}
-                Each slot reserves <code>0x22F8</code> bytes; the first 16
-                bytes hold the NPC name as UTF-16 LE, the next ~1 KiB holds
-                the player&apos;s custom house decoration (wallpaper +
-                floor) for that resident, and the remaining ~7.5 KiB holds
-                relationship stats, gift log, and dialog-seen flags. Only
-                the name + state byte are decoded here; editing residents
-                requires ROM template data we haven&apos;t mapped yet.
-              </p>
-              {populated.length === 0 && vacant.length === 0 ? (
-                <p className="muted">
-                  No residents have ever moved into this town — every slot
-                  is still untouched (0xFF). This is the normal state for a
-                  fresh save or one where the player hasn&apos;t reached
-                  the in-game point where residents start moving in.
-                </p>
-              ) : (
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Slot</th>
-                      <th>State</th>
-                      <th>Name</th>
-                      <th>Body offset</th>
-                      <th>First 16 bytes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {slot.townResidents.map(r => (
-                      <tr key={r.bodyOffset}>
-                        <td>{r.index + 1}</td>
-                        <td>
-                          {r.state === 'populated' && <strong>populated</strong>}
-                          {r.state === 'vacant' && <span className="muted">vacant (moved out)</span>}
-                          {r.state === 'uninitialised' && <span className="muted">never used</span>}
-                        </td>
-                        <td>
-                          {r.state === 'populated' ? (
-                            <strong>{r.name || '(name decode empty)'}</strong>
-                          ) : (
-                            <span className="muted">—</span>
-                          )}
-                        </td>
-                        <td><code className="muted">{hex(r.bodyOffset, 5)}</code></td>
-                        <td><code className="hex-cell muted">{r.firstBytesHex}</code></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </>
-          );
-        })()}
-      </Section>
+              </dd>
+              <dt>Rank <span className="muted small">(0..5)</span></dt>
+              <dd>
+                <strong>{WIZARD_RANK_NAMES[rank] ?? `rank ${rank}`}</strong>{' '}
+                <span className="muted small">(index {rank})</span>
+                {editable && (
+                  <InlineEdit
+                    label="rank"
+                    beta
+                    pendingValue={editCtx.edits.wizardRank !== undefined ? String(editCtx.edits.wizardRank.value) : null}
+                    pendingLabel={editCtx.edits.wizardRank !== undefined ? WIZARD_RANK_NAMES[editCtx.edits.wizardRank.value] : undefined}
+                    initialDraft={String(rec.rankIndex)}
+                    onCommit={draft => {
+                      const v = Number.parseInt(draft, 10);
+                      if (!Number.isInteger(v) || v < 0 || v > WIZARD_RANK_MAX) return `Must be 0..${WIZARD_RANK_MAX} (${WIZARD_RANK_NAMES.join(', ')}).`;
+                      editCtx.setEdits(e => ({ ...e, wizardRank: { value: v } }));
+                      return null;
+                    }}
+                    onClear={() => editCtx.setEdits(e => { const n = { ...e }; delete n.wizardRank; return n; })}
+                  />
+                )}
+              </dd>
+              <dt>Title</dt>
+              <dd>{titleName ?? <span className="muted">(none equipped)</span>} <span className="muted small">— the item in equipped slot 7; the six Magus titles are items 3284..3289</span></dd>
+              <dt>Wand</dt>
+              <dd><code className="muted">token 0x{rec.wandToken.toString(16)}</code> <span className="muted small">— equipped slot 8 (wand tokens encode type and a grade; shown raw)</span></dd>
+            </dl>
+            <p className="note-text">
+              Level and rank are separate bytes the game never derives from one
+              another; the game raises both as you progress. Setting a level
+              without the matching rank (or title item) gives a card that shows,
+              say, nine stars next to &quot;Apprentice&quot;. BETA — the write is
+              a single byte each in player record {slot.activePlayer} (checksum
+              recomputed), checked only by reading the code, not yet in the game.
+            </p>
+          </Section>
+        );
+      })()}
 
-      {/* Friends met — read-only deduplicated list of NPC stored_values in
-          body 0x500..0x4300. NPC encoding cracked in translation-repo
-          step-346 (commit 0941cbca). The Friends-Met list is DISTINCT
-          from the Town Residents table above — residents are NPCs who
-          have physically moved into the player's town (max 8, each gets
-          a full 0x22F8-byte slot with house decoration data), whereas
-          friends-met includes every NPC the player has talked to,
-          received a gift from, or otherwise interacted with (up to 252
-          per the NPC namespace). Sub-region boundaries within
-          0x500..0x4300 are not yet decoded — see translation-repo
-          notes/savefile_format.md §55 — so we surface only the
-          deduplicated roster, not per-sub-table editing affordances. */}
-      <FriendsMetSection
+      <PlayerRecordsSection slot={slot} {...labelArgs} />
+
+      <NpcAffinitySection
         slot={slot}
+        editable={editable}
+        editCtx={editCtx}
         npcEncoding={npcEncoding}
-        notes={notes}
-        setNotes={setNotes}
-        fileLabel={fileLabel}
-        payloadSha={payloadSha}
+        lookups={lookups}
+        inventoryEncoding={inventoryEncoding}
+        {...labelArgs}
       />
+
+      <ShopSection slot={slot} lookups={lookups} inventoryEncoding={inventoryEncoding} {...labelArgs} />
+
+      <CustomItemsSection slot={slot} lookups={lookups} inventoryEncoding={inventoryEncoding} {...labelArgs} />
+
+      <WorldObjectsSection slot={slot} lookups={lookups} inventoryEncoding={inventoryEncoding} {...labelArgs} />
 
       {/* Collection bitmaps — 10-bitmap family at slot+0x1CDF0 surfaced
           for diagnostics (translation-repo notes/savefile_format.md §57,
@@ -2951,121 +3026,6 @@ function SlotView({
         </details>
       </Section>
 
-      {/* Garden */}
-      <Section
-        regionId={`${slot.label}-garden`}
-        title={REGION_DESCRIPTORS.garden.title}
-        range={REGION_DESCRIPTORS.garden.range}
-        confidence={REGION_DESCRIPTORS.garden.confidence}
-        parsedSnapshot={`${slot.garden.populatedTiles}/${slot.garden.totalTiles} populated tiles`}
-        {...labelArgs}
-      >
-        <p>
-          <strong>{slot.garden.populatedTiles.toLocaleString()}</strong>{' '}
-          populated tiles out of <strong>{slot.garden.totalTiles.toLocaleString()}</strong> slots.
-        </p>
-        {slot.garden.tiles.length > 0 && (
-          <details className="tile-details">
-            <summary>
-              Show {slot.garden.tiles.length} populated tile
-              {slot.garden.tiles.length === 1 ? '' : 's'}
-            </summary>
-            <p className="note-text">
-              plant_id &rarr; name mapping isn&apos;t built yet, so each
-              tile shows &quot;Plant ID NN (mapping pending)&quot; rather
-              than a guessed name. grow_time is a small 0..255 counter
-              the game advances as the plant matures.
-            </p>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Plant</th>
-                  <th>Grow time</th>
-                  {editable && <th>Edit (beta)</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {slot.garden.tiles.slice(0, 64).map((tile, i) => {
-                  const pending = editCtx.edits.gardenTile[tile.bodyOffset];
-                  const currentPlantId =
-                    pending !== undefined ? pending.plantId : tile.plantId;
-                  const currentGrow =
-                    pending !== undefined ? pending.growTime : tile.growTime;
-                  const plantName = lookups
-                    ? lookupPlantName(lookups, currentPlantId)
-                    : null;
-                  const plantLabel =
-                    plantName ?? `Plant ID ${currentPlantId} (mapping pending)`;
-                  return (
-                    <tr key={tile.bodyOffset}>
-                      <td>{i + 1}</td>
-                      <td>
-                        {pending !== undefined ? (
-                          <>
-                            <span className="muted strike">
-                              Plant ID {tile.plantId}
-                            </span>{' '}
-                            <strong>{plantLabel}</strong>
-                          </>
-                        ) : (
-                          <strong>{plantLabel}</strong>
-                        )}
-                      </td>
-                      <td>
-                        {pending !== undefined ? (
-                          <>
-                            <span className="muted strike">{tile.growTime}</span>{' '}
-                            <strong>{currentGrow}</strong>
-                          </>
-                        ) : (
-                          currentGrow
-                        )}
-                      </td>
-                      {editable && (
-                        <td>
-                          <GardenTileEditor
-                            currentPlantId={currentPlantId}
-                            currentGrowTime={currentGrow}
-                            hasPending={pending !== undefined}
-                            onCommit={(plantId, growTime) => {
-                              editCtx.setEdits(prev => ({
-                                ...prev,
-                                gardenTile: {
-                                  ...prev.gardenTile,
-                                  [tile.bodyOffset]: { plantId, growTime },
-                                },
-                              }));
-                            }}
-                            onClear={() =>
-                              editCtx.setEdits(prev => {
-                                const next = { ...prev.gardenTile };
-                                delete next[tile.bodyOffset];
-                                return { ...prev, gardenTile: next };
-                              })
-                            }
-                          />
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-                {slot.garden.tiles.length > 64 && (
-                  <tr>
-                    <td colSpan={editable ? 4 : 3}>
-                      <span className="muted">
-                        … {slot.garden.tiles.length - 64} more tile
-                        {slot.garden.tiles.length - 64 === 1 ? '' : 's'} not shown
-                      </span>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </details>
-        )}
-      </Section>
-
       {/* Bulletin board — 14 records at body 0x162BC. step-408: the
           region previously labelled "catalog announcements" (scanned from
           0x162B6) is the board; the v2.6.3 patch changed how long posts
@@ -3097,59 +3057,6 @@ function SlotView({
         fileLabel={fileLabel}
         payloadSha={payloadSha}
       />
-
-      {/* Bank log */}
-      <Section
-        regionId={`${slot.label}-bankLog`}
-        title={REGION_DESCRIPTORS.bankLog.title}
-        range={REGION_DESCRIPTORS.bankLog.range}
-        confidence={REGION_DESCRIPTORS.bankLog.confidence}
-        parsedSnapshot={`${slot.bankLog.length} populated records`}
-        {...labelArgs}
-      >
-        {slot.bankLog.length === 0 ? (
-          <p className="muted">No populated bank records.</p>
-        ) : (
-          <>
-            <p>
-              <strong>{slot.bankLog.length}</strong> bank transaction
-              record{slot.bankLog.length === 1 ? '' : 's'} on file. Per-field
-              decoding (deposit / withdraw / balance) isn&apos;t mapped yet,
-              so the raw 6-byte payload is available behind a toggle for
-              future analysis.
-            </p>
-            <details className="tile-details">
-              <summary>Show raw transaction bytes</summary>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Txn</th>
-                    <th>Raw bytes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {slot.bankLog.slice(0, 32).map((r, i) => (
-                    <tr key={r.bodyOffset}>
-                      <td>{i + 1}</td>
-                      <td><code className="hex-cell muted">{r.rawHex}</code></td>
-                    </tr>
-                  ))}
-                  {slot.bankLog.length > 32 && (
-                    <tr>
-                      <td colSpan={2}>
-                        <span className="muted">
-                          … {slot.bankLog.length - 32} more transaction
-                          {slot.bankLog.length - 32 === 1 ? '' : 's'} not shown
-                        </span>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </details>
-          </>
-        )}
-      </Section>
 
       {/* Note: the "Town residents" section was previously placed here
           (below the catalog section). It now lives above the Garden
@@ -3334,7 +3241,7 @@ export default function SaveFileInspector() {
     setDownloadState('downloading');
     setDownloadMsg(null);
     try {
-      const editList = editsToPendingList(edits, boardEditContext);
+      const editList = editsToPendingList(edits, boardEditContext, activeSlotParse?.activePlayer ?? 0);
       const result = applyEdits(parse.wrapper.payload, editList);
       const wrapperKind: 'dsv' | 'raw' =
         parse.wrapper.kind === 'dsv' ? 'dsv' : 'raw';
@@ -3578,7 +3485,8 @@ export default function SaveFileInspector() {
               <div className="editor-banner">
                 <strong>Back up your original save first.</strong>{' '}
                 Ritch, player name and the bulletin-board repairs have been
-                checked in the game; the other fields have not. If the
+                checked in the game; the bank balance, NPC affinity and the
+                other fields have not. If the
                 modified save breaks something, you&apos;ll want the
                 original to fall back to. Edits are applied to both slot A
                 and slot B, and all three checksums the game verifies are

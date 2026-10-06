@@ -11,15 +11,25 @@
 // map this code is based on (step-173 / 176 / 177 reverse-engineering).
 
 import { parseBoardRecords, parseLetterRecords, BOARD_BASE, LETTERS_BASE } from './board';
+import {
+  chooseActivePlayer,
+  parseCustomItems,
+  parseNpcRecords,
+  parsePlayerRecords,
+  parsePlayerShop,
+  parseShopLedger,
+  parseWorldObjects,
+  PLAYER_RECORD_BASE,
+  PLAYER_RECORD_SIZE,
+  PR_BAG,
+  PR_BANK,
+  PR_WALLET,
+} from './regions';
 import type {
-  ActivityRecord,
-  BankRecord,
   ChecksumInfo,
   CollectionBitmap,
-  CollectionStatRecord,
   DateTimeInfo,
   EventFlagSummary,
-  FriendMet,
   Game1Checksum,
   Game1Classmate,
   Game1Decode,
@@ -27,15 +37,11 @@ import type {
   Game1Player,
   Game1Spell,
   Game1Title,
-  GardenSummary,
   InventoryBagSlot,
-  InventorySlot,
   PreambleInfo,
   SaveParse,
   SlotLabel,
   SlotParse,
-  TownResident,
-  WizardLevelCandidate,
   WrapperInfo,
 } from './types';
 
@@ -142,56 +148,12 @@ export const OFFSETS = {
   playerName: 0x1149c,
   playerNameLen: 22, // up to 11 UTF-16 LE chars (editor caps at 5)
 
-  // Unconfirmed region — body[0x4300..0x4480], stride 8. Previously
-  // (step-176/177) labelled "active inventory" with a (cat<<8)|sub
-  // decomposition. step-232 rejected that framework: no ARM9 accessor
-  // touches this offset and the lone "confirmed" mapping
-  // (cat=2,sub=6)->1887 (Transmitter) was an artifact of misreading a
-  // u16 LE item ID as a packed (cat,sub) tuple. The raw bytes are still
-  // surfaced for research purposes; their semantics are unknown.
-  // See notes/save_analysis/_blockers.md (step-232) in the translation
-  // repo for the rejection trail.
-  activeInvStart: 0x4300,
-  activeInvEnd: 0x4480,
-  activeInvSlotSize: 8,
-
-  // Activity log
-  activityLogStart: 0x0b500,
-  activityLogEnd: 0x0b900,
-  activityRecordSize: 9,
-
-  // Collection statistics
-  collectionStatsStart: 0x11550,
-  collectionStatsEnd: 0x115f4,
-  collectionStatsRecordSize: 14,
-
-  // 4×1080-byte character records (0x11488 .. 0x1257C). record[0] is the
-  // player's character record; records[1..3] are reserved (always zero).
-  // step-223 validation confirmed the first 20 bytes of record[0] are NOT
-  // the player display name — phase-7's claim there was wrong; the real
-  // display name lives at body 0x47E. Inside record[0] the byte at +0x5a
-  // is the documented WIZARD-LEVEL CANDIDATE per phase 7. In our 55-save
-  // corpus the byte was 0x00 in every initialized save, so the candidate
-  // is shown READ-ONLY with a "please test" caveat — we do NOT promote it
-  // to confirmed yet.
+  // 4 × 0x438 character records at body 0x11488 (slot_rel 0x1149C): record 0
+  // is the player (name, shop name, portrait selectors, shop ledgers — §58.2);
+  // records 1..3 hold only the init template.
   characterRecordsStart: 0x11488,
   characterRecordSize: 0x438,
   characterRecordCount: 4,
-  /** Offset within record[0] of the wizard-level candidate byte. */
-  wizardLevelCandidateOffset: 0x5a,
-
-  // Garden tiles. Predecessor said 0x12414; step-223 _savefile_validate_all
-  // proved that's INSIDE the 4×1080 char-record array (which occupies
-  // 0x11488..0x1257C). The validator's plant-pattern score peaks at the
-  // first 12-byte stride AFTER the character-records end. We use 0x12568
-  // because it wins the per-save score race on upload_12 (the most
-  // populated save in the corpus); the character-records end at 0x1257C
-  // and 0x12568 sits 0x14 bytes earlier — that overlap is OK because the
-  // last reserved char record is all-zero, so we count 0 plant tiles
-  // there.
-  gardenStart: 0x12568,
-  gardenEnd: 0x16000,
-  gardenRecordSize: 12,
 
   // Bulletin board + letter queues. The block the game's record routines
   // address starts at body 0x162BC (slot-body start + 0x14 + 0x162A8, see
@@ -225,77 +187,6 @@ export const OFFSETS = {
   // Wallet
   ritch: 0x1cfd0,
 
-  // Bank transaction log
-  bankStart: 0x1cfd4,
-  bankEnd: 0x1e0e0,
-  bankRecordSize: 6,
-
-  // Town residents table — 8 fixed slots × 0x22F8 (8952) bytes at body
-  // 0x1E0E0. §30 of `notes/savefile_format.md` documents the layout; the
-  // 3DS dump upload_12 in the translation repo's corpus has populated
-  // residents モコるん (Mokorun) at slot 0 and ラビーな (Rabina) at slot 1,
-  // with vacant zeros at slots 2..3 and 0xFF UNINIT bytes at slots 4..7
-  // — visible directly at the documented offsets.
-  //
-  // Per-record layout:
-  //   +0x00..0x0F  NPC name (UTF-16 LE, zero-padded; max 8 chars)
-  //   +0x10..0x1F  padding
-  //   +0x20..0x420 house decoration bitmap (4-bit-per-pixel wallpaper +
-  //                floor tiles — the `aa aa bb bb ee ee` patterns visible
-  //                in hex dumps)
-  //   +0x420..end  relationship stats + per-day affinity history +
-  //                gift log + dialog-seen flags
-  //
-  // Tri-state per slot via the first 16 bytes (the name field):
-  //   - populated  (non-FF, non-zero): in-town resident
-  //   - vacant     (all 0x00): resident moved out, slot reusable
-  //   - uninit     (all 0xFF): slot never used
-  //
-  // Step-262's removal note rejected this region by Game-1 analogy
-  // (mqreader.js documents 11 × 164 B classmate slots at file 0x64D8 for
-  // Magician's Quest, which the comment claimed proved 8 × 0x22F8 was
-  // structurally wrong). But Game 3 (Tongari Boushi) and Game 1
-  // (Magician's Quest) ARE different games — Game 3 allows a fixed 8-
-  // resident town with full per-NPC house customisation (the 1 KiB house-
-  // decoration bitmap at +0x20..0x420), which Magician's Quest does not
-  // have. The 0x22F8 stride was therefore genuinely Game-3-specific, not
-  // a transposition error. §30's empirical evidence (upload_12 reading
-  // モコるん at the exact predicted offset) overrides the analogy.
-  //
-  // Step-262 also REMOVED two adjacent regions that ARE genuinely
-  // unconfirmed and stay removed:
-  //   - "NPC relationship records @ body 0x119C0+ stride 0x500" — no
-  //     ARM9 evidence; pattern-matched noise.
-  //   - "173-bit inventory bitmap @ body 0x1CDF2" — appeared to decode
-  //     against a real ARM9 trace but produced items the player did NOT
-  //     own. Bytes are real, meaning unknown.
-  residentsStart: 0x1e0e0,
-  residentsStride: 0x22f8,
-  residentsCount: 8,
-  residentsNameLen: 16,
-
-  // Friends-met / NPC encounter region — body 0x500..0x4300 (15,616
-  // bytes). Within this region, every NPC the player has encountered or
-  // befriended appears as a u16 LE stored_value (= npc_data_ofs_id + 500,
-  // range 500..751) at one or more non-aligned offsets — there are
-  // multiple sub-tables (encounter log, friend list, gift log, etc.)
-  // and they don't all use the same record layout, so the same NPC may
-  // be referenced from several offsets inside this 15 KB block. NPC
-  // encoding cracked in translation-repo step-346 (commit 0941cbca, tag
-  // step-346-npc-encoding) via differential save analysis + ARM9 NPC
-  // tables at RAM 0x020A1660 / 0x020A1670 / 0x020A1690.
-  //
-  // The parser scans EVEN-aligned offsets only — odd-aligned reads
-  // would catch byte-pairs that straddle unrelated record boundaries
-  // and happen to land in the 500..751 range as false positives. The
-  // sub-region boundaries within this 15 KB block are NOT yet decoded
-  // (open question per translation-repo notes/savefile_format.md §55),
-  // so editing affordances are deliberately not exposed here — we just
-  // surface the deduplicated list of NPCs the player has met.
-  friendsRegionStart: 0x500,
-  friendsRegionEnd: 0x4300,
-  friendStoredValueMin: 500,
-  friendStoredValueMax: 751,
 } as const;
 
 /** Body-level RFC1071 checksum range length. Exported because the editor
@@ -725,32 +616,6 @@ function decodeDatetime(bytes: Uint8Array): DateTimeInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Inventory (legacy body+0x4300 region — DISPUTED, see step-232/237)
-// ---------------------------------------------------------------------------
-
-function parseActiveInventory(body: Uint8Array, view: DataView): InventorySlot[] {
-  const slots: InventorySlot[] = [];
-  for (
-    let off = OFFSETS.activeInvStart;
-    off < OFFSETS.activeInvEnd;
-    off += OFFSETS.activeInvSlotSize
-  ) {
-    const word = u16le(view, off);
-    if (word === 0x0000 || word === 0xffff) continue;
-    const category = (word >> 8) & 0xff;
-    const subIndex = word & 0xff;
-    const trailing = body.subarray(off + 2, off + 8);
-    slots.push({
-      bodyOffset: off,
-      category,
-      subIndex,
-      trailingHex: bytesToHex(trailing),
-    });
-  }
-  return slots;
-}
-
-// ---------------------------------------------------------------------------
 // Inventory bag (15-slot player inventory at body 0x1D9B6)
 // ---------------------------------------------------------------------------
 
@@ -759,10 +624,10 @@ function parseActiveInventory(body: Uint8Array, view: DataView): InventorySlot[]
  *  fetched public/data/inventory_encoding.json so the bundle stays small).
  *  The component layer in SaveFileInspector.tsx fills in the iid once the
  *  lookups payload has loaded. */
-function parseInventoryBag(body: Uint8Array): InventoryBagSlot[] {
+function parseInventoryBag(body: Uint8Array, base: number = OFFSETS.inventoryBagStart): InventoryBagSlot[] {
   const out: InventoryBagSlot[] = [];
   for (let i = 0; i < OFFSETS.inventoryBagCount; i++) {
-    const off = OFFSETS.inventoryBagStart + i * OFFSETS.inventoryBagStride;
+    const off = base + i * OFFSETS.inventoryBagStride;
     const rec = body.subarray(off, off + OFFSETS.inventoryBagStride);
     // Empty sentinel: ff ff ff ff ff 00.
     const isEmpty =
@@ -786,39 +651,6 @@ function parseInventoryBag(body: Uint8Array): InventoryBagSlot[] {
 }
 
 // ---------------------------------------------------------------------------
-// Garden
-// ---------------------------------------------------------------------------
-
-function parseGarden(body: Uint8Array): GardenSummary {
-  let total = 0;
-  let populated = 0;
-  const tiles: import('./types').GardenTile[] = [];
-  let idx = 0;
-  for (
-    let off = OFFSETS.gardenStart;
-    off + OFFSETS.gardenRecordSize <= OFFSETS.gardenEnd &&
-    off + OFFSETS.gardenRecordSize <= body.length;
-    off += OFFSETS.gardenRecordSize
-  ) {
-    total++;
-    const rec = body.subarray(off, off + OFFSETS.gardenRecordSize);
-    const isEmpty = allBytesEqual(rec, 0xff) || allBytesEqual(rec, 0x00);
-    if (!isEmpty) {
-      populated++;
-      tiles.push({
-        index: idx,
-        bodyOffset: off,
-        plantId: rec[0],
-        growTime: rec[4],
-        rawHex: bytesToHex(rec),
-      });
-    }
-    idx++;
-  }
-  return { totalTiles: total, populatedTiles: populated, tiles };
-}
-
-// ---------------------------------------------------------------------------
 // Event flags
 // ---------------------------------------------------------------------------
 
@@ -829,225 +661,6 @@ function parseEventFlags(body: Uint8Array): EventFlagSummary {
     totalBytes: region.length,
     setBits: popcountBytes(region),
     previewHex: bytesToHex(region.subarray(0, previewLen)),
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Activity log
-// ---------------------------------------------------------------------------
-
-function parseActivityLog(body: Uint8Array, view: DataView): ActivityRecord[] {
-  const out: ActivityRecord[] = [];
-  let idx = 0;
-  for (
-    let off = OFFSETS.activityLogStart;
-    off + OFFSETS.activityRecordSize <= OFFSETS.activityLogEnd &&
-    off + OFFSETS.activityRecordSize <= body.length;
-    off += OFFSETS.activityRecordSize
-  ) {
-    const rec = body.subarray(off, off + OFFSETS.activityRecordSize);
-    const sentinel = allBytesEqual(rec, 0xff);
-    out.push({
-      index: idx,
-      bodyOffset: off,
-      headerHex: bytesToHex(rec.subarray(0, 3)),
-      dateOrSequence: u32le(view, off + 3),
-      countOrState: u16le(view, off + 7),
-      sentinel,
-    });
-    idx++;
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Collection stats
-// ---------------------------------------------------------------------------
-
-function parseCollectionStats(body: Uint8Array): CollectionStatRecord[] {
-  const out: CollectionStatRecord[] = [];
-  let idx = 0;
-  for (
-    let off = OFFSETS.collectionStatsStart;
-    off + OFFSETS.collectionStatsRecordSize <= OFFSETS.collectionStatsEnd &&
-    off + OFFSETS.collectionStatsRecordSize <= body.length;
-    off += OFFSETS.collectionStatsRecordSize
-  ) {
-    const rec = body.subarray(off, off + OFFSETS.collectionStatsRecordSize);
-    out.push({
-      index: idx,
-      bodyOffset: off,
-      rawHex: bytesToHex(rec),
-    });
-    idx++;
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Bank log
-// ---------------------------------------------------------------------------
-
-function parseBankLog(body: Uint8Array): BankRecord[] {
-  const out: BankRecord[] = [];
-  let idx = 0;
-  for (
-    let off = OFFSETS.bankStart;
-    off + OFFSETS.bankRecordSize <= OFFSETS.bankEnd &&
-    off + OFFSETS.bankRecordSize <= body.length;
-    off += OFFSETS.bankRecordSize
-  ) {
-    const rec = body.subarray(off, off + OFFSETS.bankRecordSize);
-    if (!allBytesEqual(rec, 0xff) && !allBytesEqual(rec, 0x00)) {
-      out.push({
-        index: idx,
-        bodyOffset: off,
-        rawHex: bytesToHex(rec),
-      });
-    }
-    idx++;
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Town residents (8 slots × 0x22F8 at body 0x1E0E0)
-// ---------------------------------------------------------------------------
-
-/** Parse the 8-slot town-residents table at body 0x1E0E0 (stride 0x22F8).
- *  §30 confirmed via the 3DS dump upload_12: slot 0 = モコるん (bytes
- *  `e2 30 b3 30 8b 30 93 30 00 00 00 00 00 00 00 00`), slot 1 = ラビーな,
- *  slots 2..3 = vacant zeros, slots 4..7 = 0xFF uninitialised.
- *
- *  Returns every slot (not just populated ones) so the inspector can
- *  show the full 0..7 table with per-slot state. */
-function parseTownResidents(body: Uint8Array): TownResident[] {
-  const out: TownResident[] = [];
-  for (let i = 0; i < OFFSETS.residentsCount; i++) {
-    const off = OFFSETS.residentsStart + i * OFFSETS.residentsStride;
-    // Defensive: a slot may run past the slot body if the save is
-    // truncated. We still emit a record (state=uninitialised) rather than
-    // throwing, so the inspector can render gracefully.
-    if (off + OFFSETS.residentsNameLen > body.length) {
-      out.push({
-        index: i,
-        bodyOffset: off,
-        state: 'uninitialised',
-        name: '',
-        firstBytesHex: '',
-      });
-      continue;
-    }
-    const nameField = body.subarray(off, off + OFFSETS.residentsNameLen);
-    let allFF = true;
-    let allZero = true;
-    for (let j = 0; j < nameField.length; j++) {
-      const b = nameField[j];
-      if (b !== 0xff) allFF = false;
-      if (b !== 0x00) allZero = false;
-      if (!allFF && !allZero) break;
-    }
-    let state: TownResident['state'];
-    if (allFF) state = 'uninitialised';
-    else if (allZero) state = 'vacant';
-    else state = 'populated';
-    const name = state === 'populated'
-      ? decodeUtf16Le(nameField, OFFSETS.residentsNameLen / 2)
-      : '';
-    out.push({
-      index: i,
-      bodyOffset: off,
-      state,
-      name,
-      firstBytesHex: bytesToHex(nameField),
-    });
-  }
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Friends met — NPC encounter / friend-list region at body 0x500..0x4300
-// ---------------------------------------------------------------------------
-
-/** Scan body 0x500..0x4300 for u16 LE values in the range 500..751
- *  (valid NPC stored_values per translation-repo step-346), deduplicate
- *  by value, and return the list sorted by stored_value ascending.
- *
- *  We scan EVEN offsets only. The internal sub-tables in this 15 KB
- *  region (encounter log, friend list, gift log, etc.) all align their
- *  u16 stored_value fields on 2-byte boundaries; odd-aligned reads
- *  would walk straight through unrelated record boundaries and pick up
- *  byte-pairs that happen to land in the 500..751 range as false
- *  positives. Empirically on tongari_en.dsv the even-aligned scan
- *  produces exactly the player's met-NPC roster with no noise.
- *
- *  Sub-region boundaries within 0x500..0x4300 aren't yet decoded — the
- *  same stored_value will commonly appear at several offsets (one per
- *  sub-table that references the NPC). We track every offset where the
- *  value appears for diagnostics but display only the deduped list. */
-export function parseFriendsMet(body: Uint8Array): FriendMet[] {
-  const offsetsByValue = new Map<number, number[]>();
-  const lo = OFFSETS.friendsRegionStart;
-  const hi = Math.min(OFFSETS.friendsRegionEnd, body.length);
-  const vLo = OFFSETS.friendStoredValueMin;
-  const vHi = OFFSETS.friendStoredValueMax;
-  for (let off = lo; off + 2 <= hi; off += 2) {
-    const v = body[off] | (body[off + 1] << 8);
-    if (v < vLo || v > vHi) continue;
-    let list = offsetsByValue.get(v);
-    if (!list) {
-      list = [];
-      offsetsByValue.set(v, list);
-    }
-    list.push(off);
-  }
-  const out: FriendMet[] = [];
-  for (const [storedValue, offsets] of offsetsByValue) {
-    out.push({
-      storedValue,
-      bodyOffsets: offsets,
-      iid: storedValue - 500,
-    });
-  }
-  out.sort((a, b) => a.storedValue - b.storedValue);
-  return out;
-}
-
-// ---------------------------------------------------------------------------
-// Wizard-level candidate
-// ---------------------------------------------------------------------------
-
-/** Read body[characterRecordsStart + wizardLevelCandidateOffset] (= body
- *  0x11488 + 0x5a). Phase-7 said the per-character init routine writes
- *  0x0a here, hypothesizing "wizard starting level". step-223 validation
- *  found every initialized save in our corpus stores 0x00, NOT the 0x0a
- *  init value. This means EITHER the byte gets cleared by some later code
- *  path, OR the init claim is wrong. We surface the candidate read-only
- *  with a clear "please test" caveat — no edit affordance yet. */
-function parseWizardLevelCandidate(body: Uint8Array): WizardLevelCandidate {
-  const off = OFFSETS.characterRecordsStart + OFFSETS.wizardLevelCandidateOffset;
-  if (off >= body.length) {
-    return {
-      bodyOffset: off,
-      rawByte: 0,
-      plausible: false,
-      note: 'Out of range — save is shorter than expected.',
-    };
-  }
-  const raw = body[off];
-  return {
-    bodyOffset: off,
-    rawByte: raw,
-    // Across step-223's 55-save corpus this byte was 0 in every save.
-    // Until a save shows a non-zero value AND we have confirmation it
-    // tracks the player's wizard rank, we mark this read-only and "not
-    // plausible as a level".
-    plausible: false,
-    note:
-      'Candidate field per phase-7 ARM9 trace (body 0x11488 + 0x5a). step-223 ' +
-      'validation found this byte is 0 in 55/55 saves in the corpus, ' +
-      'contradicting phase-7’s hypothesis that init writes 0x0a here. ' +
-      'Read-only — please test by saving at known wizard ranks and report.',
   };
 }
 
@@ -1102,23 +715,18 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
       lastSaveTimestamp: { rawHex: '', decoded: '(uninit)' },
       characterCreateTimestamp: { rawHex: '', decoded: '(uninit)' },
       ritch: null,
-      activeInventory: [],
+      bank: null,
       inventoryBag: [],
       boardRecords: [],
       letterRecords: [],
-      garden: { totalTiles: 0, populatedTiles: 0, tiles: [] },
       eventFlags: { totalBytes: 0, setBits: 0, previewHex: '' },
-      activityLog: [],
-      collectionStats: [],
-      bankLog: [],
-      townResidents: [],
-      wizardLevelCandidate: {
-        bodyOffset: OFFSETS.characterRecordsStart + OFFSETS.wizardLevelCandidateOffset,
-        rawByte: 0xff,
-        plausible: false,
-        note: 'Slot is uninitialised.',
-      },
-      friendsMet: [],
+      playerRecords: [],
+      activePlayer: 0,
+      npcRecords: [],
+      shopLedger: { entries: [], lifetimeTotal: 0, counters: [] },
+      playerShop: { shelves: [], displayItems: [], featuredItem: 0xffff, rankRaw: 0 },
+      customItems: [],
+      worldObjects: { outdoorCellsUsed: 0, outdoorCounts: new Map(), lists: [] },
       collectionBitmaps: [],
     };
   }
@@ -1148,8 +756,15 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     body.subarray(OFFSETS.charCreateTs, OFFSETS.charCreateTs + 8),
   );
 
-  const ritchVal = u32le(view, OFFSETS.ritch);
+  // Wallet, bank and bag are read from the player record the header
+  // says was saved last (§58.3); single-character saves have record 0.
+  const playerRecords = parsePlayerRecords(body);
+  const activePlayer = chooseActivePlayer(body, playerRecords);
+  const playerBase = PLAYER_RECORD_BASE + activePlayer * PLAYER_RECORD_SIZE;
+  const ritchVal = u32le(view, playerBase + PR_WALLET);
   const ritch = ritchVal === 0xffffffff ? null : ritchVal;
+  const bankVal = u32le(view, playerBase + PR_BANK);
+  const bank = bankVal === 0xffffffff ? null : bankVal;
 
   return {
     label,
@@ -1173,18 +788,18 @@ function parseSlot(body: Uint8Array, label: SlotLabel): SlotParse {
     lastSaveTimestamp,
     characterCreateTimestamp,
     ritch,
-    activeInventory: parseActiveInventory(body, view),
-    inventoryBag: parseInventoryBag(body),
+    bank,
+    inventoryBag: parseInventoryBag(body, playerBase + PR_BAG),
     boardRecords: parseBoardRecords(body),
     letterRecords: parseLetterRecords(body),
-    garden: parseGarden(body),
     eventFlags: parseEventFlags(body),
-    activityLog: parseActivityLog(body, view),
-    collectionStats: parseCollectionStats(body),
-    bankLog: parseBankLog(body),
-    townResidents: parseTownResidents(body),
-    wizardLevelCandidate: parseWizardLevelCandidate(body),
-    friendsMet: parseFriendsMet(body),
+    playerRecords,
+    activePlayer,
+    npcRecords: parseNpcRecords(body),
+    shopLedger: parseShopLedger(body),
+    playerShop: parsePlayerShop(body),
+    customItems: parseCustomItems(body),
+    worldObjects: parseWorldObjects(body),
     collectionBitmaps: parseCollectionBitmaps(body),
   };
 }
@@ -1708,20 +1323,19 @@ export const REGION_DESCRIPTORS = {
   bodyChecksum: { id: 'bodyChecksum', title: 'Body-level checksum (RFC1071)', range: 'body[0x14:0x14+0x1CDDC], stored at 0x14:0x16', confidence: 'confirmed' as const },
   extra0Checksum: { id: 'extra0Checksum', title: 'Extra[0] checksum (RFC1071)', range: 'extra[0][0:0x22F8], stored at extra[0][0:2] (file 0x01CEF0 / 0x05CDF0)', confidence: 'confirmed' as const },
   versionMagic: { id: 'versionMagic', title: 'Format version magic + sub-code', range: 'body[0x02:0x04] + body[0x16:0x18]', confidence: 'confirmed' as const },
-  wizardLevelCandidate: { id: 'wizardLevelCandidate', title: 'Wizard level candidate (read-only — please test)', range: 'body[0x11488 + 0x5a]', confidence: 'candidate' as const },
   eventFlags: { id: 'eventFlags', title: 'Event flag region', range: 'body[0x18:0x460], ~1 KiB bit-flags', confidence: 'candidate' as const },
   profile: { id: 'profile', title: 'Player + Shop + Town names (3 independent fields, editable)', range: 'player body[0x1149C]; shop body[0x114B2]; town body[0x47E]', confidence: 'candidate' as const },
-  inventory: { id: 'inventory', title: 'Region at body 0x4300 — semantics unconfirmed (previously labelled "active inventory")', range: 'body[0x4300:0x4480], 8-byte stride', confidence: 'disputed' as const },
   inventoryBag: { id: 'inventoryBag', title: 'Inventory bag — 15 slots (editable)', range: 'body[0x1D9B6:0x1DA14], 6-byte stride; per-slot u16 LE stored_value + 3B pad + u8 quantity', confidence: 'confirmed' as const },
-  activityLog: { id: 'activityLog', title: 'Activity log', range: 'body[0x0B500:0x0B900], 9-byte records', confidence: 'candidate' as const },
-  collectionStats: { id: 'collectionStats', title: 'Collection statistics', range: 'body[0x11550:0x115F4], 14-byte records', confidence: 'candidate' as const },
-  garden: { id: 'garden', title: 'Garden plant tile state', range: 'body[0x12400:0x16000], 12-byte records', confidence: 'confirmed' as const },
   board: { id: 'board', title: 'Bulletin board — 14 posts (view, update to the current translation, remove, edit)', range: 'body[0x162BC:0x16BEC], 168-byte records: 136-byte text, 22-byte author, message no., author id, addressee id, flag, date', confidence: 'confirmed' as const },
   letters: { id: 'letters', title: 'Letter queues — 10 + 12 records (same layout as board posts)', range: 'body[0x16BEC:0x1765C], 168-byte records', confidence: 'candidate' as const },
-  ritch: { id: 'ritch', title: 'Ritch (wallet)', range: 'body[0x1CFD0], u32 LE', confidence: 'confirmed' as const },
-  bankLog: { id: 'bankLog', title: 'Bank transaction log', range: 'body[0x1CFD4:0x1E0E0], 6-byte records', confidence: 'candidate' as const },
-  townResidents: { id: 'townResidents', title: 'Town residents (8 slots × 0x22F8)', range: 'body[0x1E0E0:0x2F8A0], 0x22F8-byte stride, max 8 residents; first 16 B per slot = UTF-16 LE NPC name', confidence: 'confirmed' as const },
-  friendsMet: { id: 'friendsMet', title: 'Friends met — NPCs encountered / befriended (read-only)', range: 'body[0x500:0x4300], u16 LE stored_value in 500..751 (= npc_data_ofs_id + 500), even-aligned scan', confidence: 'candidate' as const },
+  ritch: { id: 'ritch', title: 'Ritch (wallet) + bank balance (editable)', range: 'player record +0x1E0 / +0x1E4 (0x1CFD0 / 0x1CFD4 for record 0), u32 LE', confidence: 'confirmed' as const },
+  wizard: { id: 'wizard', title: 'Wizard level + rank (editable)', range: 'player record +0x1FDA (level 1..50) / +0x1FDB (rank 0..5); title + wand = equipped slots 7 / 8 at +0x1112', confidence: 'confirmed' as const },
+  playerRecords: { id: 'playerRecords', title: 'Player characters — the four extra records (read-only)', range: 'slot_rel 0x1CDF0 + n·0x22F8, n = 0..3; each with its own RFC1071 checksum', confidence: 'confirmed' as const },
+  npcRecords: { id: 'npcRecords', title: 'NPC affinity — 140 per-NPC records (affinity editable)', range: 'slot_rel 0x1257C, 0x70-byte stride; +7 = affinity 0..100', confidence: 'confirmed' as const },
+  playerShop: { id: 'playerShop', title: "Player's shop — shelves, prices, rank (read-only)", range: 'slot_rel 0x17DA2, 16 × 0x16 shelf records, rank at +0x1B5', confidence: 'confirmed' as const },
+  shopLedger: { id: 'shopLedger', title: 'Shop sales ledger — 2 display sets × 22 slots (read-only)', range: 'character record 0 + 0xA8 / + 0x1B0, 12-byte entries; lifetime total at +0x2CC', confidence: 'confirmed' as const },
+  customItems: { id: 'customItems', title: 'Custom-named items (read-only)', range: 'slot_rel 0x1AECA, 8 × 0x5E (UTF-16 name + item ref)', confidence: 'confirmed' as const },
+  worldObjects: { id: 'worldObjects', title: 'World objects — outdoor grid + placed-object lists (read-only)', range: 'slot_rel 0x4AC 7680 × 5-byte cells; 0x9AB0 43 lists × 32 × 9-byte records', confidence: 'confirmed' as const },
   collectionBitmaps: { id: 'collectionBitmaps', title: 'Collection bitmaps — 10-bitmap family at slot+0x1CDF0 (read-only)', range: 'body[0x1CDF2:0x1D0BD], 459 bytes; ten same-shape bit sets serviced by ARM9 0x0201BCB0', confidence: 'candidate' as const },
   timestamps: { id: 'timestamps', title: 'Last-save + character-create timestamps', range: 'body[0x494] / body[0x4A4]', confidence: 'confirmed' as const },
   game1: { id: 'game1', title: "Game 1 (Magician's Quest / Enchanted Folk) decoder — dormant for Game 3", range: 'file[0x00..0x80000], LaytonLoztew-documented layout', confidence: 'confirmed' as const },

@@ -134,6 +134,25 @@ import {
   TEXT_FIELD,
   TEXT_PLAIN_MAX,
 } from './board';
+import {
+  BANK_MAX,
+  NPC_AFFINITY_MAX,
+  NPC_AFFINITY_OFF,
+  NPC_RECORD_BASE,
+  NPC_RECORD_COUNT,
+  NPC_RECORD_SIZE,
+  PLAYER_RECORD_BASE,
+  PLAYER_RECORD_COUNT,
+  PLAYER_RECORD_SIZE,
+  PR_BAG,
+  PR_BANK,
+  PR_WALLET,
+  PR_WIZARD_LEVEL,
+  PR_WIZARD_RANK,
+  WALLET_MAX,
+  WIZARD_LEVEL_MAX,
+  WIZARD_RANK_MAX,
+} from './regions';
 
 const SLOT_A_BASE = 0x100;
 const SLOT_B_BASE = 0x40000;
@@ -167,7 +186,8 @@ const TEXT_ENCODER_UTF16 = (() => {
 // ---------------------------------------------------------------------------
 
 export type PendingEdit =
-  | { kind: 'ritch'; value: number }
+  /** Wallet. `playerIndex` selects the player record (default 0). */
+  | { kind: 'ritch'; value: number; playerIndex?: number }
   | { kind: 'player_name'; value: string }
   | { kind: 'shop_name'; value: string }
   | { kind: 'town_name'; value: string }
@@ -178,7 +198,14 @@ export type PendingEdit =
   /** One letter-queue record's text (plain UTF-16, ≤ 67 chars); the
    *  record is also marked filled so the game does not overwrite it. */
   | { kind: 'letter'; recordOffset: number; text: string }
-  | { kind: 'garden_tile'; recordOffset: number; plantId: number; growTime: number }
+  /** Bank balance (player record +0x1E4), capped at 9,999,999. */
+  | { kind: 'bank'; value: number; playerIndex?: number }
+  /** Wizard level 1..50 (player record +0x1FDA, script var 0x1002). */
+  | { kind: 'wizard_level'; value: number; playerIndex?: number }
+  /** Rank text index 0..5 (player record +0x1FDB, script var 0x1003). */
+  | { kind: 'wizard_rank'; value: number; playerIndex?: number }
+  /** Affinity byte (+7) of one of the 140 per-NPC records at 0x1257C. */
+  | { kind: 'npc_affinity'; npcIndex: number; value: number }
   /** Player inventory bag slot (one of the 15 records at body 0x1D9B6,
    *  stride 6). slotIndex 0..14. `storedValue=null + quantity=0` writes
    *  the empty sentinel (ff ff ff ff ff 00). */
@@ -187,6 +214,7 @@ export type PendingEdit =
       slotIndex: number;
       storedValue: number | null;
       quantity: number;
+      playerIndex?: number;
     };
 
 export interface ApplyResult {
@@ -311,9 +339,9 @@ function fixBodyChecksum(payload: Uint8Array, slot: 'A' | 'B'): number {
  *  the same offset where extra[0] starts) and the header csum, so
  *  ordering within the three-level repair doesn't matter for
  *  correctness — we do it first for clarity. */
-function fixExtra0Checksum(payload: Uint8Array, slot: 'A' | 'B'): number {
+function fixPlayerRecordChecksum(payload: Uint8Array, slot: 'A' | 'B', playerIndex: number = 0): number {
   const base = slot === 'A' ? SLOT_A_BASE : SLOT_B_BASE;
-  const start = base + EXTRA0_OFFSET;
+  const start = base + EXTRA0_OFFSET + playerIndex * PLAYER_RECORD_SIZE;
   const end = start + EXTRA0_LEN;
   if (end > payload.length) {
     throw new Error(
@@ -414,17 +442,26 @@ export const INVENTORY_BAG_STRIDE = 6;
 export const INVENTORY_QUANTITY_MIN = 1;
 export const INVENTORY_QUANTITY_MAX = 255;
 
+/** slot_rel offset of player record n (§58.3). */
+export function playerRecordOffset(playerIndex: number): number {
+  if (playerIndex < 0 || playerIndex >= PLAYER_RECORD_COUNT) {
+    throw new Error(`Player index out of range: ${playerIndex}`);
+  }
+  return PLAYER_RECORD_BASE + playerIndex * PLAYER_RECORD_SIZE;
+}
+
 function writeInventorySlot(
   payload: Uint8Array,
   slot: 'A' | 'B',
   slotIndex: number,
   storedValue: number | null,
   quantity: number,
+  playerIndex: number = 0,
 ): void {
   if (slotIndex < 0 || slotIndex >= INVENTORY_BAG_COUNT) {
     throw new Error(`Inventory slotIndex out of range: ${slotIndex}`);
   }
-  const bodyOffset = INVENTORY_BAG_BASE + slotIndex * INVENTORY_BAG_STRIDE;
+  const bodyOffset = playerRecordOffset(playerIndex) + PR_BAG + slotIndex * INVENTORY_BAG_STRIDE;
   const fileOffset = bodyOffsetToFile(slot, bodyOffset);
   if (storedValue === null) {
     // Empty sentinel: ff ff ff ff ff 00. Matches the byte pattern of
@@ -475,15 +512,63 @@ export function applyEdits(
   }
   // Defensive copy so we don't mutate the caller's array.
   const payload = new Uint8Array(originalPayload);
+  // Player records whose bytes changed: each needs its own checksum
+  // recomputed (§58.3). Record 0 is always recomputed for compatibility
+  // with the pre-step-409 behaviour (its result is what the UI reports).
+  const touchedPlayers = new Set<number>([0]);
 
   for (const edit of edits) {
     switch (edit.kind) {
       case 'ritch': {
-        if (!Number.isFinite(edit.value) || edit.value < 0 || edit.value > 0xffffffff) {
-          throw new Error(`Ritch out of range: ${edit.value}`);
+        if (!Number.isFinite(edit.value) || edit.value < 0 || edit.value > WALLET_MAX) {
+          throw new Error(`Ritch out of range: ${edit.value} (0..${WALLET_MAX})`);
         }
-        writeU32Le(payload, 'A', OFFSETS.ritch, edit.value);
-        writeU32Le(payload, 'B', OFFSETS.ritch, edit.value);
+        const off = playerRecordOffset(edit.playerIndex ?? 0) + PR_WALLET;
+        writeU32Le(payload, 'A', off, edit.value);
+        writeU32Le(payload, 'B', off, edit.value);
+        touchedPlayers.add(edit.playerIndex ?? 0);
+        break;
+      }
+      case 'bank': {
+        if (!Number.isFinite(edit.value) || edit.value < 0 || edit.value > BANK_MAX) {
+          throw new Error(`Bank balance out of range: ${edit.value} (0..${BANK_MAX})`);
+        }
+        const off = playerRecordOffset(edit.playerIndex ?? 0) + PR_BANK;
+        writeU32Le(payload, 'A', off, edit.value);
+        writeU32Le(payload, 'B', off, edit.value);
+        touchedPlayers.add(edit.playerIndex ?? 0);
+        break;
+      }
+      case 'wizard_level': {
+        if (!Number.isInteger(edit.value) || edit.value < 1 || edit.value > WIZARD_LEVEL_MAX) {
+          throw new Error(`Wizard level must be 1..${WIZARD_LEVEL_MAX}, got ${edit.value}.`);
+        }
+        const off = playerRecordOffset(edit.playerIndex ?? 0) + PR_WIZARD_LEVEL;
+        writeByte(payload, 'A', off, edit.value);
+        writeByte(payload, 'B', off, edit.value);
+        touchedPlayers.add(edit.playerIndex ?? 0);
+        break;
+      }
+      case 'wizard_rank': {
+        if (!Number.isInteger(edit.value) || edit.value < 0 || edit.value > WIZARD_RANK_MAX) {
+          throw new Error(`Rank index must be 0..${WIZARD_RANK_MAX}, got ${edit.value}.`);
+        }
+        const off = playerRecordOffset(edit.playerIndex ?? 0) + PR_WIZARD_RANK;
+        writeByte(payload, 'A', off, edit.value);
+        writeByte(payload, 'B', off, edit.value);
+        touchedPlayers.add(edit.playerIndex ?? 0);
+        break;
+      }
+      case 'npc_affinity': {
+        if (edit.npcIndex < 0 || edit.npcIndex >= NPC_RECORD_COUNT) {
+          throw new Error(`NPC index out of range: ${edit.npcIndex}`);
+        }
+        if (!Number.isFinite(edit.value) || edit.value < 0 || edit.value > NPC_AFFINITY_MAX) {
+          throw new Error(`Affinity must be 0..${NPC_AFFINITY_MAX}, got ${edit.value}.`);
+        }
+        const off = NPC_RECORD_BASE + edit.npcIndex * NPC_RECORD_SIZE + NPC_AFFINITY_OFF;
+        writeByte(payload, 'A', off, edit.value);
+        writeByte(payload, 'B', off, edit.value);
         break;
       }
       case 'player_name': {
@@ -588,15 +673,6 @@ export function applyEdits(
         }
         break;
       }
-      case 'garden_tile': {
-        // 12-byte record: byte 0 = plant_id, byte 4 = grow_time. Other
-        // bytes in the record are left untouched.
-        for (const slot of ['A', 'B'] as const) {
-          writeByte(payload, slot, edit.recordOffset + 0, edit.plantId & 0xff);
-          writeByte(payload, slot, edit.recordOffset + 4, edit.growTime & 0xff);
-        }
-        break;
-      }
       case 'inventory_slot': {
         // Mirror the write to both slots so the edit survives the next
         // ping-pong save regardless of which slot the game considers
@@ -609,8 +685,10 @@ export function applyEdits(
             edit.slotIndex,
             edit.storedValue,
             edit.quantity,
+            edit.playerIndex ?? 0,
           );
         }
+        touchedPlayers.add(edit.playerIndex ?? 0);
         break;
       }
     }
@@ -626,8 +704,16 @@ export function applyEdits(
   //      (step-223 added this; previously missing → most edits broke saves).
   //   3. header csum    — covers body[0x00..0x14], stored at +0
   //      (step-173 — the original csum that the predecessor knew about).
-  const extra0CsumA = fixExtra0Checksum(payload, 'A');
-  const extra0CsumB = fixExtra0Checksum(payload, 'B');
+  let extra0CsumA = 0;
+  let extra0CsumB = 0;
+  for (const n of Array.from(touchedPlayers).sort()) {
+    const a = fixPlayerRecordChecksum(payload, 'A', n);
+    const b = fixPlayerRecordChecksum(payload, 'B', n);
+    if (n === 0) {
+      extra0CsumA = a;
+      extra0CsumB = b;
+    }
+  }
   const bodyCsumA = fixBodyChecksum(payload, 'A');
   const bodyCsumB = fixBodyChecksum(payload, 'B');
   const csumA = fixHeaderChecksum(payload, 'A');

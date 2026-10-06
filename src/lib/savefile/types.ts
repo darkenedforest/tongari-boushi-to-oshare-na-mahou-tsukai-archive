@@ -54,24 +54,6 @@ export interface DateTimeInfo {
   decoded: string;
 }
 
-/** Raw 8-byte record at body[0x4300:0x4480] stride 8. The "category /
- *  sub_index" decomposition is a HOLDOVER from the rejected step-176/177
- *  framework — step-232 found no ARM9 accessor touches this region and
- *  the (cat<<8)|sub mapping was an artifact of misreading a u16 LE item
- *  ID. We retain the fields purely so the UI can keep showing the raw
- *  bytes; their semantics are unknown. See `notes/save_analysis/
- *  _blockers.md` (step-232 entry) for the full rejection trail. */
-export interface InventorySlot {
-  /** Slot offset relative to slot body. */
-  bodyOffset: number;
-  /** High byte of the first u16 at this offset. Semantics unconfirmed. */
-  category: number;
-  /** Low byte of the first u16 at this offset. Semantics unconfirmed. */
-  subIndex: number;
-  /** Hex of the remaining 6 trailing bytes. Semantics unconfirmed. */
-  trailingHex: string;
-}
-
 /** One of the 15 player-inventory bag slots starting at body 0x1D9B6, stride
  *  6 bytes. The on-disk record layout is:
  *    +0..1  u16 LE stored_value (game's internal item-ID — distinct from the
@@ -105,111 +87,17 @@ export interface InventoryBagSlot {
  *  see ./board.ts for the field map and decoding. */
 import type { BoardRecord } from './board';
 export type { BoardRecord };
-
-export interface GardenTile {
-  index: number;
-  bodyOffset: number;
-  plantId: number;
-  growTime: number;
-  /** Hex of the full 12-byte record for context. */
-  rawHex: string;
-}
-
-export interface GardenSummary {
-  totalTiles: number;
-  populatedTiles: number;
-  /** Populated tiles only — empty tiles (all 0x00 or 0xFF) are filtered. */
-  tiles: GardenTile[];
-}
-
-export interface ActivityRecord {
-  index: number;
-  bodyOffset: number;
-  /** First 3 bytes — record header. */
-  headerHex: string;
-  /** Bytes 3..7 as u32 LE. */
-  dateOrSequence: number;
-  /** Bytes 7..9 as u16 LE. */
-  countOrState: number;
-  /** Whether all 9 bytes are 0xFF (sentinel). */
-  sentinel: boolean;
-}
-
-export interface CollectionStatRecord {
-  index: number;
-  bodyOffset: number;
-  /** 14 raw bytes as hex. */
-  rawHex: string;
-}
-
-export interface BankRecord {
-  index: number;
-  bodyOffset: number;
-  /** 6 raw bytes as hex. */
-  rawHex: string;
-}
-
-/** One slot of the 8-entry town residents table at body 0x1E0E0
- *  (stride 0x22F8 bytes, max 8 residents). Confirmed via the
- *  3DS dump upload_12 which has populated residents モコるん +
- *  ラビーな at slots 0..1 and vacant zeros at slots 2..3.
- *
- *  Each slot can be in one of three states:
- *    - 'populated'  — currently lives in the player's town; first 16
- *                     bytes hold the UTF-16 LE NPC name.
- *    - 'vacant'     — was once active but the resident moved out;
- *                     bytes are zeroed (slot can be reused).
- *    - 'uninitialised' — slot never used; bytes are 0xFF.
- *
- *  Field map per `notes/savefile_format.md` §30:
- *    +0x00..0x0F  NPC name (UTF-16 LE, zero-padded; max 8 chars)
- *    +0x10..0x1F  padding
- *    +0x20..0x420 house decoration bitmap
- *    +0x420..end  relationship stats / affinity history / gift log /
- *                  dialog-seen flags
- *  We parse only the name + state byte here; the inspector renders
- *  the rest as read-only diagnostic bytes if needed. */
-export type TownResidentState = 'populated' | 'vacant' | 'uninitialised';
-
-export interface TownResident {
-  /** 0..7 — slot position within the 8-entry table. */
-  index: number;
-  /** Slot-A body offset of this record (= 0x1E0E0 + index*0x22F8). */
-  bodyOffset: number;
-  /** Tri-state per the first 16 bytes (the name field). */
-  state: TownResidentState;
-  /** Decoded UTF-16 LE NPC name for populated slots; '' otherwise. */
-  name: string;
-  /** First 16 bytes of the slot as hex, for raw diagnostics. */
-  firstBytesHex: string;
-}
-
-/** One row in the per-slot "Friends Met" view — a friend / met-NPC found
- *  in the save-body 0x500..0x4300 NPC-history region.
- *
- *  Encoding (translation-repo step-346): the u16 LE `stored_value` is
- *  `npc_data_ofs_id + 500`, range 500..751 across the 252 NPCs catalogued
- *  in `notes/npc_encoding.json`. The save's encounter-log / friend-list /
- *  gift-log sub-tables within 0x500..0x4300 each reference the same NPC by
- *  storing the same u16 at multiple offsets, so we deduplicate per
- *  stored_value to produce a clean per-NPC list rather than per-offset
- *  noise.
- *
- *  The resolved `name_en`, `name_jp`, `iid`, `category`, and
- *  `categoryLabel` are filled in by SaveFileInspector.tsx at render time
- *  from the loaded NPC encoding JSON (the parser stays bundle-light by
- *  not embedding all 252 names). When the JSON is still loading these
- *  fields are null / empty and only the `storedValue` is shown. */
-export interface FriendMet {
-  /** u16 LE stored_value (500..751) found in body 0x500..0x4300. */
-  storedValue: number;
-  /** All body offsets in 0x500..0x4300 where this stored_value was found.
-   *  Useful for diagnostics; the display surfaces the count rather than
-   *  every offset. Even-aligned scan only — see parseFriendsMet doc. */
-  bodyOffsets: number[];
-  /** Resolved npc_data_ofs_id = storedValue - 500. */
-  iid: number;
-}
+/** Regions mapped by the 2026-10-06 live-RAM traces (translation repo
+ *  notes/savefile_format.md §58); decoders in ./regions.ts. */
+import type {
+  CustomItem,
+  NpcRecord,
+  PlayerRecord,
+  PlayerShop,
+  ShopLedger,
+  WorldObjects,
+} from './regions';
+export type { CustomItem, NpcRecord, PlayerRecord, PlayerShop, ShopLedger, WorldObjects };
 
 export interface EventFlagSummary {
   /** Total bytes in the region 0x18..0x460. */
@@ -250,19 +138,6 @@ export interface CollectionBitmap {
    *  "magazines-read candidate"). Always populated; tells the user
    *  what to do with the row even when `label === null`. */
   semanticNote: string;
-}
-
-export interface WizardLevelCandidate {
-  /** Body offset (= 0x11488 + 0x5a). */
-  bodyOffset: number;
-  /** Raw byte read from that offset. */
-  rawByte: number;
-  /** Heuristic flag — true if the value looks like a plausible level
-   *  (0..99 range across a corpus that spans fresh→heavily-played). False
-   *  today because all 55 saves in step-223's corpus stored 0x00. */
-  plausible: boolean;
-  /** Human-readable explanation surfaced in the UI next to the value. */
-  note: string;
 }
 
 export interface SlotParse {
@@ -333,13 +208,10 @@ export interface SlotParse {
   lastSaveTimestamp: DateTimeInfo;
   characterCreateTimestamp: DateTimeInfo;
 
-  // Wallet (body 0x1CFD0..0x1CFD4)
+  // Wallet (player record +0x1E0; 0x1CFD0 for record 0), cap 999,999
   ritch: number | null;
-
-  // Raw 8-byte records at body[0x4300..0x4480]. Previously labelled
-  // "active inventory"; step-232 rejected that framework. Surfaced read-
-  // only as a research region (see InventorySlot doc above).
-  activeInventory: InventorySlot[];
+  // Bank balance (player record +0x1E4; 0x1CFD4 for record 0), cap 9,999,999
+  bank: number | null;
 
   /** Player inventory bag — 15 fixed slots at body 0x1D9B6, stride 6 bytes.
    *  Each slot is either the empty sentinel `ff ff ff ff ff 00` or a
@@ -353,40 +225,26 @@ export interface SlotParse {
   // Letter queues — 10 + 12 records right after the board, same layout
   letterRecords: BoardRecord[];
 
-  // Garden plant tiles (0x12400..0x16000, 12-byte records)
-  garden: GardenSummary;
-
   // Event flag region (0x18..0x460)
   eventFlags: EventFlagSummary;
 
-  // Activity log (0x0B500..0x0B900, 9-byte records)
-  activityLog: ActivityRecord[];
-
-  // Collection statistics (0x11550..0x115F4, 14 records of variable size)
-  collectionStats: CollectionStatRecord[];
-
-  // Bank transaction log (0x1CFD4..0x1E0E0, 6-byte records)
-  bankLog: BankRecord[];
-
-  // Town residents table — 8 fixed slots × 0x22F8 stride at body 0x1E0E0.
-  // §30 confirmed via the 3DS dump upload_12 (slots 0..1 populated with
-  // モコるん / ラビーな; slots 2..3 vacant zeros; slots 4..7 uninitialised
-  // 0xFF). Read-only in the inspector — editing residents in/out would
-  // require copying ROM templates whose location we haven't pinned, but
-  // surfacing the roster + per-slot state matches the rest of the editor's
-  // diagnostic depth.
-  townResidents: TownResident[];
-
-  // Wizard-level candidate (body 0x11488 + 0x5a). Read-only.
-  wizardLevelCandidate: WizardLevelCandidate;
-
-  /** Friends / NPCs met — deduplicated list of u16 LE stored_values in
-   *  the range 500..751 found at even-aligned offsets in body
-   *  0x500..0x4300. NPC encoding cracked in translation-repo step-346.
-   *  Read-only in the inspector — sub-region boundaries inside that 15 KB
-   *  block (encounter log / friend list / gift log) aren't decoded yet,
-   *  so we can't safely add or remove individual entries. */
-  friendsMet: FriendMet[];
+  /** The four player-character records at slot_rel 0x1CDF0 + n·0x22F8
+   *  (§58.3). Each carries its own RFC1071 checksum. */
+  playerRecords: PlayerRecord[];
+  /** Index of the player record the editor treats as current: the one
+   *  the header says was saved last (header +0xB), if it exists. The
+   *  wallet, bank and inventory bag above are read from this record. */
+  activePlayer: number;
+  /** 140 per-NPC records at slot_rel 0x1257C, stride 0x70 (affinity at +7). */
+  npcRecords: NpcRecord[];
+  /** The two 22-slot shop display ledgers inside character record 0. */
+  shopLedger: ShopLedger;
+  /** The player's shop block at slot_rel 0x17DA2 (shelves, prices, rank). */
+  playerShop: PlayerShop;
+  /** 8 player-named custom items at slot_rel 0x1AECA. */
+  customItems: CustomItem[];
+  /** Outdoor object grid + 43 placed-object lists (slot_rel 0x4AC / 0x9AB0). */
+  worldObjects: WorldObjects;
 
   /** Collection-bitmap family at slot_rel 0x1CDF0 (translation-repo
    *  notes/savefile_format.md §57, step-364). Ten same-shape bitmaps
