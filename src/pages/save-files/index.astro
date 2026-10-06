@@ -62,7 +62,11 @@ const base = import.meta.env.BASE_URL;
 </Layout>
 
 <style>
+  /* Same 920px column as the editor card below (.inspector-wrap), centred
+     the same way, so the intro and the tool share one axis. */
   .page-header {
+    max-width: 920px;
+    margin: 0 auto;
     padding: 40px 0 20px;
   }
   .breadcrumb {
