@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { supabase, supabaseConfigured, GUESTBOOK_BUCKET, getOrCreateSession } from '../lib/supabase';
+import { apiConfigured, apiGet, apiPost, getOrCreateSession, uploadFile } from '../lib/api';
 import assets from '../data/guestbook_assets.json';
 
 // ── Card geometry ────────────────────────────────────────────────────
@@ -620,7 +620,7 @@ function CardEditor({ base, onClose, onPosted }: {
   async function post() {
     setErr(null);
     if (honeypot) return; // bot
-    if (!supabaseConfigured || !supabase) {
+    if (!apiConfigured) {
       setErr("The guest book backend isn't configured in this build.");
       return;
     }
@@ -632,18 +632,12 @@ function CardEditor({ base, onClose, onPosted }: {
     if (!saveBlob) return;
     setBusy(true);
     try {
-      const path = `${new Date().getFullYear()}/${crypto.randomUUID()}.png`;
-      const { error: upErr } = await supabase.storage
-        .from(GUESTBOOK_BUCKET)
-        .upload(path, saveBlob, { contentType: 'image/png', cacheControl: '31536000' });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from(GUESTBOOK_BUCKET).getPublicUrl(path);
-      if (!pub?.publicUrl) throw new Error('No public URL returned.');
-      const { error: insErr } = await supabase.from('guestbook_cards').insert({
+      const pngBlob = saveBlob.type === 'image/png' ? saveBlob : new Blob([saveBlob], { type: 'image/png' });
+      const up = await uploadFile('guestbook-card', pngBlob, 'card.png');
+      await apiPost('/api/guestbook', {
         author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
-        image_url: pub.publicUrl,
+        object: up.object,
       });
-      if (insErr) throw insErr;
       localStorage.setItem('tongari-guestbook-last', String(Date.now()));
       onPosted();
       onClose();
@@ -952,11 +946,11 @@ function CardEditor({ base, onClose, onPosted }: {
               <button className="gb-tool" onClick={() => { setSaveOpen(false); setErr(null); }} disabled={busy}>
                 Keep editing
               </button>
-              <button className="gb-post" onClick={post} disabled={busy || !supabaseConfigured}>
+              <button className="gb-post" onClick={post} disabled={busy || !apiConfigured}>
                 {busy ? 'Posting…' : 'Post my card'}
               </button>
             </div>
-            {!supabaseConfigured && (
+            {!apiConfigured && (
               <p className="gb-hint">The backend isn't configured in this build, so posting is disabled.</p>
             )}
           </div>
@@ -979,15 +973,12 @@ function HeartButton({ card }: { card: CardRow }) {
   const [busy, setBusy] = useState(false);
 
   async function press() {
-    if (pressed || busy || !supabaseConfigured || !supabase) return;
+    if (pressed || busy || !apiConfigured) return;
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from('guestbook_hearts')
-        .insert({ card_id: card.id, session_id: session });
-      if (error && error.code !== '23505') throw error;
+      const out = await apiPost<{ heart_count: number }>(`/api/guestbook/${card.id}/heart`, { session });
       setPressed(true);
-      setCount((c) => c + 1);
+      setCount(out.heart_count);
       localStorage.setItem(localKey, '1');
     } catch {
       // ignore for MVP
@@ -1020,21 +1011,17 @@ export default function GuestbookBoard() {
   const [posted, setPosted] = useState(false);
 
   async function load() {
-    if (!supabaseConfigured || !supabase) {
+    if (!apiConfigured) {
       setLoading(false);
       setErr('not_configured');
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('guestbook_cards')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (error) {
-      setErr(error.message);
-    } else {
-      setCards((data as CardRow[]) || []);
+    try {
+      setCards(await apiGet<CardRow[]>('/api/guestbook'));
       setErr(null);
+    } catch (e: any) {
+      setErr(e?.message || String(e));
     }
     setLoading(false);
   }

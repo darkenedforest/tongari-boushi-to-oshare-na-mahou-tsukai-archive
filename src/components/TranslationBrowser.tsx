@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import MiniSearch from 'minisearch';
-import { supabase, supabaseConfigured } from '../lib/supabase';
+import { apiConfigured, apiPost } from '../lib/api';
 
 // ---------------------------------------------------------------------
 // Types
@@ -154,7 +154,7 @@ function EditForm({
       setErr("Suggestion is identical to the current text.");
       return;
     }
-    if (disabled || !supabaseConfigured || !supabase) {
+    if (disabled || !apiConfigured) {
       setErr(disabledReason || "Backend isn't configured.");
       return;
     }
@@ -168,8 +168,7 @@ function EditForm({
         reason: reason.trim() ? reason.trim().slice(0, MAX_REASON) : null,
         submitter: submitter.trim() ? submitter.trim().slice(0, MAX_AUTHOR) : null,
       };
-      const { error } = await supabase.from('edit_suggestions').insert(payload);
-      if (error) throw error;
+      await apiPost('/api/edit-suggestions', payload);
       // Reset the editable fields. Keep the form open so the user can keep
       // refining (per spec). Don't update the displayed `row.en` — the
       // suggestion isn't accepted yet, so showing the unchanged original
@@ -476,8 +475,8 @@ function Browser({ snapshot }: { snapshot: Snapshot }) {
   const visible = results.slice(0, (page + 1) * PAGE_SIZE);
   const hasMore = visible.length < results.length;
 
-  const submitDisabled = !supabaseConfigured;
-  const submitDisabledReason = supabaseConfigured
+  const submitDisabled = !apiConfigured;
+  const submitDisabledReason = apiConfigured
     ? ''
     : "Submissions are temporarily disabled — the site owner hasn't connected the suggestions backend yet.";
 
@@ -488,7 +487,7 @@ function Browser({ snapshot }: { snapshot: Snapshot }) {
 
   return (
     <div className="tr-browser">
-      {!supabaseConfigured && (
+      {!apiConfigured && (
         <div className="banner banner-warn">
           <strong>Suggestions are disabled.</strong> The site owner hasn't
           connected the submissions backend yet — you can still browse and

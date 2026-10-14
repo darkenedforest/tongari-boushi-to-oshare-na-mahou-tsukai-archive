@@ -1,7 +1,10 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import SubscribeSeal from '../../components/SubscribeSeal.astro';
+import GameCart from '../../components/GameCart.astro';
 import patchData from '../../../public/data/patches.json';
+import patch3ds from '../../../public/data/patches_3ds.json';
+import { GAMES } from '../../data/games';
 
 const base = import.meta.env.BASE_URL;
 
@@ -10,6 +13,13 @@ const latest = releases[0];
 const olderReleases = releases.slice(1);
 const legacy = patchData.legacy;
 const patcher = patchData.patcherInfo;
+
+// 3DS game: releases come from patches_3ds.json (empty until the first
+// version ships, in which case the panel shows the in-progress note).
+const releases3ds: any[] = (patch3ds as any).releases ?? [];
+const latest3ds = releases3ds[0];
+const g3 = GAMES['3ds'];
+const gds = GAMES.ds;
 
 // Rotating sprite list for older release cards (purely decorative).
 const olderSprites = [
@@ -121,12 +131,46 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     </p>
     <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
     <p class="lede">
-      English fan-translation patches for the original Japanese DS ROM. The
-      quickest way is the in-browser patcher just below — pick a version, drop
-      in your ROM, done. If you'd rather patch manually, every
-      <code>.xdelta</code> is also downloadable below for use with Delta Patcher.
+      English fan-translation patches for two Japan-only Tongari Boushi games:
+      the DS game <span lang="ja">{gds.titleJa}</span> and the 3DS game
+      <span lang="ja">{g3.titleJa}</span>. Pick a game below.
     </p>
   </section>
+
+  <!-- ───────────────────────── Game picker: one column per game ─────────── -->
+  <nav class="game-switch" aria-label="Choose a game">
+    <a class="game-col is-active" href="#ds" data-game="ds" aria-current="true"
+       style={`--g-deep:${gds.accent.deep};--g-mid:${gds.accent.mid};--g-light:${gds.accent.light};--g-ink:${gds.accent.ink}`}>
+      <div class="game-col-cart"><GameCart game="ds" width={184} tilt={-9} /></div>
+      <div class="game-col-text">
+        <span class="game-col-platform">DS</span>
+        <span class="game-col-title" lang="ja">{gds.titleJa}</span>
+        <span class="game-col-romaji">{gds.titleRomaji}</span>
+        <span class="game-col-status">Latest: <strong>v{latest.version}</strong> · {formatDate(latest.date)}</span>
+      </div>
+    </a>
+    <a class="game-col" href="#3ds" data-game="3ds"
+       style={`--g-deep:${g3.accent.deep};--g-mid:${g3.accent.mid};--g-light:${g3.accent.light};--g-ink:${g3.accent.ink}`}>
+      <div class="game-col-cart"><GameCart game="3ds" width={184} tilt={8} /></div>
+      <div class="game-col-text">
+        <span class="game-col-platform">3DS</span>
+        <span class="game-col-title" lang="ja">{g3.titleJa}</span>
+        <span class="game-col-romaji">{g3.titleRomaji}</span>
+        <span class="game-col-status">
+          {latest3ds
+            ? <>Latest: <strong>v{latest3ds.version}</strong> · {formatDate(latest3ds.date)}</>
+            : <>In progress — no release yet</>}
+        </span>
+      </div>
+    </a>
+  </nav>
+
+  <!-- ═════════════════════════ DS game ═════════════════════════════════════ -->
+  <div class="game-panel" id="panel-ds" data-game="ds">
+  <p class="panel-links">
+    <a href={`${base}/bug-reports/#ds`}>DS bug reports →</a>
+    <a href={`${base}/changelog/`}>DS changelog →</a>
+  </p>
 
   <!-- ───────────────────────── In-browser ROM patcher (hero) ────────────── -->
   <section class="web-patcher card" id="web-patcher" aria-labelledby="web-patcher-title">
@@ -601,9 +645,197 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       tongariboushipatchtool.wordpress.com
     </a>.
   </p>
+  </div>
+
+  <!-- ═════════════════════════ 3DS game ════════════════════════════════════ -->
+  <div class="game-panel" id="panel-3ds" data-game="3ds" hidden
+       style={`--g-deep:${g3.accent.deep};--g-mid:${g3.accent.mid};--g-light:${g3.accent.light};--g-ink:${g3.accent.ink}`}>
+    <p class="panel-links">
+      <a href={`${base}/bug-reports/#3ds`}>3DS bug reports →</a>
+    </p>
+    {!latest3ds ? (
+      <section class="card p3-empty">
+        <img class="p3-icon" src={`${base}${g3.icon}`} alt="" width="96" height="96" />
+        <div>
+          <h2>The 3DS patch is in progress</h2>
+          <p>{(patch3ds as any).statusNote}</p>
+          <p class="muted small">
+            Found something already? The <a href={`${base}/bug-reports/#3ds`}>bug board</a> has
+            a 3DS section, and the <a href="#subscribe" class="p3-sub">patch-update emails</a>
+            cover both games.
+          </p>
+        </div>
+      </section>
+    ) : (
+      <section class="releases">
+        <h2>Release history</h2>
+        {releases3ds.map((r: any, i: number) => (
+          <article class={`release ${i === 0 ? 'latest p3-latest' : 'older-release'}`}>
+            <header class="release-head">
+              <div class="version-line">
+                <span class={`version-tag ${i === 0 ? 'p3-tag' : 'muted-tag'}`}>v{r.version}</span>
+                {i === 0 && <span class="latest-chip">Latest</span>}
+              </div>
+              <time datetime={r.date}>{formatDate(r.date)}</time>
+            </header>
+            <h3 class="release-headline">{r.headline}</h3>
+            {r.summary && <p class="release-summary">{r.summary}</p>}
+            {r.changes?.length > 0 && (
+              <ul class="changes">{r.changes.map((c: string) => <li>{c}</li>)}</ul>
+            )}
+            {r.notes && <p class="release-note">{r.notes}</p>}
+            <div class="downloads">
+              <div class={`download-grid ${i === 0 ? '' : 'compact'}`}>
+                {(r.downloads ?? []).map((d: any) => (
+                  <a class={`download-card ${i === 0 ? '' : 'small'}`} href={resolveUrl(d)} {...(d.isLocal ? { download: '' } : { target: '_blank', rel: 'noopener' })}>
+                    <span class="download-label">
+                      {d.label}
+                      {d.patchSizeBytes && <span class="size-tag"> ({formatBytes(d.patchSizeBytes)})</span>}
+                    </span>
+                    {d.romMd5 && <><span class="download-sub">Match this MD5:</span><code class="hash">{d.romMd5}</code></>}
+                    {d.patchSha256 && <><span class="download-sub">Patch SHA-256:</span><code class="hash">{d.patchSha256}</code></>}
+                    <span class="download-cta">Download <span aria-hidden="true">→</span></span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </article>
+        ))}
+      </section>
+    )}
+  </div>
+
+  <script is:inline>
+    (function () {
+      // Show one game's panel at a time. #3ds selects the 3DS game; any other
+      // hash (#ds, #web-patcher, #subscribe, none) shows the DS game.
+      var cols = document.querySelectorAll('.game-col');
+      var panels = document.querySelectorAll('.game-panel');
+      function show(game, scroll) {
+        panels.forEach(function (p) { p.hidden = p.getAttribute('data-game') !== game; });
+        cols.forEach(function (c) {
+          var on = c.getAttribute('data-game') === game;
+          c.classList.toggle('is-active', on);
+          if (on) c.setAttribute('aria-current', 'true'); else c.removeAttribute('aria-current');
+        });
+        if (scroll) document.querySelector('.game-switch').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      function fromHash() { show(location.hash === '#3ds' ? '3ds' : 'ds', false); }
+      cols.forEach(function (c) {
+        c.addEventListener('click', function (e) {
+          e.preventDefault();
+          var game = c.getAttribute('data-game');
+          history.replaceState(null, '', '#' + game);
+          show(game, false);
+        });
+      });
+      var sub = document.querySelector('.p3-sub');
+      if (sub) sub.addEventListener('click', function (e) {
+        e.preventDefault();
+        var seal = document.getElementById('psub-open');
+        if (seal) seal.click();
+      });
+      window.addEventListener('hashchange', fromHash);
+      fromHash();
+    })();
+  </script>
 </Layout>
 
 <style>
+  /* ── Game picker ─────────────────────────────────────────────── */
+  .game-switch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin: 84px 0 26px;
+  }
+  .game-col {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 150px 20px 22px;
+    background: var(--surface-strong);
+    border: 2px solid var(--color-purple-100);
+    box-shadow: var(--shadow-soft);
+    text-decoration: none;
+    color: var(--color-ink);
+    text-align: center;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .game-col:hover {
+    transform: translateY(-2px);
+    color: var(--color-ink);
+  }
+  .game-col.is-active {
+    border-color: var(--g-deep);
+    background: linear-gradient(180deg, var(--g-light), var(--surface-strong) 70%);
+    box-shadow: 6px 6px 0 var(--g-deep);
+  }
+  .game-col-cart {
+    position: absolute;
+    top: -64px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .game-col:hover :global(.game-cart) {
+    transform: rotate(calc(var(--tilt) * 0.4)) translateY(-4px);
+  }
+  .game-col-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .game-col-platform {
+    align-self: center;
+    padding: 2px 12px;
+    background: var(--g-deep);
+    color: white;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+  .game-col-title {
+    font-size: 1.05rem;
+    color: var(--g-ink);
+  }
+  .game-col-romaji {
+    font-size: 0.85rem;
+    color: var(--color-ink-soft);
+  }
+  .game-col-status {
+    margin-top: 6px;
+    font-size: 0.88rem;
+  }
+  .game-col:not(.is-active) .game-col-text {
+    opacity: 0.75;
+  }
+  @media (max-width: 640px) {
+    .game-switch { grid-template-columns: 1fr; gap: 92px; }
+  }
+  .panel-links {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+    font-weight: 700;
+  }
+  .p3-empty {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    padding: 26px 28px;
+    border: 2px solid var(--g-deep);
+    background: linear-gradient(135deg, var(--g-light), var(--surface-strong) 60%);
+    box-shadow: 6px 6px 0 var(--g-deep);
+    margin-bottom: 30px;
+  }
+  .p3-empty h2 { margin: 0 0 8px; color: var(--g-ink); }
+  .p3-empty p { margin: 0 0 8px; line-height: 1.6; }
+  .p3-icon { image-rendering: pixelated; flex-shrink: 0; }
+  @media (max-width: 640px) { .p3-empty { flex-direction: column; text-align: center; } }
+  .p3-tag { background: linear-gradient(135deg, var(--g-mid), var(--g-deep)); }
+
   .page-header {
     padding: 40px 0 12px;
     position: relative;

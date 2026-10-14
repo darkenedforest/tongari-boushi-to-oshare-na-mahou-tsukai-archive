@@ -1,4 +1,5 @@
 ---
+import GameBadge from '../../components/GameBadge.astro';
 import Layout from '../../layouts/Layout.astro';
 import AssetGallery from '../../components/AssetGallery.tsx';
 import LazyImageGrid from '../../components/LazyImageGrid.tsx';
@@ -39,6 +40,7 @@ const familyShots = [
       <img src={`${base}/decorations/dragonfly.png`} alt="" />
     </div>
     <h1>2D Assets ✦</h1>
+    <GameBadge game="ds" note="All art here is extracted from the DS ROM." />
     <p class="lede">
       Backgrounds, character creator, hair catalog, animations, design tool logos,
       magic-keyboard buttons, title screens, shop UI, minigame sprites — every 2D

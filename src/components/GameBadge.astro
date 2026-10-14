@@ -1,0 +1,62 @@
+---
+// "Applies to: <game>" marker for pages that cover only one of the games
+// (save editor, translation browser, changelog, field guide, assets).
+import { GAMES, type GameId } from '../data/games';
+
+interface Props {
+  game: GameId;
+  /** Optional sentence after the badge, e.g. what does not apply to the other game. */
+  note?: string;
+}
+
+const { game, note } = Astro.props;
+const g = GAMES[game];
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<p class="game-badge-row" style={`--gb-deep:${g.accent.deep};--gb-light:${g.accent.light};--gb-ink:${g.accent.ink}`}>
+  <span class="game-badge">
+    <img src={`${base}${g.icon}`} alt="" width="20" height="20" />
+    <strong>{g.platform} game only</strong>
+    <span class="gb-title" lang="ja">{g.titleJa}</span>
+  </span>
+  {note && <span class="gb-note">{note}</span>}
+</p>
+
+<style>
+  .game-badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+    margin: 6px 0 12px;
+  }
+  .game-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px 4px 6px;
+    background: var(--gb-light);
+    border: 2px solid var(--gb-deep);
+    color: var(--gb-ink);
+    box-shadow: 3px 3px 0 var(--gb-deep);
+    font-size: 0.85rem;
+  }
+  .game-badge img {
+    image-rendering: pixelated;
+    width: 20px;
+    height: 20px;
+  }
+  .game-badge strong {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+  .gb-title {
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+  .gb-note {
+    color: var(--color-ink-soft);
+    font-size: 0.85rem;
+  }
+</style>

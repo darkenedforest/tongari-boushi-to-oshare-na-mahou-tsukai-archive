@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """Send a patch-release announcement email to everyone on the subscriber list.
 
-The list lives in the Supabase `patch_subscribers` table (see
-SUPABASE_SETUP.md, "Patch release email subscriptions"). The table is an
-append-only log of {email, action} rows written by the subscribe card on the
-site; this script replays the log (latest action per email wins) to get the
-active subscriber set, then sends one announcement per BCC batch through
-Gmail SMTP.
+The list lives in the site backend's `patch_subscribers` table (media-api on
+Cloud Run, see BACKEND.md). The table is an append-only log of
+{email, action} rows written by the subscribe card on the site; the API
+replays the log (latest action per email wins) to give the active subscriber
+set, and this script sends one announcement per BCC batch through Gmail SMTP.
 
 Subcommands:
   list                       Show the active subscriber set (and totals).
@@ -24,22 +23,16 @@ Subcommands:
   --yes                      Skip the interactive "send to these N?"
                              confirmation (for scripted runs).
 
-Credentials — put them in a `.env.announce` file in the repo root
-(gitignored; KEY=value lines, # comments allowed), or set them as
-environment variables (env vars win). Do NOT type the secrets at the
-shell prompt — PowerShell persists every typed line to its history file.
+Credentials:
+  The subscriber list is read with the backend's admin token, which
+  _media_api.py (translation repo) fetches from Secret Manager with gcloud
+  — so `gcloud` must be signed in to an account with access to
+  media-library-119506. Override with MEDIA_API_ADMIN_TOKEN.
 
-  PUBLIC_SUPABASE_URL     https://<project-ref>.supabase.co
-  SUPABASE_SERVICE_KEY    service-role key (Supabase dashboard -> Project
-                          Settings -> API Keys -> service_role). Needed
-                          because the table is not readable via the anon key.
-  GMAIL_ADDRESS           the Gmail address to send from
-  GMAIL_APP_PASSWORD      a Google "app password" for that account
-                          (myaccount.google.com -> Security -> 2-Step
-                          Verification -> App passwords). NOT the normal
-                          account password.
-
-`list` and `unsubscribe` need only the first two.
+  GMAIL_ADDRESS / GMAIL_APP_PASSWORD come from Windows Credential Manager
+  (service "tongari-boushi-notifier"), or from env vars / a gitignored
+  `.env.announce` in the repo root. A Gmail "app password", not the account
+  password. `list` and `unsubscribe` don't need them.
 """
 
 from __future__ import annotations
@@ -57,6 +50,8 @@ from email.mime.text import MIMEText
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+# The site-backend client (_media_api.py) lives in the translation repo.
+TRANSLATION_REPO = REPO_ROOT.parent / "Tongari boushi translation app claude"
 PATCHES_JSON = REPO_ROOT / "public" / "data" / "patches.json"
 
 SITE_URL = (
@@ -65,7 +60,6 @@ SITE_URL = (
 
 BCC_BATCH_SIZE = 80          # stay well under Gmail's per-message cap
 BATCH_PAUSE_SECONDS = 5      # small pause between batches
-PAGE_SIZE = 1000             # Supabase REST default max rows per request
 
 
 def load_env_file() -> None:
@@ -73,23 +67,12 @@ def load_env_file() -> None:
     ONLY thing a sender must supply is their Gmail login.
 
     Sources, in order (first value for a name wins; real environment
-    variables always win over files):
-      1. archive repo   .env.announce   (optional overrides)
-      2. archive repo   .env            (if present)
-      3. translation    .env            (sibling repo — holds the
-                                         Supabase project URL + service key)
-
-    The Supabase keys in the translation repo are named SUPABASE_URL and
-    SUPABASE_SERVICE_ROLE_KEY; this script historically read
-    PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY. We alias the former to
-    the latter so the existing .env just works and the sender is never
-    asked for Supabase anything.
+    variables always win over files): .env.announce, then .env, both in
+    the archive repo root.
     """
-    translation_repo = REPO_ROOT.parent / "Tongari boushi translation app claude"
     candidates = [
         REPO_ROOT / ".env.announce",
         REPO_ROOT / ".env",
-        translation_repo / ".env",
     ]
     for path in candidates:
         if not path.is_file():
@@ -102,15 +85,6 @@ def load_env_file() -> None:
             name, value = name.strip(), value.strip().strip('"').strip("'")
             if name and name not in os.environ:
                 os.environ[name] = value
-    # Alias the translation-repo credential names onto what this script uses.
-    aliases = {
-        "PUBLIC_SUPABASE_URL": "SUPABASE_URL",
-        "SUPABASE_SERVICE_KEY": "SUPABASE_SERVICE_ROLE_KEY",
-    }
-    for want, have in aliases.items():
-        if not os.environ.get(want) and os.environ.get(have):
-            os.environ[want] = os.environ[have]
-
     # Gmail credentials live in the OS keychain (Windows Credential
     # Manager via keyring), stored under this service. Pull them in if
     # they were not supplied by env/.env, so a sender never types them.
@@ -162,56 +136,19 @@ def env_or_die(*names: str) -> dict[str, str]:
     return values
 
 
-def supabase_request(url: str, key: str, path: str, *, method: str = "GET",
-                     body: dict | None = None, headers: dict | None = None) -> tuple[int, bytes]:
-    req = urllib.request.Request(
-        f"{url.rstrip('/')}{path}",
-        method=method,
-        data=json.dumps(body).encode() if body is not None else None,
-    )
-    req.add_header("apikey", key)
-    req.add_header("Authorization", f"Bearer {key}")
-    req.add_header("Content-Type", "application/json")
-    for k, v in (headers or {}).items():
-        req.add_header(k, v)
-    try:
-        with urllib.request.urlopen(req) as resp:
-            return resp.status, resp.read()
-    except urllib.error.HTTPError as e:
-        return e.code, e.read()
+def _admin():
+    sys.path.insert(0, str(TRANSLATION_REPO / "src"))
+    from translator._media_api import Admin  # shared client: base URL + admin token via gcloud
+    return Admin()
 
 
-def fetch_active_subscribers(url: str, key: str) -> tuple[list[str], int]:
-    """Replay the append-only log. Returns (active_emails, total_rows).
-
-    Ordered by id only: id is `generated always as identity`, so clients
-    cannot forge it — unlike created_at, which the open INSERT policy
-    would let an attacker backdate/future-date to override real actions.
-    """
-    rows: list[dict] = []
-    offset = 0
-    while True:
-        status, data = supabase_request(
-            url, key,
-            "/rest/v1/patch_subscribers?select=id,email,action&order=id.asc",
-            headers={"Range-Unit": "items", "Range": f"{offset}-{offset + PAGE_SIZE - 1}"},
-        )
-        if status not in (200, 206):
-            sys.exit(f"Supabase fetch failed ({status}): {data.decode(errors='replace')[:500]}")
-        page = json.loads(data)
-        rows.extend(page)
-        if len(page) < PAGE_SIZE:
-            break
-        offset += PAGE_SIZE
-
-    latest: dict[str, str] = {}
-    for row in rows:
-        email = (row.get("email") or "").strip().lower()
-        if email:
-            latest[email] = row.get("action") or "subscribe"
-
+def fetch_active_subscribers() -> tuple[list[str], int]:
+    """Active subscribers from the site backend (the append-only log is
+    replayed server-side; latest action per email wins). Returns
+    (active_emails, total_log_rows)."""
+    data = _admin().get("/api/admin/subscribers")
     active = []
-    for email in sorted(e for e, a in latest.items() if a == "subscribe"):
+    for email in data["active"]:
         try:
             # smtplib sends SMTP commands as ASCII; one internationalized
             # address would crash the whole send, so drop it with a warning.
@@ -221,7 +158,7 @@ def fetch_active_subscribers(url: str, key: str) -> tuple[list[str], int]:
                   "(SMTP without SMTPUTF8 can't deliver to it)")
             continue
         active.append(email)
-    return active, len(rows)
+    return active, data["total_rows"]
 
 
 def load_release(version: str | None) -> dict:
@@ -341,27 +278,15 @@ this email with "unsubscribe".
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    env = env_or_die("PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_KEY")
-    active, total_rows = fetch_active_subscribers(
-        env["PUBLIC_SUPABASE_URL"], env["SUPABASE_SERVICE_KEY"]
-    )
+    active, total_rows = fetch_active_subscribers()
     for e in active:
         print(e)
     print(f"\n{len(active)} active subscriber(s) ({total_rows} log rows).")
 
 
 def cmd_unsubscribe(args: argparse.Namespace) -> None:
-    env = env_or_die("PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_KEY")
     email = args.email.strip().lower()
-    status, data = supabase_request(
-        env["PUBLIC_SUPABASE_URL"], env["SUPABASE_SERVICE_KEY"],
-        "/rest/v1/patch_subscribers",
-        method="POST",
-        body={"email": email, "action": "unsubscribe"},
-        headers={"Prefer": "return=minimal"},
-    )
-    if status not in (200, 201, 204):
-        sys.exit(f"Insert failed ({status}): {data.decode(errors='replace')[:500]}")
+    _admin().post("/api/admin/subscribers", {"email": email, "action": "unsubscribe"})
     print(f"Unsubscribed {email}.")
 
 
@@ -373,10 +298,7 @@ def cmd_send(args: argparse.Namespace) -> None:
         recipients = [args.test_to.strip().lower()]
         print(f"TEST MODE: sending only to {recipients[0]}")
     else:
-        env = env_or_die("PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_KEY")
-        recipients, total_rows = fetch_active_subscribers(
-            env["PUBLIC_SUPABASE_URL"], env["SUPABASE_SERVICE_KEY"]
-        )
+        recipients, total_rows = fetch_active_subscribers()
         print(f"{len(recipients)} active subscriber(s) ({total_rows} log rows).")
 
     if not recipients:

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { supabase, supabaseConfigured, BUG_BUCKET, BUG_FILES_BUCKET, getOrCreateSession } from '../lib/supabase';
+import { apiConfigured, apiGet, apiPost, getOrCreateSession, uploadFile } from '../lib/api';
+import { GAMES } from '../data/games';
+import patchData from '../../public/data/patches.json';
+import patch3ds from '../../public/data/patches_3ds.json';
 
 interface ReportImage { id: number; url: string; }
 interface Report {
@@ -9,6 +12,8 @@ interface Report {
   body: string;
   author: string | null;
   status: 'open' | 'flagged' | 'resolved' | 'closed';
+  /** Which game (or the website) the report is about. */
+  game: BoardGame;
   metoo_count: number;
   created_at: string;
   report_images?: ReportImage[];
@@ -64,27 +69,35 @@ const MAX_COMMENT = 2000;
 const MAX_AUTHOR = 40;
 const MAX_HARDWARE = 8;
 
-// Patch versions for the bug-report dropdown. Newest first so v2.5 is the
-// default selection for new submissions. Freeform "Other" is handled via
-// the OTHER_VERSION_SENTINEL below.
-const PATCH_VERSIONS = [
-  'v2.6.4',
-  'v2.6.3',
-  'v2.6.2',
-  'v2.6.1',
-  'v2.6',
-  'v2.5.1',
-  'v2.5',
-  'v2.4.2',
-  'v2.4.1',
-  'v2.4',
-  'v2.32',
-  'v2.31',
-  'v2.3',
-  'v2.2',
-  'v2.1',
-  'v2.0',
-];
+// What a report can be about. The DS / 3DS entries carry the game's
+// colours and icon; 'site' covers the archive website itself.
+type BoardGame = 'ds' | '3ds' | 'site';
+type GameFilter = 'all' | BoardGame;
+
+const GAME_META: Record<BoardGame, { label: string; long: string; deep: string; light: string; ink: string; icon?: string }> = {
+  ds: { label: 'DS', long: `DS game — ${GAMES.ds.titleJa}`, deep: GAMES.ds.accent.deep, light: GAMES.ds.accent.light, ink: GAMES.ds.accent.ink, icon: GAMES.ds.icon },
+  '3ds': { label: '3DS', long: `3DS game — ${GAMES['3ds'].titleJa}`, deep: GAMES['3ds'].accent.deep, light: GAMES['3ds'].accent.light, ink: GAMES['3ds'].accent.ink, icon: GAMES['3ds'].icon },
+  site: { label: 'Website', long: 'This website', deep: '#6b6b7b', light: '#ececf2', ink: '#33333f' },
+};
+const BASE_URL = (import.meta.env.BASE_URL as string).replace(/\/$/, '');
+
+// Patch versions for the dropdown, newest first, read from each game's
+// patch data so a new release appears here without editing this file.
+// Freeform "Other" is handled via OTHER_VERSION_SENTINEL below.
+const PATCH_VERSIONS: Record<'ds' | '3ds', string[]> = {
+  ds: (patchData as any).releases.map((r: any) => `v${r.version}`),
+  '3ds': ((patch3ds as any).releases ?? []).map((r: any) => `v${r.version}`),
+};
+
+function GameTag({ game }: { game: BoardGame }) {
+  const m = GAME_META[game] ?? GAME_META.ds;
+  return (
+    <span className="game-tag" style={{ background: m.light, color: m.ink, borderColor: m.deep }}>
+      {m.icon && <img src={`${BASE_URL}${m.icon}`} alt="" width={16} height={16} />}
+      {m.label}
+    </span>
+  );
+}
 const OTHER_VERSION_SENTINEL = '__OTHER_VERSION__';
 
 // Hardware options for the bug-report form. Grouped via optgroup so the
@@ -128,6 +141,34 @@ const HARDWARE_OPTIONS: { label: string; items: string[] }[] = [
   },
   // 'Other' is handled specially: picking it shows a freeform text input
   // next to the dropdown for typing the actual hardware name.
+];
+
+// Hardware for 3DS-game reports. The 3DS game does not run on DS / DSi
+// hardware, so its list is the 3DS family and 3DS emulators only.
+const HARDWARE_OPTIONS_3DS: { label: string; items: string[] }[] = [
+  {
+    label: '3DS family',
+    items: [
+      'Nintendo 3DS',
+      'Nintendo 3DS XL',
+      'Nintendo 2DS',
+      'New Nintendo 3DS',
+      'New Nintendo 3DS XL',
+      'New Nintendo 2DS XL',
+    ],
+  },
+  {
+    label: 'Custom firmware / loader',
+    items: ['Luma3DS (LayeredFS)', 'Installed CIA'],
+  },
+  {
+    label: 'Emulator (PC)',
+    items: ['Azahar', 'Lime3DS', 'Citra', 'Panda3DS'],
+  },
+  {
+    label: 'Emulator (mobile / other)',
+    items: ['Azahar (Android)', 'Citra / Mandarine (Android)', 'Folium (iOS)'],
+  },
 ];
 const OTHER_SENTINEL = '__OTHER__';
 const OTHER_PREFIX = 'Other: ';
@@ -188,11 +229,18 @@ function ImageThumbs({ urls, onOpen }: { urls: string[]; onOpen: (url: string) =
 function NewReportForm({
   onPosted,
   rateLimited,
+  defaultGame,
 }: {
   onPosted: () => void;
   rateLimited: boolean;
+  /** Pre-selects the game when the board is filtered to one. */
+  defaultGame: BoardGame | null;
 }) {
   const [open, setOpen] = useState(false);
+  const [game, setGame] = useState<BoardGame | ''>(defaultGame ?? '');
+  useEffect(() => {
+    if (!open && defaultGame) setGame(defaultGame);
+  }, [defaultGame, open]);
   const [author, setAuthor] = useState('');
   const [title, setTitle] = useState('');
   const [patchVersion, setPatchVersion] = useState('');
@@ -248,6 +296,10 @@ function NewReportForm({
   async function submit() {
     setErr(null);
     if (honeypot) return; // bot
+    if (!game) {
+      setErr('Pick which game the report is about (or "This website").');
+      return;
+    }
     if (!title.trim() || !body.trim()) {
       setErr('Title and description are required.');
       return;
@@ -256,8 +308,8 @@ function NewReportForm({
       setErr("You just posted — give it a couple of minutes before another one.");
       return;
     }
-    if (!supabaseConfigured || !supabase) {
-      setErr("Backend isn't configured yet. (Site owner: see SUPABASE_SETUP.md)");
+    if (!apiConfigured) {
+      setErr("Backend isn't configured yet. (Site owner: see BACKEND.md)");
       return;
     }
     setBusy(true);
@@ -281,76 +333,39 @@ function NewReportForm({
       if (stepsTrimmed) {
         combinedBody = `${combinedBody}\n\n**Steps to reproduce:**\n${stepsTrimmed}`;
       }
-      const insertPayload = {
+      const reportRow = await apiPost<{ id: number }>('/api/reports', {
         title: title.trim().slice(0, MAX_TITLE),
         body: combinedBody.slice(0, MAX_BODY),
         author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
-        status: 'open' as const,
-      };
-      const { data: reportRow, error: insErr } = await supabase
-        .from('reports')
-        .insert(insertPayload)
-        .select()
-        .single();
-      if (insErr || !reportRow) throw insErr || new Error('No report returned');
+        game,
+      });
+      const reportId = reportRow.id;
 
-      const reportId = reportRow.id as number;
-
-      // Upload images
-      const imageRecords: { report_id: number; url: string }[] = [];
-      for (const f of files) {
-        const ext = f.name.split('.').pop()?.toLowerCase() || 'png';
-        const path = `r${reportId}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from(BUG_BUCKET).upload(path, f, {
-          contentType: f.type || 'image/png',
-          cacheControl: '31536000',
-        });
-        if (upErr) throw upErr;
-        const { data: pub } = supabase.storage.from(BUG_BUCKET).getPublicUrl(path);
-        if (pub?.publicUrl) imageRecords.push({ report_id: reportId, url: pub.publicUrl });
-      }
-      if (imageRecords.length) {
-        const { error: imgErr } = await supabase.from('report_images').insert(imageRecords);
-        if (imgErr) throw imgErr;
-      }
-
-      // Upload file attachments into the PRIVATE bucket — same scheme as
-      // the save-file editor's silent capture: r<report>/<uuid>/<name>.
-      // The row records what was attached; the board only ever shows a
-      // count. A failure here is reported but the report itself stays
-      // posted (it already exists), so the user can retry by commenting.
-      const attachmentRows: {
-        report_id: number;
-        filename: string;
-        file_path: string;
-        file_size_bytes: number;
-        content_type: string | null;
-      }[] = [];
-      for (const f of attachments) {
-        const cleaned = safeFilename(f.name);
-        const path = `r${reportId}/${crypto.randomUUID()}/${cleaned}`;
-        const { error: upErr } = await supabase.storage.from(BUG_FILES_BUCKET).upload(path, f, {
-          contentType: f.type || 'application/octet-stream',
-          cacheControl: '0',
-          upsert: false,
-        });
-        if (upErr) throw new Error(`Report #${reportId} was posted, but attaching ${f.name} failed: ${upErr.message}`);
-        attachmentRows.push({
-          report_id: reportId,
-          filename: cleaned,
-          file_path: path,
-          file_size_bytes: f.size,
-          content_type: f.type || null,
-        });
-      }
-      if (attachmentRows.length) {
-        const { error: attErr } = await supabase.from('report_attachments').insert(attachmentRows);
-        if (attErr) throw new Error(`Report #${reportId} was posted, but recording its attachments failed: ${attErr.message}`);
+      // Screenshots go to the public bucket, file attachments to the private
+      // one (only the maintainer can download them; the board shows a
+      // count). Each file is uploaded with a signed URL from the API, then
+      // attached to the report. A failure here leaves the report posted.
+      try {
+        for (const f of files) {
+          const up = await uploadFile('report-image', f, f.name);
+          await apiPost(`/api/reports/${reportId}/images`, { object: up.object });
+        }
+        for (const f of attachments) {
+          const up = await uploadFile('report-attachment', f, safeFilename(f.name));
+          await apiPost(`/api/reports/${reportId}/attachments`, {
+            object: up.object,
+            filename: safeFilename(f.name),
+            contentType: f.type || null,
+          });
+        }
+      } catch (e: any) {
+        throw new Error(`Report #${reportId} was posted, but a file did not upload: ${e?.message || e}`);
       }
 
       window.localStorage.setItem('tongari-last-post', String(Date.now()));
       setAuthor('');
       setTitle('');
+      setGame(defaultGame ?? '');
       setPatchVersion('');
       setHardware(['']);
       setBody('');
@@ -403,6 +418,31 @@ function NewReportForm({
           />
         </label>
       </div>
+      <div className="field">
+        <span className="field-label">Which game is this about?</span>
+        <div className="game-pick" role="radiogroup" aria-label="Which game">
+          {(['ds', '3ds', 'site'] as BoardGame[]).map(g => {
+            const m = GAME_META[g];
+            return (
+              <button
+                key={g}
+                type="button"
+                role="radio"
+                aria-checked={game === g}
+                className={`game-pick-btn ${game === g ? 'on' : ''}`}
+                style={{ ['--gp-deep' as any]: m.deep, ['--gp-light' as any]: m.light, ['--gp-ink' as any]: m.ink }}
+                onClick={() => { if (g !== game) { setGame(g); setPatchVersion(''); setHardware(['']); } }}
+              >
+                {m.icon ? <img src={`${BASE_URL}${m.icon}`} alt="" width={24} height={24} /> : <span aria-hidden className="gp-globe">🌐</span>}
+                <span className="gp-text">
+                  <strong>{m.label === 'Website' ? 'This website' : `${m.label} game`}</strong>
+                  {g !== 'site' && <small lang="ja">{g === 'ds' ? GAMES.ds.titleJa : GAMES['3ds'].titleJa}</small>}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       <label className="field">
         <span className="field-label">Title</span>
         <input
@@ -414,8 +454,9 @@ function NewReportForm({
           required
         />
       </label>
+      {game && game !== 'site' && (
       <div className="field">
-        <span className="field-label">Patch version (optional)</span>
+        <span className="field-label">{GAME_META[game].label} patch version (optional)</span>
         <div className="hw-row">
           <select
             value={patchVersion.startsWith('Other: ') ? OTHER_VERSION_SENTINEL : patchVersion}
@@ -427,7 +468,7 @@ function NewReportForm({
             className="hw-select"
           >
             <option value="">— Select version —</option>
-            {PATCH_VERSIONS.map(v => (
+            {PATCH_VERSIONS[game].map(v => (
               <option key={v} value={v}>{v}</option>
             ))}
             <option value={OTHER_VERSION_SENTINEL}>Other (type your own)…</option>
@@ -445,6 +486,8 @@ function NewReportForm({
           )}
         </div>
       </div>
+      )}
+      {game && game !== 'site' && (
       <div className="field">
         <span className="field-label">Hardware tested on (optional, add more if multiple)</span>
         <div className="hw-list">
@@ -464,7 +507,7 @@ function NewReportForm({
                   className="hw-select"
                 >
                   <option value="">— Select hardware —</option>
-                  {HARDWARE_OPTIONS.map(group => (
+                  {(game === '3ds' ? HARDWARE_OPTIONS_3DS : HARDWARE_OPTIONS).map(group => (
                     <optgroup key={group.label} label={group.label}>
                       {group.items.map(item => (
                         <option key={item} value={item}>{item}</option>
@@ -503,6 +546,7 @@ function NewReportForm({
           )}
         </div>
       </div>
+      )}
       <label className="field">
         <span className="field-label">What's the issue?</span>
         <textarea
@@ -646,66 +690,32 @@ function CommentForm({ reportId, onPosted }: { reportId: number; onPosted: () =>
   async function submit() {
     setErr(null);
     if (!body.trim()) { setErr('Comment is required.'); return; }
-    if (!supabaseConfigured || !supabase) {
+    if (!apiConfigured) {
       setErr("Backend isn't configured yet.");
       return;
     }
     setBusy(true);
     try {
-      const { data: commentRow, error } = await supabase.from('comments').insert({
-        report_id: reportId,
+      const commentRow = await apiPost<{ id: number }>(`/api/reports/${reportId}/comments`, {
         body: body.trim().slice(0, MAX_COMMENT),
         author: author.trim() ? author.trim().slice(0, MAX_AUTHOR) : null,
-      }).select().single();
-      if (error || !commentRow) throw error || new Error('No comment returned');
-      // Screenshots on a reply go into the same public bucket as report
-      // screenshots, under c<comment id>/, and are listed in comment_images.
-      const commentId = commentRow.id as number;
-      const imageRecords: { comment_id: number; url: string }[] = [];
-      for (const f of images) {
-        const ext = f.name.split('.').pop()?.toLowerCase() || 'png';
-        const path = `c${commentId}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from(BUG_BUCKET).upload(path, f, {
-          contentType: f.type || 'image/png',
-          cacheControl: '31536000',
-        });
-        if (upErr) throw new Error(`Reply posted, but uploading ${f.name} failed: ${upErr.message}`);
-        const { data: pub } = supabase.storage.from(BUG_BUCKET).getPublicUrl(path);
-        if (pub?.publicUrl) imageRecords.push({ comment_id: commentId, url: pub.publicUrl });
-      }
-      if (imageRecords.length) {
-        const { error: imgErr } = await supabase.from('comment_images').insert(imageRecords);
-        if (imgErr) throw new Error(`Reply posted, but recording its images failed: ${imgErr.message}`);
-      }
-      // File attachments: private bucket, c<comment id>/<uuid>/<name>, same
-      // as report attachments — the board shows only a count.
-      const attachmentRows: {
-        comment_id: number;
-        filename: string;
-        file_path: string;
-        file_size_bytes: number;
-        content_type: string | null;
-      }[] = [];
-      for (const f of attachments) {
-        const cleaned = safeFilename(f.name);
-        const path = `c${commentId}/${crypto.randomUUID()}/${cleaned}`;
-        const { error: upErr } = await supabase.storage.from(BUG_FILES_BUCKET).upload(path, f, {
-          contentType: f.type || 'application/octet-stream',
-          cacheControl: '0',
-          upsert: false,
-        });
-        if (upErr) throw new Error(`Reply posted, but attaching ${f.name} failed: ${upErr.message}`);
-        attachmentRows.push({
-          comment_id: commentId,
-          filename: cleaned,
-          file_path: path,
-          file_size_bytes: f.size,
-          content_type: f.type || null,
-        });
-      }
-      if (attachmentRows.length) {
-        const { error: attErr } = await supabase.from('comment_attachments').insert(attachmentRows);
-        if (attErr) throw new Error(`Reply posted, but recording its attachments failed: ${attErr.message}`);
+      });
+      const commentId = commentRow.id;
+      try {
+        for (const f of images) {
+          const up = await uploadFile('comment-image', f, f.name);
+          await apiPost(`/api/comments/${commentId}/images`, { object: up.object });
+        }
+        for (const f of attachments) {
+          const up = await uploadFile('comment-attachment', f, safeFilename(f.name));
+          await apiPost(`/api/comments/${commentId}/attachments`, {
+            object: up.object,
+            filename: safeFilename(f.name),
+            contentType: f.type || null,
+          });
+        }
+      } catch (e: any) {
+        throw new Error(`Reply posted, but a file did not upload: ${e?.message || e}`);
       }
       // Clear the body but KEEP the form open so multiple replies in a row
       // are easy. Keep the typed name too (people usually post under the same
@@ -834,16 +844,12 @@ function MeTooButton({ report, onTooed }: { report: Report; onTooed: () => void 
 
   async function press() {
     if (pressed || busy) return;
-    if (!supabaseConfigured || !supabase) return;
+    if (!apiConfigured) return;
     setBusy(true);
     try {
-      const { error } = await supabase
-        .from('report_metoos')
-        .insert({ report_id: report.id, session_id: session });
-      if (error && error.code !== '23505') throw error;
-      // Optimistically bump count
+      const out = await apiPost<{ metoo_count: number }>(`/api/reports/${report.id}/metoo`, { session });
       setPressed(true);
-      setCount(c => c + 1);
+      setCount(out.metoo_count);
       window.localStorage.setItem(localKey, '1');
       onTooed();
     } catch (e) {
@@ -882,6 +888,7 @@ function ReportCard({
       <header className="bug-card-head">
         <div className="head-left">
           <span className="ticket-num">#{report.id}</span>
+          <GameTag game={report.game ?? 'ds'} />
           <h2 className="bug-title">{report.title}</h2>
         </div>
         <div className="head-right">
@@ -948,54 +955,45 @@ export default function BugReportsBoard() {
   // Newest first by default so a fresh report is the first thing a visitor
   // sees; "Open first" and "Most me-toos" stay one click away.
   const [sort, setSort] = useState<SortMode>('newest');
+  // Game filter, kept in the URL hash (#ds, #3ds, #site) so other pages can
+  // link straight to one game's reports.
+  const [filter, setFilter] = useState<GameFilter>('all');
+  useEffect(() => {
+    const read = () => {
+      const h = window.location.hash.replace('#', '');
+      setFilter(h === 'ds' || h === '3ds' || h === 'site' ? h : 'all');
+    };
+    read();
+    window.addEventListener('hashchange', read);
+    return () => window.removeEventListener('hashchange', read);
+  }, []);
+  function chooseFilter(f: GameFilter) {
+    setFilter(f);
+    history.replaceState(null, '', f === 'all' ? window.location.pathname : `#${f}`);
+  }
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
 
   async function load() {
-    if (!supabaseConfigured || !supabase) {
+    if (!apiConfigured) {
       setLoading(false);
       setErr('not_configured');
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*, report_images(*), comments(*, comment_images(*))')
-      .order('created_at', { ascending: false });
-    if (error) {
-      setErr(error.message);
-    } else {
-      // Attachment counts come from a separate query so the board still
-      // loads if the report_attachments table is missing (older backend).
-      // Only report_id is readable by the anon key — never filenames.
-      const counts: Record<number, number> = {};
-      const { data: att, error: attErr } = await supabase
-        .from('report_attachments')
-        .select('report_id');
-      if (!attErr && att) {
-        for (const row of att as { report_id: number }[]) {
-          counts[row.report_id] = (counts[row.report_id] ?? 0) + 1;
-        }
-      }
-      const commentCounts: Record<number, number> = {};
-      const { data: catt, error: cattErr } = await supabase
-        .from('comment_attachments')
-        .select('comment_id');
-      if (!cattErr && catt) {
-        for (const row of catt as { comment_id: number }[]) {
-          commentCounts[row.comment_id] = (commentCounts[row.comment_id] ?? 0) + 1;
-        }
-      }
-      // Sort comments oldest-first within each report
-      const normalized = (data as Report[] || []).map(r => ({
+    try {
+      // The API returns reports newest first with images, comments (with
+      // their images) and attachment counts already attached.
+      const data = await apiGet<Report[]>('/api/reports');
+      setReports(data.map(r => ({
         ...r,
-        attachment_count: counts[r.id] ?? 0,
-        comments: (r.comments || [])
-          .map(c => ({ ...c, attachment_count: commentCounts[c.id] ?? 0 }))
-          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
-      }));
-      setReports(normalized);
+        comments: (r.comments || []).slice().sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        ),
+      })));
       setErr(null);
+    } catch (e: any) {
+      setErr(e?.message || String(e));
     }
     setLoading(false);
   }
@@ -1013,7 +1011,7 @@ export default function BugReportsBoard() {
   }, []);
 
   const sorted = useMemo(() => {
-    const list = [...reports];
+    const list = reports.filter(r => filter === 'all' || (r.game ?? 'ds') === filter);
     list.sort((a, b) => {
       if (sort === 'open-first') {
         const aOpen = a.status === 'open' || a.status === 'flagged' ? 0 : 1;
@@ -1030,15 +1028,17 @@ export default function BugReportsBoard() {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
     return list;
-  }, [reports, sort]);
+  }, [reports, sort, filter]);
 
-  if (!supabaseConfigured) {
+  const countFor = (f: GameFilter) =>
+    f === 'all' ? reports.length : reports.filter(r => (r.game ?? 'ds') === f).length;
+
+  if (!apiConfigured) {
     return (
       <div className="board-status">
         <p>
-          The bug-report backend isn't configured for this site yet. The site
-          owner needs to add Supabase credentials — see{' '}
-          <code>SUPABASE_SETUP.md</code> in the repo for the one-time setup.
+          The bug-report backend isn't configured for this build — see{' '}
+          <code>BACKEND.md</code> in the repo.
         </p>
       </div>
     );
@@ -1048,8 +1048,27 @@ export default function BugReportsBoard() {
 
   return (
     <div className="bug-board">
+      <div className="game-filter" role="tablist" aria-label="Filter by game">
+        {(['all', 'ds', '3ds', 'site'] as GameFilter[]).map(f => {
+          const m = f === 'all' ? null : GAME_META[f];
+          return (
+            <button
+              key={f}
+              role="tab"
+              aria-selected={filter === f}
+              className={`game-filter-tab ${filter === f ? 'on' : ''}`}
+              style={m ? { ['--gf-deep' as any]: m.deep, ['--gf-light' as any]: m.light, ['--gf-ink' as any]: m.ink } : undefined}
+              onClick={() => chooseFilter(f)}
+            >
+              {m?.icon && <img src={`${BASE_URL}${m.icon}`} alt="" width={20} height={20} />}
+              {f === 'all' ? 'All reports' : f === 'site' ? 'Website' : `${m!.label} game`}
+              <span className="gf-count">{countFor(f)}</span>
+            </button>
+          );
+        })}
+      </div>
       <div className="board-header">
-        <NewReportForm onPosted={load} rateLimited={rateLimited} />
+        <NewReportForm onPosted={load} rateLimited={rateLimited} defaultGame={filter === 'all' ? null : filter} />
         <div className="sort-pills">
           {(['newest', 'open-first', 'most-metoos'] as SortMode[]).map(s => (
             <button
@@ -1062,16 +1081,16 @@ export default function BugReportsBoard() {
           ))}
         </div>
         <span className="board-counts">
-          {reports.filter(r => r.status === 'open' || r.status === 'flagged').length} open
+          {sorted.filter(r => r.status === 'open' || r.status === 'flagged').length} open
           <span className="dot">·</span>
-          {reports.filter(r => r.status === 'closed' || r.status === 'resolved').length} closed
+          {sorted.filter(r => r.status === 'closed' || r.status === 'resolved').length} closed
         </span>
       </div>
 
       {sorted.length === 0 && (
         <div className="empty-state">
           <div className="empty-emoji" aria-hidden>🌸</div>
-          <h3>No bug reports yet</h3>
+          <h3>{filter === 'all' ? 'No bug reports yet' : `No ${filter === 'site' ? 'website' : GAME_META[filter].label + ' game'} reports yet`}</h3>
           <p>Be the first to share something — the post form is above.</p>
         </div>
       )}
@@ -1094,6 +1113,36 @@ export default function BugReportsBoard() {
       )}
 
       <style>{`
+        .game-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+        .game-filter-tab {
+          display: inline-flex; align-items: center; gap: 8px;
+          padding: 8px 14px; background: white; color: var(--gf-ink, var(--color-purple-600));
+          border: 2px solid var(--gf-deep, var(--color-purple-200)); cursor: pointer;
+          font-family: var(--font-display); font-weight: 700; font-size: 0.92rem;
+          box-shadow: 3px 3px 0 var(--gf-deep, var(--color-purple-200));
+        }
+        .game-filter-tab img { image-rendering: pixelated; }
+        .game-filter-tab.on { background: var(--gf-light, var(--color-purple-50)); transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--gf-deep, var(--color-purple-400)); }
+        .gf-count { font-family: var(--font-body); font-weight: 400; font-size: 0.8rem; background: rgba(255,255,255,0.8); padding: 0 7px; border: 1px solid currentColor; }
+        .game-tag {
+          display: inline-flex; align-items: center; gap: 4px; align-self: center;
+          padding: 1px 8px 1px 4px; border: 2px solid; font-family: var(--font-display);
+          font-size: 0.75rem; font-weight: 700; letter-spacing: 0.03em;
+        }
+        .game-tag img { image-rendering: pixelated; }
+        .game-pick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 4px; }
+        @media (max-width: 640px) { .game-pick { grid-template-columns: 1fr; } }
+        .game-pick-btn {
+          display: flex; align-items: center; gap: 10px; text-align: left;
+          padding: 10px 12px; background: white; color: var(--gp-ink);
+          border: 2px solid var(--color-purple-100); cursor: pointer; font: inherit;
+        }
+        .game-pick-btn img { image-rendering: pixelated; flex-shrink: 0; }
+        .game-pick-btn .gp-globe { font-size: 1.2rem; width: 24px; text-align: center; }
+        .game-pick-btn .gp-text { display: flex; flex-direction: column; line-height: 1.25; }
+        .game-pick-btn small { font-size: 0.72rem; opacity: 0.8; }
+        .game-pick-btn:hover { border-color: var(--gp-deep); }
+        .game-pick-btn.on { border-color: var(--gp-deep); background: var(--gp-light); box-shadow: 3px 3px 0 var(--gp-deep); }
         .board-status { padding: 60px 20px; text-align: center; color: var(--color-ink-soft); background: var(--surface-strong); border-radius: var(--radius-lg); border: 1px solid var(--color-pink-100); }
         .board-status.error { color: var(--color-pink-600); }
         .board-status code { background: var(--color-purple-50); padding: 2px 6px; border-radius: 4px; }

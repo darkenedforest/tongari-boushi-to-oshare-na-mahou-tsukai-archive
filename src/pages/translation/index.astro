@@ -1,4 +1,5 @@
 ---
+import GameBadge from '../../components/GameBadge.astro';
 // Step-259: the Translation Viewer (JP↔EN side-by-side over the whole ROM)
 // is now the canonical /translation/ page. The previous /translation/
 // landing — a search browser over a baked snapshot of EN/JP/status from
@@ -28,6 +29,7 @@ const decorationBase = `${baseNorm}/decorations/`;
       <img src={`${base}/decorations/dragonfly.png`} alt="" />
     </div>
     <h1>Translation Viewer ✦</h1>
+    <GameBadge game="ds" note="The 3DS game's script is not in this database." />
     <p class="lede">
       Browse the in-progress fan translation side-by-side with the original
       Japanese, across the entire ROM. The English text comes from the

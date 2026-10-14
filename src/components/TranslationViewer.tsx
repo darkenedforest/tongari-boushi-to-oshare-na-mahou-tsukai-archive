@@ -28,7 +28,7 @@ import type {
   Textblock,
   WorkerOutbound,
 } from '../lib/rom/types';
-import { supabase, supabaseConfigured } from '../lib/supabase';
+import { apiConfigured, apiGet, apiPost } from '../lib/api';
 
 // ---------------------------------------------------------------------------
 // EN lookup types (shape mirrors _export_en_lookup_for_rom_viewer.py)
@@ -991,8 +991,8 @@ function SuggestEditCard({
   const proposedLen = [...proposedWire].length;
   const currentLen = [...currentEn].length;
   const over = maxChars != null && proposedLen > maxChars;
-  const disabled = !supabaseConfigured;
-  const disabledReason = supabaseConfigured
+  const disabled = !apiConfigured;
+  const disabledReason = apiConfigured
     ? ''
     : "Suggestions are disabled — the site owner hasn't connected the submissions backend yet.";
 
@@ -1007,7 +1007,7 @@ function SuggestEditCard({
       setErr('Suggestion is identical to the current text.');
       return;
     }
-    if (disabled || !supabaseConfigured || !supabase) {
+    if (disabled || !apiConfigured) {
       setErr(disabledReason || "Backend isn't configured.");
       return;
     }
@@ -1021,8 +1021,7 @@ function SuggestEditCard({
         reason: reason.trim() ? reason.trim().slice(0, SUGGEST_MAX_REASON) : null,
         submitter: submitter.trim() ? submitter.trim().slice(0, SUGGEST_MAX_AUTHOR) : null,
       };
-      const { error } = await supabase.from('edit_suggestions').insert(payload);
-      if (error) throw error;
+      await apiPost('/api/edit-suggestions', payload);
       // Reset editable fields but keep the form open so the user can
       // refine and submit again — matches TranslationBrowser's UX.
       setProposed(wireToEdit(currentEn));
@@ -1048,7 +1047,7 @@ function SuggestEditCard({
         </span>
         {maxChars != null && <span className="suggest-budget">Max {maxChars} chars</span>}
       </header>
-      {!supabaseConfigured && (
+      {!apiConfigured && (
         <div className="suggest-banner">
           <strong>Suggestions are disabled.</strong> The site owner hasn't
           connected the submissions backend yet.
@@ -1232,31 +1231,23 @@ function ProposedChangesPanel({
       setErr(null);
       return;
     }
-    if (!supabaseConfigured || !supabase) {
+    if (!apiConfigured) {
       setRows([]);
       setErr(null);
       return;
     }
     setLoading(true);
     setErr(null);
-    // `like` requires `*` as the wildcard in PostgREST (the supabase-js
-    // client passes the literal value through to the URL).
-    supabase
-      .from('edit_suggestions')
-      .select(
-        'id,kind,ref,original_en,proposed_en,reason,submitter,status,created_at',
-      )
-      .like('ref', `${refPrefix}*`)
-      .order('created_at', { ascending: false })
-      .limit(200)
-      .then(({ data, error }) => {
+    apiGet<EditSuggestionRow[]>(`/api/edit-suggestions?ref_prefix=${encodeURIComponent(refPrefix)}`)
+      .then((data) => {
         if (aborted) return;
-        if (error) {
-          setErr(error.message);
-          setRows([]);
-        } else {
-          setRows((data ?? []) as EditSuggestionRow[]);
-        }
+        setRows(data ?? []);
+        setLoading(false);
+      })
+      .catch((e: any) => {
+        if (aborted) return;
+        setErr(e?.message || String(e));
+        setRows([]);
         setLoading(false);
       });
     return () => {
@@ -1265,7 +1256,7 @@ function ProposedChangesPanel({
   }, [refPrefix, reloadToken]);
 
   const hasBlock = !!block;
-  const disabledBackend = !supabaseConfigured;
+  const disabledBackend = !apiConfigured;
 
   return (
     <aside className="proposed">

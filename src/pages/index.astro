@@ -1,7 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import HomeBadges from '../components/HomeBadges.astro';
+import GameCart from '../components/GameCart.astro';
+import patch3ds from '../../public/data/patches_3ds.json';
+import { GAMES } from '../data/games';
 const base = import.meta.env.BASE_URL;
+const g3 = GAMES['3ds'];
+const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
 ---
 
 <Layout title="Home">
@@ -27,6 +32,28 @@ const base = import.meta.env.BASE_URL;
     </div>
   </section>
 
+  <!-- 3DS game announcement -->
+  <a class="announce" href={`${base}/patches/#3ds`}
+     style={`--a-deep:${g3.accent.deep};--a-mid:${g3.accent.mid};--a-light:${g3.accent.light};--a-ink:${g3.accent.ink}`}>
+    <span class="announce-ribbon">New</span>
+    <div class="announce-carts" aria-hidden="true">
+      <div class="ac ac-ds"><GameCart game="ds" width={118} tilt={-12} /></div>
+      <div class="ac ac-3ds"><GameCart game="3ds" width={132} tilt={7} /></div>
+    </div>
+    <div class="announce-text">
+      <p class="announce-kicker">Now covering two games</p>
+      <h2>The 3DS game joins the archive</h2>
+      <p>
+        <span lang="ja">{g3.titleJa}</span> ({g3.titleRomaji}) is getting an
+        English patch too.
+        {has3dsRelease
+          ? ' The first release is out now on the patches page, next to the DS patch.'
+          : ' It is in progress; the patches page now has a 3DS column where releases will appear, and the bug board has a 3DS section.'}
+      </p>
+      <span class="announce-cta">{has3dsRelease ? 'Get the 3DS patch' : 'See the 3DS patch page'} <span aria-hidden="true">→</span></span>
+    </div>
+  </a>
+
   <div class="section-divider" aria-hidden="true">
     <img src={`${base}/decorations/peach.png`} alt="" />
     <img src={`${base}/decorations/parfait.png`} alt="" />
@@ -38,7 +65,7 @@ const base = import.meta.env.BASE_URL;
       <a href={`${base}/patches/`} class="section-card live">
         <span class="section-emoji">💾</span>
         <h3>Patches</h3>
-        <p>Download the latest English patch for the ROM. Release history, MD5 hashes, and instructions for applying the patch with Delta Patcher.</p>
+        <p>English patches for both games: the DS patch with its full release history, MD5 hashes and in-browser patcher, and a column for the 3DS patch.</p>
         <span class="section-cta">Latest release →</span>
       </a>
       <a href={`${base}/assets/`} class="section-card live">
@@ -74,7 +101,7 @@ const base = import.meta.env.BASE_URL;
       <a href={`${base}/bug-reports/`} class="section-card live">
         <span class="section-emoji">🐛</span>
         <h3>Bug Reports</h3>
-        <p>The public triage board for the patch and the site. Open reports, screenshots, "Me too" counts, and workaround comments — no account needed to post or pile on.</p>
+        <p>The public triage board for both patches and the site, filterable by game. Open reports, screenshots, "Me too" counts, and workaround comments — no account needed to post or pile on.</p>
         <span class="section-cta">Open the board →</span>
       </a>
       <a href={`${base}/save-files/`} class="section-card live">
@@ -100,6 +127,83 @@ const base = import.meta.env.BASE_URL;
 </Layout>
 
 <style>
+  .announce {
+    position: relative;
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    align-items: center;
+    gap: 26px;
+    margin: 8px 0 34px;
+    padding: 26px 30px 26px 16px;
+    background: linear-gradient(120deg, var(--a-light) 0%, #fff 55%, #ffe9f4 100%);
+    border: 3px solid var(--a-deep);
+    box-shadow: 7px 7px 0 var(--a-deep);
+    color: var(--color-ink);
+    text-decoration: none;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .announce:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 9px 9px 0 var(--a-deep);
+    color: var(--color-ink);
+  }
+  .announce-ribbon {
+    position: absolute;
+    top: 14px;
+    right: -34px;
+    width: 130px;
+    padding: 3px 0;
+    transform: rotate(35deg);
+    background: var(--a-deep);
+    color: #fff;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .announce-carts {
+    position: relative;
+    height: 150px;
+  }
+  .ac { position: absolute; }
+  .ac-ds { left: 6px; top: 14px; z-index: 1; }
+  .ac-3ds { left: 98px; top: 0; z-index: 2; }
+  .announce:hover .ac-3ds :global(.game-cart) { transform: rotate(3deg) translateY(-5px); }
+  .announce:hover .ac-ds :global(.game-cart) { transform: rotate(-15deg) translateX(-3px); }
+  .announce-kicker {
+    margin: 0 0 4px;
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--a-deep);
+  }
+  .announce h2 {
+    margin: 0 0 8px;
+    color: var(--a-ink);
+    font-size: 1.6rem;
+  }
+  .announce-text p:not(.announce-kicker) {
+    margin: 0 0 12px;
+    line-height: 1.6;
+  }
+  .announce-cta {
+    display: inline-block;
+    padding: 6px 14px;
+    background: var(--a-deep);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    box-shadow: 3px 3px 0 var(--a-ink);
+  }
+  @media (max-width: 680px) {
+    .announce { grid-template-columns: 1fr; padding: 20px 18px; gap: 10px; }
+    .announce-carts { width: 250px; margin: 0 auto; }
+  }
+
   .hero {
     display: grid;
     grid-template-columns: 1.6fr 1fr;

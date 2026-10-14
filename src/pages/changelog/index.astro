@@ -1,4 +1,5 @@
 ---
+import GameBadge from '../../components/GameBadge.astro';
 import Layout from '../../layouts/Layout.astro';
 import SubscribeSeal from '../../components/SubscribeSeal.astro';
 import v264meta from '../../data/changelog_v2.6.4_meta.json';
@@ -225,6 +226,7 @@ function formatDate(iso: string): string {
       <img src={`${base}/decorations/dragonfly.png`} alt="" />
     </div>
     <h1>Changelog ✦</h1>
+    <GameBadge game="ds" note="3DS patch notes live on the patches page." />
     <p class="lede">
       Row-by-row before/after diffs for every translation patch release —
       every <code>msg</code> file entry, item name, overlay string, and

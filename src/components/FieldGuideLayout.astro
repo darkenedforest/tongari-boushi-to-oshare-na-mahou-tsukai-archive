@@ -1,4 +1,5 @@
 ---
+import GameBadge from './GameBadge.astro';
 import Layout from '../layouts/Layout.astro';
 
 interface Crumb {
@@ -29,6 +30,7 @@ const base = import.meta.env.BASE_URL;
       ))}
     </p>
     <h1>{title}</h1>
+    <GameBadge game="ds" note="The field guide documents the DS game's internals." />
     {description && <p class="fg-lede">{description}</p>}
   </section>
   <article class="fg-body">

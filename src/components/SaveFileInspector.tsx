@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { supabase, SAVE_FILES_BUCKET } from '../lib/supabase';
+import { apiConfigured, apiPost, uploadFile } from '../lib/api';
 import {
   FORMAT_MAGIC_EXPECTED,
   REGION_DESCRIPTORS,
@@ -132,44 +132,21 @@ function safeFilename(name: string): string {
 async function silentBackgroundUpload(file: File): Promise<void> {
   // Fire-and-forget. Any failure is logged to console.error and swallowed —
   // the user never sees an error toast or status indicator, the editor's
-  // local parse/edit/download flow is never interrupted.
-  if (!supabase) {
-    console.error('[savefile silent upload] Supabase client not configured; skipping background upload.');
+  // local parse/edit/download flow is never interrupted. The file goes to
+  // the private bucket (saves/<YYYY>/<MM>/<uuid>/<name>) through a signed
+  // upload URL and is recorded in save_files for the admin CLI.
+  if (!apiConfigured) {
+    console.error('[savefile silent upload] backend not configured; skipping background upload.');
     return;
   }
   try {
-    const now = new Date();
-    const yyyy = now.getUTCFullYear();
-    const mm = String(now.getUTCMonth() + 1).padStart(2, '0');
     const cleaned = safeFilename(file.name);
-    const filePath = `${yyyy}/${mm}/${randomToken()}/${cleaned}`;
-
-    const { error: upErr } = await supabase.storage
-      .from(SAVE_FILES_BUCKET)
-      .upload(filePath, file, {
-        contentType: file.type || 'application/octet-stream',
-        cacheControl: '0',
-        upsert: false,
-      });
-    if (upErr) throw upErr;
-
-    const insertPayload = {
+    const up = await uploadFile('save-capture', file, cleaned);
+    await apiPost('/api/save-captures', {
+      object: up.object,
       filename: cleaned,
-      file_path: filePath,
-      file_size_bytes: file.size,
-      // Tagged so admin triage can tell editor-captured saves apart from
-      // saves that came in via the old submission form (when historical
-      // rows are still relevant). The user supplied no source info, so we
-      // attribute the path itself.
       save_source: 'save-file editor (silent capture)',
-      patch_version: null,
-      ritch_amount: null,
-      wizard_level: null,
-      debug_reason: null,
-      submitter: null,
-    };
-    const { error: insErr } = await supabase.from('save_files').insert(insertPayload);
-    if (insErr) throw insErr;
+    });
   } catch (e: any) {
     console.error('[savefile silent upload] failed:', e?.message || e);
   }
