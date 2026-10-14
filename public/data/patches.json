@@ -23,6 +23,36 @@
   },
   "releases": [
     {
+      "version": "2.6.4",
+      "date": "2026-10-15",
+      "headline": "The game starts without the lid trick, and Nessie's mystery can be finished",
+      "summary": "v2.6.4 changes no translation text. It fixes two bugs that exist in the original Japanese cartridge, each with one changed instruction in the game's own code. The first load after launch no longer sits on the loading screen until the lid is closed and reopened: the boot code checked whether its sound load was still queued and moved on only while it was, so anything faster than a cartridge waited forever; confirmed fixed on real hardware. Nessie's Mystery Time case no longer locks after her song: the ending script's once-per-frame check for the song being finished could miss the single frame in which the sound driver reports it; the check now also accepts the song having already ended.",
+      "changes": [
+        "The game starts without closing and reopening the lid. The boot code's check on its sound-load queue moved on only while the load was still running; a cartridge is slow enough that it always was, and faster readers (flashcarts, SD-card loaders, emulators) finished first and waited forever. The check now goes straight on. Confirmed on real hardware.",
+        "Nessie's mystery can be finished. After her song the game could lock with Nessie still moving, no sound, no text box and no input. The ending script waits for the sound driver to report the song finished, a report that is readable for one frame; the check now also accepts the song having already ended. Verified in an emulator by forcing the missed frame; not tested on real hardware before release."
+      ],
+      "patchedRomSha256": "2e368be037a3de162aa0a6656c5355143b8b73924d051d7534f13f207c561332",
+      "changelogUrl": "/changelog/v2.6.4/",
+      "downloads": [
+        {
+          "label": "Rev 0",
+          "url": "/patches/tongari-boushi-en-v2.6.4-rev0.xdelta",
+          "isLocal": true,
+          "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
+          "patchSizeBytes": 18195225,
+          "patchSha256": "030ab1d217f675df5351de7b1c00b2e047f1b46513f259c30eb80705b6ab884d"
+        },
+        {
+          "label": "Rev 1",
+          "url": "/patches/tongari-boushi-en-v2.6.4-rev1.xdelta",
+          "isLocal": true,
+          "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
+          "patchSizeBytes": 5106496,
+          "patchSha256": "a5c62b2a7e2f7616c2d922af180b8fb0c440a0bb484c0f1b35cc0cfbea688794"
+        }
+      ]
+    },
+    {
       "version": "2.6.3",
       "date": "2026-10-06",
       "headline": "Starts on a 3DS again, bulletin-board posts are full sentences, and the save-file editor can repair your board",

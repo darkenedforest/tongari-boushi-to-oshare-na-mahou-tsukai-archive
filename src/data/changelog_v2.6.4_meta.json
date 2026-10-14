@@ -1,0 +1,11 @@
+{
+  "version": "2.6.4",
+  "date": "2026-10-15",
+  "headline": "The game starts without the lid trick, and Nessie's mystery can be finished",
+  "summary": "Two one-instruction fixes to bugs in the original cartridge, no text changes. The first load after launch no longer sits on the loading screen until the lid is closed and reopened (confirmed on real hardware). Nessie's Mystery Time case no longer locks after her song: the ending script's once-per-frame check for the song being finished could miss the single frame in which the sound driver reports it; it now also accepts the song having already ended.",
+  "previousVersionLabel": "v2.6.3",
+  "counts": {
+    "bootFix": 1,
+    "nessieCaseFix": 1
+  }
+}

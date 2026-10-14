@@ -1,0 +1,23 @@
+{
+  "version": "2.6.4",
+  "date": "2026-10-15",
+  "headline": "The game starts without the lid trick, and Nessie's mystery can be finished",
+  "summary": "v2.6.4 changes no translation text. It fixes two bugs that exist in the original Japanese cartridge, each with a single changed instruction in the game's own code. The first is the loading screen that never ended on the first load after launch until the lid was closed and opened again: the boot code checks whether its sound load is still queued and, by mistake, moves on only while it is, so anything that reads the game faster than a cartridge waits forever. The check now goes straight on, confirmed on real hardware. The second is the lock at the end of Nessie's Mystery Time case: her ending script waits for the sound driver to report her song finished, and that report is readable for one frame only, so on a cartridge or a 3DS the script often missed it and waited forever with Nessie still moving. The check now also accepts the song having already ended.",
+  "shipFormats": [
+    {
+      "label": "Released patch",
+      "description": "Same patch format as v2.6.3: one xdelta3 patch per ROM revision; both produce the same patched ROM byte-for-byte."
+    }
+  ],
+  "shipNote": "Apply v2.6.4 to a clean Japanese ROM. Saves from v2.2 or later load; nothing in the save format changed. A save made with v2.6.3 or v2.6.4 should not be taken back to a version before v2.6.3 (the older game shows the long bulletin-board posts as garbage).",
+  "otherChanges": [
+    {
+      "title": "The game starts without closing and reopening the lid",
+      "body": "On many flashcarts and loaders, and in some emulators, the first load after launch never ended: the loading screen stayed up until you closed the lid and opened it again, after which the game ran normally. This has been known since 2017 and was taken for an anti-piracy check. It is not. The game's boot code loads a block of sounds and then checks whether that load is still in its queue, and by mistake it moves on only while the load is still running. A cartridge is slow enough that the check always happens while the load is in progress, so it never showed on the original hardware; anything that reads the game faster finishes the load before the check, and the boot waits forever. Closing the lid puts a pause-music command into the same queue, which is why that unstuck it. The check now goes straight on. Confirmed on real hardware: the patched game boots through to the title without touching the lid."
+    },
+    {
+      "title": "Nessie's mystery can be finished",
+      "body": "In the Mystery Time case with Nessie in the cave, the game could lock right after she sang her song: she kept moving, the music stopped, no text box opened, and no button did anything. The only way out was to power off; the save was intact but the case was not finished. Her ending script waits for the sound driver to report her song as finished. The song reports that in the same instant it stops, and the sound driver clears the report one frame later; the script checks once per frame, so whether it catches the report depends on which of the two runs first inside that one frame. On a cartridge and on a 3DS running the game through TWiLight Menu++ it often does not; in emulators it always did. The check now also accepts the song having already ended. Verified in an emulator by forcing the missed frame: the case completes, Nessie says her goodbye, and the case is marked solved. This was not tested on real hardware before release; if Nessie still locks after her song, please report it through the bug-report form."
+    }
+  ]
+}
