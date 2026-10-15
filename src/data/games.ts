@@ -36,7 +36,7 @@ export const GAMES: Record<GameId, Game> = {
     cart: { body: '#4a4a55', edge: '#2f2f38', ridge: '#5d5d6a' },
     patchBy: 'darkenedforest',
     languages: ['English'],
-    cartTag: '✦ ENGLISH',
+    cartTag: '✦ FAN PATCH',
   },
   '3ds': {
     id: '3ds',
@@ -49,7 +49,7 @@ export const GAMES: Record<GameId, Game> = {
     patchBy: 'a collaborator',
     // Multi-language patch; Italian is the first language.
     languages: ['Italian'],
-    cartTag: '✦ ITALIANO',
+    cartTag: '✦ MULTI-LANG',
   },
 };
 
