@@ -194,7 +194,7 @@ def build_email(release: dict) -> tuple[str, str, str]:
     v = release["version"]
     game = release.get("game", "ds")
     platform = "3DS" if game == "3ds" else "DS"
-    patch_name = "fan-translation patch"
+    patch_name = "English patch" if game == "ds" else "multi-language patch"
     subject = f"Tongari Boushi {platform} {patch_name} v{v} is out ✦"
     patches_url = f"{SITE_URL}/patches/" + ("#3ds" if game == "3ds" else "")
     changelog_url = (
@@ -212,7 +212,7 @@ def build_email(release: dict) -> tuple[str, str, str]:
     )
 
     lines = [
-        f"Version {v} of the fan-translation patch for",
+        f"Version {v} of the {'English' if game == 'ds' else 'multi-language'} fan-translation patch for",
         f"{GAME_TITLE[game]} just shipped.",
         "",
         release.get("headline", ""),

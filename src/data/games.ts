@@ -36,7 +36,7 @@ export const GAMES: Record<GameId, Game> = {
     cart: { body: '#4a4a55', edge: '#2f2f38', ridge: '#5d5d6a' },
     patchBy: 'darkenedforest',
     languages: ['English'],
-    cartTag: '✦ FAN PATCH',
+    cartTag: '✦ ENGLISH',
   },
   '3ds': {
     id: '3ds',

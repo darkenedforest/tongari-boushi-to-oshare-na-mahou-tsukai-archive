@@ -76,7 +76,7 @@ export const GET: APIRoute = () => {
     <title>Tongari Boushi Fan-Translation Patches — Releases</title>
     <link>${escapeXml(`${ROOT}/patches/`)}</link>
     <atom:link href="${escapeXml(`${ROOT}/feed.xml`)}" rel="self" type="application/rss+xml" />
-    <description>Release announcements for the fan-translation patches of Tongari Boushi to Oshare na Mahou Tsukai (DS) and Tongari Boushi to Mahou no Machi (3DS, multi-language).</description>
+    <description>Release announcements for the fan-translation patches of Tongari Boushi to Oshare na Mahou Tsukai (DS, English) and Tongari Boushi to Mahou no Machi (3DS, multi-language).</description>
     <language>en-us</language>
 ${items}
   </channel>
