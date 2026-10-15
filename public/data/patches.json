@@ -26,10 +26,10 @@
       "version": "2.6.4",
       "date": "2026-10-15",
       "headline": "The game starts without the lid trick, and Nessie's mystery can be finished",
-      "summary": "v2.6.4 changes no translation text. It fixes two bugs that exist in the original Japanese cartridge, each with one changed instruction in the game's own code. The first load after launch no longer sits on the loading screen until the lid is closed and reopened: the boot code checked whether its sound load was still queued and moved on only while it was, so anything faster than a cartridge waited forever; confirmed fixed on real hardware. Nessie's Mystery Time case no longer locks after her song: the ending script's once-per-frame check for the song being finished could miss the single frame in which the sound driver reports it; the check now also accepts the song having already ended.",
+      "summary": "Fixes two bugs from the original Japanese game. No translation changes.",
       "changes": [
-        "The game starts without closing and reopening the lid. The boot code's check on its sound-load queue moved on only while the load was still running; a cartridge is slow enough that it always was, and faster readers (flashcarts, SD-card loaders, emulators) finished first and waited forever. The check now goes straight on. Confirmed on real hardware.",
-        "Nessie's mystery can be finished. After her song the game could lock with Nessie still moving, no sound, no text box and no input. The ending script waits for the sound driver to report the song finished, a report that is readable for one frame; the check now also accepts the song having already ended. Verified in an emulator by forcing the missed frame; not tested on real hardware before release."
+        "The game no longer gets stuck on the loading screen at startup. You don't have to close and reopen the lid anymore.",
+        "Nessie's mystery no longer freezes after her song, so the case can be finished."
       ],
       "patchedRomSha256": "2e368be037a3de162aa0a6656c5355143b8b73924d051d7534f13f207c561332",
       "changelogUrl": "/changelog/v2.6.4/",
