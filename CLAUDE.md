@@ -90,8 +90,16 @@ Because the tree is dirty, integrating remote changes needs autostash:
 
 ## Git account
 
-Personal GitHub account `darkenedforest` (folder-based routing, already
-configured on this repo). Do not change it.
+On the owner's computer: personal GitHub account `darkenedforest`
+(folder-based routing, already configured on this repo). Do not change it.
+Collaborators use their own GitHub account.
+
+## Collaborators (3DS patch)
+
+Before any work, read `AGENTS.md` in the private repo
+`darkenedforest/media-library` (clone it next to this one). It has the
+setup, the release steps for the 3DS patch, and the security rules.
+This repo is **public**: never put secrets, server code or cloud details here.
 
 ## Adding an app to the `/apps` store
 
