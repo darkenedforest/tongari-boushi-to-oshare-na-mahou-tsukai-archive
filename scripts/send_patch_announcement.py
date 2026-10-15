@@ -14,8 +14,11 @@ Subcommands:
                              someone replies "unsubscribe" to an email).
 
 `send` options:
-  --version 2.6              Which release from public/data/patches.json to
-                             announce. Default: the newest one.
+  --game ds|3ds              Which game's release to announce: ds reads
+                             public/data/patches.json, 3ds reads
+                             public/data/patches_3ds.json. Default: ds.
+  --version 2.6              Which release of that game to announce.
+                             Default: the newest one.
   --dry-run                  Print recipients + the rendered email, send
                              nothing.
   --test-to you@example.com  Send only to this one address (ignores the
@@ -52,7 +55,14 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 # The site-backend client (_media_api.py) lives in the translation repo.
 TRANSLATION_REPO = REPO_ROOT.parent / "Tongari boushi translation app claude"
-PATCHES_JSON = REPO_ROOT / "public" / "data" / "patches.json"
+PATCHES_JSON = {
+    "ds": REPO_ROOT / "public" / "data" / "patches.json",
+    "3ds": REPO_ROOT / "public" / "data" / "patches_3ds.json",
+}
+GAME_TITLE = {
+    "ds": "Tongari Boushi to Oshare na Mahou Tsukai (DS)",
+    "3ds": "Tongari Boushi to Mahou no Machi (3DS)",
+}
 
 SITE_URL = (
     "https://darkenedforest.github.io/tongari-boushi-to-oshare-na-mahou-tsukai-archive"
@@ -161,17 +171,20 @@ def fetch_active_subscribers() -> tuple[list[str], int]:
     return active, data["total_rows"]
 
 
-def load_release(version: str | None) -> dict:
-    data = json.loads(PATCHES_JSON.read_text(encoding="utf-8"))
+def load_release(version: str | None, game: str = "ds") -> dict:
+    path = PATCHES_JSON[game]
+    data = json.loads(path.read_text(encoding="utf-8"))
     releases = data["releases"]
+    if not releases:
+        sys.exit(f"{path.name} has no releases yet.")
     if version is None:
-        return releases[0]
+        return {**releases[0], "game": game}
     want = version.lstrip("vV")
     for r in releases:
         if r["version"] == want:
-            return r
+            return {**r, "game": game}
     sys.exit(
-        f"Version {version!r} not found in patches.json. "
+        f"Version {version!r} not found in {path.name}. "
         f"Known: {', '.join('v' + r['version'] for r in releases)}"
     )
 
@@ -179,8 +192,10 @@ def load_release(version: str | None) -> dict:
 def build_email(release: dict) -> tuple[str, str, str]:
     """Returns (subject, text_body, html_body)."""
     v = release["version"]
-    subject = f"Tongari Boushi English patch v{v} is out ✦"
-    patches_url = f"{SITE_URL}/patches/"
+    game = release.get("game", "ds")
+    platform = "3DS" if game == "3ds" else "DS"
+    subject = f"Tongari Boushi {platform} English patch v{v} is out ✦"
+    patches_url = f"{SITE_URL}/patches/" + ("#3ds" if game == "3ds" else "")
     changelog_url = (
         f"{SITE_URL}{release['changelogUrl']}" if release.get("changelogUrl") else None
     )
@@ -196,8 +211,8 @@ def build_email(release: dict) -> tuple[str, str, str]:
     )
 
     lines = [
-        f"Version {v} of the English fan-translation patch for Tongari Boushi",
-        "to Oshare na Mahou Tsukai just shipped.",
+        f"Version {v} of the English fan-translation patch for",
+        f"{GAME_TITLE[game]} just shipped.",
         "",
         release.get("headline", ""),
         "",
@@ -257,7 +272,8 @@ def build_email(release: dict) -> tuple[str, str, str]:
         )
     html = f"""\
 <html><body style="font-family: sans-serif; color: #3a2c4e; line-height: 1.55;">
-<h2 style="color: #9b7bd9;">English patch v{esc(v)} is out &#10022;</h2>
+<h2 style="color: #9b7bd9;">{platform} English patch v{esc(v)} is out &#10022;</h2>
+<p style="margin-top: -8px; color: #8a7a9e;">{esc(GAME_TITLE[game])}</p>
 <p><strong>{esc(release.get('headline', ''))}</strong></p>
 <p>{esc(release.get('summary', ''))}</p>
 {callout_html}
@@ -291,7 +307,7 @@ def cmd_unsubscribe(args: argparse.Namespace) -> None:
 
 
 def cmd_send(args: argparse.Namespace) -> None:
-    release = load_release(args.version)
+    release = load_release(args.version, args.game)
     subject, text, html = build_email(release)
 
     if args.test_to:
@@ -385,6 +401,8 @@ def main() -> None:
     p_unsub.add_argument("email")
 
     p_send = sub.add_parser("send", help="send the announcement")
+    p_send.add_argument("--game", choices=["ds", "3ds"], default="ds",
+                        help="which game's release to announce (default: ds)")
     p_send.add_argument("--version", help="release to announce, e.g. 2.6 (default: newest)")
     p_send.add_argument("--dry-run", action="store_true", help="print, send nothing")
     p_send.add_argument("--test-to", help="send only to this address")

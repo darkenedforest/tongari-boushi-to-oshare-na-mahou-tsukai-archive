@@ -49,8 +49,13 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+// `isLocal` marks a patch file we host ourselves (the web patcher can use
+// it). Those now live in the public storage bucket with absolute URLs;
+// site-relative paths are still accepted.
+const isAbsolute = (u: string) => /^https?:\/\//.test(u);
+
 function resolveUrl(d: { url: string; isLocal?: boolean }): string {
-  if (d.isLocal) {
+  if (d.isLocal && !isAbsolute(d.url)) {
     // strip leading slash so the base url joins cleanly
     const trimmed = d.url.replace(/^\/+/, '');
     return `${base}/${trimmed}`;
@@ -59,13 +64,14 @@ function resolveUrl(d: { url: string; isLocal?: boolean }): string {
 }
 
 function resolveLocalUrl(path: string): string {
+  if (isAbsolute(path)) return path;
   const trimmed = path.replace(/^\/+/, '');
   return `${base}/${trimmed}`;
 }
 
 // ── In-browser patcher config ─────────────────────────────────────────
 // Build the list of versions the web patcher can apply: only releases whose
-// downloads are locally-hosted .xdelta files (v2.3 → latest). Each version
+// downloads are .xdelta files we host (v2.3 → latest). Each version
 // carries its two ROM-revision entries (Rev 0 / Rev 1) so the patcher can
 // auto-detect which revision the visitor's ROM is by MD5.
 const webPatcherVersions = releases

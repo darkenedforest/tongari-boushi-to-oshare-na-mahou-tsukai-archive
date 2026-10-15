@@ -52,12 +52,29 @@ index: `python scripts/export_board_posts.py` → `public/data/board_posts.json`
 (current + historical post texts, fair names, NPC names). The editor uses
 it to recognise damaged posts and offer the current translation.
 
-When a new **patch release** ships (new entry in `public/data/patches.json`),
+## Two games, one site
+
+The site covers the DS game and the 3DS game (とんがりボウシと魔法の町).
+Per-game names, icons and colours live in `src/data/games.ts`. DS releases
+are in `public/data/patches.json`, 3DS releases in
+`public/data/patches_3ds.json` (same shape). Bug reports carry a `game`
+(`ds`, `3ds`, `site`). The save editor, translation viewer, changelog,
+assets, 3D models and field guide are DS-only and say so with `GameBadge`.
+
+## Backend and patch files
+
+Posts, uploads and subscriptions go to the `media-api` service in GCP project
+`media-library-119506` — see **BACKEND.md**. No keys are in the site.
+Patch files are **not** in `public/`; upload them with
+`python scripts/upload_patches.py --game ds|3ds <files>` and put the printed
+URLs in the patches JSON.
+
+When a new **patch release** ships (new entry in either patches JSON),
 email the subscriber list after pushing:
-`python scripts/send_patch_announcement.py send --dry-run` to preview, then
-without `--dry-run`. Needs env vars — see SUPABASE_SETUP.md § "Patch release
-email subscriptions". The RSS feed (`/feed.xml`) updates automatically from
-patches.json at build time.
+`python scripts/send_patch_announcement.py send --game ds|3ds --dry-run` to
+preview, then without `--dry-run` (Gmail creds in `.env.announce`, see
+BACKEND.md). The RSS feed (`/feed.xml`) updates automatically from both
+patches files at build time.
 
 ## Committing
 

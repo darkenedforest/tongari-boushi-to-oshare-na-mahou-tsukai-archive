@@ -36,7 +36,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.6.4-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.4-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 18195225,
@@ -44,7 +44,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.6.4-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.4-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 5106496,
@@ -79,7 +79,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.6.3-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.3-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 18195233,
@@ -87,7 +87,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.6.3-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.3-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 5106201,
@@ -109,7 +109,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.6.2-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.2-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 18233356,
@@ -117,7 +117,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.6.2-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.2-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4979219,
@@ -140,7 +140,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.6.1-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.1-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 18200428,
@@ -148,7 +148,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.6.1-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6.1-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4946199,
@@ -173,7 +173,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.6-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 18203796,
@@ -181,7 +181,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.6-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.6-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4949739,
@@ -204,7 +204,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.5.1-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.5.1-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16929833,
@@ -212,7 +212,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.5.1-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.5.1-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4017119,
@@ -241,7 +241,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.5-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.5-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16929839,
@@ -249,7 +249,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.5-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.5-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4017118,
@@ -275,7 +275,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.4.2-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.4.2-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16930254,
@@ -283,7 +283,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.4.2-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.4.2-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4017549,
@@ -306,7 +306,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.4.1-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.4.1-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16924138,
@@ -314,7 +314,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.4.1-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.4.1-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 4011463,
@@ -346,7 +346,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.4-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.4-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16916955,
@@ -354,7 +354,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.4-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.4-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 3843057,
@@ -387,7 +387,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.32-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.32-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16898502,
@@ -395,7 +395,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.32-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.32-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 3824445,
@@ -421,7 +421,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.31-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.31-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16923421,
@@ -429,7 +429,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.31-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.31-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 3855606,
@@ -463,7 +463,7 @@
       "downloads": [
         {
           "label": "Rev 0",
-          "url": "/patches/tongari-boushi-en-v2.3-rev0.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.3-rev0.xdelta",
           "isLocal": true,
           "romMd5": "a37fc3e00813fd05d47cd770e4f9e958",
           "patchSizeBytes": 16925285,
@@ -471,7 +471,7 @@
         },
         {
           "label": "Rev 1",
-          "url": "/patches/tongari-boushi-en-v2.3-rev1.xdelta",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/ds/tongari-boushi-en-v2.3-rev1.xdelta",
           "isLocal": true,
           "romMd5": "bef1d8ad5f80ceb8886331ecf33bc467",
           "patchSizeBytes": 3873543,

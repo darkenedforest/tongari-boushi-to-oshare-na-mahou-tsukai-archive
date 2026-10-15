@@ -30,10 +30,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # No secrets: the site talks to the media-api service, whose URL is
+      # public (src/lib/api.ts). Patch files are served from Cloud Storage.
       - name: Build
-        env:
-          PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
-          PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
         run: npm run build
 
       - name: Upload Pages artifact
