@@ -1,5 +1,6 @@
 ---
 import GameBadge from './GameBadge.astro';
+import type { GameId } from '../data/games';
 import Layout from '../layouts/Layout.astro';
 
 interface Crumb {
@@ -11,9 +12,18 @@ interface Props {
   title: string;
   description?: string;
   crumbs: Crumb[];
+  /** Game the page documents (default: the DS game, for the field guide). */
+  game?: GameId;
+  badgeNote?: string;
 }
 
-const { title, description, crumbs } = Astro.props;
+const {
+  title,
+  description,
+  crumbs,
+  game = 'ds',
+  badgeNote = "The field guide documents the DS game's internals.",
+} = Astro.props;
 const base = import.meta.env.BASE_URL;
 ---
 
@@ -30,7 +40,7 @@ const base = import.meta.env.BASE_URL;
       ))}
     </p>
     <h1>{title}</h1>
-    <GameBadge game="ds" note="The field guide documents the DS game's internals." />
+    <GameBadge game={game} note={badgeNote} />
     {description && <p class="fg-lede">{description}</p>}
   </section>
   <article class="fg-body">

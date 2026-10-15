@@ -1,0 +1,44 @@
+---
+import FieldGuideLayout from '../../components/FieldGuideLayout.astro';
+import { GAMES } from '../../data/games';
+const base = import.meta.env.BASE_URL;
+const g3 = GAMES['3ds'];
+const repo = 'https://github.com/chokercrave/mahou-no-machi-patch';
+---
+
+<FieldGuideLayout
+  title="3DS patch"
+  description={`Guides and notes for the multi-language patch of ${g3.titleRomaji}, starting with Italian.`}
+  game="3ds"
+  badgeNote="These pages document the 3DS game and its multi-language patch."
+  crumbs={[{ label: '3DS patch' }]}
+>
+  <div class="fg-cards">
+    <a href={`${base}/patches/#3ds`} class="fg-card">
+      <h3>Download and patch</h3>
+      <p>The latest version, the in-browser patcher for Azahar, and the full package for a 3DS with Luma3DS.</p>
+    </a>
+    <a href={`${base}/3ds/features/`} class="fg-card">
+      <h3>Patch features</h3>
+      <p>Everything the patch changes: the translation, shops open around the clock, relationships with anyone, fast travel, fast text and the Options menu. How to use each one in game.</p>
+    </a>
+    <a href={`${base}/3ds/technical-notes/`} class="fg-card">
+      <h3>Technical notes</h3>
+      <p>How the game works inside: variables, the dialogue engine, event scripts, opening hours, relationships, maps and the bag. Addresses for anyone who wants to mod the game.</p>
+    </a>
+    <a href={repo} class="fg-card" target="_blank" rel="noopener">
+      <h3>Source code</h3>
+      <p>The patch's tools and translated texts on GitHub, with the guides to rebuild it from your own copy of the game.</p>
+    </a>
+    <a href={`${base}/bug-reports/#3ds`} class="fg-card">
+      <h3>Bug reports</h3>
+      <p>Found a problem in the 3DS patch? Tell us where you were and whether you play on Azahar or on a 3DS.</p>
+    </a>
+  </div>
+
+  <p class="fg-note">
+    <strong>Le guide sono anche in italiano:</strong>
+    <a href={`${base}/3ds/features/it/`}>Funzionalità</a> ·
+    <a href={`${base}/3ds/technical-notes/it/`}>Note tecniche</a>
+  </p>
+</FieldGuideLayout>

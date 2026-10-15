@@ -746,8 +746,8 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
        style={`--g-deep:${g3.accent.deep};--g-mid:${g3.accent.mid};--g-light:${g3.accent.light};--g-ink:${g3.accent.ink}`}>
     <p class="panel-links">
       <a href={`${base}/bug-reports/#3ds`}>3DS bug reports →</a>
-      <a href="https://github.com/chokercrave/mahou-no-machi-patch/blob/main/docs/en/features.md" target="_blank" rel="noopener">3DS features guide →</a>
-      <a href="https://github.com/chokercrave/mahou-no-machi-patch" target="_blank" rel="noopener">3DS patch source and docs →</a>
+      <a href={`${base}/3ds/features/`}>3DS features guide →</a>
+      <a href={`${base}/3ds/`}>3DS guides and notes →</a>
     </p>
 
     {webPatcherConfig.versions3ds.length > 0 && (

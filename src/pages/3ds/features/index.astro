@@ -1,0 +1,24 @@
+---
+// Generated content: the Markdown comes from the 3DS patch repository
+// (github.com/chokercrave/mahou-no-machi-patch, docs/), copied by its
+// scripts/site_docs.py. Edit it there, not here.
+import FieldGuideLayout from '../../../components/FieldGuideLayout.astro';
+import { Content } from '../../../data/3ds-docs/features.en.md';
+const base = import.meta.env.BASE_URL;
+---
+
+<FieldGuideLayout
+  title="Patch features"
+  description="Everything the 3DS patch changes in the game, and how to use each feature while playing."
+  game="3ds"
+  badgeNote="These pages document the 3DS game and its multi-language patch."
+  crumbs={[
+    { label: '3DS patch', href: `${base}/3ds/` },
+    { label: 'Features' },
+  ]}
+>
+  <p class="fg-note"><a href={`${base}/3ds/features/it/`}>Leggi in italiano →</a></p>
+  <div>
+    <Content />
+  </div>
+</FieldGuideLayout>
