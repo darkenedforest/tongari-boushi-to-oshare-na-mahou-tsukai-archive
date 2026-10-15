@@ -18,8 +18,14 @@ import v23meta from '../../data/changelog_v2.3_meta.json';
 import v22meta from '../../data/changelog_v2.2_meta.json';
 import v21meta from '../../data/changelog_v2.1_meta.json';
 import v20meta from '../../data/changelog_v2.0_meta.json';
+import patch3ds from '../../../public/data/patches_3ds.json';
+import { GAMES } from '../../data/games';
 
 const base = import.meta.env.BASE_URL;
+// 3DS game: its releases (newest first) come from patches_3ds.json.
+const releases3ds: any[] = (patch3ds as any).releases ?? [];
+const tabs = (['ds', '3ds'] as const).map((id) => ({ id, g: GAMES[id] }));
+const GITHUB_CHANGELOG = 'https://github.com/chokercrave/mahou-no-machi-patch/blob/main/CHANGELOG.md';
 
 type ReleaseCard = {
   version: string;
@@ -226,7 +232,26 @@ function formatDate(iso: string): string {
       <img src={`${base}/decorations/dragonfly.png`} alt="" />
     </div>
     <h1>Changelog ✦</h1>
-    <GameBadge game="ds" note="3DS patch notes live on the patches page." />
+    <div class="game-filter" role="tablist" aria-label="Choose a game">
+      {tabs.map(({ id, g }, i) => (
+        <a
+          href={`#${id}`}
+          role="tab"
+          data-game={id}
+          aria-selected={i === 0 ? 'true' : 'false'}
+          class={`game-filter-tab ${i === 0 ? 'on' : ''}`}
+          style={`--gf-deep:${g.accent.deep};--gf-light:${g.accent.light};--gf-ink:${g.accent.ink}`}
+        >
+          <img src={`${base}${g.icon}`} alt="" width="20" height="20" />
+          {g.platform} game
+          <span class="gf-count">{id === 'ds' ? releases.length : releases3ds.length}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <div class="cl-panel" data-game="ds">
+    <GameBadge game="ds" />
     <p class="lede">
       Row-by-row before/after diffs for every translation patch release —
       every <code>msg</code> file entry, item name, overlay string, and
@@ -234,7 +259,6 @@ function formatDate(iso: string): string {
       who want to see exactly what moved. For the "what's new" summary
       of each release, head to <a href={`${base}/patches/`}>Patches</a>.
     </p>
-  </section>
 
   <section class="releases">
     <ul class="release-list">
@@ -269,6 +293,73 @@ function formatDate(iso: string): string {
       can be several MB and is fetched on demand.
     </p>
   </section>
+  </div>
+
+  <div class="cl-panel" data-game="3ds" hidden>
+    <GameBadge game="3ds" />
+    <p class="lede">
+      What changed in each version of the multi-language patch for
+      <span lang="ja">{GAMES['3ds'].titleJa}</span>, starting with Italian.
+      To patch your game, head to <a href={`${base}/patches/#3ds`}>Patches</a>.
+    </p>
+    <section class="releases">
+      <ul class="release-list">
+        {releases3ds.map((r, i) => (
+          <li>
+            <article class="release-card release-card-3ds">
+              <div class="release-left">
+                <span class="version-tag version-tag-3ds">v{r.version}</span>
+                {i === 0 && <span class="latest-chip">Latest</span>}
+                <time datetime={r.date}>{formatDate(r.date)}</time>
+              </div>
+              <div class="release-mid">
+                {r.headline && <span class="headline">{r.headline}</span>}
+                {r.summary && <p class="summary-3ds">{r.summary}</p>}
+                {r.changes?.length > 0 && (
+                  <ul class="changes-3ds">{r.changes.map((c: string) => <li>{c}</li>)}</ul>
+                )}
+              </div>
+              <a class="cta" href={`${base}/patches/#3ds`}>Patch it <span aria-hidden="true">→</span></a>
+            </article>
+          </li>
+        ))}
+      </ul>
+      <p class="older-note">
+        v1.9 is the first public release of the 3DS patch, so it lists everything
+        it changes compared to the original Japanese game. The full history, with
+        the technical details, is in the
+        <a href={GITHUB_CHANGELOG} target="_blank" rel="noopener">patch's changelog on GitHub</a>.
+      </p>
+    </section>
+  </div>
+
+  <script is:inline>
+    (function () {
+      // One game at a time, kept in the URL hash (#ds / #3ds) like the bug
+      // reports board. DS is the default.
+      var tabs = document.querySelectorAll('.game-filter-tab');
+      var panels = document.querySelectorAll('.cl-panel');
+      function show(game) {
+        panels.forEach(function (p) { p.hidden = p.getAttribute('data-game') !== game; });
+        tabs.forEach(function (t) {
+          var on = t.getAttribute('data-game') === game;
+          t.classList.toggle('on', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+      }
+      function fromHash() { show(location.hash === '#3ds' ? '3ds' : 'ds'); }
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function (e) {
+          e.preventDefault();
+          var game = t.getAttribute('data-game');
+          history.replaceState(null, '', '#' + game);
+          show(game);
+        });
+      });
+      window.addEventListener('hashchange', fromHash);
+      fromHash();
+    })();
+  </script>
 </Layout>
 
 <style>
@@ -335,6 +426,30 @@ function formatDate(iso: string): string {
   .releases {
     margin: 24px 0 50px;
   }
+
+  /* DS / 3DS tabs, same look as the bug reports board */
+  .game-filter { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 0; }
+  .game-filter-tab {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 8px 14px; background: white; color: var(--gf-ink, var(--color-purple-600));
+    border: 2px solid var(--gf-deep, var(--color-purple-200));
+    font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; text-decoration: none;
+    box-shadow: 3px 3px 0 var(--gf-deep, var(--color-purple-200));
+  }
+  .game-filter-tab:hover { color: var(--gf-ink, var(--color-purple-600)); }
+  .game-filter-tab img { image-rendering: pixelated; }
+  .game-filter-tab.on { background: var(--gf-light, var(--color-purple-50)); transform: translate(1px, 1px); box-shadow: 2px 2px 0 var(--gf-deep, var(--color-purple-400)); }
+  .gf-count { font-family: var(--font-body); font-weight: 400; font-size: 0.8rem; background: rgba(255,255,255,0.8); padding: 0 7px; border: 1px solid currentColor; }
+  .cl-panel[hidden] { display: none; }
+
+  /* 3DS release cards: the notes themselves, no per-row diff page */
+  .release-card-3ds { align-items: start; }
+  .release-card-3ds:hover { transform: none; }
+  .release-card-3ds .headline { -webkit-line-clamp: unset; font-weight: 700; }
+  .version-tag.version-tag-3ds { background: linear-gradient(135deg, #5f8fee, #2f5fb9); }
+  .summary-3ds { margin: 4px 0 0; line-height: 1.5; }
+  .changes-3ds { margin: 6px 0 0; padding-left: 20px; line-height: 1.55; font-size: 0.92rem; }
+  .changes-3ds li { margin-bottom: 3px; }
 
   .release-list {
     list-style: none;

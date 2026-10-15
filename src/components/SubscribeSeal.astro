@@ -85,6 +85,12 @@ const points = Array.from({ length: 48 }, (_, i) => {
         Subscribe <span aria-hidden="true">✦</span>
       </button>
     </div>
+    <!-- Which patch's announcements (both by default). -->
+    <fieldset class="sub-games" id="psub-games">
+      <legend id="psub-games-legend">Which patch?</legend>
+      <label><input type="checkbox" name="games" value="ds" checked /> DS game <span>· English patch</span></label>
+      <label><input type="checkbox" name="games" value="3ds" checked /> 3DS game <span>· multi-language patch</span></label>
+    </fieldset>
     <!-- Honeypot: bots fill it, people never see it. -->
     <label class="sub-hp" aria-hidden="true">
       Website (leave blank)
@@ -124,6 +130,11 @@ const points = Array.from({ length: 48 }, (_, i) => {
   const doneEl = document.getElementById('psub-done') as HTMLDivElement | null;
   const doneText = document.getElementById('psub-done-text') as HTMLParagraphElement | null;
   const modeToggle = document.getElementById('psub-mode') as HTMLButtonElement | null;
+  const gamesLegend = document.getElementById('psub-games-legend');
+  const GAME_NAMES: Record<string, string> = { ds: 'DS', '3ds': '3DS' };
+  function chosenGames(): string[] {
+    return [...document.querySelectorAll<HTMLInputElement>('#psub-games input[name="games"]:checked')].map((i) => i.value);
+  }
 
   // 'subscribe' | 'unsubscribe' — flipped by the small toggle link.
   let mode: 'subscribe' | 'unsubscribe' = 'subscribe';
@@ -182,6 +193,7 @@ const points = Array.from({ length: 48 }, (_, i) => {
         mode === 'subscribe'
           ? 'Want off the list? Unsubscribe here.'
           : 'Changed your mind? Back to subscribing.';
+      if (gamesLegend) gamesLegend.textContent = mode === 'subscribe' ? 'Which patch?' : 'Unsubscribe from';
       clearError();
     });
 
@@ -196,6 +208,12 @@ const points = Array.from({ length: 48 }, (_, i) => {
       const email = emailInput.value.trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 320) {
         showError('That doesn’t look like an email address — double-check it?');
+        return;
+      }
+
+      const games = chosenGames();
+      if (games.length === 0) {
+        showError('Pick at least one patch: DS, 3DS or both.');
         return;
       }
 
@@ -217,17 +235,18 @@ const points = Array.from({ length: 48 }, (_, i) => {
         const res = await fetch(`${API_BASE}/api/subscribers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, action: submittedMode }),
+          body: JSON.stringify({ email, action: submittedMode, games }),
         });
         if (!res.ok) {
           throw new Error(`Signup failed (${res.status}). Try again in a bit?`);
         }
         window.localStorage.setItem(RATE_KEY, String(Date.now()));
         if (doneEl && doneText) {
+          const which = games.length === 2 ? 'DS and 3DS' : GAME_NAMES[games[0]];
           doneText.textContent =
             submittedMode === 'subscribe'
-              ? "You're on the list! You'll hear from us when the next patch ships."
-              : "You're off the list. No more emails — come back any time.";
+              ? `You're on the list for the ${which} patch${games.length === 2 ? 'es' : ''}! You'll hear from us when the next version ships.`
+              : `You're off the ${which} list. No more of those emails — come back any time.`;
           const emoji = doneEl.querySelector('.sub-done-emoji');
           if (emoji) emoji.textContent = submittedMode === 'subscribe' ? '🎉' : '👋';
           form.hidden = true;
@@ -244,6 +263,34 @@ const points = Array.from({ length: 48 }, (_, i) => {
 </script>
 
 <style>
+  /* ── Patch choice ─────────────────────────────────────────────── */
+  .sub-games {
+    border: 0;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+  }
+  .sub-games legend {
+    padding: 0;
+    margin-bottom: 6px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--color-purple-600);
+  }
+  .sub-games label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+  .sub-games label span {
+    color: var(--color-ink-soft);
+    font-size: 0.85rem;
+  }
+
   /* ── The sticker cluster ──────────────────────────────────────── */
   .seal-cluster {
     display: inline-flex;

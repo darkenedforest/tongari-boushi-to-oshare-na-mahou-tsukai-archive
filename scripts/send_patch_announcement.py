@@ -8,7 +8,7 @@ replays the log (latest action per email wins) to give the active subscriber
 set, and this script sends one announcement per BCC batch through Gmail SMTP.
 
 Subcommands:
-  list                       Show the active subscriber set (and totals).
+  list [--game ds|3ds]       Show the active subscriber set (and totals), or one patch's.
   send [options]             Send the announcement for a release.
   unsubscribe EMAIL          Append an unsubscribe row for EMAIL (e.g. when
                              someone replies "unsubscribe" to an email).
@@ -17,6 +17,9 @@ Subcommands:
   --game ds|3ds              Which game's release to announce: ds reads
                              public/data/patches.json, 3ds reads
                              public/data/patches_3ds.json. Default: ds.
+                             It goes only to the people subscribed to that
+                             game's patch (sign-ups from before the choice
+                             existed are on both lists).
   --version 2.6              Which release of that game to announce.
                              Default: the newest one.
   --dry-run                  Print recipients + the rendered email, send
@@ -152,11 +155,12 @@ def _admin():
     return Admin()
 
 
-def fetch_active_subscribers() -> tuple[list[str], int]:
+def fetch_active_subscribers(game: str | None = None) -> tuple[list[str], int]:
     """Active subscribers from the site backend (the append-only log is
-    replayed server-side; latest action per email wins). Returns
-    (active_emails, total_log_rows)."""
-    data = _admin().get("/api/admin/subscribers")
+    replayed server-side; latest action per email wins). People choose the
+    DS patch, the 3DS patch or both: with `game`, only that patch's list
+    (older sign-ups count for both). Returns (active_emails, total_log_rows)."""
+    data = _admin().get("/api/admin/subscribers" + (f"?game={game}" if game else ""))
     active = []
     for email in data["active"]:
         try:
@@ -295,7 +299,7 @@ this email with "unsubscribe".
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    active, total_rows = fetch_active_subscribers()
+    active, total_rows = fetch_active_subscribers(args.game)
     for e in active:
         print(e)
     print(f"\n{len(active)} active subscriber(s) ({total_rows} log rows).")
@@ -315,7 +319,7 @@ def cmd_send(args: argparse.Namespace) -> None:
         recipients = [args.test_to.strip().lower()]
         print(f"TEST MODE: sending only to {recipients[0]}")
     else:
-        recipients, total_rows = fetch_active_subscribers()
+        recipients, total_rows = fetch_active_subscribers(args.game)
         print(f"{len(recipients)} active subscriber(s) ({total_rows} log rows).")
 
     if not recipients:
@@ -396,7 +400,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     sub = parser.add_subparsers(dest="command", required=True)
 
-    sub.add_parser("list", help="show active subscribers")
+    p_list = sub.add_parser("list", help="show active subscribers")
+    p_list.add_argument("--game", choices=["ds", "3ds"], help="only this patch's list (default: everyone)")
 
     p_unsub = sub.add_parser("unsubscribe", help="append an unsubscribe row")
     p_unsub.add_argument("email")
