@@ -111,6 +111,9 @@ const webPatcherConfig = {
         file: resolveLocalUrl(d.url),
         inputMd5: d.romMd5,
         outputName: `Tongari Boushi ITA v${r.version}`,
+        // What the 3DS (Luma3DS) folder is made of, checked file by file
+        // by public/3ds-luma/luma.js. Absent = Azahar ROM only.
+        luma: r.luma ?? null,
       };
     }),
 };
@@ -419,7 +422,58 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
         sel3ds.addEventListener('change', function () {
           currentVersionIndex3ds = parseInt(this.value, 10) || 0;
           stage();
+          updateTargets();
         });
+        document.querySelectorAll('input[name="wp3-target"]').forEach(function (r) {
+          r.addEventListener('change', function () { if (this.checked) target3ds = this.value; });
+        });
+        updateTargets();
+      }
+
+      // "I play on": Azahar gets the patched .3ds ROM; a 3DS (Luma3DS) gets
+      // a zip with the luma folder, made from that ROM by TongariLuma
+      // (public/3ds-luma/luma.js). Versions without "luma" data offer Azahar only.
+      let target3ds = 'azahar';
+      function updateTargets() {
+        const v = versions3ds[currentVersionIndex3ds];
+        const luma = document.querySelector('input[name="wp3-target"][value="luma"]');
+        if (!luma) return;
+        luma.disabled = !(v && v.luma);
+        if (luma.disabled && luma.checked) {
+          document.querySelector('input[name="wp3-target"][value="azahar"]').checked = true;
+          target3ds = 'azahar';
+        }
+      }
+
+      let lumaUrl = null;
+      function lumaStatus(html) {
+        const el = document.getElementById('wp3-luma-status');
+        if (!el) return;
+        el.innerHTML = html;
+        el.hidden = !html;
+      }
+      // Called by RomPatcher with the patched ROM, just before it saves it.
+      function onpatch(patchedRom) {
+        if (activeGame !== '3ds' || target3ds !== 'luma') { lumaStatus(''); return; }
+        const v = versions3ds[currentVersionIndex3ds];
+        patchedRom.save = function () {}; // the zip replaces the .3ds download
+        try {
+          const parts = TongariLuma.build(patchedRom._u8array, v.luma);
+          if (lumaUrl) URL.revokeObjectURL(lumaUrl);
+          lumaUrl = URL.createObjectURL(new Blob(parts, { type: 'application/zip' }));
+          const name = v.outputName + ' - 3DS luma.zip';
+          const a = document.createElement('a');
+          a.href = lumaUrl;
+          a.download = name;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          lumaStatus('✦ Your 3DS folder is ready: <strong>' + name + '</strong>. ' +
+            'If the download did not start, <a href="' + lumaUrl + '" download="' + name + '">download it here</a>. ' +
+            'Then follow the steps under “Playing on a 3DS?” above.');
+        } catch (e) {
+          lumaStatus('✦ Could not make the 3DS folder: ' + (e && e.message ? e.message : e));
+        }
       }
 
       function descriptor3ds(version) {
@@ -502,6 +556,7 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
               // what's currently staged.
               stage();
             },
+            onpatch: onpatch,
           },
           first
         );
@@ -777,28 +832,33 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
             <p class="wp-lede">
               No downloads, no extra tools. Choose your decrypted Japanese
               <code>.cci</code> or <code>.3ds</code> ROM and get the Italian game
-              back out, ready for the Azahar emulator. Everything runs locally in
-              your browser, and your ROM never leaves your device.
+              back out: a ROM for the Azahar emulator, or the <code>luma</code>
+              folder for a 3DS. Everything runs locally in your browser, and your
+              ROM never leaves your device.
             </p>
           </div>
           {(() => {
             const pkg = (latest3ds?.downloads ?? []).find((d: any) => !d.isLocal);
-            return pkg && (
+            return (
               <aside class="wp-save-badge" aria-labelledby="wp3-badge-title">
                 <span class="wp-save-badge-chip">
                   <span aria-hidden="true">✦</span> Playing on a 3DS?
                 </span>
                 <p class="wp-save-badge-title" id="wp3-badge-title">
-                  Get the full package
+                  Install with Luma3DS
                 </p>
-                <p class="wp-save-badge-body">
-                  A 3DS with Luma3DS needs a <code>luma</code> folder on the SD
-                  card. The full package makes it from your ROM on Windows, along
-                  with the Azahar ROM.
-                </p>
-                <a class="wp-save-badge-link" href={pkg.url} target="_blank" rel="noopener">
-                  Full package on GitHub <span aria-hidden="true">→</span>
-                </a>
+                <ol class="wp3-steps">
+                  <li>Choose <strong>3DS (Luma3DS)</strong> below and patch: you get a <code>.zip</code>.</li>
+                  <li>If you had an older version, delete <code>SD:/luma/titles/00040000000B4A00</code>.</li>
+                  <li>Open the zip and copy the <code>luma</code> folder inside it to the root of the SD card (merge it with the one already there).</li>
+                  <li>Hold SELECT while turning on the 3DS and enable <em>Enable game patching</em>.</li>
+                </ol>
+                {pkg && (
+                  <p class="wp-save-badge-body">
+                    Works with the cartridge and the installed game. Prefer to patch
+                    offline? <a href={pkg.url} target="_blank" rel="noopener">Full package for Windows</a>.
+                  </p>
+                )}
               </aside>
             );
           })()}
@@ -809,11 +869,19 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
             <span class="wp-field-label">Patch version</span>
             <select id="wp3-version-select" class="wp-select"></select>
           </label>
+          <fieldset class="wp-field wp3-target">
+            <legend class="wp-field-label">I play on</legend>
+            <label><input type="radio" name="wp3-target" value="azahar" checked /> Azahar emulator <span class="muted">(.3ds ROM)</span></label>
+            <label><input type="radio" name="wp3-target" value="luma" /> 3DS (Luma3DS) <span class="muted">(luma folder, .zip)</span></label>
+          </fieldset>
         </div>
 
         <!-- The RomPatcher widget moves here while the 3DS panel is shown. -->
         <div id="wp3-host"></div>
+        <p class="wp3-luma-status" id="wp3-luma-status" role="status" hidden></p>
       </section>
+      <!-- Builds the Luma3DS folder from the patched ROM (no game files hosted). -->
+      <script is:inline src={`${base}/3ds-luma/luma.js`}></script>
     )}
 
     {!latest3ds ? (
@@ -1647,6 +1715,48 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     transform: translateY(-1px);
     color: white;
   }
+
+  /* 3DS: install steps in the badge, "I play on" choice, zip status */
+  .wp3-steps {
+    margin: 0 0 10px;
+    padding-left: 20px;
+    font-size: 0.86rem;
+    line-height: 1.5;
+    color: var(--color-ink);
+  }
+
+  .wp3-steps li { margin-bottom: 3px; }
+
+  .wp3-target {
+    border: 0;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .wp3-target label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    cursor: pointer;
+  }
+
+  .wp3-target input:disabled + * { opacity: 0.5; }
+
+  .wp3-luma-status {
+    margin: 14px 32px 0;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #fff7d6, rgba(255, 255, 255, 0.92));
+    border: 2px solid #f3d774;
+    border-radius: var(--radius-md);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .wp3-luma-status[hidden] { display: none; }
 
   @media (max-width: 760px) {
     .wp-save-badge {
