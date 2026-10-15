@@ -99,6 +99,20 @@ const webPatcherConfig = {
   styleSheet: `${base}/rom-patcher-js/style.css`,
   poweredByImg: `${base}/rom-patcher-js/assets/powered_by_rom_patcher_js.png`,
   versions: webPatcherVersions,
+  // 3DS game: same widget, moved into the 3DS panel when that panel is
+  // shown. One ROM dump per version, so no rev detection. The output is
+  // the patched ROM for the Azahar emulator.
+  versions3ds: releases3ds
+    .filter((r) => (r.downloads ?? []).some((d: any) => d.isLocal))
+    .map((r) => {
+      const d = r.downloads.find((x: any) => x.isLocal);
+      return {
+        version: r.version,
+        file: resolveLocalUrl(d.url),
+        inputMd5: d.romMd5,
+        outputName: `Tongari Boushi ITA v${r.version}`,
+      };
+    }),
 };
 
 // Render very light markdown: **bold** spans only.
@@ -378,11 +392,85 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
         saveBadge.hidden = badgeMinIndex < 0 || index > badgeMinIndex;
       }
 
+      // ── 3DS game ──────────────────────────────────────────────────
+      // There is one RomPatcher widget on the page. When the 3DS panel is
+      // shown, the widget moves into it and gets the 3DS patch; back on the
+      // DS panel it returns to its original place with the DS patch.
+      const versions3ds = cfg.versions3ds || [];
+      let currentVersionIndex3ds = 0;
+      let activeGame = 'ds';
+      const container = document.getElementById('rom-patcher-container');
+      const dsParent = container.parentNode;
+      const dsNext = container.nextSibling;
+
+      // The 3DS panel comes after this script, so its version dropdown is
+      // filled on the first switch (the switcher runs at the end of the page).
+      let sel3dsReady = false;
+      function setup3ds() {
+        const sel3ds = document.getElementById('wp3-version-select');
+        if (sel3dsReady || !sel3ds) return;
+        sel3dsReady = true;
+        versions3ds.forEach(function (v, i) {
+          const opt = document.createElement('option');
+          opt.value = String(i);
+          opt.textContent = 'v' + v.version + (i === 0 ? ' (latest)' : '');
+          sel3ds.appendChild(opt);
+        });
+        sel3ds.addEventListener('change', function () {
+          currentVersionIndex3ds = parseInt(this.value, 10) || 0;
+          stage();
+        });
+      }
+
+      function descriptor3ds(version) {
+        return {
+          file: version.file,
+          name: 'v' + version.version + ' — Italian',
+          outputName: version.outputName,
+          outputExtension: '3ds',
+          inputMd5: version.inputMd5,
+        };
+      }
+
+      // The patch that should be staged for the panel on screen.
+      function wanted() {
+        if (activeGame === '3ds' && versions3ds.length)
+          return descriptor3ds(versions3ds[currentVersionIndex3ds]);
+        const version = versions[currentVersionIndex];
+        return patchDescriptor(version, pickRev(version));
+      }
+
+      // Stage the wanted patch unless it is already staged. RomPatcher
+      // refuses a new patch while it is still downloading the previous one
+      // (and before it is initialized), so retry shortly in that case.
+      let staged = null;
+      let retry = null;
+      function stage() {
+        clearTimeout(retry);
+        const w = wanted();
+        if (w.file === staged) return;
+        try {
+          RomPatcherWeb.setEmbededPatches(w);
+          staged = w.file;
+        } catch (e) {
+          retry = setTimeout(stage, 400);
+        }
+      }
+
+      // Called by the game switcher at the bottom of the page.
+      window.__wpSetGame = function (game) {
+        setup3ds();
+        const host = document.getElementById('wp3-host');
+        if (game === '3ds' && !host) return;
+        activeGame = game;
+        if (game === '3ds') host.appendChild(container);
+        else dsParent.insertBefore(container, dsNext);
+        stage();
+      };
+
       function applyVersion(index) {
         currentVersionIndex = index;
-        const version = versions[index];
-        const rev = pickRev(version);
-        RomPatcherWeb.setEmbededPatches(patchDescriptor(version, rev));
+        stage();
         updateSaveBadge(index);
       }
       updateSaveBadge(0);
@@ -392,6 +480,7 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       });
 
       function init() {
+        const first = wanted();
         RomPatcherWeb.initialize(
           {
             language: 'en',
@@ -400,25 +489,23 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
             // When the visitor loads a ROM, compute its md5 and (if it
             // matches the other revision of the selected version) swap to the
             // matching rev so the right patch is applied automatically.
+            // A 3DS ROM has a single dump, so it skips this (and the slow
+            // md5 of a 256 MB file).
             onloadrom: function (romFile) {
+              if (activeGame === '3ds') return;
               try {
                 currentRomMd5 = romFile.hashMD5();
               } catch (e) {
                 currentRomMd5 = null;
               }
-              const version = versions[currentVersionIndex];
-              const rev = pickRev(version);
-              // Only re-fetch if the auto-detected rev differs from what's
-              // currently staged (avoids a redundant fetch on every load).
-              if (rev && rev.file !== (window.__wpCurrentPatchFile || null)) {
-                window.__wpCurrentPatchFile = rev.file;
-                RomPatcherWeb.setEmbededPatches(patchDescriptor(version, rev));
-              }
+              // Only re-fetches if the auto-detected rev differs from
+              // what's currently staged.
+              stage();
             },
           },
-          patchDescriptor(versions[0], pickRev(versions[0]))
+          first
         );
-        window.__wpCurrentPatchFile = pickRev(versions[0]).file;
+        staged = first.file;
       }
 
       if (document.readyState === 'complete') {
@@ -659,7 +746,76 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
        style={`--g-deep:${g3.accent.deep};--g-mid:${g3.accent.mid};--g-light:${g3.accent.light};--g-ink:${g3.accent.ink}`}>
     <p class="panel-links">
       <a href={`${base}/bug-reports/#3ds`}>3DS bug reports →</a>
+      <a href="https://github.com/chokercrave/mahou-no-machi-patch/blob/main/docs/en/features.md" target="_blank" rel="noopener">3DS features guide →</a>
+      <a href="https://github.com/chokercrave/mahou-no-machi-patch" target="_blank" rel="noopener">3DS patch source and docs →</a>
     </p>
+
+    {webPatcherConfig.versions3ds.length > 0 && (
+      <section class="web-patcher card" id="web-patcher-3ds" aria-labelledby="web-patcher-3ds-title">
+        <div class="wp-banner">
+          <div class="wp-glitter" aria-hidden="true">
+            <span class="wp-star s1">✦</span>
+            <span class="wp-star s2">✧</span>
+            <span class="wp-star s3">✦</span>
+            <span class="wp-star s4">✧</span>
+            <span class="wp-star s5">✦</span>
+            <span class="wp-star s6">✧</span>
+          </div>
+          <img
+            class="wp-sprite"
+            src={`${base}/decorations/magic-lamp-gold.png`}
+            alt=""
+            aria-hidden="true"
+          />
+          <div class="wp-header">
+            <span class="wp-recommend-chip">
+              <span class="wp-chip-star" aria-hidden="true">✦</span> The easy way to patch
+            </span>
+            <h2 id="web-patcher-3ds-title">
+              Patch your ROM in your browser
+            </h2>
+            <p class="wp-lede">
+              No downloads, no extra tools. Choose your decrypted Japanese
+              <code>.cci</code> or <code>.3ds</code> ROM and get the Italian game
+              back out, ready for the Azahar emulator. Everything runs locally in
+              your browser, and your ROM never leaves your device.
+            </p>
+          </div>
+          {(() => {
+            const pkg = (latest3ds?.downloads ?? []).find((d: any) => !d.isLocal);
+            return pkg && (
+              <aside class="wp-save-badge" aria-labelledby="wp3-badge-title">
+                <span class="wp-save-badge-chip">
+                  <span aria-hidden="true">✦</span> Playing on a 3DS?
+                </span>
+                <p class="wp-save-badge-title" id="wp3-badge-title">
+                  Get the full package
+                </p>
+                <p class="wp-save-badge-body">
+                  A 3DS with Luma3DS needs a <code>luma</code> folder on the SD
+                  card. The full package makes it from your ROM on Windows, along
+                  with the Azahar ROM.
+                </p>
+                <a class="wp-save-badge-link" href={pkg.url} target="_blank" rel="noopener">
+                  Full package on GitHub <span aria-hidden="true">→</span>
+                </a>
+              </aside>
+            );
+          })()}
+        </div>
+
+        <div class="wp-controls">
+          <label class="wp-field">
+            <span class="wp-field-label">Patch version</span>
+            <select id="wp3-version-select" class="wp-select"></select>
+          </label>
+        </div>
+
+        <!-- The RomPatcher widget moves here while the 3DS panel is shown. -->
+        <div id="wp3-host"></div>
+      </section>
+    )}
+
     {!latest3ds ? (
       <section class="card p3-empty">
         <img class="p3-icon" src={`${base}${g3.icon}`} alt="" width="96" height="96" />
@@ -720,6 +876,8 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
           c.classList.toggle('is-active', on);
           if (on) c.setAttribute('aria-current', 'true'); else c.removeAttribute('aria-current');
         });
+        // Move the in-browser patcher into this game's panel.
+        if (window.__wpSetGame) window.__wpSetGame(game);
         if (scroll) document.querySelector('.game-switch').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       function fromHash() { show(location.hash === '#3ds' ? '3ds' : 'ds', false); }
