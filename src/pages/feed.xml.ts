@@ -73,10 +73,10 @@ export const GET: APIRoute = () => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Tongari Boushi English Patches — Releases</title>
+    <title>Tongari Boushi Fan-Translation Patches — Releases</title>
     <link>${escapeXml(`${ROOT}/patches/`)}</link>
     <atom:link href="${escapeXml(`${ROOT}/feed.xml`)}" rel="self" type="application/rss+xml" />
-    <description>Release announcements for the English fan-translation patches of Tongari Boushi to Oshare na Mahou Tsukai (DS) and Tongari Boushi to Mahou no Machi (3DS).</description>
+    <description>Release announcements for the fan-translation patches of Tongari Boushi to Oshare na Mahou Tsukai (DS, English) and Tongari Boushi to Mahou no Machi (3DS, multi-language).</description>
     <language>en-us</language>
 ${items}
   </channel>

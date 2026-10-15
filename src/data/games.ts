@@ -19,6 +19,10 @@ export interface Game {
   cart: { body: string; edge: string; ridge: string };
   /** Who makes this game's patch. */
   patchBy: string;
+  /** Languages the patch ships in, in release order. */
+  languages: string[];
+  /** Short tag printed on the cartridge label. */
+  cartTag: string;
 }
 
 export const GAMES: Record<GameId, Game> = {
@@ -31,6 +35,8 @@ export const GAMES: Record<GameId, Game> = {
     accent: { deep: '#9b3f9e', mid: '#e93f8e', light: '#ffd3e8', ink: '#5c1f52' },
     cart: { body: '#4a4a55', edge: '#2f2f38', ridge: '#5d5d6a' },
     patchBy: 'darkenedforest',
+    languages: ['English'],
+    cartTag: '✦ ENGLISH',
   },
   '3ds': {
     id: '3ds',
@@ -41,6 +47,9 @@ export const GAMES: Record<GameId, Game> = {
     accent: { deep: '#2f5fb9', mid: '#5f8fee', light: '#d6e6ff', ink: '#1d3566' },
     cart: { body: '#f2f2f5', edge: '#c9c9d2', ridge: '#dcdce4' },
     patchBy: 'a collaborator',
+    // Multi-language patch; Italian is the first language.
+    languages: ['Italian'],
+    cartTag: '✦ ITALIANO',
   },
 };
 

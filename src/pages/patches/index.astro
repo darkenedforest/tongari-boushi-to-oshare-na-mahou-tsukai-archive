@@ -137,9 +137,10 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     </p>
     <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
     <p class="lede">
-      English fan-translation patches for two Japan-only Tongari Boushi games:
-      the DS game <span lang="ja">{gds.titleJa}</span> and the 3DS game
-      <span lang="ja">{g3.titleJa}</span>. Pick a game below.
+      Fan-translation patches for two Japan-only Tongari Boushi games: an
+      English patch for the DS game <span lang="ja">{gds.titleJa}</span>, and a
+      multi-language patch for the 3DS game <span lang="ja">{g3.titleJa}</span>,
+      starting with Italian.
     </p>
   </section>
 
@@ -663,13 +664,8 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       <section class="card p3-empty">
         <img class="p3-icon" src={`${base}${g3.icon}`} alt="" width="96" height="96" />
         <div>
-          <h2>The 3DS patch is in progress</h2>
+          <h2>Coming soon!</h2>
           <p>{(patch3ds as any).statusNote}</p>
-          <p class="muted small">
-            Found something already? The <a href={`${base}/bug-reports/#3ds`}>bug board</a> has
-            a 3DS section, and the <a href="#subscribe" class="p3-sub">patch-update emails</a>
-            cover both games.
-          </p>
         </div>
       </section>
     ) : (
@@ -734,12 +730,6 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
           history.replaceState(null, '', '#' + game);
           show(game, false);
         });
-      });
-      var sub = document.querySelector('.p3-sub');
-      if (sub) sub.addEventListener('click', function (e) {
-        e.preventDefault();
-        var seal = document.getElementById('psub-open');
-        if (seal) seal.click();
       });
       window.addEventListener('hashchange', fromHash);
       fromHash();

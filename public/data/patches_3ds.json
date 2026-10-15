@@ -2,7 +2,8 @@
   "game": "3ds",
   "about": "Patch releases for the 3DS game とんがりボウシと魔法の町 (Tongari Boushi to Mahou no Machi). Same shape as patches.json: newest release first. Each download is a link to the patch file (host it in the public bucket under patches/3ds/, or any public URL) plus optional checksums.",
   "status": "in-progress",
-  "statusNote": "An English patch for the 3DS game is in progress. Downloads, release notes and checksums will appear here when the first version ships.",
+  "languages": ["Italian"],
+  "statusNote": "A multilingual patch for the 3DS game is on its way, starting with Italian. We'll let you know when it's ready to play!",
   "howTo": [],
   "releases": []
 }

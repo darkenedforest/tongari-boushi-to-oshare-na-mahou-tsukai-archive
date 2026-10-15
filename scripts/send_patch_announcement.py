@@ -194,7 +194,8 @@ def build_email(release: dict) -> tuple[str, str, str]:
     v = release["version"]
     game = release.get("game", "ds")
     platform = "3DS" if game == "3ds" else "DS"
-    subject = f"Tongari Boushi {platform} English patch v{v} is out ✦"
+    patch_name = "English patch" if game == "ds" else "fan-translation patch"
+    subject = f"Tongari Boushi {platform} {patch_name} v{v} is out ✦"
     patches_url = f"{SITE_URL}/patches/" + ("#3ds" if game == "3ds" else "")
     changelog_url = (
         f"{SITE_URL}{release['changelogUrl']}" if release.get("changelogUrl") else None
@@ -211,7 +212,7 @@ def build_email(release: dict) -> tuple[str, str, str]:
     )
 
     lines = [
-        f"Version {v} of the English fan-translation patch for",
+        f"Version {v} of the {'English ' if game == 'ds' else ''}fan-translation patch for",
         f"{GAME_TITLE[game]} just shipped.",
         "",
         release.get("headline", ""),
@@ -272,7 +273,7 @@ def build_email(release: dict) -> tuple[str, str, str]:
         )
     html = f"""\
 <html><body style="font-family: sans-serif; color: #3a2c4e; line-height: 1.55;">
-<h2 style="color: #9b7bd9;">{platform} English patch v{esc(v)} is out &#10022;</h2>
+<h2 style="color: #9b7bd9;">{platform} {patch_name} v{esc(v)} is out &#10022;</h2>
 <p style="margin-top: -8px; color: #8a7a9e;">{esc(GAME_TITLE[game])}</p>
 <p><strong>{esc(release.get('headline', ''))}</strong></p>
 <p>{esc(release.get('summary', ''))}</p>
