@@ -33,7 +33,7 @@ const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
   </section>
 
   <!-- 3DS game announcement -->
-  <section class="announce"
+  <a class="announce" href={`${base}/patches/#3ds`}
      style={`--a-deep:${g3.accent.deep};--a-mid:${g3.accent.mid};--a-light:${g3.accent.light};--a-ink:${g3.accent.ink}`}>
     <span class="announce-ribbon">New</span>
     <div class="announce-carts" aria-hidden="true">
@@ -48,8 +48,9 @@ const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
           ? <><span lang="ja">{g3.titleJa}</span> has a multilingual fan translation, starting with Italian, and it's out now!</>
           : <><span lang="ja">{g3.titleJa}</span> is getting a multilingual fan translation, starting with Italian. We'll let you know when it's ready to play!</>}
       </p>
+      <span class="announce-cta">See the 3DS patch page <span aria-hidden="true">→</span></span>
     </div>
-  </section>
+  </a>
 
   <div class="section-divider" aria-hidden="true">
     <img src={`${base}/decorations/peach.png`} alt="" />
@@ -138,6 +139,12 @@ const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
     color: var(--color-ink);
     text-decoration: none;
     overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .announce:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 9px 9px 0 var(--a-deep);
+    color: var(--color-ink);
   }
   .announce-ribbon {
     position: absolute;
@@ -162,6 +169,15 @@ const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
   .ac { position: absolute; }
   .ac-ds { left: 6px; top: 14px; z-index: 1; }
   .ac-3ds { left: 98px; top: 0; z-index: 2; }
+  .announce-cta {
+    display: inline-block;
+    padding: 6px 14px;
+    background: var(--a-deep);
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 700;
+    box-shadow: 3px 3px 0 var(--a-ink);
+  }
   .announce-kicker {
     margin: 0 0 4px;
     font-family: var(--font-display);
