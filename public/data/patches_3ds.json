@@ -1,9 +1,43 @@
 {
   "game": "3ds",
   "about": "Patch releases for the 3DS game とんがりボウシと魔法の町 (Tongari Boushi to Mahou no Machi). Same shape as patches.json: newest release first. Each download is a link to the patch file (host it in the public bucket under patches/3ds/, or any public URL) plus optional checksums.",
-  "status": "in-progress",
+  "status": "released",
   "languages": ["Italian"],
   "statusNote": "A multilingual patch for the 3DS game is on its way, starting with Italian. We'll let you know when it's ready to play!",
   "howTo": [],
-  "releases": []
+  "releases": [
+    {
+      "version": "1.9",
+      "date": "2026-10-15",
+      "headline": "The first release: the whole game in Italian",
+      "summary": "A complete Italian translation, with a few changes that make the game more comfortable to play. Works on the Azahar emulator and on a 3DS with Luma3DS. Saves stay compatible.",
+      "changes": [
+        "Everything is in Italian: dialogue, menus, items, names, shop signs, lesson blackboards, the Spell & Spill magazine, titles and credits, redrawn in the original style.",
+        "Dialogue uses feminine forms when you play as a girl.",
+        "Three-line dialogue boxes, full clothing names, a 24-hour clock, and a name keyboard that opens on Latin letters and accepts the names the old word filter rejected.",
+        "Shops and services are open around the clock, and lessons work at any hour.",
+        "You can date or become best friends with anyone, of any sex.",
+        "Fast travel from the village map.",
+        "Hold B to show text instantly.",
+        "A new Options menu, asked to the teachers or to Reginaldo: infinite money, stable bonds, new stock in shops, spells that don't use up materials.",
+        "One patch for both the original game (Ver.1.0) and the Ver.1.1 update."
+      ],
+      "notes": "Azahar: apply the .xdelta to your decrypted Japanese ROM (.cci or .3ds) with Delta Patcher, or download the full package. 3DS with Luma3DS: download the full package and run \"Applica patch.bat\" next to your ROM. It makes both the Azahar ROM and the luma folder to copy to the SD card. Instructions and source code are on GitHub (chokercrave/mahou-no-machi-patch).",
+      "downloads": [
+        {
+          "label": "Italian (.xdelta)",
+          "isLocal": true,
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/3ds/tongari-boushi-ita-v1.9.xdelta",
+          "patchSizeBytes": 28498476,
+          "patchSha256": "f73d2ced9cf6c372f061b8c3ac472194cc0a5c0eb8da0ce8132789f3c77e678b",
+          "romMd5": "343ea3fceb37e6c690b0e2e815a40a7b"
+        },
+        {
+          "label": "Full package for 3DS and Azahar (Windows, GitHub)",
+          "isLocal": false,
+          "url": "https://github.com/chokercrave/mahou-no-machi-patch/releases/tag/v1.9"
+        }
+      ]
+    }
+  ]
 }
