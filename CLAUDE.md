@@ -64,7 +64,9 @@ assets, 3D models and field guide are DS-only and say so with `GameBadge`.
 ## Backend and patch files
 
 Posts, uploads and subscriptions go to the `media-api` service in GCP project
-`media-library-119506` — see **BACKEND.md**. No keys are in the site.
+`media-library-119506`. Its code and backend notes live in the **private** repo
+`darkenedforest/media-library` (local: `../media-library`), never in this public
+repo. No keys are in the site.
 Patch files are **not** in `public/`; upload them with
 `python scripts/upload_patches.py --game ds|3ds <files>` and put the printed
 URLs in the patches JSON.
@@ -72,8 +74,8 @@ URLs in the patches JSON.
 When a new **patch release** ships (new entry in either patches JSON),
 email the subscriber list after pushing:
 `python scripts/send_patch_announcement.py send --game ds|3ds --dry-run` to
-preview, then without `--dry-run` (Gmail creds in `.env.announce`, see
-BACKEND.md). The RSS feed (`/feed.xml`) updates automatically from both
+preview, then without `--dry-run` (Gmail creds in `.env.announce`, see the
+private repo's README). The RSS feed (`/feed.xml`) updates automatically from both
 patches files at build time.
 
 ## Committing
