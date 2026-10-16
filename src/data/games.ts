@@ -23,6 +23,8 @@ export interface Game {
   languages: string[];
   /** Short tag printed on the cartridge label. */
   cartTag: string;
+  /** Product code printed along the bottom of the real cartridge label. */
+  productCode: string;
 }
 
 export const GAMES: Record<GameId, Game> = {
@@ -37,6 +39,7 @@ export const GAMES: Record<GameId, Game> = {
     patchBy: 'darkenedforest',
     languages: ['English'],
     cartTag: '✦ ENGLISH',
+    productCode: 'NTR-TB4J-JPN',
   },
   '3ds': {
     id: '3ds',
@@ -50,6 +53,7 @@ export const GAMES: Record<GameId, Game> = {
     // Multi-language patch; Italian is the first language.
     languages: ['Italian'],
     cartTag: '✦ MULTI-LANG',
+    productCode: 'CTR-P-AVCJ-JPN',
   },
 };
 
