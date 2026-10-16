@@ -50,9 +50,8 @@ export const GAMES: Record<GameId, Game> = {
     accent: { deep: '#2f5fb9', mid: '#5f8fee', light: '#d6e6ff', ink: '#1d3566' },
     cart: { body: '#f2f2f5', edge: '#c9c9d2', ridge: '#dcdce4' },
     patchBy: 'a collaborator',
-    // Multi-language patch; Italian is the first language.
-    languages: ['Italian'],
-    cartTag: '✦ MULTI-LANG',
+    languages: ['Italian', 'English'],
+    cartTag: '✦ ITALIANO · ENGLISH',
     productCode: 'CTR-P-AVCJ-JPN',
   },
 };

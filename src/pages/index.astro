@@ -42,10 +42,10 @@ const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
     </div>
     <div class="announce-text">
       <p class="announce-kicker">News ✦</p>
-      <h2>The 3DS game is getting a patch too!</h2>
+      <h2>The 3DS game has patches too!</h2>
       <p>
         {has3dsRelease
-          ? <><span lang="ja">{g3.titleJa}</span> has a multilingual fan translation, starting with Italian, and it's out now!</>
+          ? <><span lang="ja">{g3.titleJa}</span> now has fan translation patches in Italian and English!</>
           : <><span lang="ja">{g3.titleJa}</span> is getting a multilingual fan translation, starting with Italian. We'll let you know when it's ready to play!</>}
       </p>
       <span class="announce-cta">See the 3DS patch page <span aria-hidden="true">→</span></span>
@@ -63,7 +63,7 @@ const has3dsRelease = ((patch3ds as any).releases ?? []).length > 0;
       <a href={`${base}/patches/`} class="section-card live">
         <span class="section-emoji">💾</span>
         <h3>Patches</h3>
-        <p>Fan-translation patches for both games: the English DS patch with its full release history, MD5 hashes and in-browser patcher, and the multi-language 3DS patch.</p>
+        <p>Fan-translation patches for both games: the English DS patch with its full release history, MD5 hashes and in-browser patcher, and the Italian and English 3DS patches.</p>
         <span class="section-cta">Latest release →</span>
       </a>
       <a href={`${base}/assets/`} class="section-card live">

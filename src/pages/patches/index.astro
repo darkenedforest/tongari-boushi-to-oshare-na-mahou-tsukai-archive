@@ -18,6 +18,13 @@ const patcher = patchData.patcherInfo;
 // version ships, in which case the panel shows the in-progress note).
 const releases3ds: any[] = (patch3ds as any).releases ?? [];
 const latest3ds = releases3ds[0];
+// One patch line per language (Italian, English); newest release of each.
+const languages3ds: string[] = [];
+for (const r of releases3ds) {
+  const l = r.language ?? 'Italian';
+  if (!languages3ds.includes(l)) languages3ds.push(l);
+}
+const latestByLang3ds = languages3ds.map((l) => releases3ds.find((r: any) => (r.language ?? 'Italian') === l));
 const g3 = GAMES['3ds'];
 const gds = GAMES.ds;
 
@@ -106,11 +113,13 @@ const webPatcherConfig = {
     .filter((r) => (r.downloads ?? []).some((d: any) => d.isLocal))
     .map((r) => {
       const d = r.downloads.find((x: any) => x.isLocal);
+      const language = r.language ?? 'Italian';
       return {
         version: r.version,
+        language,
         file: resolveLocalUrl(d.url),
         inputMd5: d.romMd5,
-        outputName: `Tongari Boushi ITA v${r.version}`,
+        outputName: `Tongari Boushi ${language === 'English' ? 'ENG' : 'ITA'} v${r.version}`,
         // What the 3DS (Luma3DS) folder is made of, checked file by file
         // by public/3ds-luma/luma.js. Absent = Azahar ROM only.
         luma: r.luma ?? null,
@@ -155,9 +164,8 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     <h1>Patches <span class="sparkle-mark" aria-hidden="true">✦</span></h1>
     <p class="lede">
       Fan-translation patches for two Japan-only Tongari Boushi games: an
-      English patch for the DS game <span lang="ja">{gds.titleJa}</span>, and a
-      multi-language patch for the 3DS game <span lang="ja">{g3.titleJa}</span>,
-      starting with Italian.
+      English patch for the DS game <span lang="ja">{gds.titleJa}</span>, and
+      Italian and English patches for the 3DS game <span lang="ja">{g3.titleJa}</span>.
     </p>
   </section>
 
@@ -182,7 +190,7 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
         <span class="game-col-romaji">{g3.titleRomaji}</span>
         <span class="game-col-status">
           {latest3ds
-            ? <>Latest: <strong>v{latest3ds.version}</strong> · {formatDate(latest3ds.date)}</>
+            ? <>{latestByLang3ds.map((r: any, i: number) => <>{i > 0 && ' · '}{`${r.language ?? 'Italian'} `}<strong>v{r.version}</strong></>)}</>
             : <>In progress — no release yet</>}
         </span>
       </div>
@@ -411,14 +419,40 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       let sel3dsReady = false;
       function setup3ds() {
         const sel3ds = document.getElementById('wp3-version-select');
+        const selLang = document.getElementById('wp3-language-select');
         if (sel3dsReady || !sel3ds) return;
         sel3dsReady = true;
-        versions3ds.forEach(function (v, i) {
-          const opt = document.createElement('option');
-          opt.value = String(i);
-          opt.textContent = 'v' + v.version + (i === 0 ? ' (latest)' : '');
-          sel3ds.appendChild(opt);
-        });
+        // Languages in release order; the version list shows the chosen
+        // language's versions only (each value is an index into versions3ds).
+        const langs = [];
+        versions3ds.forEach(function (v) { if (langs.indexOf(v.language) < 0) langs.push(v.language); });
+        function fillVersions(lang) {
+          sel3ds.innerHTML = '';
+          let first = true;
+          versions3ds.forEach(function (v, i) {
+            if (v.language !== lang) return;
+            const opt = document.createElement('option');
+            opt.value = String(i);
+            opt.textContent = 'v' + v.version + (first ? ' (latest)' : '');
+            sel3ds.appendChild(opt);
+            if (first) currentVersionIndex3ds = i;
+            first = false;
+          });
+        }
+        if (selLang) {
+          langs.forEach(function (l) {
+            const opt = document.createElement('option');
+            opt.value = l;
+            opt.textContent = l;
+            selLang.appendChild(opt);
+          });
+          selLang.addEventListener('change', function () {
+            fillVersions(this.value);
+            stage();
+            updateTargets();
+          });
+        }
+        fillVersions(langs[0]);
         sel3ds.addEventListener('change', function () {
           currentVersionIndex3ds = parseInt(this.value, 10) || 0;
           stage();
@@ -479,7 +513,7 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
       function descriptor3ds(version) {
         return {
           file: version.file,
-          name: 'v' + version.version + ' — Italian',
+          name: 'v' + version.version + ' — ' + version.language,
           outputName: version.outputName,
           outputExtension: '3ds',
           inputMd5: version.inputMd5,
@@ -831,14 +865,14 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
             </h2>
             <p class="wp-lede">
               No downloads, no extra tools. Choose your decrypted Japanese
-              <code>.cci</code> or <code>.3ds</code> ROM and get the Italian game
+              <code>.cci</code> or <code>.3ds</code> ROM and get the Italian or English game
               back out: a ROM for the Azahar emulator, or the <code>luma</code>
               folder for a 3DS. Everything runs locally in your browser, and your
               ROM never leaves your device.
             </p>
           </div>
           {(() => {
-            const pkg = (latest3ds?.downloads ?? []).find((d: any) => !d.isLocal);
+            const pkg = releases3ds.flatMap((r: any) => r.downloads ?? []).find((d: any) => !d.isLocal);
             return (
               <aside class="wp-save-badge" aria-labelledby="wp3-badge-title">
                 <span class="wp-save-badge-chip">
@@ -865,6 +899,10 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
         </div>
 
         <div class="wp-controls">
+          <label class="wp-field">
+            <span class="wp-field-label">Language</span>
+            <select id="wp3-language-select" class="wp-select"></select>
+          </label>
           <label class="wp-field">
             <span class="wp-field-label">Patch version</span>
             <select id="wp3-version-select" class="wp-select"></select>
@@ -895,12 +933,14 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
     ) : (
       <section class="releases">
         <h2>Release history</h2>
-        {releases3ds.map((r: any, i: number) => (
-          <article class={`release ${i === 0 ? 'latest p3-latest' : 'older-release'}`}>
+        {releases3ds.map((r: any) => {
+          const isLatest = latestByLang3ds.includes(r);
+          return (
+          <article class={`release ${isLatest ? 'latest p3-latest' : 'older-release'}`}>
             <header class="release-head">
               <div class="version-line">
-                <span class={`version-tag ${i === 0 ? 'p3-tag' : 'muted-tag'}`}>v{r.version}</span>
-                {i === 0 && <span class="latest-chip">Latest</span>}
+                <span class={`version-tag ${isLatest ? 'p3-tag' : 'muted-tag'}`}>{r.language ?? 'Italian'} v{r.version}</span>
+                {isLatest && <span class="latest-chip">Latest</span>}
               </div>
               <time datetime={r.date}>{formatDate(r.date)}</time>
             </header>
@@ -911,9 +951,9 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
             )}
             {r.notes && <p class="release-note">{r.notes}</p>}
             <div class="downloads">
-              <div class={`download-grid ${i === 0 ? '' : 'compact'}`}>
+              <div class={`download-grid ${isLatest ? '' : 'compact'}`}>
                 {(r.downloads ?? []).map((d: any) => (
-                  <a class={`download-card ${i === 0 ? '' : 'small'}`} href={resolveUrl(d)} {...(d.isLocal ? { download: '' } : { target: '_blank', rel: 'noopener' })}>
+                  <a class={`download-card ${isLatest ? '' : 'small'}`} href={resolveUrl(d)} {...(d.isLocal ? { download: '' } : { target: '_blank', rel: 'noopener' })}>
                     <span class="download-label">
                       {d.label}
                       {d.patchSizeBytes && <span class="size-tag"> ({formatBytes(d.patchSizeBytes)})</span>}
@@ -926,7 +966,8 @@ function renderInline(text: string): Array<{ kind: 'text' | 'bold'; value: strin
               </div>
             </div>
           </article>
-        ))}
+          );
+        })}
       </section>
     )}
   </div>
