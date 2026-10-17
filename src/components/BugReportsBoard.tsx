@@ -86,7 +86,8 @@ const BASE_URL = (import.meta.env.BASE_URL as string).replace(/\/$/, '');
 // Freeform "Other" is handled via OTHER_VERSION_SENTINEL below.
 const PATCH_VERSIONS: Record<'ds' | '3ds', string[]> = {
   ds: (patchData as any).releases.map((r: any) => `v${r.version}`),
-  '3ds': ((patch3ds as any).releases ?? []).map((r: any) => `v${r.version}`),
+  // 3DS: one patch per language, so the language is part of the version.
+  '3ds': ((patch3ds as any).releases ?? []).map((r: any) => `${r.language ?? 'Italian'} v${r.version}`),
 };
 
 function GameTag({ game }: { game: BoardGame }) {
