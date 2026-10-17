@@ -428,13 +428,13 @@
         {
           "label": "English (.xdelta)",
           "isLocal": true,
-          "url": "https://storage.googleapis.com/media-library-119506-public/patches/3ds/tongari-boushi-eng-v1.0.xdelta",
-          "patchSizeBytes": 16195025,
-          "patchSha256": "b412822a2826e49726f9f2aa884126a7bcfb0947476072286edbe3474c4279fe",
+          "url": "https://storage.googleapis.com/media-library-119506-public/patches/3ds/tongari-boushi-eng-v1.0-r2.xdelta",
+          "patchSizeBytes": 16186907,
+          "patchSha256": "eebd29f1e844e06d7e43e21d1bc731e6d0df99e1f8b5610864448107fa2e8a6b",
           "romMd5": "343ea3fceb37e6c690b0e2e815a40a7b"
         }
       ],
-      "patchedRomSha256": "4067b8e5ef64fda436c66dc9a5b515953bd12f8a09a1bba0e2b64f2dc30e2281",
+      "patchedRomSha256": "03dc9fc3cd25c5f50051e9a6d04aae27bb26fa06719176cc2a5fd08d6a81f091",
       "luma": {
         "titleId": "00040000000B4A00",
         "files": [
@@ -614,7 +614,7 @@
             83476
           ],
           [
-            "romfs/ui/menu_magpage_style_02_.tarc",
+            "romfs/ui/menu_magpage_style_02.tarc",
             3894461734,
             73206
           ],
